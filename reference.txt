@@ -1,0 +1,603 @@
+# Creative Direction — Awwwards-Level WebGL Portfolio
+
+You are building an experimental, award-level personal portfolio for a software engineer / creative developer.
+
+The goal is NOT to create another developer portfolio with a 3D background.
+
+The goal is to create something that feels like a **digital art installation, cinematic game interface, and premium creative-development portfolio combined**.
+
+Use these references for inspiration:
+
+* Three.js "Where Worlds Take Shape" — playable WebGL world / interactive exploration
+* Valentin Gassend — creative developer portfolio / WebGL / Three.js / GSAP
+* Three.js Journey — advanced shaders, particles, procedural effects, physics, post-processing and R3F
+* Current Awwwards / Web Design Awards Three.js winners — benchmark the level of art direction and interaction
+
+Do NOT directly copy any specific site's layout, assets, branding, or visual identity.
+
+---
+
+## CORE CONCEPT
+
+The website should feel like entering a **personal digital universe**.
+
+The visitor should immediately think:
+
+"How the hell was this website made?"
+
+But underneath the spectacle, the UX must remain extremely intuitive.
+
+The experience should communicate:
+
+* software engineering
+* creative development
+* technical sophistication
+* visual experimentation
+* gaming / digital culture
+* precision
+* personality
+
+Avoid the generic "developer portfolio" aesthetic.
+
+No:
+
+* generic gradient blobs
+* generic glassmorphism cards
+* generic floating spheres
+* generic AI/SaaS landing page layouts
+* excessive rounded cards
+* stock 3D assets
+* template-looking sections
+* unnecessary neon cyberpunk clichés
+
+---
+
+# VISUAL LANGUAGE
+
+Think:
+
+**cinematic + futuristic + experimental + minimal + technical**
+
+Reference the visual language of:
+
+* high-end game interfaces
+* sci-fi HUD systems
+* cinematic title sequences
+* experimental digital art
+* architectural visualization
+* Japanese / European creative web design
+* premium product launch websites
+* Awwwards SOTD-level interaction design
+
+The site should have a strong art direction rather than simply adding effects everywhere.
+
+Use contrast:
+
+* enormous typography against empty space
+* tiny technical metadata
+* dark environments against bright focal objects
+* extremely smooth animation against sudden transitions
+* complex WebGL scenes against minimal HTML UI
+
+---
+
+# HERO EXPERIENCE
+
+Do NOT make the hero:
+
+"Hi, I'm Amara, a software engineer."
+
+Instead, create an immersive opening sequence.
+
+Example concept:
+
+The screen begins almost completely dark.
+
+A small technical status indicator appears:
+
+SYSTEM INITIALIZING
+RENDER ENGINE ONLINE
+PORTFOLIO DATABASE ONLINE
+CREATIVE SYSTEM ONLINE
+
+The scene gradually materializes.
+
+A 3D environment / abstract structure / particle field appears.
+
+The camera slowly moves through the environment.
+
+Typography emerges from the environment:
+
+AMARA
+
+SOFTWARE
+ENGINEER
+/ CREATIVE DEVELOPER
+
+The visitor can interact with the scene using the cursor.
+
+Mouse movement should subtly influence:
+
+* camera
+* lighting
+* particles
+* depth
+* object rotation
+* shader distortion
+
+Keep the interaction elegant rather than gimmicky.
+
+---
+
+# WEBGL WORLD
+
+Create one central visual system that persists throughout the experience.
+
+Possible environment:
+
+A massive abstract architectural structure floating in darkness.
+
+Think:
+
+* monolithic geometry
+* suspended platforms
+* cables
+* particles
+* distant lights
+* fog
+* subtle atmospheric effects
+* procedural surfaces
+* reflective materials
+* volumetric-looking lighting
+
+The environment should feel designed, not randomly generated.
+
+The camera can travel through this world as the user scrolls.
+
+---
+
+# PROJECTS
+
+Projects should NOT simply appear as cards in a grid.
+
+Turn the project section into an interactive archive.
+
+For example:
+
+PROJECT ARCHIVE
+
+01 / BUG SEVERITY INTELLIGENCE
+02 / DISPATCH PLATFORM
+03 / EXPERIMENTAL WEB EXPERIENCE
+04 / OTHER PROJECT
+
+Each project exists physically inside the 3D environment.
+
+Hovering over a project:
+
+* changes lighting
+* causes nearby particles to react
+* slightly shifts the camera
+* reveals metadata
+* activates subtle shader effects
+
+Clicking a project should trigger a cinematic transition.
+
+The camera moves toward the project.
+
+The WebGL environment transforms.
+
+The project case study takes over the screen.
+
+---
+
+# PROJECT CASE STUDIES
+
+Case studies should feel like interactive presentations.
+
+Structure:
+
+PROJECT 01
+
+BUG SEVERITY INTELLIGENCE
+
+Machine Learning / Python / PostgreSQL / Streamlit
+
+Then:
+
+THE PROBLEM
+THE SYSTEM
+THE ARCHITECTURE
+THE MODEL
+THE RESULTS
+
+Use large typography, diagrams, technical visualizations and animated data.
+
+Do not make every section a card.
+
+Use:
+
+* sticky visual panels
+* horizontal transitions
+* animated diagrams
+* shader backgrounds
+* large numerical statistics
+* interactive architecture diagrams
+* scroll-driven camera movement
+
+---
+
+# SHADER LANGUAGE
+
+Use GLSL where it genuinely improves the experience.
+
+Potential effects:
+
+* procedural noise
+* chromatic aberration
+* distortion
+* displacement
+* liquid surfaces
+* holographic materials
+* scanline textures
+* particle morphing
+* dissolve transitions
+* RGB separation
+* heat distortion
+* animated gradients
+* environment distortion
+* procedural terrain
+* vertex displacement
+
+Do not use all of them simultaneously.
+
+Each section should have a deliberate visual identity.
+
+Three.js post-processing can be used through EffectComposer / ShaderPass for custom effects.
+
+Use post-processing sparingly and artistically.
+
+---
+
+# PARTICLE SYSTEM
+
+Build a custom particle system.
+
+Potential behaviors:
+
+* ambient particles
+* particles attracted to cursor
+* particles forming text
+* particles exploding during transitions
+* particles morphing between shapes
+* particles reacting to scroll velocity
+* particles responding to project selection
+
+Consider GPU-friendly approaches when particle counts become large.
+
+---
+
+# TYPOGRAPHY
+
+Typography should be one of the main visual elements.
+
+Use very large display typography.
+
+Examples:
+
+AMARA
+
+SYSTEMS
+
+CREATE
+
+BUILD
+
+EXPERIMENT
+
+ENGINEER
+
+PROJECT 01
+
+Use typography as geometry where appropriate.
+
+Letters can:
+
+* distort
+* split
+* move in 3D space
+* act as masks
+* dissolve into particles
+* transition between sections
+
+However, readability always wins.
+
+---
+
+# CURSOR
+
+Create a custom cursor.
+
+Normal state:
+
+small precise dot.
+
+Interactive state:
+
+expands into a technical targeting element.
+
+Hovering over an interactive WebGL object:
+
+cursor changes state.
+
+Possible labels:
+
+VIEW
+EXPLORE
+ENTER
+OPEN
+DRAG
+
+The cursor should feel like part of the interface rather than a gimmick.
+
+---
+
+# SCROLL
+
+Treat scrolling as a cinematic control mechanism.
+
+Do not simply fade elements in as the user scrolls.
+
+Use scroll velocity and position to control:
+
+* camera movement
+* object rotation
+* shader uniforms
+* particle behavior
+* typography
+* environment transitions
+* depth
+* scene changes
+
+The entire site should feel like one continuous experience.
+
+Avoid obvious "section 1 / section 2 / section 3" boundaries.
+
+---
+
+# TRANSITIONS
+
+Transitions should be a major part of the experience.
+
+Examples:
+
+Project selection:
+
+HTML interface → camera movement → WebGL object fills screen → shader distortion → project case study.
+
+Navigation:
+
+scene morph → camera travels → new environment appears.
+
+Page exit:
+
+content dissolves into particles.
+
+Think of transitions as **film editing**, not CSS animations.
+
+---
+
+# UI / HTML LAYER
+
+Despite the WebGL complexity, the HTML interface must remain extremely clean.
+
+Use:
+
+* minimal navigation
+* small technical labels
+* strong hierarchy
+* generous whitespace
+* high contrast
+* precise alignment
+
+Navigation example:
+
+AMARA / 2026
+
+WORK
+ABOUT
+EXPERIMENTS
+CONTACT
+
+Keep it fixed where appropriate.
+
+The UI should feel like a control system sitting on top of the 3D world.
+
+---
+
+# SOUND
+
+Make sound optional.
+
+If implemented:
+
+* subtle ambient atmosphere
+* extremely quiet interaction sounds
+* transition sounds
+* no annoying autoplay music
+
+Provide a clearly visible sound toggle.
+
+The experience must remain excellent with sound disabled.
+
+---
+
+# TECHNICAL STACK
+
+Prefer:
+
+* Next.js
+* TypeScript
+* React
+* React Three Fiber
+* Three.js
+* Drei
+* GSAP
+* Framer Motion where useful
+* GLSL shaders
+* postprocessing / EffectComposer
+* Lenis or equivalent smooth scrolling
+* Vite-compatible tooling where appropriate
+
+Use Three.js directly where R3F would create unnecessary abstraction.
+
+Use Blender-generated GLTF/GLB assets when custom 3D geometry is appropriate.
+
+Do NOT generate complex 3D geometry purely in JavaScript if a proper Blender asset would look substantially better.
+
+---
+
+# PERFORMANCE
+
+This is extremely important.
+
+The website must be visually insane without being technically incompetent.
+
+Implement:
+
+* lazy-loaded 3D scenes
+* compressed GLTF/GLB assets
+* texture compression where appropriate
+* LOD where useful
+* adaptive pixel ratio
+* device capability detection
+* reduced particle counts on weaker devices
+* pause rendering when tab is hidden
+* dispose unused geometries/materials/textures
+* avoid unnecessary React re-renders
+* GPU-conscious shader complexity
+* progressive loading
+
+The experience should degrade gracefully.
+
+High-end desktop:
+
+FULL EXPERIENCE
+
+Mid-range device:
+
+REDUCED EXPERIENCE
+
+Mobile:
+
+OPTIMIZED EXPERIENCE
+
+Low-power / reduced-motion:
+
+MINIMAL WEBGL EXPERIENCE
+
+---
+
+# ACCESSIBILITY / SEO
+
+Do NOT let the WebGL canvas become the entire website.
+
+Important content must exist in real HTML.
+
+Provide:
+
+* semantic headings
+* accessible navigation
+* keyboard navigation
+* reduced-motion mode
+* descriptive project content
+* proper metadata
+* Open Graph metadata
+* meaningful URLs
+* crawlable project pages
+
+The WebGL experience enhances the website.
+
+It must not replace the website.
+
+---
+
+# INTERACTION QUALITY
+
+Every animation needs a reason.
+
+Avoid:
+
+"Look, it moves!"
+
+Prefer:
+
+"The interaction communicates something."
+
+Examples:
+
+Project hover → project becomes visually important.
+
+Scroll → camera travels through the world.
+
+Cursor → environment responds to the visitor.
+
+Project selection → camera physically enters the project.
+
+Loading → system initialization establishes the site's identity.
+
+Every effect should reinforce the narrative.
+
+---
+
+# IMPORTANT DESIGN PRINCIPLE
+
+Do not build the entire site at once.
+
+First create:
+
+1. WebGL engine
+2. hero environment
+3. camera system
+4. lighting
+5. particle system
+6. typography
+7. cursor interaction
+8. scroll integration
+9. project interaction
+10. transitions
+11. case studies
+12. performance optimization
+13. responsive/mobile fallback
+
+Build the visual foundation first.
+
+Then build the content architecture around it.
+
+---
+
+# QUALITY BAR
+
+Before considering the implementation finished, ask:
+
+Would this look impressive in an Awwwards submission?
+
+Would a creative developer immediately recognize the technical craft?
+
+Does the site have a distinctive visual identity?
+
+Could someone remember this website after visiting it once?
+
+Does the WebGL actually contribute to the experience?
+
+Does it still feel usable?
+
+Does it feel like a cohesive world rather than a collection of effects?
+
+If the answer to these is no, iterate.
+
+Do not settle for "good enough."
+
+The goal is:
+
+**A portfolio that feels like an experience people accidentally spend 10 minutes exploring.**

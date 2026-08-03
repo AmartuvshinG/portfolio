@@ -1,0 +1,348 @@
+"use client";
+
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from "react";
+import { createPortal } from "react-dom";
+import Link from "next/link";
+import { AnimatePresence, motion } from "framer-motion";
+import { ArrowUpRight, X } from "lucide-react";
+import type { Project } from "@/lib/content";
+import { accentColor } from "@/lib/content";
+import { useReducedMotion } from "@/hooks/useReducedMotion";
+import { useLockScroll } from "@/hooks/useLockScroll";
+import { useOutsideClick } from "@/hooks/useOutsideClick";
+import { EASE_EXPO } from "@/lib/motion";
+import { ProjectVisual } from "./ProjectVisual";
+
+export interface DossierOrigin {
+  project: Project;
+  /** Viewport rect of the card that was clicked — the expansion's start state. */
+  rect: DOMRect;
+}
+
+interface Box {
+  top: number;
+  left: number;
+  width: number;
+  height: number;
+}
+
+const GUTTER = 24;
+const MAX_W = 1040;
+const MAX_H = 760;
+
+const noopSubscribe = () => () => {};
+
+/**
+ * True once running on the client. `createPortal` needs a real `document`, and
+ * this is the sanctioned way to ask — an effect that flips a boolean would just
+ * be a cascading render.
+ */
+function useIsClient() {
+  return useSyncExternalStore(
+    noopSubscribe,
+    () => true,
+    () => false
+  );
+}
+
+function targetBox(): Box {
+  const width = Math.min(window.innerWidth - GUTTER * 2, MAX_W);
+  const height = Math.min(window.innerHeight - GUTTER * 2, MAX_H);
+  return {
+    width,
+    height,
+    left: (window.innerWidth - width) / 2,
+    top: (window.innerHeight - height) / 2,
+  };
+}
+
+/**
+ * Expanding case-file quick-look.
+ *
+ * Grows out of the card you clicked and fills the viewport with the project's
+ * dossier, then collapses back into the same card. Deep links still belong to
+ * `/work/[slug]` — this is a fast look without losing your scroll position, not
+ * a replacement for the route.
+ *
+ * Implementation note: this animates `top/left/width/height` from a captured
+ * `DOMRect` rather than using Framer's `layoutId`. The trigger cards live
+ * inside a GSAP-pinned, `transform`ed track, and layout projection measured
+ * through that transform mis-origins the expansion. Explicit geometry is
+ * immune to whatever the ancestor is doing — and only one element animates, so
+ * the layout cost stays trivial.
+ */
+export function ProjectDossier({
+  origin,
+  onClose,
+}: {
+  origin: DossierOrigin | null;
+  onClose: () => void;
+}) {
+  const reduced = useReducedMotion();
+  const panelRef = useRef<HTMLDivElement>(null);
+  const isClient = useIsClient();
+  const [resizeTick, setResizeTick] = useState(0);
+
+  const open = Boolean(origin);
+  useLockScroll(open);
+
+  /* The target box is derived during render, not set from an effect. Deriving
+     it means the panel exists on the very first open render — an effect would
+     leave one frame where the dialog is empty, and the focus effect below
+     would run against a panel that isn't mounted yet and silently do nothing.
+     `resizeTick` exists only to force this recomputation when the viewport
+     changes under an open panel (device rotate, window drag). */
+  void resizeTick;
+  const box: Box | null = open && isClient ? targetBox() : null;
+
+  useEffect(() => {
+    if (!open) return;
+    const onResize = () => setResizeTick((t) => t + 1);
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, [open]);
+
+  const close = useCallback(() => onClose(), [onClose]);
+  useOutsideClick(panelRef, close, open);
+
+  /* Escape to dismiss + a focus trap for the duration. */
+  useEffect(() => {
+    if (!open) return;
+    const previous = document.activeElement as HTMLElement | null;
+    const panel = panelRef.current;
+    panel?.querySelector<HTMLElement>("[data-autofocus]")?.focus();
+
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        close();
+        return;
+      }
+      if (e.key !== "Tab" || !panelRef.current) return;
+
+      const focusables = panelRef.current.querySelectorAll<HTMLElement>(
+        'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])'
+      );
+      if (focusables.length === 0) return;
+      const first = focusables[0];
+      const last = focusables[focusables.length - 1];
+
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    };
+
+    window.addEventListener("keydown", onKey);
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      previous?.focus();
+    };
+  }, [open, close]);
+
+  if (!isClient) return null;
+
+  const project = origin?.project;
+  const from = origin?.rect;
+  const color = project ? accentColor[project.accent] : undefined;
+
+  return createPortal(
+    <AnimatePresence>
+      {open && project && from && box && (
+        <div className="fixed inset-0 z-[90]" role="presentation">
+          <motion.div
+            aria-hidden
+            className="absolute inset-0 bg-bg/80 backdrop-blur-md"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.3 }}
+          />
+
+          <motion.div
+            ref={panelRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="dossier-title"
+            className="absolute flex flex-col overflow-hidden border border-line-strong bg-surface"
+            initial={
+              reduced
+                ? { ...box, opacity: 0 }
+                : {
+                    top: from.top,
+                    left: from.left,
+                    width: from.width,
+                    height: from.height,
+                    opacity: 0.5,
+                  }
+            }
+            animate={{ ...box, opacity: 1 }}
+            exit={
+              reduced
+                ? { opacity: 0 }
+                : {
+                    top: from.top,
+                    left: from.left,
+                    width: from.width,
+                    height: from.height,
+                    opacity: 0,
+                  }
+            }
+            transition={{ duration: 0.55, ease: EASE_EXPO }}
+          >
+            {/* Visual header — the element that visually "is" the card */}
+            <div className="relative h-40 shrink-0 overflow-hidden sm:h-52">
+              <ProjectVisual
+                index={project.index}
+                title={project.title}
+                category={project.category}
+                accent={project.accent}
+              />
+              <div
+                className="pointer-events-none absolute inset-0"
+                style={{
+                  background:
+                    "linear-gradient(0deg, rgba(11,11,12,0.95), transparent 65%)",
+                }}
+              />
+              <button
+                type="button"
+                data-autofocus
+                onClick={close}
+                aria-label="Close case file"
+                className="absolute right-3 top-3 flex h-9 w-9 items-center justify-center border border-line bg-bg/70 text-fg backdrop-blur transition-colors hover:border-cyan hover:text-cyan"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            {/* Body */}
+            <motion.div
+              className="flex min-h-0 flex-1 flex-col"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0, transition: { duration: 0.12 } }}
+              transition={{ duration: 0.35, delay: reduced ? 0 : 0.22 }}
+            >
+              <div className="border-b border-line px-6 py-5">
+                <div className="flex items-center gap-3">
+                  <span className="font-mono text-xs" style={{ color }}>
+                    CASE FILE / {project.index}
+                  </span>
+                  <span className="h-px flex-1 bg-line" />
+                  <span className="hud-label">{project.year}</span>
+                </div>
+                <h2
+                  id="dossier-title"
+                  className="mt-3 font-display text-4xl font-black uppercase text-fg md:text-5xl"
+                >
+                  {project.title}
+                </h2>
+                <p className="mt-2 max-w-2xl text-sm text-muted md:text-base">
+                  {project.summary}
+                </p>
+              </div>
+
+              {/* Scrollable detail */}
+              <div className="min-h-0 flex-1 overflow-y-auto px-6 py-6">
+                <div className="grid gap-8 md:grid-cols-2">
+                  <div>
+                    <h3 className="hud-label mb-3 text-cyan/70">OVERVIEW</h3>
+                    <p className="text-sm leading-relaxed text-fg/85">
+                      {project.description}
+                    </p>
+
+                    <h3 className="hud-label mb-3 mt-8 text-cyan/70">
+                      KEY OUTCOMES
+                    </h3>
+                    <ul className="space-y-2.5">
+                      {project.highlights.map((h) => (
+                        <li
+                          key={h}
+                          className="flex items-start gap-3 text-sm text-muted"
+                        >
+                          <span className="mt-0.5 font-mono text-xs" style={{ color }}>
+                            →
+                          </span>
+                          {h}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+
+                  <div>
+                    <h3 className="hud-label mb-3 text-cyan/70">STACK</h3>
+                    <div className="flex flex-wrap gap-2">
+                      {project.stack.map((s) => (
+                        <span
+                          key={s}
+                          className="border border-line px-2.5 py-1 font-mono text-[0.65rem] uppercase tracking-wider text-fg"
+                        >
+                          {s}
+                        </span>
+                      ))}
+                    </div>
+
+                    <h3 className="hud-label mb-3 mt-8 text-cyan/70">TELEMETRY</h3>
+                    <div className="grid grid-cols-3 gap-4 border-t border-line pt-4">
+                      {project.metrics.map((m) => (
+                        <div key={m.label}>
+                          <span className="hud-label">{m.label}</span>
+                          <p
+                            className="mt-1 font-display text-2xl font-bold tabular"
+                            style={{ color }}
+                          >
+                            {m.value}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+
+                    <dl className="mt-8 space-y-3 border-t border-line pt-4">
+                      {[
+                        ["ROLE", project.role],
+                        ["CATEGORY", project.category],
+                        ["STATUS", "DEPLOYED"],
+                      ].map(([k, v]) => (
+                        <div key={k} className="flex justify-between gap-4">
+                          <dt className="hud-label">{k}</dt>
+                          <dd className="font-mono text-xs uppercase text-fg">{v}</dd>
+                        </div>
+                      ))}
+                    </dl>
+                  </div>
+                </div>
+              </div>
+
+              {/* Footer CTA */}
+              <div className="flex shrink-0 items-center justify-between gap-4 border-t border-line px-6 py-4">
+                <span className="hud-label hidden sm:inline">
+                  ESC TO CLOSE
+                </span>
+                <Link
+                  href={`/work/${project.slug}`}
+                  className="group inline-flex items-center gap-2 border border-line-strong px-5 py-3 font-mono text-xs uppercase tracking-[0.2em] text-fg transition-colors hover:bg-cyan hover:text-bg"
+                >
+                  Open full case file
+                  <ArrowUpRight
+                    size={14}
+                    className="transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5"
+                  />
+                </Link>
+              </div>
+            </motion.div>
+          </motion.div>
+        </div>
+      )}
+    </AnimatePresence>,
+    document.body
+  );
+}

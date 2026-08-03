@@ -1,26 +1,410 @@
 @import "tailwindcss";
 
+/* ============================================================================
+   NEXUS — Cyberpunk Neo-Futuristic Design System
+   Tokens, HUD utilities, and ambient effects. Single source of truth.
+   ========================================================================== */
+
+@theme {
+  /* --- Surfaces (deep black → graphite; never pure #000 to avoid OLED smear) */
+  --color-bg: #050505;
+  --color-surface: #0b0b0c;
+  --color-surface-2: #111214;
+  --color-elevated: #16181c;
+
+  /* --- Text */
+  --color-fg: #ededed;
+  --color-muted: #7a8290;
+  --color-faint: #454b56;
+
+  /* --- HUD hairlines */
+  --color-line: rgba(0, 229, 255, 0.14);
+  --color-line-strong: rgba(0, 229, 255, 0.32);
+
+  /* --- Accents: cyan primary (AI/tech), purple secondary (future), red alert */
+  --color-cyan: #00e5ff;
+  --color-cyan-dim: #0891a3;
+  --color-purple: #8b5cf6;
+  --color-purple-bright: #a855f7;
+  --color-red: #ff2a3d;
+  --color-amber: #ffb020;
+
+  /* --- Typography (wired to next/font CSS variables in layout.tsx) */
+  --font-display: var(--font-saira), "Arial Narrow", sans-serif;
+  --font-sans: var(--font-grotesk), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-mono-hud), ui-monospace, "Courier New", monospace;
+
+  /* --- Radius (sharp / chamfered motorsport-tech feel) */
+  --radius-sm: 2px;
+  --radius-md: 4px;
+  --radius-lg: 8px;
+
+  /* --- Motion */
+  --ease-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-power: cubic-bezier(0.7, 0, 0.3, 1);
+
+  /* --- Z-index scale */
+  --z-ambient: 0;
+  --z-content: 10;
+  --z-nav: 60;
+  --z-dock: 70;
+  --z-overlay: 80;
+  --z-modal: 90;
+  --z-cursor: 100;
+  --z-preloader: 120;
+}
+
+/* ---------------------------------------------------------------------------
+   Base
+   ------------------------------------------------------------------------- */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  color-scheme: dark;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+* {
+  border-color: var(--color-line);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  scroll-behavior: auto; /* Lenis owns smooth scroll */
+  -webkit-text-size-adjust: 100%;
+  /* Reserve the scrollbar track permanently. Without this, every scroll lock
+     (boot poster, dossier, mobile menu) removes the scrollbar and shifts the
+     whole layout sideways — which also desyncs GSAP's pinned triggers. */
+  scrollbar-gutter: stable;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background-color: var(--color-bg);
+  color: var(--color-fg);
+  font-family: var(--font-sans);
+  font-synthesis-weight: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+/* Base radial atmosphere behind everything (volumetric fog feel) */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(60% 50% at 50% -10%, rgba(0, 229, 255, 0.06), transparent 70%),
+    radial-gradient(50% 40% at 100% 100%, rgba(139, 92, 246, 0.07), transparent 70%),
+    radial-gradient(40% 40% at 0% 60%, rgba(0, 229, 255, 0.04), transparent 70%);
+}
+
+::selection {
+  background: var(--color-cyan);
+  color: #001014;
+}
+
+/* Custom thin scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: var(--color-bg);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-cyan-dim);
+  border-radius: 0;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-cyan);
+}
+
+/* Visible focus for keyboard users only */
+:focus-visible {
+  outline: 2px solid var(--color-cyan);
+  outline-offset: 2px;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  line-height: 0.95;
+  text-transform: uppercase;
+}
+
+/* Tabular numbers everywhere numbers matter */
+.tabular {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+}
+
+/* Hide native cursor while the custom HUD reticle is active */
+html.hud-cursor,
+html.hud-cursor * {
+  cursor: none !important;
+}
+
+/* Ambient texture switched off from the console dock. Driven by an attribute
+   so AmbientOverlay stays a zero-JS server component. */
+html[data-ambient="off"] [data-ambient-overlay] {
+  display: none;
+}
+
+/* ---------------------------------------------------------------------------
+   Typographic utilities
+   ------------------------------------------------------------------------- */
+@utility font-display {
+  font-family: var(--font-display);
+}
+@utility font-mono {
+  font-family: var(--font-mono);
+}
+
+/* HUD micro-label: JetBrains mono, uppercase, wide tracking */
+@utility hud-label {
+  font-family: var(--font-mono);
+  text-transform: uppercase;
+  letter-spacing: 0.28em;
+  font-size: 0.6875rem;
+  line-height: 1;
+  color: var(--color-muted);
+}
+
+/* ---------------------------------------------------------------------------
+   Glow utilities
+   ------------------------------------------------------------------------- */
+@utility text-glow-cyan {
+  color: var(--color-cyan);
+  text-shadow: 0 0 6px rgba(0, 229, 255, 0.55), 0 0 22px rgba(0, 229, 255, 0.28);
+}
+@utility text-glow-purple {
+  color: var(--color-purple-bright);
+  text-shadow: 0 0 6px rgba(168, 85, 247, 0.55), 0 0 22px rgba(139, 92, 246, 0.3);
+}
+@utility glow-cyan {
+  box-shadow: 0 0 0 1px var(--color-line-strong), 0 0 18px rgba(0, 229, 255, 0.18),
+    inset 0 0 18px rgba(0, 229, 255, 0.05);
+}
+@utility glow-purple {
+  box-shadow: 0 0 0 1px rgba(139, 92, 246, 0.4), 0 0 20px rgba(139, 92, 246, 0.2);
+}
+
+/* ---------------------------------------------------------------------------
+   HUD surfaces
+   ------------------------------------------------------------------------- */
+/* Frosted glass panel */
+@utility glass {
+  background: linear-gradient(
+    180deg,
+    rgba(22, 24, 28, 0.6),
+    rgba(11, 12, 12, 0.5)
+  );
+  backdrop-filter: blur(14px) saturate(1.2);
+  -webkit-backdrop-filter: blur(14px) saturate(1.2);
+  border: 1px solid var(--color-line);
+}
+
+/* Chamfered corners (clip a notch off top-right + bottom-left) */
+@utility chamfer {
+  clip-path: polygon(
+    0 0,
+    calc(100% - 12px) 0,
+    100% 12px,
+    100% 100%,
+    12px 100%,
+    0 calc(100% - 12px)
+  );
+}
+@utility chamfer-sm {
+  clip-path: polygon(
+    0 0,
+    calc(100% - 7px) 0,
+    100% 7px,
+    100% 100%,
+    7px 100%,
+    0 calc(100% - 7px)
+  );
+}
+/* Symmetric chamfer on all four corners — used by the contracted command bar
+   and the console dock, where the notch reads as a machined bezel. */
+@utility chamfer-lg {
+  clip-path: polygon(
+    14px 0,
+    calc(100% - 14px) 0,
+    100% 14px,
+    100% calc(100% - 14px),
+    calc(100% - 14px) 100%,
+    14px 100%,
+    0 calc(100% - 14px),
+    0 14px
+  );
+}
+
+/* Carbon-fibre / brushed metal texture surface */
+@utility metal {
+  background-color: var(--color-surface-2);
+  background-image: repeating-linear-gradient(
+      45deg,
+      rgba(255, 255, 255, 0.015) 0px,
+      rgba(255, 255, 255, 0.015) 1px,
+      transparent 1px,
+      transparent 3px
+    ),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.03), transparent 40%);
+}
+
+/* Holographic grid background */
+@utility holo-grid {
+  background-image: linear-gradient(var(--color-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--color-line) 1px, transparent 1px);
+  background-size: 44px 44px;
+}
+
+/* ---------------------------------------------------------------------------
+   Ambient overlays (scanlines + digital noise) — applied via components
+   ------------------------------------------------------------------------- */
+@utility scanlines {
+  background-image: repeating-linear-gradient(
+    0deg,
+    rgba(0, 0, 0, 0.16) 0px,
+    rgba(0, 0, 0, 0.16) 1px,
+    transparent 1px,
+    transparent 3px
+  );
+}
+
+/* ---------------------------------------------------------------------------
+   Keyframes
+   ------------------------------------------------------------------------- */
+@keyframes hud-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.25; }
+}
+@keyframes hud-flicker {
+  0%, 100% { opacity: 1; }
+  92% { opacity: 1; }
+  93% { opacity: 0.4; }
+  94% { opacity: 1; }
+  97% { opacity: 0.7; }
+  98% { opacity: 1; }
+}
+@keyframes scan-y {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(100%); }
+}
+@keyframes marquee {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+@keyframes pulse-ring {
+  0% { transform: scale(0.9); opacity: 0.9; }
+  100% { transform: scale(2.2); opacity: 0; }
+}
+@keyframes float-slow {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+@keyframes grid-drift {
+  0% { background-position: 0 0; }
+  100% { background-position: 44px 44px; }
+}
+/* Slow volumetric drift for the boot poster's fog plate */
+@keyframes fog-drift {
+  0%, 100% { transform: translate3d(-2%, 0, 0) scale(1.08); }
+  50% { transform: translate3d(2%, -1.5%, 0) scale(1.14); }
+}
+/* Travelling light along the data conduit spine */
+@keyframes conduit-pulse {
+  0%, 100% { opacity: 0.35; }
+  50% { opacity: 1; }
+}
+/* Continuous slow rotation for poster orbital rings */
+@keyframes orbit {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+@keyframes glitch-shift {
+  0%, 100% { clip-path: inset(0 0 0 0); transform: translate(0); }
+  20% { clip-path: inset(20% 0 40% 0); transform: translate(-2px, 0); }
+  40% { clip-path: inset(60% 0 10% 0); transform: translate(2px, 0); }
+  60% { clip-path: inset(30% 0 50% 0); transform: translate(-1px, 0); }
+  80% { clip-path: inset(10% 0 70% 0); transform: translate(1px, 0); }
+}
+
+@utility animate-blink { animation: hud-blink 1.4s steps(2) infinite; }
+@utility animate-flicker { animation: hud-flicker 5s linear infinite; }
+@utility animate-marquee { animation: marquee 26s linear infinite; }
+@utility animate-float { animation: float-slow 6s var(--ease-power) infinite; }
+@utility animate-fog { animation: fog-drift 22s ease-in-out infinite; }
+@utility animate-conduit { animation: conduit-pulse 2.6s ease-in-out infinite; }
+
+/* ---------------------------------------------------------------------------
+   Glitch text (RGB split layers) — driven by GlitchText.tsx
+   ------------------------------------------------------------------------- */
+.glitch {
+  position: relative;
+  display: inline-block;
+}
+.glitch::before,
+.glitch::after {
+  content: attr(data-text);
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.85;
+  clip-path: inset(0 0 0 0);
+}
+.glitch[data-active="true"]::before {
+  color: var(--color-cyan);
+  transform: translate(-2px, 0);
+  animation: glitch-shift 0.4s steps(2) infinite;
+  mix-blend-mode: screen;
+}
+.glitch[data-active="true"]::after {
+  color: var(--color-red);
+  transform: translate(2px, 0);
+  animation: glitch-shift 0.4s steps(2) infinite reverse;
+  mix-blend-mode: screen;
+}
+
+/* ---------------------------------------------------------------------------
+   Reveal primitive (opacity+transform; JS toggles .is-in)
+   ------------------------------------------------------------------------- */
+.reveal {
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity 0.7s var(--ease-expo), transform 0.7s var(--ease-expo);
+  will-change: opacity, transform;
+}
+.reveal.is-in {
+  opacity: 1;
+  transform: none;
+}
+
+/* ---------------------------------------------------------------------------
+   Reduced motion: kill ambient + decorative motion, keep content legible
+   ------------------------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+  .reveal {
+    opacity: 1;
+    transform: none;
+  }
+
+  /* Fall back from the fanned capability deck to the plain grid at every
+     width. Decided in CSS rather than from a JS media query so there is no
+     first-paint swap between the two layouts. */
+  [data-capability-deck] {
+    display: none;
+  }
+  [data-capability-grid] {
+    display: grid;
+  }
 }

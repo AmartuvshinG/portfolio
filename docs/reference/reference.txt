@@ -1,0 +1,266 @@
+==================================================
+
+CYBERPUNK NEO-FUTURISTIC ART DIRECTION
+
+Blend the premium ASUS ROG-style hardware showcase with a cyberpunk-inspired futuristic atmosphere.
+
+The experience should feel like:
+
+- a next-generation military technology reveal
+- a futuristic megacorporation product launch
+- an underground cyber-tech showroom
+- a high-performance machine from the year 2077
+
+Do NOT copy Cyberpunk 2077 assets, UI, logos, characters, or exact designs.
+
+Instead, capture the broader visual language:
+
+- neon-lit futuristic environments
+- high-tech industrial design
+- holographic interfaces
+- digital augmentation aesthetics
+- dense information displays
+- cinematic sci-fi atmosphere
+
+==================================================
+
+CYBERPUNK VISUAL LANGUAGE
+
+Environment:
+
+Create a futuristic dark world.
+
+Think:
+
+- rain-soaked futuristic city atmosphere
+- underground hardware laboratory
+- advanced robotics facility
+- premium gaming command center
+
+Background elements:
+
+- animated particles
+- floating holographic grids
+- scanning effects
+- subtle digital noise
+- volumetric fog
+- energy pulses
+- atmospheric lighting
+
+The website should feel alive even when the user is not interacting.
+
+==================================================
+
+COLOR SYSTEM
+
+Primary:
+
+Deep black:
+#050505
+
+Secondary:
+
+Industrial graphite:
+#111111
+
+Metal surfaces:
+dark chrome
+brushed aluminum
+carbon fiber
+
+
+Accent colors:
+
+Neon red:
+aggressive performance
+
+Electric cyan:
+technology / AI
+
+Purple:
+future computing
+
+
+Use accents sparingly.
+
+The page should remain premium, not chaotic.
+
+==================================================
+
+CYBERPUNK HUD ELEMENTS
+
+Add futuristic interface details around the product.
+
+Examples:
+
+- GPU temperature readings
+- clock speed monitors
+- power consumption
+- AI processing status
+- thermal scanning
+- system diagnostics
+- performance graphs
+
+
+These should be subtle.
+
+They should enhance immersion, not distract.
+
+Animations:
+
+- numbers updating
+- scanning lines
+- blinking indicators
+- holographic transitions
+- data streams
+
+==================================================
+
+TYPOGRAPHY
+
+Use a futuristic technical typography style.
+
+Characteristics:
+
+- oversized display headings
+- condensed fonts
+- sharp geometric shapes
+- technical labels
+- uppercase titles
+
+Examples:
+
+Main:
+
+"NOVA X900 TITAN"
+
+Secondary:
+
+"NEXT GENERATION COMPUTE PLATFORM"
+
+Small labels:
+
+SYSTEM ONLINE
+
+THERMAL CORE ACTIVE
+
+ARCHITECTURE INITIALIZED
+
+==================================================
+
+MICROINTERACTIONS
+
+Add cyberpunk-style interactions:
+
+Hovering over components:
+
+- scanning animation
+- glowing outline
+- technical information appears
+
+Buttons:
+
+Instead of standard buttons:
+
+Create futuristic control panels.
+
+Examples:
+
+[ INITIALIZE SYSTEM ]
+
+[ ACCESS TECHNOLOGY ]
+
+[ DEPLOY PERFORMANCE ]
+
+Effects:
+
+- animated borders
+- glowing edges
+- subtle glitch transition
+- magnetic hover
+
+==================================================
+
+GLITCH + DIGITAL EFFECTS
+
+Use carefully.
+
+Add:
+
+- occasional RGB split effects
+- digital distortion transitions
+- scanline overlays
+- hologram flicker
+- data loading animations
+
+Rules:
+
+Do not overuse.
+
+The site should still feel like a premium hardware launch, not a game interface.
+
+==================================================
+
+3D PRODUCT PRESENTATION
+
+The GPU should feel like a futuristic artifact.
+
+Add:
+
+- holographic scanning
+- blueprint mode
+- exploded technical view
+- internal component visualization
+- energy flow effects
+
+Possible interactions:
+
+User scrolls:
+
+GPU enters:
+
+1. Dark silhouette
+
+2. Fully illuminated product
+
+3. Exploded engineering view
+
+4. Internal architecture reveal
+
+5. Final complete system
+
+==================================================
+
+AUDIO-VISUAL FEEL (OPTIONAL)
+
+If implemented:
+
+Create subtle ambient effects:
+
+- electronic startup sounds
+- machine activation sounds
+- futuristic UI feedback
+
+Never autoplay audio.
+
+Only activate after user interaction.
+
+==================================================
+
+FINAL EXPERIENCE GOAL
+
+The user should feel:
+
+"I am not viewing a graphics card webpage."
+
+"I am entering the future of computing technology."
+
+The experience should combine:
+
+- Apple-level product storytelling
+- ASUS ROG-level gaming identity
+- Cyberpunk-inspired futuristic atmosphere
+- NVIDIA-level technical credibility
+- Awwwards-level interaction design
+
+==================================================
