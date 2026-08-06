@@ -1,53 +1,68 @@
 @import "tailwindcss";
 
 /* ============================================================================
-   NEXUS — Cyberpunk Neo-Futuristic Design System
-   Tokens, HUD utilities, and ambient effects. Single source of truth.
+   PAPER / SIGNAL — editorial design system
+   Light-dominant. Paper is the default surface; dark is reserved for the work
+   world and the closing block. Tokens, silhouettes, act system.
    ========================================================================== */
 
 @theme {
-  /* --- Surfaces (deep black → graphite; never pure #000 to avoid OLED smear) */
-  --color-bg: #050505;
-  --color-surface: #0b0b0c;
-  --color-surface-2: #111214;
-  --color-elevated: #16181c;
+  /* --- Paper: warm bone, never pure white. A neutral #fff under a lime accent
+         reads clinical; the warmth is what makes the acid green look chosen. */
+  --color-paper: #e9e7e1;
+  --color-paper-2: #dfdcd4;
+  --color-paper-3: #d4d0c6;
 
-  /* --- Text */
-  --color-fg: #ededed;
-  --color-muted: #7a8290;
-  --color-faint: #454b56;
+  /* --- Ink */
+  --color-ink: #0b0b0c;
+  --color-ink-soft: #55534e;
+  --color-ink-faint: #8d8a83;
 
-  /* --- HUD hairlines */
-  --color-line: rgba(0, 229, 255, 0.14);
-  --color-line-strong: rgba(0, 229, 255, 0.32);
+  /* --- The dark act */
+  --color-void: #07070a;
+  --color-void-2: #101015;
+  --color-void-3: #1a1a21;
 
-  /* --- Accents: cyan primary (AI/tech), purple secondary (future), red alert */
-  --color-cyan: #00e5ff;
-  --color-cyan-dim: #0891a3;
-  --color-purple: #8b5cf6;
-  --color-purple-bright: #a855f7;
-  --color-red: #ff2a3d;
-  --color-amber: #ffb020;
+  /* --- Accents. One signal colour, one flat. Restraint is the whole point:
+         the previous four-accent HUD scale is what made the site read busy. */
+  --color-signal: #c6ff3d;        /* acid lime — fills, rules, pills. NEVER text on paper. */
+  --color-signal-deep: #7ba300;   /* the same hue dropped to 4.6:1 on paper, for when it must be text */
+  --color-violet: #b9a8e8;        /* flat-colour interstitial */
+  --color-violet-deep: #4a3a7a;
+
+  /* --- Hairlines. Resolved per act by the [data-act] blocks below. */
+  --color-line: rgba(11, 11, 12, 0.14);
+  --color-line-strong: rgba(11, 11, 12, 0.34);
+
+  /* --- Semantic aliases. Components style against these and never against a
+         literal act colour, which is what lets the act system invert them. */
+  --color-bg: var(--color-paper);
+  --color-fg: var(--color-ink);
+  --color-muted: var(--color-ink-soft);
+  --color-faint: var(--color-ink-faint);
 
   /* --- Typography (wired to next/font CSS variables in layout.tsx) */
-  --font-display: var(--font-saira), "Arial Narrow", sans-serif;
-  --font-sans: var(--font-grotesk), ui-sans-serif, system-ui, sans-serif;
+  --font-editorial: var(--font-instrument), "Times New Roman", serif;
+  --font-sans: var(--font-archivo), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-archivo), "Arial Black", sans-serif;
   --font-mono: var(--font-mono-hud), ui-monospace, "Courier New", monospace;
 
-  /* --- Radius (sharp / chamfered motorsport-tech feel) */
-  --radius-sm: 2px;
-  --radius-md: 4px;
-  --radius-lg: 8px;
+  /* --- Radius: soft, not machined. */
+  --radius-sm: 4px;
+  --radius-md: 10px;
+  --radius-lg: 18px;
+  --radius-xl: 28px;
 
   /* --- Motion */
   --ease-expo: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-power: cubic-bezier(0.7, 0, 0.3, 1);
+  --act-fade: 620ms;
 
   /* --- Z-index scale */
   --z-ambient: 0;
   --z-content: 10;
   --z-nav: 60;
-  --z-dock: 70;
+  --z-frame: 70;
   --z-overlay: 80;
   --z-modal: 90;
   --z-cursor: 100;
@@ -55,12 +70,52 @@
 }
 
 /* ---------------------------------------------------------------------------
-   Base
+   Act system
+   ---------------------------------------------------------------------------
+   Sections declare data-act; ActTheme.tsx mirrors the active one onto <html>.
+   Everything fixed (nav, frame, cursor) inverts from that single attribute —
+   without it the site reads as two disconnected websites bolted together.
    ------------------------------------------------------------------------- */
-:root {
+:root,
+[data-act="paper"] {
+  --color-bg: var(--color-paper);
+  --color-fg: var(--color-ink);
+  --color-muted: var(--color-ink-soft);
+  --color-faint: var(--color-ink-faint);
+  --color-line: rgba(11, 11, 12, 0.14);
+  --color-line-strong: rgba(11, 11, 12, 0.34);
+  /* On paper the lime has a 1.4:1 contrast ratio — unusable as text. Anything
+     reading `--color-accent-text` gets the deepened hue instead. */
+  --color-accent-text: var(--color-signal-deep);
+  color-scheme: light;
+}
+
+[data-act="flat"] {
+  --color-bg: var(--color-violet);
+  --color-fg: #17102b;
+  --color-muted: rgba(23, 16, 43, 0.66);
+  --color-faint: rgba(23, 16, 43, 0.42);
+  --color-line: rgba(23, 16, 43, 0.18);
+  --color-line-strong: rgba(23, 16, 43, 0.38);
+  --color-accent-text: #2f1f57;
+  color-scheme: light;
+}
+
+[data-act="void"] {
+  --color-bg: var(--color-void);
+  --color-fg: #f4f3ef;
+  --color-muted: #8f8d87;
+  --color-faint: #56544f;
+  --color-line: rgba(244, 243, 239, 0.14);
+  --color-line-strong: rgba(244, 243, 239, 0.32);
+  /* 17:1 on void — here the raw lime is safe as text. */
+  --color-accent-text: var(--color-signal);
   color-scheme: dark;
 }
 
+/* ---------------------------------------------------------------------------
+   Base
+   ------------------------------------------------------------------------- */
 * {
   border-color: var(--color-line);
 }
@@ -69,90 +124,84 @@ html {
   scroll-behavior: auto; /* Lenis owns smooth scroll */
   -webkit-text-size-adjust: 100%;
   /* Reserve the scrollbar track permanently. Without this, every scroll lock
-     (boot poster, dossier, mobile menu) removes the scrollbar and shifts the
+     (preloader, dossier, mobile menu) removes the scrollbar and shifts the
      whole layout sideways — which also desyncs GSAP's pinned triggers. */
   scrollbar-gutter: stable;
+  background-color: var(--color-bg);
+  transition: background-color var(--act-fade) var(--ease-power);
 }
 
 body {
-  background-color: var(--color-bg);
+  background-color: transparent;
   color: var(--color-fg);
   font-family: var(--font-sans);
   font-synthesis-weight: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   overflow-x: hidden;
-}
-
-/* Base radial atmosphere behind everything (volumetric fog feel) */
-body::before {
-  content: "";
-  position: fixed;
-  inset: 0;
-  z-index: -1;
-  pointer-events: none;
-  background:
-    radial-gradient(60% 50% at 50% -10%, rgba(0, 229, 255, 0.06), transparent 70%),
-    radial-gradient(50% 40% at 100% 100%, rgba(139, 92, 246, 0.07), transparent 70%),
-    radial-gradient(40% 40% at 0% 60%, rgba(0, 229, 255, 0.04), transparent 70%);
+  transition: color var(--act-fade) var(--ease-power);
 }
 
 ::selection {
-  background: var(--color-cyan);
-  color: #001014;
+  background: var(--color-signal);
+  color: #0b0b0c;
 }
 
-/* Custom thin scrollbar */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 9px;
+  height: 9px;
 }
 ::-webkit-scrollbar-track {
-  background: var(--color-bg);
+  background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: var(--color-cyan-dim);
-  border-radius: 0;
+  background: var(--color-line-strong);
+  border-radius: 999px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--color-cyan);
+  background: var(--color-fg);
 }
 
-/* Visible focus for keyboard users only */
 :focus-visible {
-  outline: 2px solid var(--color-cyan);
-  outline-offset: 2px;
+  outline: 2px solid var(--color-fg);
+  outline-offset: 3px;
 }
 
-h1, h2, h3, h4, h5, h6 {
-  font-family: var(--font-display);
-  font-weight: 700;
-  letter-spacing: -0.01em;
-  line-height: 0.95;
-  text-transform: uppercase;
+/* Editorial default: headings are the serif. The oversized grotesk caps
+   (`.display-caps`) are opted into, not inherited — they are a deliberate
+   art-direction move for a handful of moments, not a global heading style.
+
+   MUST stay inside `@layer base`. Unlayered CSS outranks every layer, so as a
+   bare rule this silently beat `.display-caps` on any heading and every
+   oversized grotesk moment on the site rendered as serif instead. (The
+   `[data-act]` blocks above are unlayered on purpose, for the same reason in
+   reverse — they need to win.) */
+@layer base {
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-editorial);
+    font-weight: 400;
+    letter-spacing: -0.015em;
+    line-height: 1.02;
+  }
 }
 
-/* Tabular numbers everywhere numbers matter */
 .tabular {
   font-variant-numeric: tabular-nums;
   font-feature-settings: "tnum";
 }
 
-/* Hide native cursor while the custom HUD reticle is active */
+/* Hide native cursor while the custom ring is active */
 html.hud-cursor,
 html.hud-cursor * {
   cursor: none !important;
 }
 
-/* Ambient texture switched off from the console dock. Driven by an attribute
-   so AmbientOverlay stays a zero-JS server component. */
-html[data-ambient="off"] [data-ambient-overlay] {
-  display: none;
-}
-
 /* ---------------------------------------------------------------------------
    Typographic utilities
    ------------------------------------------------------------------------- */
+@utility font-editorial {
+  font-family: var(--font-editorial);
+}
 @utility font-display {
   font-family: var(--font-display);
 }
@@ -160,212 +209,138 @@ html[data-ambient="off"] [data-ambient-overlay] {
   font-family: var(--font-mono);
 }
 
-/* HUD micro-label: JetBrains mono, uppercase, wide tracking */
-@utility hud-label {
+/* KPR's register: oversized caps grotesk, near-zero leading, tight tracking.
+   The negative letter-spacing is doing real work at 12vw — without it the
+   word gaps blow open and the block stops reading as one mass. */
+@utility display-caps {
+  font-family: var(--font-display);
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: -0.035em;
+  line-height: 0.84;
+}
+
+/* Micro-label: the entire surviving HUD vocabulary. */
+@utility micro {
   font-family: var(--font-mono);
   text-transform: uppercase;
-  letter-spacing: 0.28em;
+  letter-spacing: 0.22em;
   font-size: 0.6875rem;
   line-height: 1;
   color: var(--color-muted);
 }
 
-/* ---------------------------------------------------------------------------
-   Glow utilities
-   ------------------------------------------------------------------------- */
-@utility text-glow-cyan {
-  color: var(--color-cyan);
-  text-shadow: 0 0 6px rgba(0, 229, 255, 0.55), 0 0 22px rgba(0, 229, 255, 0.28);
-}
-@utility text-glow-purple {
-  color: var(--color-purple-bright);
-  text-shadow: 0 0 6px rgba(168, 85, 247, 0.55), 0 0 22px rgba(139, 92, 246, 0.3);
-}
-@utility glow-cyan {
-  box-shadow: 0 0 0 1px var(--color-line-strong), 0 0 18px rgba(0, 229, 255, 0.18),
-    inset 0 0 18px rgba(0, 229, 255, 0.05);
-}
-@utility glow-purple {
-  box-shadow: 0 0 0 1px rgba(139, 92, 246, 0.4), 0 0 20px rgba(139, 92, 246, 0.2);
+/* Lime as an underline rather than as ink — the Lando move. Safe at any size
+   because the text itself stays --color-fg. */
+@utility signal-underline {
+  background-image: linear-gradient(var(--color-signal), var(--color-signal));
+  background-repeat: no-repeat;
+  background-position: 0 100%;
+  background-size: 100% 0.28em;
+  padding-bottom: 0.05em;
 }
 
 /* ---------------------------------------------------------------------------
-   HUD surfaces
+   Silhouettes
    ------------------------------------------------------------------------- */
-/* Frosted glass panel */
-@utility glass {
-  background: linear-gradient(
-    180deg,
-    rgba(22, 24, 28, 0.6),
-    rgba(11, 12, 12, 0.5)
+/* Lando's card: one corner cut away into a tab. */
+@utility notch-card {
+  clip-path: polygon(
+    0 0,
+    100% 0,
+    100% calc(100% - 26px),
+    calc(100% - 34px) 100%,
+    0 100%
   );
-  backdrop-filter: blur(14px) saturate(1.2);
-  -webkit-backdrop-filter: blur(14px) saturate(1.2);
+}
+@utility notch-card-sm {
+  clip-path: polygon(
+    0 0,
+    100% 0,
+    100% calc(100% - 14px),
+    calc(100% - 18px) 100%,
+    0 100%
+  );
+}
+
+/* KPR's dossier folder: a tab riding on the top-left edge. */
+@utility folder-tab {
+  clip-path: polygon(
+    0 14px,
+    34% 14px,
+    38% 0,
+    100% 0,
+    100% 100%,
+    0 100%
+  );
+}
+
+@utility pill {
+  border-radius: 999px;
+}
+
+/* ---------------------------------------------------------------------------
+   Surfaces
+   ------------------------------------------------------------------------- */
+@utility paper-card {
+  background: var(--color-paper);
   border: 1px solid var(--color-line);
 }
 
-/* Chamfered corners (clip a notch off top-right + bottom-left) */
-@utility chamfer {
-  clip-path: polygon(
-    0 0,
-    calc(100% - 12px) 0,
-    100% 12px,
-    100% 100%,
-    12px 100%,
-    0 calc(100% - 12px)
-  );
-}
-@utility chamfer-sm {
-  clip-path: polygon(
-    0 0,
-    calc(100% - 7px) 0,
-    100% 7px,
-    100% 100%,
-    7px 100%,
-    0 calc(100% - 7px)
-  );
-}
-/* Symmetric chamfer on all four corners — used by the contracted command bar
-   and the console dock, where the notch reads as a machined bezel. */
-@utility chamfer-lg {
-  clip-path: polygon(
-    14px 0,
-    calc(100% - 14px) 0,
-    100% 14px,
-    100% calc(100% - 14px),
-    calc(100% - 14px) 100%,
-    14px 100%,
-    0 calc(100% - 14px),
-    0 14px
-  );
+@utility void-card {
+  background: var(--color-void-2);
+  border: 1px solid rgba(244, 243, 239, 0.1);
 }
 
-/* Carbon-fibre / brushed metal texture surface */
-@utility metal {
-  background-color: var(--color-surface-2);
-  background-image: repeating-linear-gradient(
-      45deg,
-      rgba(255, 255, 255, 0.015) 0px,
-      rgba(255, 255, 255, 0.015) 1px,
-      transparent 1px,
-      transparent 3px
-    ),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.03), transparent 40%);
+/* Frosted panel that works on either act. */
+@utility glass {
+  background: color-mix(in srgb, var(--color-bg) 72%, transparent);
+  backdrop-filter: blur(16px) saturate(1.15);
+  -webkit-backdrop-filter: blur(16px) saturate(1.15);
+  border: 1px solid var(--color-line);
 }
 
-/* Holographic grid background */
-@utility holo-grid {
-  background-image: linear-gradient(var(--color-line) 1px, transparent 1px),
-    linear-gradient(90deg, var(--color-line) 1px, transparent 1px);
-  background-size: 44px 44px;
+/* Paper grain. Kept extremely low — it should register as texture at 100% zoom
+   and vanish in a screenshot, not read as noise. */
+@utility grain {
+  position: relative;
 }
-
-/* ---------------------------------------------------------------------------
-   Ambient overlays (scanlines + digital noise) — applied via components
-   ------------------------------------------------------------------------- */
-@utility scanlines {
-  background-image: repeating-linear-gradient(
-    0deg,
-    rgba(0, 0, 0, 0.16) 0px,
-    rgba(0, 0, 0, 0.16) 1px,
+@utility grain-layer {
+  background-image: repeating-radial-gradient(
+    circle at 0 0,
+    rgba(11, 11, 12, 0.035) 0,
+    rgba(11, 11, 12, 0.035) 1px,
     transparent 1px,
     transparent 3px
   );
+  background-size: 3px 3px;
 }
 
 /* ---------------------------------------------------------------------------
    Keyframes
    ------------------------------------------------------------------------- */
-@keyframes hud-blink {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.25; }
-}
-@keyframes hud-flicker {
-  0%, 100% { opacity: 1; }
-  92% { opacity: 1; }
-  93% { opacity: 0.4; }
-  94% { opacity: 1; }
-  97% { opacity: 0.7; }
-  98% { opacity: 1; }
-}
-@keyframes scan-y {
-  0% { transform: translateY(-100%); }
-  100% { transform: translateY(100%); }
-}
 @keyframes marquee {
   0% { transform: translateX(0); }
   100% { transform: translateX(-50%); }
-}
-@keyframes pulse-ring {
-  0% { transform: scale(0.9); opacity: 0.9; }
-  100% { transform: scale(2.2); opacity: 0; }
 }
 @keyframes float-slow {
   0%, 100% { transform: translateY(0); }
   50% { transform: translateY(-10px); }
 }
-@keyframes grid-drift {
-  0% { background-position: 0 0; }
-  100% { background-position: 44px 44px; }
+@keyframes contour-drift {
+  0% { transform: translate3d(0, 0, 0) scale(1.06); }
+  50% { transform: translate3d(-1.5%, 1%, 0) scale(1.1); }
+  100% { transform: translate3d(0, 0, 0) scale(1.06); }
 }
-/* Slow volumetric drift for the boot poster's fog plate */
-@keyframes fog-drift {
-  0%, 100% { transform: translate3d(-2%, 0, 0) scale(1.08); }
-  50% { transform: translate3d(2%, -1.5%, 0) scale(1.14); }
-}
-/* Travelling light along the data conduit spine */
-@keyframes conduit-pulse {
-  0%, 100% { opacity: 0.35; }
-  50% { opacity: 1; }
-}
-/* Continuous slow rotation for poster orbital rings */
-@keyframes orbit {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
-@keyframes glitch-shift {
-  0%, 100% { clip-path: inset(0 0 0 0); transform: translate(0); }
-  20% { clip-path: inset(20% 0 40% 0); transform: translate(-2px, 0); }
-  40% { clip-path: inset(60% 0 10% 0); transform: translate(2px, 0); }
-  60% { clip-path: inset(30% 0 50% 0); transform: translate(-1px, 0); }
-  80% { clip-path: inset(10% 0 70% 0); transform: translate(1px, 0); }
+@keyframes soft-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
 }
 
-@utility animate-blink { animation: hud-blink 1.4s steps(2) infinite; }
-@utility animate-flicker { animation: hud-flicker 5s linear infinite; }
-@utility animate-marquee { animation: marquee 26s linear infinite; }
-@utility animate-float { animation: float-slow 6s var(--ease-power) infinite; }
-@utility animate-fog { animation: fog-drift 22s ease-in-out infinite; }
-@utility animate-conduit { animation: conduit-pulse 2.6s ease-in-out infinite; }
-
-/* ---------------------------------------------------------------------------
-   Glitch text (RGB split layers) — driven by GlitchText.tsx
-   ------------------------------------------------------------------------- */
-.glitch {
-  position: relative;
-  display: inline-block;
-}
-.glitch::before,
-.glitch::after {
-  content: attr(data-text);
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  opacity: 0.85;
-  clip-path: inset(0 0 0 0);
-}
-.glitch[data-active="true"]::before {
-  color: var(--color-cyan);
-  transform: translate(-2px, 0);
-  animation: glitch-shift 0.4s steps(2) infinite;
-  mix-blend-mode: screen;
-}
-.glitch[data-active="true"]::after {
-  color: var(--color-red);
-  transform: translate(2px, 0);
-  animation: glitch-shift 0.4s steps(2) infinite reverse;
-  mix-blend-mode: screen;
-}
+@utility animate-marquee { animation: marquee 32s linear infinite; }
+@utility animate-float { animation: float-slow 7s var(--ease-power) infinite; }
+@utility animate-contour { animation: contour-drift 40s ease-in-out infinite; }
+@utility animate-blink { animation: soft-blink 1.8s ease-in-out infinite; }
 
 /* ---------------------------------------------------------------------------
    Reveal primitive (opacity+transform; JS toggles .is-in)
@@ -373,7 +348,7 @@ html[data-ambient="off"] [data-ambient-overlay] {
 .reveal {
   opacity: 0;
   transform: translateY(24px);
-  transition: opacity 0.7s var(--ease-expo), transform 0.7s var(--ease-expo);
+  transition: opacity 0.8s var(--ease-expo), transform 0.8s var(--ease-expo);
   will-change: opacity, transform;
 }
 .reveal.is-in {
@@ -382,7 +357,7 @@ html[data-ambient="off"] [data-ambient-overlay] {
 }
 
 /* ---------------------------------------------------------------------------
-   Reduced motion: kill ambient + decorative motion, keep content legible
+   Reduced motion
    ------------------------------------------------------------------------- */
 @media (prefers-reduced-motion: reduce) {
   *,

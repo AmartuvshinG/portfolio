@@ -1,10 +1,13 @@
 {
   "permissions": {
-    "defaultMode": "acceptEdits",
     "allow": [
       "Edit",
       "Write",
-      "Bash"
-    ]
+      "Bash",
+      "Bash(npx tsc *)",
+      "Bash(node \"C:/Users/Amara/AppData/Local/Temp/claude/c--Users-Amara-Downloads-portfolio/b59446e3-ab7b-4c91-a277-ece480cfcd67/scratchpad/rename-tokens.mjs\")",
+      "Bash(npm run *)"
+    ],
+    "defaultMode": "acceptEdits"
   }
 }

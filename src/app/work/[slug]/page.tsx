@@ -3,9 +3,9 @@ import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, ArrowRight } from "lucide-react";
-import { projects, getProject, accentColor } from "@/lib/content";
+import { projects, getProject } from "@/lib/content";
 import { Reveal } from "@/components/motion/Reveal";
-import { ScrambleText } from "@/components/motion/ScrambleText";
+import { Contour } from "@/components/layout/Contour";
 
 export function generateStaticParams() {
   return projects.map((p) => ({ slug: p.slug }));
@@ -18,13 +18,18 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { slug } = await params;
   const project = getProject(slug);
-  if (!project) return { title: "Case File Not Found" };
+  if (!project) return { title: "Case file not found" };
   return {
     title: `${project.title} — Case File`,
     description: project.summary,
   };
 }
 
+/**
+ * The full case file. Paper, unlike the work world it's reached from — this is
+ * the reading surface, and long-form copy set on black is a worse experience
+ * than the atmosphere is worth.
+ */
 export default async function WorkDetail({
   params,
 }: {
@@ -34,51 +39,53 @@ export default async function WorkDetail({
   const project = getProject(slug);
   if (!project) notFound();
 
-  const color = accentColor[project.accent];
   const idx = projects.findIndex((p) => p.slug === slug);
   const next = projects[(idx + 1) % projects.length];
 
   return (
-    <article className="relative pb-28 pt-28 md:pt-36">
-      <div className="mx-auto max-w-[1400px] px-5 md:px-8">
+    <article
+      data-act="paper"
+      className="relative bg-bg pb-28 pt-28 md:pt-36"
+    >
+      <Contour
+        className="pointer-events-none absolute inset-0 h-full w-full text-ink"
+        opacity={0.07}
+      />
+
+      <div className="relative mx-auto max-w-[1400px] px-5 md:px-8 lg:px-16">
         <Link
           href="/#work"
-          className="inline-flex items-center gap-2 font-mono text-xs uppercase tracking-[0.2em] text-muted transition-colors hover:text-cyan"
+          className="inline-flex items-center gap-2 font-mono text-xs uppercase tracking-[0.2em] text-muted transition-colors hover:text-fg"
         >
-          <ArrowLeft size={14} /> Return to archive
+          <ArrowLeft size={14} /> Back to work
         </Link>
 
-        {/* Header */}
         <header className="mt-10 border-b border-line pb-10">
           <div className="flex items-center gap-4">
-            <span className="font-mono text-xs" style={{ color }}>
-              CASE FILE / {project.index}
-            </span>
-            <span className="h-px w-10 bg-line-strong" />
-            <ScrambleText
-              text={project.category.toUpperCase()}
-              immediate
-              className="hud-label"
-            />
+            <span className="micro tabular">{project.index}</span>
+            <span className="h-px w-10 bg-current opacity-25" />
+            <span className="micro">{project.category}</span>
           </div>
           <h1
-            className="mt-6 font-display font-black uppercase leading-[0.9] text-fg"
-            style={{ fontSize: "clamp(3rem, 9vw, 8rem)" }}
+            className="display-caps mt-6 text-fg"
+            style={{ fontSize: "clamp(3rem, 10vw, 9rem)" }}
           >
             {project.title}
           </h1>
-          <p className="mt-4 max-w-2xl text-lg text-muted">{project.summary}</p>
+          <p className="mt-6 max-w-2xl font-editorial text-2xl leading-snug text-fg md:text-3xl">
+            {project.summary}
+          </p>
 
-          <dl className="mt-8 grid grid-cols-2 gap-6 md:grid-cols-4">
+          <dl className="mt-10 grid grid-cols-2 gap-6 md:grid-cols-4">
             {[
-              { k: "ROLE", v: project.role },
-              { k: "YEAR", v: project.year },
-              { k: "CATEGORY", v: project.category },
-              { k: "STATUS", v: "DEPLOYED" },
+              { k: "Role", v: project.role },
+              { k: "Year", v: project.year },
+              { k: "Category", v: project.category },
+              { k: "Status", v: "Shipped" },
             ].map((row) => (
               <div key={row.k}>
-                <dt className="hud-label">{row.k}</dt>
-                <dd className="mt-1.5 font-display text-lg uppercase text-fg">
+                <dt className="micro">{row.k}</dt>
+                <dd className="mt-2 font-display text-lg font-semibold uppercase text-fg">
                   {row.v}
                 </dd>
               </div>
@@ -86,9 +93,8 @@ export default async function WorkDetail({
           </dl>
         </header>
 
-        {/* Hero image */}
-        <Reveal className="mt-10">
-          <div className="relative aspect-[16/9] w-full overflow-hidden border border-line">
+        <Reveal className="mt-12">
+          <div className="notch-card relative aspect-[16/9] w-full overflow-hidden bg-paper-2">
             <Image
               src={project.image}
               alt={`${project.title} — project visual`}
@@ -97,41 +103,27 @@ export default async function WorkDetail({
               sizes="(max-width: 1400px) 100vw, 1400px"
               className="object-cover"
             />
-            <div
-              className="pointer-events-none absolute inset-0"
-              style={{
-                background:
-                  "linear-gradient(0deg, rgba(5,5,5,0.6), transparent 60%)",
-              }}
-            />
-            <div className="scanlines pointer-events-none absolute inset-0 opacity-25" />
-            <span className="hud-label absolute left-4 top-4 text-cyan">
-              VISUAL / RENDER 4K
-            </span>
           </div>
         </Reveal>
 
-        {/* Body */}
-        <div className="mt-16 grid gap-12 md:grid-cols-12">
+        <div className="mt-20 grid gap-12 md:grid-cols-12">
           <div className="md:col-span-7">
             <Reveal>
-              <h2 className="hud-label mb-5 text-cyan/70">OVERVIEW</h2>
-              <p className="text-lg leading-relaxed text-fg/90 md:text-xl">
+              <h2 className="micro mb-5">Overview</h2>
+              <p className="text-lg leading-relaxed text-fg md:text-xl">
                 {project.description}
               </p>
             </Reveal>
 
-            <Reveal className="mt-12">
-              <h2 className="hud-label mb-5 text-cyan/70">KEY OUTCOMES</h2>
-              <ul className="space-y-4">
+            <Reveal className="mt-14">
+              <h2 className="micro mb-5">Key outcomes</h2>
+              <ul>
                 {project.highlights.map((h) => (
                   <li
                     key={h}
-                    className="flex items-start gap-4 border-b border-line pb-4 text-lg text-muted"
+                    className="flex items-start gap-4 border-b border-line py-4 text-lg text-muted"
                   >
-                    <span className="mt-1.5 font-mono text-xs" style={{ color }}>
-                      →
-                    </span>
+                    <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-signal" />
                     {h}
                   </li>
                 ))}
@@ -139,29 +131,25 @@ export default async function WorkDetail({
             </Reveal>
           </div>
 
-          {/* Sidebar */}
           <aside className="md:col-span-5">
-            <Reveal className="border border-line bg-surface/40 p-6">
-              <h2 className="hud-label mb-5 text-cyan/70">STACK / SYSTEMS</h2>
+            <Reveal className="notch-card bg-paper-2 p-7 ring-1 ring-inset ring-ink/10">
+              <h2 className="micro mb-5">Stack</h2>
               <div className="flex flex-wrap gap-2">
                 {project.stack.map((s) => (
                   <span
                     key={s}
-                    className="border border-line px-3 py-1.5 font-mono text-xs uppercase tracking-wider text-fg"
+                    className="rounded-full border border-line px-3 py-1.5 font-mono text-xs uppercase tracking-wider text-fg"
                   >
                     {s}
                   </span>
                 ))}
               </div>
 
-              <div className="mt-8 grid grid-cols-3 gap-4 border-t border-line pt-6">
+              <div className="mt-10 grid grid-cols-3 gap-4 border-t border-line pt-7">
                 {project.metrics.map((m) => (
                   <div key={m.label}>
-                    <span className="hud-label">{m.label}</span>
-                    <p
-                      className="mt-1 font-display text-2xl font-bold tabular"
-                      style={{ color }}
-                    >
+                    <span className="micro">{m.label}</span>
+                    <p className="tabular mt-2 font-display text-2xl font-black text-fg">
                       {m.value}
                     </p>
                   </div>
@@ -171,20 +159,19 @@ export default async function WorkDetail({
           </aside>
         </div>
 
-        {/* Next project */}
         <Link
           href={`/work/${next.slug}`}
-          className="group mt-20 flex items-center justify-between border-t border-line-strong pt-10"
+          className="group mt-24 flex items-center justify-between border-t border-line pt-10"
         >
           <div>
-            <span className="hud-label text-muted">NEXT CASE FILE</span>
-            <p className="mt-2 font-display text-4xl font-black uppercase text-fg transition-colors group-hover:text-cyan md:text-6xl">
+            <span className="micro">Next case file</span>
+            <p className="display-caps mt-3 text-4xl text-fg md:text-6xl">
               {next.title}
             </p>
           </div>
           <ArrowRight
             size={40}
-            className="shrink-0 text-muted transition-all group-hover:translate-x-2 group-hover:text-cyan"
+            className="shrink-0 text-muted transition-transform duration-300 group-hover:translate-x-2"
           />
         </Link>
       </div>

@@ -59,7 +59,10 @@ export function AnimatedCounter({
     <span ref={ref} className={cn("tabular", className)}>
       {reduced ? value : display}
       {suffix}
-      {unit && <span className="text-muted">{unit}</span>}
+      {/* Sized in `em`, so the unit stays subordinate at whatever scale the
+          number is set — at the ledger's 8vw it would otherwise run "98/100"
+          straight off the side of the viewport. */}
+      {unit && <span className="text-[0.4em] text-muted">{unit}</span>}
     </span>
   );
 }

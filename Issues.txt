@@ -1,0 +1,10 @@
+A few issues:
+I can't see the mouse cursor
+
+The website's theme is highly inconsistent, it looks way similar to the Lando Norris reference website, the reference mp4 file is in the reference folder. The animations look fine but the theme is not consistent, dark/light are coexisting along with pink so make a choice.
+
+As for the navbar animation and other effects, I liked the Nexus website one better, it's in the git commit as a checkpoint, the parallax scrolling animations are really good on the current one, keep them intact, do not reset
+
+As for the timeline yearly track record, keep the design from Nexus, not the current dull/simple looking one
+
+The green lime as well as the patterned light theme looks way similar to the Lando Norris website, refer to the reference mp4 files again and come up with a creative decision

@@ -1,181 +1,129 @@
 "use client";
 
-import { useState } from "react";
 import { motion } from "framer-motion";
-import { ArrowDown } from "lucide-react";
-import { profile } from "@/lib/content";
-import { HeroCanvas } from "@/components/three/HeroCanvas";
-import { ControlPanelButton } from "@/components/motion/ControlPanelButton";
-import { GlitchText } from "@/components/motion/GlitchText";
-import { HeadlineFlip } from "@/components/motion/HeadlineFlip";
-import { ScrambleText } from "@/components/motion/ScrambleText";
-import { TelemetryReadout } from "@/components/hud/TelemetryReadout";
-import { DataGraph } from "@/components/hud/DataGraph";
-import { cn } from "@/lib/utils";
+import { profile, contact } from "@/lib/content";
+import { HeroPortrait } from "@/components/sections/HeroPortrait";
+import { Contour } from "@/components/layout/Contour";
 
-const lineParent = {
-  hidden: {},
-  show: { transition: { staggerChildren: 0.12, delayChildren: 0.15 } },
-};
-const lineChild = {
-  hidden: { y: "115%" },
+const rise = {
+  hidden: { y: "110%" },
   show: {
     y: "0%",
-    transition: { duration: 0.9, ease: [0.16, 1, 0.3, 1] as const },
+    transition: { duration: 1, ease: [0.16, 1, 0.3, 1] as const },
   },
 };
 
+/**
+ * The opening frame, on Lando's model: one enormous subject centred on paper,
+ * the name set at a scale that has to break to fit, and almost nothing else.
+ *
+ * The single detail that makes it work is depth order — the wordmark is painted
+ * *behind* the portrait, so the cutout's shoulders occlude the letterforms. That
+ * one relationship is what turns a photo-on-a-background into a composition;
+ * without it the same elements read as a stock header.
+ */
 export function Hero() {
-  /* The title lines rise out of a clipped mask. Once that entrance finishes
-     the mask has to go: the third line holds a plate that resizes as its word
-     swaps, and a live `overflow-hidden` would shear its border and glow. */
-  const [entered, setEntered] = useState(false);
-
   return (
     <section
       id="hero"
-      className="relative min-h-dvh w-full overflow-hidden"
+      data-act="paper"
+      data-chapter="INDEX"
+      className="relative flex min-h-dvh w-full flex-col justify-end overflow-hidden bg-bg"
       aria-label="Introduction"
     >
-      {/* WebGL artifact */}
-      <HeroCanvas />
+      <Contour className="pointer-events-none absolute inset-0 h-full w-full text-ink" />
 
-      {/* Legibility scrim (bottom-weighted; stronger on small screens where
-          the artifact sits behind the copy) */}
-      <div
-        className="pointer-events-none absolute inset-0 md:hidden"
-        style={{
-          background:
-            "linear-gradient(0deg, rgba(5,5,5,0.96) 8%, rgba(5,5,5,0.7) 45%, rgba(5,5,5,0.25) 75%, transparent)",
-        }}
-      />
-      <div
-        className="pointer-events-none absolute inset-0 hidden md:block"
-        style={{
-          background:
-            "radial-gradient(80% 80% at 20% 80%, rgba(5,5,5,0.85), transparent 60%), linear-gradient(0deg, rgba(5,5,5,0.9), transparent 45%)",
-        }}
-      />
-
-      {/* Rotated side label */}
-      <span className="hud-label absolute right-5 top-1/2 hidden -translate-y-1/2 rotate-90 whitespace-nowrap text-faint lg:block">
-        {profile.version} — {profile.role.toUpperCase()}
-      </span>
-
-      {/* Content */}
-      {/* pb clears the fixed console dock at the bottom centre of the viewport */}
-      <div className="relative z-10 mx-auto flex min-h-dvh max-w-[1600px] flex-col justify-end px-5 pb-10 pt-28 md:px-8 md:pb-24">
-        {/* Kicker */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.1, duration: 0.8 }}
-          className="mb-6 flex items-center gap-4"
-        >
-          <span className="h-px w-12 bg-cyan" />
-          <ScrambleText
-            text={profile.kicker}
-            immediate
-            className="text-xs uppercase tracking-[0.3em] text-cyan"
-          />
-        </motion.div>
-
-        {/* Title */}
-        <motion.h1
-          variants={lineParent}
-          initial="hidden"
-          animate="show"
-          className="font-display font-black uppercase leading-[0.82] text-fg"
-          // Bounded by height as well as width: on a short laptop viewport a
-          // pure vw scale pushed the closing telemetry row below the fold.
-          style={{ fontSize: "clamp(3.2rem, min(12vw, 13.5vh), 11rem)" }}
-        >
-          {profile.heroLines.map((line, i) => {
-            const isLast = i === profile.heroLines.length - 1;
-            return (
-              <span
-                key={line}
-                className={cn("block", !(isLast && entered) && "overflow-hidden")}
-              >
-                <motion.span
-                  variants={lineChild}
-                  className="block"
-                  style={{ paddingBottom: "0.06em" }}
-                  onAnimationComplete={
-                    isLast ? () => setEntered(true) : undefined
-                  }
-                >
-                  {i === 0 ? (
-                    <GlitchText text={line} />
-                  ) : i === 1 ? (
-                    <span
-                      style={{
-                        background: "linear-gradient(100deg,#00e5ff,#a855f7)",
-                        WebkitBackgroundClip: "text",
-                        backgroundClip: "text",
-                        color: "transparent",
-                      }}
-                    >
-                      {line}
-                    </span>
-                  ) : (
-                    <HeadlineFlip words={profile.heroFlipWords} />
-                  )}
-                </motion.span>
-              </span>
-            );
-          })}
-        </motion.h1>
-
-        {/* Sub + CTAs */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.7, duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-          className="mt-8 flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between"
-        >
-          <p className="max-w-md text-base leading-relaxed text-muted md:text-lg">
-            {profile.heroSub}
-          </p>
-          <div className="flex flex-wrap gap-4">
-            <ControlPanelButton href="#work" variant="primary">
-              Access Work
-            </ControlPanelButton>
-            <ControlPanelButton href="#contact" variant="outline">
-              Initiate Contact
-            </ControlPanelButton>
-          </div>
-        </motion.div>
-
-        {/* HUD footer row */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 1, duration: 1 }}
-          className="mt-12 flex items-end justify-between gap-8 border-t border-line pt-5"
-        >
-          <div className="flex flex-wrap gap-x-10 gap-y-4">
-            <TelemetryReadout label="Status" value="OPERATIONAL" accent blink />
-            <TelemetryReadout label="Discipline" value="INTERFACE / MOTION" />
-            <TelemetryReadout
-              label="Location"
-              value={profile.location.toUpperCase()}
-              className="hidden sm:flex"
-            />
-          </div>
-
-          <div className="hidden w-52 flex-col gap-2 md:flex">
-            <span className="hud-label">RENDER TELEMETRY</span>
-            <DataGraph />
-          </div>
-        </motion.div>
+      {/* --- Layer 1: the wordmark, behind everything --- */}
+      <div className="pointer-events-none absolute inset-x-0 top-[16vh] flex justify-center md:top-[14vh]">
+        <h1 className="display-caps flex overflow-hidden text-[26vw] leading-[0.8] text-ink md:text-[22vw]">
+          <motion.span
+            variants={rise}
+            initial="hidden"
+            animate="show"
+            className="block"
+            style={{ paddingBottom: "0.08em" }}
+          >
+            {profile.wordmark}
+          </motion.span>
+        </h1>
       </div>
 
-      {/* Scroll cue — pinned to the left gutter, since the console dock now
-          occupies the bottom centre of every viewport. */}
-      <div className="absolute bottom-8 left-5 hidden items-center gap-3 lg:flex md:left-8">
-        <ArrowDown size={14} className="animate-blink text-cyan" />
-        <span className="hud-label text-faint">SCROLL</span>
+      {/* --- Layer 2: the portrait, occluding it --- */}
+      <motion.div
+        initial={{ opacity: 0, scale: 1.04 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 1.4, ease: [0.16, 1, 0.3, 1], delay: 0.2 }}
+        className="absolute inset-x-0 bottom-0 top-[8vh]"
+      >
+        <HeroPortrait />
+      </motion.div>
+
+      {/* Legibility scrim, small screens only. On desktop the copy sits in the
+          margins either side of the portrait, but a phone has no margins — the
+          serif line and the sub land directly on the photo and neither is
+          readable without this. */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-x-0 bottom-0 h-[62%] md:hidden"
+        style={{
+          background:
+            "linear-gradient(0deg, var(--color-paper) 22%, color-mix(in srgb, var(--color-paper) 82%, transparent) 55%, transparent 100%)",
+        }}
+      />
+
+      {/* --- Layer 3: copy, in front of both --- */}
+      <div className="relative z-10 mx-auto flex w-full max-w-[1800px] flex-col gap-10 px-5 pb-8 pt-28 md:px-8 md:pb-10 lg:px-16">
+        <div className="flex flex-col gap-8 md:flex-row md:items-end md:justify-between">
+          {/* Availability card — Lando's sticky "NEXT RACE" widget, carrying
+              the one piece of information a prospective client actually wants. */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.9, duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+            className="notch-card-sm w-fit bg-ink px-5 py-4 text-paper"
+          >
+            <span className="micro !text-paper/50">Currently</span>
+            <p className="mt-2 max-w-[15rem] font-display text-sm font-semibold uppercase leading-tight">
+              {profile.status}
+            </p>
+            <a
+              href={`mailto:${contact.email}`}
+              className="signal-underline mt-3 inline-block font-mono text-[0.6875rem] lowercase tracking-wider text-paper"
+            >
+              {contact.email}
+            </a>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 1.05, duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+            className="max-w-md md:text-right"
+          >
+            {/* The serif line. One editorial voice against all the grotesk
+                is what stops the page reading as a tech template. */}
+            <p className="font-editorial text-3xl leading-[1.08] text-ink md:text-4xl">
+              {profile.heroLead}
+            </p>
+            <p className="mt-4 text-sm leading-relaxed text-muted">
+              {profile.heroSub}
+            </p>
+          </motion.div>
+        </div>
+
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 1.3, duration: 1 }}
+          className="flex items-center justify-between border-t border-line pt-4"
+        >
+          <span className="micro">{profile.kicker}</span>
+          <span className="micro hidden md:block">{profile.location}</span>
+          <span className="micro flex items-center gap-2">
+            <span className="h-1.5 w-1.5 animate-blink rounded-full bg-signal" />
+            Scroll
+          </span>
+        </motion.div>
       </div>
     </section>
   );

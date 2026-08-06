@@ -39,3 +39,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# design reference footage — ~93MB of mp4, kept locally, never in history
+/reference/

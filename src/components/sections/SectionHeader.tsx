@@ -8,12 +8,20 @@ interface SectionHeaderProps {
   description?: string;
   className?: string;
   align?: "left" | "center";
+  /**
+   * `caps` sets the title in KPR's oversized grotesk; `serif` in the editorial
+   * face. Alternating between them across the page is what gives the acts
+   * distinct voices — a single treatment everywhere flattens them back out.
+   */
+  voice?: "caps" | "serif";
 }
 
 /**
- * Consistent section masthead: a bracketed HUD label + index on top, an
- * oversized display title, and an optional description. Reused by every
- * content section so the page reads as one system.
+ * Section masthead: a mono index and label above an oversized title.
+ *
+ * The old bracketed-HUD version is gone along with the rest of that vocabulary;
+ * what remains is a rule, an index and the title, which is what all three
+ * reference sites do.
  */
 export function SectionHeader({
   index,
@@ -22,27 +30,37 @@ export function SectionHeader({
   description,
   className,
   align = "left",
+  voice = "caps",
 }: SectionHeaderProps) {
   return (
     <Reveal
       className={cn(
-        "flex flex-col gap-4",
+        "flex flex-col gap-5",
         align === "center" && "items-center text-center",
         className
       )}
     >
       <div className="flex items-center gap-4">
-        <span className="font-mono text-xs text-cyan">[ {index} ]</span>
-        <span className="h-px w-10 bg-line-strong" />
-        <span className="hud-label">{label}</span>
+        <span className="micro tabular">{index}</span>
+        <span className="h-px w-10 bg-current opacity-25" />
+        <span className="micro">{label}</span>
       </div>
 
-      <h2
-        className="font-display font-black uppercase leading-[0.9] text-fg"
-        style={{ fontSize: "clamp(2.5rem, 6vw, 5.5rem)" }}
-      >
-        {title}
-      </h2>
+      {voice === "caps" ? (
+        <h2
+          className="display-caps text-fg"
+          style={{ fontSize: "clamp(2.75rem, 8vw, 8rem)" }}
+        >
+          {title}
+        </h2>
+      ) : (
+        <h2
+          className="font-editorial leading-[1.02] text-fg"
+          style={{ fontSize: "clamp(2.5rem, 6vw, 5.5rem)" }}
+        >
+          {title}
+        </h2>
+      )}
 
       {description && (
         <p

@@ -9,13 +9,16 @@ type Status = "idle" | "sending" | "sent";
 type Errors = Partial<Record<"name" | "email" | "message", string>>;
 
 const FIELD =
-  "w-full border border-line bg-surface-2 px-4 py-3 font-mono text-sm text-fg outline-none transition-colors placeholder:text-faint focus:border-cyan";
+  "w-full border-0 border-b border-line bg-transparent px-0 py-3 font-sans text-base text-fg outline-none transition-colors placeholder:text-faint focus:border-signal";
 
 /**
- * Accessible "uplink" contact form: visible labels, inline validation on
- * submit, focus moved to the first invalid field, aria-live status. With no
- * backend it validates then opens the user's mail client and shows a success
- * state.
+ * Accessible contact form: visible labels, inline validation on submit, focus
+ * moved to the first invalid field, aria-live status. With no backend it
+ * validates then opens the user's mail client and shows a success state.
+ *
+ * Underlined fields rather than boxes — on the closing block the form sits
+ * beside a 10vw headline, and four bordered rectangles there would compete with
+ * it instead of sitting under it.
  */
 export function ContactForm() {
   const [status, setStatus] = useState<Status>("idle");
@@ -67,7 +70,7 @@ export function ContactForm() {
           type="text"
           autoComplete="name"
           placeholder="Your name"
-          className={cn(FIELD, errors.name && "border-red")}
+          className={cn(FIELD, errors.name && "border-alert")}
           aria-invalid={Boolean(errors.name)}
           aria-describedby={errors.name ? "name-error" : undefined}
         />
@@ -80,7 +83,7 @@ export function ContactForm() {
           type="email"
           autoComplete="email"
           placeholder="you@domain.com"
-          className={cn(FIELD, errors.email && "border-red")}
+          className={cn(FIELD, errors.email && "border-alert")}
           aria-invalid={Boolean(errors.email)}
           aria-describedby={errors.email ? "email-error" : undefined}
         />
@@ -92,7 +95,7 @@ export function ContactForm() {
           name="message"
           rows={4}
           placeholder="Describe the system you want to build…"
-          className={cn(FIELD, "resize-none", errors.message && "border-red")}
+          className={cn(FIELD, "resize-none", errors.message && "border-alert")}
           aria-invalid={Boolean(errors.message)}
           aria-describedby={errors.message ? "message-error" : undefined}
         />
@@ -102,25 +105,25 @@ export function ContactForm() {
         type="submit"
         disabled={status !== "idle"}
         className={cn(
-          "group relative mt-2 flex items-center justify-center gap-3 chamfer-sm px-6 py-4 font-mono text-xs uppercase tracking-[0.22em] transition-colors",
-          status === "sent"
-            ? "bg-cyan text-bg"
-            : "bg-cyan text-bg hover:bg-cyan/90 disabled:opacity-70"
+          "group relative mt-4 flex w-fit items-center justify-center gap-3 rounded-full px-7 py-3.5 font-mono text-[0.6875rem] uppercase tracking-[0.2em] transition-transform duration-300",
+          // Ink on lime: 15:1. Lime on anything is the inverse of readable, so
+          // the fill carries the colour and the label stays dark.
+          "bg-signal text-ink hover:scale-[1.03] disabled:opacity-70"
         )}
       >
         {status === "idle" && (
           <>
-            [ Transmit Message ] <Send size={14} />
+            Send message <Send size={14} />
           </>
         )}
         {status === "sending" && (
           <>
-            Establishing uplink <Loader2 size={14} className="animate-spin" />
+            Sending <Loader2 size={14} className="animate-spin" />
           </>
         )}
         {status === "sent" && (
           <>
-            Transmission sent <Check size={14} />
+            Message sent <Check size={14} />
           </>
         )}
       </button>
@@ -147,11 +150,11 @@ function Field({
     <div className="flex flex-col gap-2">
       <label
         htmlFor={name}
-        className="hud-label flex items-center justify-between"
+        className="micro flex items-center justify-between"
       >
         <span>{label}</span>
         {error && (
-          <span id={`${name}-error`} className="text-red" role="alert">
+          <span id={`${name}-error`} className="text-[#ff6b1f]" role="alert">
             {error}
           </span>
         )}

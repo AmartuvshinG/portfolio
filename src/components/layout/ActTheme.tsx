@@ -1,0 +1,101 @@
+"use client";
+
+import { useEffect, useSyncExternalStore } from "react";
+import { gsap, ScrollTrigger } from "@/lib/gsap";
+
+/**
+ * The act system.
+ *
+ * Sections declare `data-act` on themselves and paint their own background from
+ * `--color-bg`, which resolves differently inside each act's token block (see
+ * globals.css). That handles the page body on its own, with no JS.
+ *
+ * What JS is for is the *fixed* chrome — navbar, chapter frame, cursor — which
+ * lives outside every section and therefore has no act to inherit from. This
+ * component mirrors whichever act currently sits under the navbar onto
+ * `<html data-act>`, so that chrome inverts as boundaries pass beneath it.
+ * Lando does exactly this with its logo, and it's the single detail that stops
+ * a light site with a dark act reading as two different websites.
+ *
+ * The flip line is the navbar, not mid-viewport: switching at 50% would recolour
+ * the logo while it still sits over the outgoing act.
+ */
+
+/** Distance from the top of the viewport where one act hands over to the next. */
+const FLIP_LINE = 72;
+
+export type Act = "paper" | "flat" | "void";
+
+/* --- Tiny store, so components that need the act as a *value* (rather than as
+       a CSS variable) can subscribe without prop-drilling through the tree. */
+let current: Act = "paper";
+const listeners = new Set<() => void>();
+
+function setAct(act: Act) {
+  if (act === current) return;
+  current = act;
+  document.documentElement.dataset.act = act;
+  listeners.forEach((l) => l());
+}
+
+/** Reads the act currently under the navbar. `"paper"` during SSR. */
+export function useAct(): Act {
+  return useSyncExternalStore(
+    (l) => {
+      listeners.add(l);
+      return () => listeners.delete(l);
+    },
+    () => current,
+    () => "paper" as Act
+  );
+}
+
+export function ActTheme() {
+  useEffect(() => {
+    const sections = gsap.utils.toArray<HTMLElement>("[data-act]");
+    if (!sections.length) return;
+
+    const triggers = sections.map((el) =>
+      ScrollTrigger.create({
+        trigger: el,
+        // Contiguous windows: each act owns the scroll range during which it
+        // spans the flip line, so exactly one is ever active and there is no
+        // gap between them for the chrome to fall through.
+        start: `top ${FLIP_LINE}px`,
+        end: `bottom ${FLIP_LINE}px`,
+        onToggle: (self) => {
+          if (self.isActive) {
+            setAct((el.dataset.act as Act) ?? "paper");
+          }
+        },
+      })
+    );
+
+    // The page can load already scrolled (refresh, back-navigation, #hash), in
+    // which case no toggle fires and the chrome would keep the seeded act.
+    ScrollTrigger.refresh();
+
+    /* Every boundary above is a cached pixel offset, and this component mounts
+       while the preloader still holds the scroll lock — so that first refresh
+       measures a body with `overflow: hidden` and caches offsets for a document
+       that is about to get thousands of pixels taller. Left alone, the dark act
+       claimed the page several sections early and never handed back.
+
+       Observing the body's height re-measures on the release, and also covers
+       late-loading media and font swaps reflowing the page under us. */
+    let frame = 0;
+    const observer = new ResizeObserver(() => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => ScrollTrigger.refresh());
+    });
+    observer.observe(document.body);
+
+    return () => {
+      cancelAnimationFrame(frame);
+      observer.disconnect();
+      triggers.forEach((t) => t.kill());
+    };
+  }, []);
+
+  return null;
+}

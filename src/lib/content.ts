@@ -6,7 +6,7 @@
  * ============================================================================
  */
 
-export type AccentKey = "cyan" | "purple" | "red";
+export type AccentKey = "accent" | "accent-2" | "alert";
 
 export interface NavLink {
   label: string;
@@ -37,7 +37,33 @@ export interface Project {
   accent: AccentKey;
   /** Remote image used on the detail page only (homepage uses generated visuals). */
   image: string;
+  /**
+   * Real screenshot, textured onto this project's card in the 3D work world.
+   * Drop the file at the path below; while it's missing the world falls back to
+   * the generated `ProjectVisual` for this project, with no layout shift.
+   */
+  shot: string;
   metrics: { label: string; value: string }[];
+}
+
+export interface GalleryImage {
+  src: string;
+  alt: string;
+  /** Intrinsic size — drives the srcset and the scattered layout's aspect box. */
+  width: number;
+  height: number;
+  /**
+   * Scatter placement, in the tall gallery canvas's own coordinate space:
+   * `x` is a viewport fraction (0–1), `y` a multiple of viewport height, `w` a
+   * viewport-width fraction. Hand-placed rather than generated — the whole
+   * effect depends on the rhythm of the gaps, which random scatter never finds.
+   */
+  x: number;
+  y: number;
+  w: number;
+  /** Parallax strength. 0 pins to the page, 1 drifts a full viewport height. */
+  depth: number;
+  caption?: string;
 }
 
 export interface TimelineEntry {
@@ -80,6 +106,14 @@ export const site = {
   url: "https://amara.dev",
 };
 
+/**
+ * Portrait cutout for the hero. Wants a **background-removed** PNG, ≥1400px
+ * tall: the whole effect is the wordmark passing behind the shoulders, which a
+ * rectangular photo cannot do. Until the file exists the hero renders the
+ * generated silhouette treatment instead.
+ */
+export const PORTRAIT = "/portrait.png";
+
 export const profile = {
   wordmark: "AMARA",
   fullName: "Amara Junior",
@@ -87,21 +121,21 @@ export const profile = {
   discipline: "Interface Engineering · Motion · Real-time Graphics",
   location: "Remote · GMT+0",
   status: "AVAILABLE FOR SELECT PROJECTS",
-  version: "SYS.v9.0",
-  heroLines: ["BUILDING", "THE FUTURE", "INTERFACE"],
-  /** Rotated in place on the third hero line by <HeadlineFlip>. */
-  heroFlipWords: ["INTERFACE", "SYSTEMS", "MOTION", "GRAPHICS"],
+  /** The hero wordmark, split so the portrait can sit between the two halves. */
+  heroName: ["AMA", "RA"],
+  /** Set in the editorial serif under the name. */
+  heroLead: "Interfaces that feel like hardware.",
   heroSub:
-    "I design and engineer next-generation digital experiences — where cinematic motion, real-time graphics and obsessive performance converge into interfaces that feel alive.",
-  kicker: "NEXT-GENERATION DIGITAL CRAFT",
+    "Creative technologist. I design and engineer the web at the seam where cinematic motion, real-time graphics and obsessive performance meet.",
+  kicker: "PORTFOLIO — 2026",
 };
 
 export const navLinks: NavLink[] = [
   { label: "Index", href: "#hero", code: "00" },
   { label: "Profile", href: "#about", code: "01" },
-  { label: "Systems", href: "#capabilities", code: "02" },
+  { label: "Craft", href: "#capabilities", code: "02" },
   { label: "Work", href: "#work", code: "03" },
-  { label: "Log", href: "#timeline", code: "04" },
+  { label: "Archive", href: "#gallery", code: "04" },
   { label: "Contact", href: "#contact", code: "05" },
 ];
 
@@ -188,8 +222,9 @@ export const projects: Project[] = [
       "Custom instanced-particle telemetry layer",
       "Zero-jank virtualised data grids",
     ],
-    accent: "cyan",
+    accent: "accent",
     image: "https://picsum.photos/seed/helix-os/1600/1000",
+    shot: "/work/helix-os.webp",
     metrics: [
       { label: "FPS", value: "60" },
       { label: "NODES", value: "10K" },
@@ -213,8 +248,9 @@ export const projects: Project[] = [
       "Hand-written fog + bloom shaders",
       "FWA Site of the Day",
     ],
-    accent: "purple",
+    accent: "accent-2",
     image: "https://picsum.photos/seed/neon-atlas/1600/1000",
+    shot: "/work/neon-atlas.webp",
     metrics: [
       { label: "LIGHTHOUSE", value: "98" },
       { label: "AWARDS", value: "3" },
@@ -238,8 +274,9 @@ export const projects: Project[] = [
       "Keyboard-first analyst command layer",
       "Accessible colour-blind-safe palette",
     ],
-    accent: "red",
+    accent: "alert",
     image: "https://picsum.photos/seed/cipher-grid/1600/1000",
+    shot: "/work/cipher-grid.webp",
     metrics: [
       { label: "EVENTS/S", value: "4K" },
       { label: "UPTIME", value: "99.9%" },
@@ -263,13 +300,115 @@ export const projects: Project[] = [
       "Fully themeable token engine",
       "Interactive motion documentation",
     ],
-    accent: "cyan",
+    accent: "accent",
     image: "https://picsum.photos/seed/vantablack/1600/1000",
+    shot: "/work/vantablack.webp",
     metrics: [
       { label: "TEAMS", value: "6" },
       { label: "COMPONENTS", value: "180" },
       { label: "ADOPTION", value: "94%" },
     ],
+  },
+];
+
+/**
+ * The scattered archive. Deliberately *not* a grid: items sit at wildly
+ * different scales across a canvas several viewports tall and drift at
+ * different rates, so the section reads as a spread rather than a gallery.
+ *
+ * Two rules make it work, and breaking either collapses it back into a grid:
+ * no two neighbours share a width, and `depth` alternates so adjacent items
+ * separate as you scroll instead of travelling together.
+ *
+ * Swap `src` for files in `/gallery/` — mixed aspect ratios are better here.
+ */
+export const gallery: GalleryImage[] = [
+  {
+    src: "https://picsum.photos/seed/amara-a/1400/1750",
+    alt: "Helix OS — console detail",
+    width: 1400,
+    height: 1750,
+    x: 0.06,
+    y: 0.12,
+    w: 0.24,
+    depth: 0.55,
+    caption: "HELIX OS, 2025",
+  },
+  {
+    src: "https://picsum.photos/seed/amara-b/1600/1000",
+    alt: "Motion choreography boards",
+    width: 1600,
+    height: 1000,
+    x: 0.46,
+    y: 0.34,
+    w: 0.38,
+    depth: 0.18,
+    caption: "PROCESS",
+  },
+  {
+    src: "https://picsum.photos/seed/amara-c/1200/1200",
+    alt: "Shader research — volumetric studies",
+    width: 1200,
+    height: 1200,
+    x: 0.2,
+    y: 0.78,
+    w: 0.16,
+    depth: 0.85,
+    caption: "SHADER STUDY",
+  },
+  {
+    src: "https://picsum.photos/seed/amara-d/1400/1750",
+    alt: "Neon Atlas — launch sequence",
+    width: 1400,
+    height: 1750,
+    x: 0.66,
+    y: 0.95,
+    w: 0.3,
+    depth: 0.4,
+    caption: "NEON ATLAS, 2024",
+  },
+  {
+    src: "https://picsum.photos/seed/amara-e/1600/1000",
+    alt: "Cipher Grid — anomaly stream",
+    width: 1600,
+    height: 1000,
+    x: 0.04,
+    y: 1.34,
+    w: 0.42,
+    depth: 0.25,
+    caption: "CIPHER GRID",
+  },
+  {
+    src: "https://picsum.photos/seed/amara-f/1200/1500",
+    alt: "Interface studies — archive sheet",
+    width: 1200,
+    height: 1500,
+    x: 0.58,
+    y: 1.62,
+    w: 0.2,
+    depth: 0.7,
+    caption: "ARCHIVE",
+  },
+  {
+    src: "https://picsum.photos/seed/amara-g/1800/1000",
+    alt: "Vantablack — token documentation",
+    width: 1800,
+    height: 1000,
+    x: 0.24,
+    y: 2.02,
+    w: 0.5,
+    depth: 0.12,
+    caption: "VANTABLACK, 2023",
+  },
+  {
+    src: "https://picsum.photos/seed/amara-h/1200/1200",
+    alt: "Studio — workstation",
+    width: 1200,
+    height: 1200,
+    x: 0.82,
+    y: 2.3,
+    w: 0.14,
+    depth: 0.9,
   },
 ];
 
@@ -357,9 +496,14 @@ export function getProject(slug: string): Project | undefined {
   return projects.find((p) => p.slug === slug);
 }
 
-/** Accent → CSS custom property colour, for inline styling by data. */
+/**
+ * Per-project tint. The palette is down to one accent, so these are no longer
+ * UI colours — they are rim lights in the 3D work world and wash tints on the
+ * generated visuals, which is the one place four projects genuinely need to be
+ * told apart at a glance. Literal hex, not tokens: three.js needs a real colour.
+ */
 export const accentColor: Record<AccentKey, string> = {
-  cyan: "var(--color-cyan)",
-  purple: "var(--color-purple-bright)",
-  red: "var(--color-red)",
+  accent: "#c6ff3d",
+  "accent-2": "#b9a8e8",
+  alert: "#ff6b1f",
 };

@@ -1,28 +1,32 @@
 import type { Metadata, Viewport } from "next";
-import { Saira_Condensed, Space_Grotesk, JetBrains_Mono } from "next/font/google";
+import { Instrument_Serif, Archivo, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { site } from "@/lib/content";
 import { SmoothScroll } from "@/components/layout/SmoothScroll";
-import { PosterReveal } from "@/components/layout/PosterReveal";
-import { AmbientOverlay } from "@/components/layout/AmbientOverlay";
+import { ActTheme } from "@/components/layout/ActTheme";
+import { Preloader } from "@/components/layout/Preloader";
+import { ChapterFrame } from "@/components/hud/ChapterFrame";
 import { HudCursor } from "@/components/hud/HudCursor";
-import { ConsoleDock } from "@/components/layout/ConsoleDock";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 
-const saira = Saira_Condensed({
+/** Editorial display serif — the Lando register. */
+const instrument = Instrument_Serif({
   subsets: ["latin"],
-  weight: ["500", "600", "700", "800", "900"],
-  variable: "--font-saira",
+  weight: "400",
+  style: ["normal", "italic"],
+  variable: "--font-instrument",
   display: "swap",
 });
 
-const grotesk = Space_Grotesk({
+/** Variable grotesk. Body copy at 400–500, KPR's oversized caps at 900. */
+const archivo = Archivo({
   subsets: ["latin"],
-  variable: "--font-grotesk",
+  variable: "--font-archivo",
   display: "swap",
 });
 
+/** The only survivor of the HUD vocabulary: micro-labels and numbering. */
 const monoHud = JetBrains_Mono({
   subsets: ["latin"],
   variable: "--font-mono-hud",
@@ -41,7 +45,9 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#050505",
+  /* Matches the opening act. The browser chrome should agree with the paper,
+     not with a dark theme the site no longer has. */
+  themeColor: "#e9e7e1",
   width: "device-width",
   initialScale: 1,
 };
@@ -52,28 +58,31 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${saira.variable} ${grotesk.variable} ${monoHud.variable} h-full`}
+      /* Seeded to the opening act so first paint is already paper — waiting for
+         ActTheme to mount would flash the wrong surface. */
+      data-act="paper"
+      className={`${instrument.variable} ${archivo.variable} ${monoHud.variable} h-full`}
     >
       <body className="min-h-full antialiased">
         <a
           href="#main"
-          className="sr-only rounded-none focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[200] focus:bg-cyan focus:px-4 focus:py-2 focus:font-mono focus:text-xs focus:text-bg"
+          className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[200] focus:bg-ink focus:px-4 focus:py-2 focus:font-mono focus:text-xs focus:text-paper"
         >
           Skip to content
         </a>
 
         {/* Everything lives inside SmoothScroll: overlays that freeze the page
-            (boot poster, project dossier) need the Lenis-aware scroll lock from
+            (preloader, project dossier) need the Lenis-aware scroll lock from
             its context, which a sibling can't reach. */}
         <SmoothScroll>
-          <PosterReveal />
-          <AmbientOverlay />
+          <ActTheme />
+          <Preloader />
           <HudCursor />
 
           <Navbar />
+          <ChapterFrame />
           <main id="main">{children}</main>
           <Footer />
-          <ConsoleDock />
         </SmoothScroll>
       </body>
     </html>

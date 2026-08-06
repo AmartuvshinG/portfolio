@@ -5,65 +5,56 @@ import type { Capability } from "@/lib/content";
 import { scaleIn } from "@/lib/motion";
 
 /**
- * A single "system module" card. Hovering runs a scan sweep, brightens the
- * frame and surfaces the technical detail (tags + proficiency). The
- * proficiency bar fills once the card scrolls into view.
+ * A capability, as a notched card — Lando's helmet-grid silhouette.
+ *
+ * The cut corner is the entire reason a plain grid of boxes reads as designed
+ * here. It costs one clip-path and it is the difference between "cards" and a
+ * card *system*, which is why it's a shared utility rather than local styling.
+ *
+ * The old version had a scan sweep, corner brackets and a magenta proficiency
+ * bar. The proficiency number stays — it's real information — but as a hairline
+ * rule, because a chunky progress bar on paper reads as a dashboard widget.
  */
 export function CapabilityCard({ item }: { item: Capability }) {
   return (
     <motion.article
       variants={scaleIn}
-      className="group relative flex flex-col overflow-hidden border border-line bg-surface/40 p-6 transition-colors duration-300 hover:border-line-strong"
-      whileHover={{ y: -4 }}
+      className="notch-card group relative flex flex-col bg-paper p-6 ring-1 ring-inset ring-ink/10 transition-shadow duration-300"
+      whileHover={{ y: -5 }}
       transition={{ type: "spring", stiffness: 300, damping: 24 }}
     >
-      {/* Hover scan sweep */}
-      <span
-        aria-hidden
-        className="pointer-events-none absolute inset-0 -translate-y-full bg-[linear-gradient(180deg,transparent,rgba(0,229,255,0.08),transparent)] transition-transform duration-700 ease-out group-hover:translate-y-full"
-      />
-      {/* Corner brackets brighten on hover */}
-      <span className="absolute right-0 top-0 h-4 w-4 border-r border-t border-cyan/30 transition-colors group-hover:border-cyan" />
-      <span className="absolute bottom-0 left-0 h-4 w-4 border-b border-l border-cyan/30 transition-colors group-hover:border-cyan" />
-
-      <div className="relative flex items-center justify-between">
-        <span className="font-mono text-xs text-cyan">{item.code}</span>
-        <span className="hud-label text-faint">MODULE</span>
+      <div className="flex items-center justify-between">
+        <span className="micro tabular">{item.code}</span>
+        <span className="tabular font-mono text-[0.65rem] text-ink-faint">
+          {item.level}
+        </span>
       </div>
 
-      <h3 className="relative mt-6 font-display text-2xl font-bold uppercase text-fg">
+      <h3 className="mt-8 font-display text-2xl font-bold uppercase leading-tight text-ink">
         {item.title}
       </h3>
 
-      <p className="relative mt-3 flex-1 text-sm leading-relaxed text-muted">
+      <p className="mt-3 flex-1 text-sm leading-relaxed text-ink-soft">
         {item.description}
       </p>
 
-      {/* Proficiency */}
-      <div className="relative mt-6">
-        <div className="mb-2 flex items-center justify-between">
-          <span className="hud-label">PROFICIENCY</span>
-          <span className="font-mono text-xs tabular text-cyan">
-            {item.level}%
-          </span>
-        </div>
-        <div className="h-1 w-full overflow-hidden bg-surface-2">
-          <motion.div
-            className="h-full bg-cyan"
-            initial={{ width: 0 }}
-            whileInView={{ width: `${item.level}%` }}
-            viewport={{ once: true }}
-            transition={{ duration: 1.1, ease: [0.16, 1, 0.3, 1] }}
-          />
-        </div>
+      {/* Proficiency, as a rule rather than a bar. Lime is a fill here, never
+          text — at 1.4:1 on paper it would be unreadable as a label. */}
+      <div className="mt-8 h-px w-full bg-ink/10">
+        <motion.div
+          className="h-full bg-signal"
+          initial={{ width: 0 }}
+          whileInView={{ width: `${item.level}%` }}
+          viewport={{ once: true }}
+          transition={{ duration: 1.1, ease: [0.16, 1, 0.3, 1] }}
+        />
       </div>
 
-      {/* Tags */}
-      <div className="relative mt-5 flex flex-wrap gap-2">
+      <div className="mt-5 flex flex-wrap gap-x-4 gap-y-1">
         {item.tags.map((tag) => (
           <span
             key={tag}
-            className="border border-line px-2.5 py-1 font-mono text-[0.65rem] uppercase tracking-wider text-muted"
+            className="font-mono text-[0.65rem] uppercase tracking-wider text-ink-faint"
           >
             {tag}
           </span>

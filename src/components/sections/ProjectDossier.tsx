@@ -157,10 +157,13 @@ export function ProjectDossier({
   return createPortal(
     <AnimatePresence>
       {open && project && from && box && (
-        <div className="fixed inset-0 z-[90]" role="presentation">
+        // `data-act` is pinned rather than inherited: this renders into a
+        // portal at document level, so it has no section to take its tokens
+        // from and `<html data-act>` could be mid-transition when it opens.
+        <div data-act="void" className="fixed inset-0 z-[90]" role="presentation">
           <motion.div
             aria-hidden
-            className="absolute inset-0 bg-bg/80 backdrop-blur-md"
+            className="absolute inset-0 bg-void/85 backdrop-blur-md"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -172,7 +175,7 @@ export function ProjectDossier({
             role="dialog"
             aria-modal="true"
             aria-labelledby="dossier-title"
-            className="absolute flex flex-col overflow-hidden border border-line-strong bg-surface"
+            className="notch-card absolute flex flex-col overflow-hidden bg-void-2 ring-1 ring-inset ring-white/12"
             initial={
               reduced
                 ? { ...box, opacity: 0 }
@@ -210,7 +213,7 @@ export function ProjectDossier({
                 className="pointer-events-none absolute inset-0"
                 style={{
                   background:
-                    "linear-gradient(0deg, rgba(11,11,12,0.95), transparent 65%)",
+                    "linear-gradient(0deg, rgba(11, 11, 12, 0.95), transparent 65%)",
                 }}
               />
               <button
@@ -218,7 +221,7 @@ export function ProjectDossier({
                 data-autofocus
                 onClick={close}
                 aria-label="Close case file"
-                className="absolute right-3 top-3 flex h-9 w-9 items-center justify-center border border-line bg-bg/70 text-fg backdrop-blur transition-colors hover:border-cyan hover:text-cyan"
+                className="absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-full border border-line bg-void/70 text-fg backdrop-blur transition-colors hover:border-current"
               >
                 <X size={16} />
               </button>
@@ -235,14 +238,14 @@ export function ProjectDossier({
               <div className="border-b border-line px-6 py-5">
                 <div className="flex items-center gap-3">
                   <span className="font-mono text-xs" style={{ color }}>
-                    CASE FILE / {project.index}
+                    Case file {project.index}
                   </span>
                   <span className="h-px flex-1 bg-line" />
-                  <span className="hud-label">{project.year}</span>
+                  <span className="micro">{project.year}</span>
                 </div>
                 <h2
                   id="dossier-title"
-                  className="mt-3 font-display text-4xl font-black uppercase text-fg md:text-5xl"
+                  className="display-caps mt-3 text-4xl text-fg md:text-5xl"
                 >
                   {project.title}
                 </h2>
@@ -255,14 +258,12 @@ export function ProjectDossier({
               <div className="min-h-0 flex-1 overflow-y-auto px-6 py-6">
                 <div className="grid gap-8 md:grid-cols-2">
                   <div>
-                    <h3 className="hud-label mb-3 text-cyan/70">OVERVIEW</h3>
+                    <h3 className="micro mb-3">Overview</h3>
                     <p className="text-sm leading-relaxed text-fg/85">
                       {project.description}
                     </p>
 
-                    <h3 className="hud-label mb-3 mt-8 text-cyan/70">
-                      KEY OUTCOMES
-                    </h3>
+                    <h3 className="micro mb-3 mt-8">Key outcomes</h3>
                     <ul className="space-y-2.5">
                       {project.highlights.map((h) => (
                         <li
@@ -279,26 +280,25 @@ export function ProjectDossier({
                   </div>
 
                   <div>
-                    <h3 className="hud-label mb-3 text-cyan/70">STACK</h3>
+                    <h3 className="micro mb-3">Stack</h3>
                     <div className="flex flex-wrap gap-2">
                       {project.stack.map((s) => (
                         <span
                           key={s}
-                          className="border border-line px-2.5 py-1 font-mono text-[0.65rem] uppercase tracking-wider text-fg"
+                          className="rounded-full border border-line px-2.5 py-1 font-mono text-[0.65rem] uppercase tracking-wider text-fg"
                         >
                           {s}
                         </span>
                       ))}
                     </div>
 
-                    <h3 className="hud-label mb-3 mt-8 text-cyan/70">TELEMETRY</h3>
+                    <h3 className="micro mb-3 mt-8">Metrics</h3>
                     <div className="grid grid-cols-3 gap-4 border-t border-line pt-4">
                       {project.metrics.map((m) => (
                         <div key={m.label}>
-                          <span className="hud-label">{m.label}</span>
+                          <span className="micro">{m.label}</span>
                           <p
-                            className="mt-1 font-display text-2xl font-bold tabular"
-                            style={{ color }}
+                            className="tabular mt-1 font-display text-2xl font-black text-fg"
                           >
                             {m.value}
                           </p>
@@ -308,12 +308,12 @@ export function ProjectDossier({
 
                     <dl className="mt-8 space-y-3 border-t border-line pt-4">
                       {[
-                        ["ROLE", project.role],
-                        ["CATEGORY", project.category],
-                        ["STATUS", "DEPLOYED"],
+                        ["Role", project.role],
+                        ["Category", project.category],
+                        ["Status", "Shipped"],
                       ].map(([k, v]) => (
                         <div key={k} className="flex justify-between gap-4">
-                          <dt className="hud-label">{k}</dt>
+                          <dt className="micro">{k}</dt>
                           <dd className="font-mono text-xs uppercase text-fg">{v}</dd>
                         </div>
                       ))}
@@ -324,12 +324,10 @@ export function ProjectDossier({
 
               {/* Footer CTA */}
               <div className="flex shrink-0 items-center justify-between gap-4 border-t border-line px-6 py-4">
-                <span className="hud-label hidden sm:inline">
-                  ESC TO CLOSE
-                </span>
+                <span className="micro hidden sm:inline">Esc to close</span>
                 <Link
                   href={`/work/${project.slug}`}
-                  className="group inline-flex items-center gap-2 border border-line-strong px-5 py-3 font-mono text-xs uppercase tracking-[0.2em] text-fg transition-colors hover:bg-cyan hover:text-bg"
+                  className="group inline-flex items-center gap-2 rounded-full bg-signal px-5 py-3 font-mono text-[0.6875rem] uppercase tracking-[0.2em] text-ink transition-transform duration-300 hover:scale-[1.03]"
                 >
                   Open full case file
                   <ArrowUpRight

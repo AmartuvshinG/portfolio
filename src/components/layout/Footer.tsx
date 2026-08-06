@@ -3,50 +3,54 @@
 import { ArrowUp } from "lucide-react";
 import { navLinks, socials, profile, contact } from "@/lib/content";
 import { useSmoothScroll } from "@/components/layout/SmoothScroll";
-import { GlitchText } from "@/components/motion/GlitchText";
-import { cn } from "@/lib/utils";
 
+/**
+ * Footer, continuing the dark closing act — it carries `data-act="void"` so the
+ * chrome above it stays inverted all the way to the bottom of the document
+ * instead of snapping back to paper over a black background.
+ */
 export function Footer() {
   const { scrollTo } = useSmoothScroll();
   const year = new Date().getFullYear();
 
   return (
-    <footer className="relative border-t border-line-strong bg-surface/40">
-      {/* Marquee wordmark */}
-      <div className="overflow-hidden border-b border-line py-6">
-        <div className="animate-marquee flex shrink-0 items-center gap-8 whitespace-nowrap">
+    <footer
+      data-act="void"
+      className="relative bg-bg text-fg"
+      aria-label="Footer"
+    >
+      {/* Marquee wordmark. Set in the outline weight rather than solid: at 8rem
+          a filled wordmark is heavier than the closing headline above it and
+          steals the last word of the page. */}
+      <div className="overflow-hidden border-y border-line py-6">
+        <div className="animate-marquee flex shrink-0 items-center gap-10 whitespace-nowrap">
           {Array.from({ length: 8 }).map((_, i) => (
             <span
               key={i}
-              className="font-display text-6xl font-black uppercase text-faint md:text-8xl"
+              className="display-caps text-6xl text-transparent md:text-8xl"
+              style={{ WebkitTextStroke: "1px var(--color-faint)" }}
             >
-              {profile.wordmark} <span className="text-cyan">/</span>
+              {profile.wordmark} —
             </span>
           ))}
         </div>
       </div>
 
-      <div className="mx-auto grid max-w-[1600px] gap-10 px-5 py-14 md:grid-cols-[2fr_1fr_1fr] md:px-8">
-        {/* Brand + CTA */}
+      <div className="mx-auto grid max-w-[1800px] gap-10 px-5 py-14 md:grid-cols-[2fr_1fr_1fr] md:px-8">
         <div>
-          <GlitchText
-            text={profile.wordmark}
-            as="p"
-            className="font-display text-4xl font-black text-fg"
-          />
+          <p className="font-editorial text-4xl text-fg">{profile.fullName}</p>
           <p className="mt-4 max-w-sm text-sm leading-relaxed text-muted">
             {profile.role} — {profile.discipline}.
           </p>
           <a
             href={`mailto:${contact.email}`}
-            className="mt-6 inline-block border-b border-cyan/40 pb-1 font-mono text-sm text-cyan transition-colors hover:border-cyan"
+            className="signal-underline mt-6 inline-block font-mono text-sm text-fg"
           >
             {contact.email}
           </a>
         </div>
 
-        {/* Sitemap */}
-        <FooterCol title="INDEX">
+        <FooterCol title="Index">
           {navLinks.map((l) => (
             <li key={l.href}>
               <a
@@ -63,8 +67,7 @@ export function Footer() {
           ))}
         </FooterCol>
 
-        {/* Socials */}
-        <FooterCol title="CHANNELS">
+        <FooterCol title="Elsewhere">
           {socials.map((s) => (
             <li key={s.label}>
               <a
@@ -74,7 +77,7 @@ export function Footer() {
                 className="group flex items-center justify-between gap-4 font-mono text-xs uppercase tracking-widest text-muted transition-colors hover:text-fg"
               >
                 {s.label}
-                <span className="text-cyan opacity-0 transition-opacity group-hover:opacity-100">
+                <span className="opacity-0 transition-opacity group-hover:opacity-60">
                   {s.handle}
                 </span>
               </a>
@@ -83,24 +86,17 @@ export function Footer() {
         </FooterCol>
       </div>
 
-      {/* Status bar. Extra bottom padding clears the fixed console dock so the
-          last line of the page is never sitting underneath it. */}
-      <div className="flex flex-col items-start justify-between gap-3 border-t border-line px-5 py-4 pb-24 font-mono text-[0.65rem] uppercase tracking-[0.2em] text-faint md:flex-row md:items-center md:px-8 md:pb-4 md:pr-8 lg:pb-24">
+      <div className="flex flex-col items-start justify-between gap-3 border-t border-line px-5 py-5 font-mono text-[0.65rem] uppercase tracking-[0.2em] text-faint md:flex-row md:items-center md:px-8">
         <span>
-          © {year} {profile.fullName} — ALL SYSTEMS NOMINAL
+          © {year} {profile.fullName}
         </span>
-        <span className="flex items-center gap-4">
-          <span>LAT 00.000 / LON 00.000</span>
-          <button
-            type="button"
-            onClick={() => scrollTo(0)}
-            className={cn(
-              "flex items-center gap-2 border border-line px-3 py-1.5 text-muted transition-colors hover:border-cyan hover:text-cyan"
-            )}
-          >
-            <ArrowUp size={12} /> TOP
-          </button>
-        </span>
+        <button
+          type="button"
+          onClick={() => scrollTo(0)}
+          className="flex items-center gap-2 rounded-full border border-line px-4 py-2 transition-colors hover:border-current hover:text-fg"
+        >
+          <ArrowUp size={12} /> Top
+        </button>
       </div>
     </footer>
   );
@@ -115,7 +111,7 @@ function FooterCol({
 }) {
   return (
     <div>
-      <p className="hud-label mb-4 text-cyan/70">{title}</p>
+      <p className="micro mb-4">{title}</p>
       <ul className="space-y-3">{children}</ul>
     </div>
   );

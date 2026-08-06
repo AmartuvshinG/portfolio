@@ -2,121 +2,127 @@
 
 import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { ChevronLeft, ChevronRight } from "lucide-react";
 import { testimonials } from "@/lib/content";
-import { SectionHeader } from "./SectionHeader";
-import { ScrambleText } from "@/components/motion/ScrambleText";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
-import { cn } from "@/lib/utils";
+import { Contour } from "@/components/layout/Contour";
 
+/** Dwell per quote, ms. */
+const HOLD = 6500;
+
+/**
+ * One quote, set enormous, holding the whole viewport — KPR's full-bleed
+ * question frame.
+ *
+ * The old version was a three-across card grid, which is how testimonials are
+ * always done and is exactly why nobody reads them. At this scale the quote is
+ * unavoidable, and only one is on screen at a time so it has to be the one
+ * worth reading.
+ */
 export function Testimonials() {
   const reduced = useReducedMotion();
   const [index, setIndex] = useState(0);
-  const [paused, setPaused] = useState(false);
-  const count = testimonials.length;
-
-  const go = (dir: number) => setIndex((i) => (i + dir + count) % count);
 
   useEffect(() => {
-    if (reduced || paused) return;
-    const id = setInterval(() => setIndex((i) => (i + 1) % count), 6000);
+    if (reduced) return;
+    const id = setInterval(
+      () => setIndex((i) => (i + 1) % testimonials.length),
+      HOLD
+    );
     return () => clearInterval(id);
-  }, [reduced, paused, count]);
+  }, [reduced]);
+
+  // Reduced motion gets the full list rather than a carousel it cannot advance.
+  if (reduced) {
+    return (
+      <section
+        data-act="paper"
+        data-chapter="VOICES"
+        className="relative bg-bg py-24"
+        aria-label="Testimonials"
+      >
+        <div className="mx-auto max-w-[1800px] space-y-16 px-5 md:px-8 lg:px-16">
+          {testimonials.map((t) => (
+            <figure key={t.author}>
+              <blockquote className="font-editorial text-[clamp(1.75rem,4vw,3.25rem)] leading-[1.1] text-fg">
+                “{t.quote}”
+              </blockquote>
+              <figcaption className="micro mt-5">
+                {t.author} — {t.role}, {t.org}
+              </figcaption>
+            </figure>
+          ))}
+        </div>
+      </section>
+    );
+  }
 
   const active = testimonials[index];
 
   return (
-    <section className="relative border-t border-line py-24 md:py-36">
-      <div className="mx-auto max-w-[1600px] px-5 md:px-8">
-        <SectionHeader
-          index="TX"
-          label="INCOMING TRANSMISSIONS"
-          title="Signals"
-        />
+    <section
+      data-act="paper"
+      data-chapter="VOICES"
+      className="relative flex min-h-[92vh] items-center overflow-hidden bg-bg py-24"
+      aria-label="Testimonials"
+    >
+      <Contour
+        className="pointer-events-none absolute inset-0 h-full w-full text-ink"
+        opacity={0.09}
+      />
 
-        <div
-          className="mt-14 border border-line bg-surface/40"
-          onMouseEnter={() => setPaused(true)}
-          onMouseLeave={() => setPaused(false)}
-        >
-          {/* Transmission header */}
-          <div className="flex items-center justify-between border-b border-line px-5 py-3">
-            <span className="hud-label flex items-center gap-2 text-cyan">
-              <span className="h-1.5 w-1.5 animate-blink bg-cyan" />
-              SIGNAL LOCKED — CH.{String(index + 1).padStart(2, "0")}
-            </span>
-            <span className="hud-label tabular text-muted">
-              {String(index + 1).padStart(2, "0")} / {String(count).padStart(2, "0")}
-            </span>
-          </div>
+      <div className="relative mx-auto w-full max-w-[1800px] px-5 md:px-8 lg:px-16">
+        <div className="flex items-center gap-4">
+          <span className="micro tabular">
+            {String(index + 1).padStart(2, "0")} / {String(testimonials.length).padStart(2, "0")}
+          </span>
+          <span className="h-px flex-1 bg-current opacity-15" />
+        </div>
 
-          {/* Body */}
-          <div className="relative min-h-[19rem] p-6 md:min-h-[16rem] md:p-12">
-            <AnimatePresence mode="wait">
-              <motion.blockquote
-                key={index}
-                initial={{ opacity: 0, y: 16 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -16 }}
-                transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
-              >
-                <p className="max-w-4xl font-display text-2xl font-medium uppercase leading-tight text-fg md:text-4xl">
-                  <span className="text-cyan">“</span>
-                  {active.quote}
-                  <span className="text-cyan">”</span>
-                </p>
-                <footer className="mt-8 flex items-center gap-4">
-                  <span className="h-px w-10 bg-cyan" />
-                  <div>
-                    <ScrambleText
-                      text={active.author}
-                      immediate
-                      className="block font-mono text-sm uppercase tracking-widest text-fg"
-                    />
-                    <span className="mt-1 block font-mono text-xs uppercase tracking-widest text-muted">
-                      {active.role} — {active.org}
-                    </span>
-                  </div>
-                </footer>
-              </motion.blockquote>
-            </AnimatePresence>
-          </div>
+        {/* `mode="wait"` so the outgoing quote clears before the next arrives —
+            two blocks of 4vw serif cross-fading on top of each other is
+            illegible for the whole overlap. */}
+        <AnimatePresence mode="wait">
+          <motion.figure
+            key={active.author}
+            initial={{ opacity: 0, y: 28 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+            className="mt-10"
+          >
+            <blockquote className="font-editorial text-[clamp(2rem,5.4vw,5rem)] leading-[1.06] text-fg">
+              “{active.quote}”
+            </blockquote>
+            <figcaption className="mt-8 flex flex-wrap items-baseline gap-x-4">
+              <span className="font-display text-lg font-bold uppercase text-fg">
+                {active.author}
+              </span>
+              <span className="micro">
+                {active.role} — {active.org}
+              </span>
+            </figcaption>
+          </motion.figure>
+        </AnimatePresence>
 
-          {/* Controls */}
-          <div className="flex items-center justify-between border-t border-line px-5 py-4">
-            <div className="flex gap-2">
-              {testimonials.map((_, i) => (
-                <button
-                  key={i}
-                  type="button"
-                  aria-label={`Show transmission ${i + 1}`}
-                  onClick={() => setIndex(i)}
-                  className={cn(
-                    "h-1.5 transition-all",
-                    i === index ? "w-8 bg-cyan" : "w-4 bg-surface-2 hover:bg-muted"
-                  )}
-                />
-              ))}
-            </div>
-            <div className="flex gap-2">
-              <button
-                type="button"
-                aria-label="Previous transmission"
-                onClick={() => go(-1)}
-                className="flex h-9 w-9 items-center justify-center border border-line text-muted transition-colors hover:border-cyan hover:text-cyan"
-              >
-                <ChevronLeft size={16} />
-              </button>
-              <button
-                type="button"
-                aria-label="Next transmission"
-                onClick={() => go(1)}
-                className="flex h-9 w-9 items-center justify-center border border-line text-muted transition-colors hover:border-cyan hover:text-cyan"
-              >
-                <ChevronRight size={16} />
-              </button>
-            </div>
-          </div>
+        {/* Progress ticks double as the control. */}
+        <div className="mt-12 flex gap-2">
+          {testimonials.map((t, i) => (
+            <button
+              key={t.author}
+              type="button"
+              onClick={() => setIndex(i)}
+              aria-label={`Show quote from ${t.author}`}
+              className="group h-6 w-16"
+            >
+              <span
+                className={
+                  i === index
+                    ? "block h-0.5 w-full bg-signal"
+                    : "block h-0.5 w-full bg-current opacity-20 transition-opacity group-hover:opacity-50"
+                }
+              />
+            </button>
+          ))}
         </div>
       </div>
     </section>
