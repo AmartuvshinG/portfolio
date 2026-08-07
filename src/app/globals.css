@@ -1,45 +1,57 @@
 @import "tailwindcss";
 
 /* ============================================================================
-   PAPER / SIGNAL — editorial design system
-   Light-dominant. Paper is the default surface; dark is reserved for the work
-   world and the closing block. Tokens, silhouettes, act system.
+   SPECTRUM — neo-Tokyo design system
+   ----------------------------------------------------------------------------
+   One theme, three depths of it. The site is dark end to end; there is no light
+   act and no second palette. What changes as you scroll is *depth*, not mode.
+
+   The vibrancy rule, which is the whole discipline here:
+
+       chrome is achromatic — colour only ever appears as gradient, bloom or
+       rim light, never as a flat field.
+
+   Hairlines, mono labels, type and borders stay bone-on-ink. The spectrum ramp
+   does all the chromatic work. That separation is what lets the palette read as
+   vivid without reading as busy — the failure mode the previous four-accent HUD
+   scale hit, and the one a flat neon fill would hit again.
    ========================================================================== */
 
 @theme {
-  /* --- Paper: warm bone, never pure white. A neutral #fff under a lime accent
-         reads clinical; the warmth is what makes the acid green look chosen. */
-  --color-paper: #e9e7e1;
-  --color-paper-2: #dfdcd4;
-  --color-paper-3: #d4d0c6;
+  /* --- Ground. Petrol-black with a blue cast, never neutral #000: a true
+         neutral black kills the iridescence sitting on top of it. */
+  --color-void: #05060d;   /* deepest ground */
+  --color-deck: #0b0d1a;   /* raised surface */
+  --color-bloom: #141033;  /* the chromatic beat — one section, once */
+  --color-deck-2: #12162a; /* card fill on deck */
 
-  /* --- Ink */
-  --color-ink: #0b0b0c;
-  --color-ink-soft: #55534e;
-  --color-ink-faint: #8d8a83;
+  /* --- Foreground: cool bone, not white. */
+  --color-bone: #eceefb;
+  --color-bone-soft: #8a8fa8;
+  --color-bone-faint: #4d5166;
 
-  /* --- The dark act */
-  --color-void: #07070a;
-  --color-void-2: #101015;
-  --color-void-3: #1a1a21;
+  /* --- The spectrum ramp. THE accent — a ramp, not a colour. Applied as
+         --grad-spectrum wherever a gradient can go. The three stops exist
+         individually only for three.js rim lights and single-pixel details. */
+  --spectrum-1: #ff2d8f;  /* magenta */
+  --spectrum-2: #7b5cff;  /* violet  */
+  --spectrum-3: #22e0ff;  /* cyan    */
+  --gradient-spectrum: linear-gradient(100deg, #ff2d8f, #7b5cff, #22e0ff);
 
-  /* --- Accents. One signal colour, one flat. Restraint is the whole point:
-         the previous four-accent HUD scale is what made the site read busy. */
-  --color-signal: #c6ff3d;        /* acid lime — fills, rules, pills. NEVER text on paper. */
-  --color-signal-deep: #7ba300;   /* the same hue dropped to 4.6:1 on paper, for when it must be text */
-  --color-violet: #b9a8e8;        /* flat-colour interstitial */
-  --color-violet-deep: #4a3a7a;
+  /* Flat fallback for the handful of places a gradient genuinely cannot go:
+     1px dots, focus rings, caret. Magenta because it holds up smallest. */
+  --color-signal: #ff2d8f;
 
-  /* --- Hairlines. Resolved per act by the [data-act] blocks below. */
-  --color-line: rgba(11, 11, 12, 0.14);
-  --color-line-strong: rgba(11, 11, 12, 0.34);
+  /* --- Hairlines. Resolved per depth by the [data-act] blocks below. */
+  --color-line: rgba(236, 238, 251, 0.12);
+  --color-line-strong: rgba(236, 238, 251, 0.3);
 
   /* --- Semantic aliases. Components style against these and never against a
-         literal act colour, which is what lets the act system invert them. */
-  --color-bg: var(--color-paper);
-  --color-fg: var(--color-ink);
-  --color-muted: var(--color-ink-soft);
-  --color-faint: var(--color-ink-faint);
+         literal depth colour, which is what lets the act system shift them. */
+  --color-bg: var(--color-void);
+  --color-fg: var(--color-bone);
+  --color-muted: var(--color-bone-soft);
+  --color-faint: var(--color-bone-faint);
 
   /* --- Typography (wired to next/font CSS variables in layout.tsx) */
   --font-editorial: var(--font-instrument), "Times New Roman", serif;
@@ -47,11 +59,11 @@
   --font-display: var(--font-archivo), "Arial Black", sans-serif;
   --font-mono: var(--font-mono-hud), ui-monospace, "Courier New", monospace;
 
-  /* --- Radius: soft, not machined. */
-  --radius-sm: 4px;
-  --radius-md: 10px;
-  --radius-lg: 18px;
-  --radius-xl: 28px;
+  /* --- Radius: machined, not soft. ref1's panels are cut, not rounded. */
+  --radius-sm: 2px;
+  --radius-md: 6px;
+  --radius-lg: 12px;
+  --radius-xl: 20px;
 
   /* --- Motion */
   --ease-expo: cubic-bezier(0.16, 1, 0.3, 1);
@@ -65,59 +77,69 @@
   --z-frame: 70;
   --z-overlay: 80;
   --z-modal: 90;
-  --z-cursor: 100;
   --z-preloader: 120;
+  --z-cursor: 130; /* above the preloader and the route wipe, deliberately */
 }
 
 /* ---------------------------------------------------------------------------
-   Act system
+   Depth system
    ---------------------------------------------------------------------------
    Sections declare data-act; ActTheme.tsx mirrors the active one onto <html>.
-   Everything fixed (nav, frame, cursor) inverts from that single attribute —
-   without it the site reads as two disconnected websites bolted together.
+   Everything fixed (nav, frame, cursor) reads from that single attribute.
+
+   These blocks are unlayered ON PURPOSE — they must outrank Tailwind's layers
+   so a depth change wins over a utility. That is the mirror image of the
+   `border-color` hazard documented under Base below.
    ------------------------------------------------------------------------- */
 :root,
-[data-act="paper"] {
-  --color-bg: var(--color-paper);
-  --color-fg: var(--color-ink);
-  --color-muted: var(--color-ink-soft);
-  --color-faint: var(--color-ink-faint);
-  --color-line: rgba(11, 11, 12, 0.14);
-  --color-line-strong: rgba(11, 11, 12, 0.34);
-  /* On paper the lime has a 1.4:1 contrast ratio — unusable as text. Anything
-     reading `--color-accent-text` gets the deepened hue instead. */
-  --color-accent-text: var(--color-signal-deep);
-  color-scheme: light;
-}
-
-[data-act="flat"] {
-  --color-bg: var(--color-violet);
-  --color-fg: #17102b;
-  --color-muted: rgba(23, 16, 43, 0.66);
-  --color-faint: rgba(23, 16, 43, 0.42);
-  --color-line: rgba(23, 16, 43, 0.18);
-  --color-line-strong: rgba(23, 16, 43, 0.38);
-  --color-accent-text: #2f1f57;
-  color-scheme: light;
-}
-
 [data-act="void"] {
   --color-bg: var(--color-void);
-  --color-fg: #f4f3ef;
-  --color-muted: #8f8d87;
-  --color-faint: #56544f;
-  --color-line: rgba(244, 243, 239, 0.14);
-  --color-line-strong: rgba(244, 243, 239, 0.32);
-  /* 17:1 on void — here the raw lime is safe as text. */
-  --color-accent-text: var(--color-signal);
+  --color-surface: var(--color-deck);
+  --color-fg: var(--color-bone);
+  --color-muted: var(--color-bone-soft);
+  --color-faint: var(--color-bone-faint);
+  --color-line: rgba(236, 238, 251, 0.12);
+  --color-line-strong: rgba(236, 238, 251, 0.3);
+  color-scheme: dark;
+}
+
+[data-act="deck"] {
+  --color-bg: var(--color-deck);
+  --color-surface: var(--color-deck-2);
+  --color-fg: var(--color-bone);
+  --color-muted: #9297b0;
+  --color-faint: #565b74;
+  --color-line: rgba(236, 238, 251, 0.14);
+  --color-line-strong: rgba(236, 238, 251, 0.32);
+  color-scheme: dark;
+}
+
+/* The one chromatic ground on the site. Still dark — it is a *charged* black,
+   not a colour field. The bloom washes are painted by the section itself. */
+[data-act="bloom"] {
+  --color-bg: var(--color-bloom);
+  --color-surface: #1c1745;
+  --color-fg: #f4f2ff;
+  --color-muted: #a99ede;
+  --color-faint: #6b5fa8;
+  --color-line: rgba(244, 242, 255, 0.16);
+  --color-line-strong: rgba(244, 242, 255, 0.36);
   color-scheme: dark;
 }
 
 /* ---------------------------------------------------------------------------
    Base
    ------------------------------------------------------------------------- */
-* {
-  border-color: var(--color-line);
+
+/* MUST stay inside `@layer base`. Unlayered, this outranks every cascade layer
+   — including Tailwind's `utilities` — so as a bare rule it silently beat every
+   `border-*` utility on the site. That is what made the cursor ring invisible:
+   `border-current` resolved to `--color-line` and then got halved again by the
+   ring's own opacity. Same class of bug as the `.display-caps` one below. */
+@layer base {
+  * {
+    border-color: var(--color-line);
+  }
 }
 
 html {
@@ -144,7 +166,7 @@ body {
 
 ::selection {
   background: var(--color-signal);
-  color: #0b0b0c;
+  color: #05060d;
 }
 
 ::-webkit-scrollbar {
@@ -163,7 +185,7 @@ body {
 }
 
 :focus-visible {
-  outline: 2px solid var(--color-fg);
+  outline: 2px solid var(--color-signal);
   outline-offset: 3px;
 }
 
@@ -173,9 +195,7 @@ body {
 
    MUST stay inside `@layer base`. Unlayered CSS outranks every layer, so as a
    bare rule this silently beat `.display-caps` on any heading and every
-   oversized grotesk moment on the site rendered as serif instead. (The
-   `[data-act]` blocks above are unlayered on purpose, for the same reason in
-   reverse — they need to win.) */
+   oversized grotesk moment on the site rendered as serif instead. */
 @layer base {
   h1, h2, h3, h4, h5, h6 {
     font-family: var(--font-editorial);
@@ -190,7 +210,10 @@ body {
   font-feature-settings: "tnum";
 }
 
-/* Hide native cursor while the custom ring is active */
+/* Hide native cursor while the custom ring is active. Applied by HudCursor on
+   the same condition that mounts the ring — `(pointer: fine)` AND a wide
+   viewport. If those two ever diverge you get `cursor: none` with nothing
+   drawn, i.e. no cursor at all. */
 html.hud-cursor,
 html.hud-cursor * {
   cursor: none !important;
@@ -209,9 +232,9 @@ html.hud-cursor * {
   font-family: var(--font-mono);
 }
 
-/* KPR's register: oversized caps grotesk, near-zero leading, tight tracking.
-   The negative letter-spacing is doing real work at 12vw — without it the
-   word gaps blow open and the block stops reading as one mass. */
+/* Oversized caps grotesk, near-zero leading, tight tracking. The negative
+   letter-spacing is doing real work at 22vw — without it the word gaps blow
+   open and the block stops reading as one mass. */
 @utility display-caps {
   font-family: var(--font-display);
   font-weight: 900;
@@ -220,7 +243,8 @@ html.hud-cursor * {
   line-height: 0.84;
 }
 
-/* Micro-label: the entire surviving HUD vocabulary. */
+/* Micro-label: the surviving HUD vocabulary, straight off ref3's tiny
+   technical metadata. */
 @utility micro {
   font-family: var(--font-mono);
   text-transform: uppercase;
@@ -230,90 +254,102 @@ html.hud-cursor * {
   color: var(--color-muted);
 }
 
-/* Lime as an underline rather than as ink — the Lando move. Safe at any size
-   because the text itself stays --color-fg. */
-@utility signal-underline {
-  background-image: linear-gradient(var(--color-signal), var(--color-signal));
+/* Bracketed label, restored from NEXUS for the navbar and section headers. */
+@utility hud-label {
+  font-family: var(--font-mono);
+  text-transform: uppercase;
+  letter-spacing: 0.28em;
+  font-size: 0.625rem;
+  line-height: 1;
+  color: var(--color-muted);
+}
+
+/* The ramp as text. Background-clip means the glyphs carry the gradient rather
+   than sitting on it — the only way colour touches type in this system. */
+@utility spectrum-text {
+  background-image: var(--gradient-spectrum);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* The ramp as an underline. Safe at any size because the text stays --color-fg. */
+@utility spectrum-underline {
+  background-image: var(--gradient-spectrum);
   background-repeat: no-repeat;
   background-position: 0 100%;
-  background-size: 100% 0.28em;
-  padding-bottom: 0.05em;
+  background-size: 100% 0.14em;
+  padding-bottom: 0.12em;
+}
+
+/* A 1px ramp rule. Used for dividers that need to carry the accent. */
+@utility spectrum-rule {
+  background-image: var(--gradient-spectrum);
 }
 
 /* ---------------------------------------------------------------------------
-   Silhouettes
+   Silhouettes — ref1's cut corners. Harder and more angular than the previous
+   soft notch, which was ref2's shape.
    ------------------------------------------------------------------------- */
-/* Lando's card: one corner cut away into a tab. */
 @utility notch-card {
   clip-path: polygon(
     0 0,
-    100% 0,
-    100% calc(100% - 26px),
-    calc(100% - 34px) 100%,
-    0 100%
+    calc(100% - 22px) 0,
+    100% 22px,
+    100% 100%,
+    22px 100%,
+    0 calc(100% - 22px)
   );
 }
 @utility notch-card-sm {
   clip-path: polygon(
     0 0,
-    100% 0,
-    100% calc(100% - 14px),
-    calc(100% - 18px) 100%,
-    0 100%
-  );
-}
-
-/* KPR's dossier folder: a tab riding on the top-left edge. */
-@utility folder-tab {
-  clip-path: polygon(
-    0 14px,
-    34% 14px,
-    38% 0,
-    100% 0,
+    calc(100% - 12px) 0,
+    100% 12px,
     100% 100%,
-    0 100%
+    12px 100%,
+    0 calc(100% - 12px)
   );
 }
 
-@utility pill {
-  border-radius: 999px;
+/* Single-corner chamfers, restored from NEXUS for the navbar console. */
+@utility chamfer-lg {
+  clip-path: polygon(0 0, 100% 0, 100% calc(100% - 18px), calc(100% - 18px) 100%, 0 100%);
+}
+@utility chamfer-sm {
+  clip-path: polygon(0 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%);
 }
 
 /* ---------------------------------------------------------------------------
    Surfaces
    ------------------------------------------------------------------------- */
-@utility paper-card {
-  background: var(--color-paper);
+@utility deck-card {
+  background: var(--color-surface);
   border: 1px solid var(--color-line);
 }
 
-@utility void-card {
-  background: var(--color-void-2);
-  border: 1px solid rgba(244, 243, 239, 0.1);
-}
-
-/* Frosted panel that works on either act. */
 @utility glass {
-  background: color-mix(in srgb, var(--color-bg) 72%, transparent);
-  backdrop-filter: blur(16px) saturate(1.15);
-  -webkit-backdrop-filter: blur(16px) saturate(1.15);
+  background: color-mix(in srgb, var(--color-bg) 74%, transparent);
+  backdrop-filter: blur(16px) saturate(1.25);
+  -webkit-backdrop-filter: blur(16px) saturate(1.25);
   border: 1px solid var(--color-line);
 }
 
-/* Paper grain. Kept extremely low — it should register as texture at 100% zoom
-   and vanish in a screenshot, not read as noise. */
-@utility grain {
-  position: relative;
+/* Restored from NEXUS for the mobile nav sheet. */
+@utility holo-grid {
+  background-image:
+    linear-gradient(var(--color-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--color-line) 1px, transparent 1px);
+  background-size: 48px 48px;
 }
-@utility grain-layer {
-  background-image: repeating-radial-gradient(
-    circle at 0 0,
-    rgba(11, 11, 12, 0.035) 0,
-    rgba(11, 11, 12, 0.035) 1px,
-    transparent 1px,
-    transparent 3px
-  );
-  background-size: 3px 3px;
+
+/* An iridescent bloom, the workhorse of the whole look. Sits behind content at
+   low opacity; this is where ref3's point-cloud glow lives in plain CSS. */
+@utility spectrum-bloom {
+  background-image:
+    radial-gradient(60% 50% at 18% 30%, rgba(255, 45, 143, 0.34), transparent 70%),
+    radial-gradient(55% 55% at 78% 22%, rgba(34, 224, 255, 0.28), transparent 70%),
+    radial-gradient(70% 60% at 50% 92%, rgba(123, 92, 255, 0.32), transparent 72%);
 }
 
 /* ---------------------------------------------------------------------------
@@ -323,24 +359,24 @@ html.hud-cursor * {
   0% { transform: translateX(0); }
   100% { transform: translateX(-50%); }
 }
-@keyframes float-slow {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-10px); }
-}
-@keyframes contour-drift {
-  0% { transform: translate3d(0, 0, 0) scale(1.06); }
-  50% { transform: translate3d(-1.5%, 1%, 0) scale(1.1); }
-  100% { transform: translate3d(0, 0, 0) scale(1.06); }
-}
 @keyframes soft-blink {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.3; }
 }
+/* Slow hue travel along the ramp. Drives the aperture slab and the nebula. */
+@keyframes spectrum-drift {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1.04); opacity: 0.9; }
+  50% { transform: translate3d(-1.5%, 1.5%, 0) scale(1.1); opacity: 1; }
+}
+@keyframes breathe {
+  0%, 100% { transform: scaleY(1) scaleX(1); opacity: 0.86; }
+  50% { transform: scaleY(1.03) scaleX(1.015); opacity: 1; }
+}
 
 @utility animate-marquee { animation: marquee 32s linear infinite; }
-@utility animate-float { animation: float-slow 7s var(--ease-power) infinite; }
-@utility animate-contour { animation: contour-drift 40s ease-in-out infinite; }
 @utility animate-blink { animation: soft-blink 1.8s ease-in-out infinite; }
+@utility animate-drift { animation: spectrum-drift 34s ease-in-out infinite; }
+@utility animate-breathe { animation: breathe 9s ease-in-out infinite; }
 
 /* ---------------------------------------------------------------------------
    Reveal primitive (opacity+transform; JS toggles .is-in)
@@ -371,15 +407,5 @@ html.hud-cursor * {
   .reveal {
     opacity: 1;
     transform: none;
-  }
-
-  /* Fall back from the fanned capability deck to the plain grid at every
-     width. Decided in CSS rather than from a JS media query so there is no
-     first-paint swap between the two layouts. */
-  [data-capability-deck] {
-    display: none;
-  }
-  [data-capability-grid] {
-    display: grid;
   }
 }

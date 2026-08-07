@@ -104,11 +104,12 @@ export function ContactForm() {
       <button
         type="submit"
         disabled={status !== "idle"}
+        style={{ backgroundImage: "var(--gradient-spectrum)" }}
         className={cn(
-          "group relative mt-4 flex w-fit items-center justify-center gap-3 rounded-full px-7 py-3.5 font-mono text-[0.6875rem] uppercase tracking-[0.2em] transition-transform duration-300",
-          // Ink on lime: 15:1. Lime on anything is the inverse of readable, so
-          // the fill carries the colour and the label stays dark.
-          "bg-signal text-ink hover:scale-[1.03] disabled:opacity-70"
+          "group relative mt-4 flex w-fit items-center justify-center gap-3 px-7 py-3.5 font-mono text-[0.6875rem] uppercase tracking-[0.2em] transition-transform duration-300",
+          // The ramp carries the colour and the label stays dark against it.
+          // Bone on magenta is only ~3:1 — the fill has to be the bright side.
+          "chamfer-sm text-void hover:scale-[1.03] disabled:opacity-70"
         )}
       >
         {status === "idle" && (
@@ -154,7 +155,7 @@ function Field({
       >
         <span>{label}</span>
         {error && (
-          <span id={`${name}-error`} className="text-[#ff6b1f]" role="alert">
+          <span id={`${name}-error`} className="text-[--spectrum-1]" role="alert">
             {error}
           </span>
         )}

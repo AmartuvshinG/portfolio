@@ -14,7 +14,7 @@ export default function Template({ children }: { children: React.ReactNode }) {
     <>
       <motion.div
         aria-hidden
-        className="pointer-events-none fixed inset-0 z-[110] bg-ink"
+        className="pointer-events-none fixed inset-0 z-[110] bg-void"
         initial={{ scaleY: 1 }}
         animate={{ scaleY: 0 }}
         transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}

@@ -6,7 +6,7 @@ import { socials } from "@/lib/content";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
 
 /**
- * The fanned arc — Lando's closing move.
+ * The fanned arc — the closing move.
  *
  * Cards are splayed along a shallow arc, each rotated to its own tangent and
  * dropped by the cosine of its offset so the row curves. Hovering one lifts it
@@ -51,7 +51,7 @@ export function SocialFan() {
               href={social.href}
               target="_blank"
               rel="noreferrer noopener"
-              className="notch-card-sm block w-24 overflow-hidden bg-void-2 ring-1 ring-inset ring-white/15 sm:w-32 md:w-40"
+              className="notch-card-sm block w-24 overflow-hidden bg-void-2 ring-1 ring-inset ring-line sm:w-32 md:w-40"
             >
               <div className="relative aspect-[3/4] w-full">
                 <Image
@@ -62,7 +62,7 @@ export function SocialFan() {
                   className="object-cover opacity-70"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-void to-transparent" />
-                <span className="absolute inset-x-0 bottom-0 p-3 font-mono text-[0.6rem] uppercase tracking-[0.14em] text-paper">
+                <span className="absolute inset-x-0 bottom-0 p-3 font-mono text-[0.6rem] uppercase tracking-[0.14em] text-fg">
                   {social.label}
                 </span>
               </div>

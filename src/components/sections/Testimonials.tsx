@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { testimonials } from "@/lib/content";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
-import { Contour } from "@/components/layout/Contour";
+import { Nebula } from "@/components/layout/Nebula";
 
 /** Dwell per quote, ms. */
 const HOLD = 6500;
@@ -35,7 +35,7 @@ export function Testimonials() {
   if (reduced) {
     return (
       <section
-        data-act="paper"
+        data-act="deck"
         data-chapter="VOICES"
         className="relative bg-bg py-24"
         aria-label="Testimonials"
@@ -60,14 +60,14 @@ export function Testimonials() {
 
   return (
     <section
-      data-act="paper"
+      data-act="deck"
       data-chapter="VOICES"
       className="relative flex min-h-[92vh] items-center overflow-hidden bg-bg py-24"
       aria-label="Testimonials"
     >
-      <Contour
-        className="pointer-events-none absolute inset-0 h-full w-full text-ink"
-        opacity={0.09}
+      <Nebula
+        className="pointer-events-none absolute inset-0 h-full w-full"
+        opacity={0.34}
       />
 
       <div className="relative mx-auto w-full max-w-[1800px] px-5 md:px-8 lg:px-16">

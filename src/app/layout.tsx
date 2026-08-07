@@ -10,7 +10,7 @@ import { HudCursor } from "@/components/hud/HudCursor";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 
-/** Editorial display serif — the Lando register. */
+/** Editorial display serif — the one non-grotesk voice on the site. */
 const instrument = Instrument_Serif({
   subsets: ["latin"],
   weight: "400",
@@ -19,7 +19,7 @@ const instrument = Instrument_Serif({
   display: "swap",
 });
 
-/** Variable grotesk. Body copy at 400–500, KPR's oversized caps at 900. */
+/** Variable grotesk. Body copy at 400–500, oversized display caps at 900. */
 const archivo = Archivo({
   subsets: ["latin"],
   variable: "--font-archivo",
@@ -45,9 +45,9 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  /* Matches the opening act. The browser chrome should agree with the paper,
+  /* Matches the opening act. The browser chrome should agree with the ground,
      not with a dark theme the site no longer has. */
-  themeColor: "#e9e7e1",
+  themeColor: "#05060d",
   width: "device-width",
   initialScale: 1,
 };
@@ -58,15 +58,15 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      /* Seeded to the opening act so first paint is already paper — waiting for
+      /* Seeded to the opening act so first paint is already the base void — waiting for
          ActTheme to mount would flash the wrong surface. */
-      data-act="paper"
+      data-act="void"
       className={`${instrument.variable} ${archivo.variable} ${monoHud.variable} h-full`}
     >
       <body className="min-h-full antialiased">
         <a
           href="#main"
-          className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[200] focus:bg-ink focus:px-4 focus:py-2 focus:font-mono focus:text-xs focus:text-paper"
+          className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[200] focus:bg-void focus:px-4 focus:py-2 focus:font-mono focus:text-xs focus:text-fg"
         >
           Skip to content
         </a>

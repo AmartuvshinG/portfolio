@@ -29,12 +29,12 @@ function drawGeneratedPanel(
 ) {
   const tint = accentColor[project.accent];
 
-  ctx.fillStyle = "#101015";
+  ctx.fillStyle = "#0b0d1a";
   ctx.fillRect(0, 0, W, H);
 
   // Accent wash, weighted to one side so the four cards don't read identically.
   // Kept light: the card also carries an additive rim plate in the scene, and
-  // the two compounding turned the lime project into a solid green panel.
+  // the two compounding turned the magenta project into a solid pink panel.
   const wash = ctx.createLinearGradient(W, 0, W * 0.2, H);
   wash.addColorStop(0, `${tint}22`);
   wash.addColorStop(1, "transparent");
@@ -42,7 +42,7 @@ function drawGeneratedPanel(
   ctx.fillRect(0, 0, W, H);
 
   // Hairline grid
-  ctx.strokeStyle = "rgba(244,243,239,0.06)";
+  ctx.strokeStyle = "rgba(236,238,251,0.07)";
   ctx.lineWidth = 1;
   for (let x = 0; x < W; x += 48) {
     ctx.beginPath();
@@ -73,8 +73,8 @@ function drawCover(ctx: CanvasRenderingContext2D, img: HTMLImageElement) {
 
   // Bottom scrim, so the title stays readable over any screenshot.
   const scrim = ctx.createLinearGradient(0, H * 0.45, 0, H);
-  scrim.addColorStop(0, "rgba(7,7,10,0)");
-  scrim.addColorStop(1, "rgba(7,7,10,0.88)");
+  scrim.addColorStop(0, "rgba(5,6,13,0)");
+  scrim.addColorStop(1, "rgba(5,6,13,0.9)");
   ctx.fillStyle = scrim;
   ctx.fillRect(0, 0, W, H);
 }
@@ -90,7 +90,7 @@ function drawChrome(ctx: CanvasRenderingContext2D, project: Project) {
   ctx.font = "500 20px JetBrains Mono, ui-monospace, monospace";
   ctx.fillText(project.index, pad, pad + 18);
 
-  ctx.fillStyle = "rgba(244,243,239,0.55)";
+  ctx.fillStyle = "rgba(236,238,251,0.55)";
   ctx.fillText(project.category.toUpperCase(), pad + 56, pad + 18);
 
   // Year, top right
@@ -100,7 +100,7 @@ function drawChrome(ctx: CanvasRenderingContext2D, project: Project) {
   ctx.textAlign = "left";
 
   // Title, bottom left
-  ctx.fillStyle = "#f4f3ef";
+  ctx.fillStyle = "#eceefb";
   ctx.font = "900 62px Archivo, Arial Black, sans-serif";
   ctx.fillText(project.title, pad, H - pad - 30);
 

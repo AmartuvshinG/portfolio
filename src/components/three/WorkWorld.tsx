@@ -219,7 +219,7 @@ function Dust({ count = 420 }: { count?: number }) {
       </bufferGeometry>
       <pointsMaterial
         size={0.035}
-        color="#f4f3ef"
+        color="#eceefb"
         transparent
         opacity={0.5}
         sizeAttenuation
@@ -270,8 +270,8 @@ export default function WorkWorld({
       camera={{ position: [0, 0, 6], fov: 42, near: 0.1, far: 120 }}
       gl={{ antialias: true, alpha: false }}
       onCreated={({ gl, scene }) => {
-        gl.setClearColor("#07070a");
-        scene.fog = new THREE.Fog("#07070a", 18, 46);
+        gl.setClearColor("#05060d");
+        scene.fog = new THREE.Fog("#05060d", 18, 46);
       }}
     >
       <Rig progress={progress} />

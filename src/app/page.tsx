@@ -9,15 +9,15 @@ import { Timeline } from "@/components/sections/Timeline";
 import { Contact } from "@/components/sections/Contact";
 
 /**
- * The act sequence.
+ * The act sequence — depths of one dark theme, never a light/dark inversion.
  *
- * paper → flat → paper → VOID → paper … → VOID
+ * void → bloom → deck → VOID → deck … → VOID
  *
- * The two dark acts are the load-bearing structure: the work world in the
- * middle and the close at the end. Everything between them is paper, so each
- * drop into black lands as an event rather than as another background colour.
- * Reordering these is not a cosmetic change — the lavender flat exists to
- * establish that this page changes colour before the work world does it hard.
+ * The two full-void acts are the load-bearing structure: the work world in the
+ * middle and the close at the end. `deck` lifts a step between them so each
+ * drop back to the base black lands as an event rather than as more of the
+ * same. Reordering these is not a cosmetic change — the bloom exists to
+ * establish that this page shifts before the work world does it hard.
  */
 export default function Home() {
   return (

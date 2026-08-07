@@ -7,7 +7,7 @@ import type { GalleryImage } from "@/lib/content";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
 
 /**
- * The scattered archive — Lando's gallery.
+ * The scattered archive.
  *
  * Items are absolutely placed across a canvas several viewports tall at wildly
  * different scales, each drifting at its own rate. What separates this from a
@@ -67,7 +67,7 @@ function ScatterItem({ item }: { item: GalleryImage }) {
       className="absolute"
     >
       <div
-        className="relative w-full overflow-hidden bg-paper-2"
+        className="relative w-full overflow-hidden bg-surface"
         style={{ aspectRatio: `${item.width} / ${item.height}` }}
       >
         <Image
@@ -95,7 +95,7 @@ function StaticGrid({ items }: { items: GalleryImage[] }) {
     <div className="mx-auto grid max-w-[1800px] grid-cols-2 gap-4 px-5 md:grid-cols-3 md:px-8">
       {items.map((item) => (
         <figure key={item.src}>
-          <div className="relative aspect-[4/5] w-full overflow-hidden bg-paper-2">
+          <div className="relative aspect-[4/5] w-full overflow-hidden bg-surface">
             <Image
               src={item.src}
               alt={item.alt}

@@ -13,9 +13,12 @@ import { gsap, ScrollTrigger } from "@/lib/gsap";
  * What JS is for is the *fixed* chrome — navbar, chapter frame, cursor — which
  * lives outside every section and therefore has no act to inherit from. This
  * component mirrors whichever act currently sits under the navbar onto
- * `<html data-act>`, so that chrome inverts as boundaries pass beneath it.
- * Lando does exactly this with its logo, and it's the single detail that stops
- * a light site with a dark act reading as two different websites.
+ * `<html data-act>`, so that chrome shifts as boundaries pass beneath it.
+ *
+ * The three acts are *depths of one dark theme*, not modes. The site used to
+ * invert between a light and a dark palette here; that is what made it read as
+ * two websites bolted together, and it is gone. What changes now is how far
+ * down you are — void, deck, bloom — never whether the lights are on.
  *
  * The flip line is the navbar, not mid-viewport: switching at 50% would recolour
  * the logo while it still sits over the outgoing act.
@@ -24,11 +27,11 @@ import { gsap, ScrollTrigger } from "@/lib/gsap";
 /** Distance from the top of the viewport where one act hands over to the next. */
 const FLIP_LINE = 72;
 
-export type Act = "paper" | "flat" | "void";
+export type Act = "void" | "deck" | "bloom";
 
 /* --- Tiny store, so components that need the act as a *value* (rather than as
        a CSS variable) can subscribe without prop-drilling through the tree. */
-let current: Act = "paper";
+let current: Act = "void";
 const listeners = new Set<() => void>();
 
 function setAct(act: Act) {
@@ -38,7 +41,7 @@ function setAct(act: Act) {
   listeners.forEach((l) => l());
 }
 
-/** Reads the act currently under the navbar. `"paper"` during SSR. */
+/** Reads the act currently under the navbar. `"void"` during SSR. */
 export function useAct(): Act {
   return useSyncExternalStore(
     (l) => {
@@ -46,7 +49,7 @@ export function useAct(): Act {
       return () => listeners.delete(l);
     },
     () => current,
-    () => "paper" as Act
+    () => "void" as Act
   );
 }
 
@@ -65,7 +68,7 @@ export function ActTheme() {
         end: `bottom ${FLIP_LINE}px`,
         onToggle: (self) => {
           if (self.isActive) {
-            setAct((el.dataset.act as Act) ?? "paper");
+            setAct((el.dataset.act as Act) ?? "void");
           }
         },
       })

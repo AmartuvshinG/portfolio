@@ -5,7 +5,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
 import { useLockScroll } from "@/hooks/useLockScroll";
 import { profile } from "@/lib/content";
-import { Contour } from "@/components/layout/Contour";
+import { Nebula } from "@/components/layout/Nebula";
 
 /**
  * First-load curtain.
@@ -64,13 +64,13 @@ export function Preloader() {
         <motion.div
           key="preloader"
           aria-hidden
-          className="fixed inset-0 z-[120] flex flex-col justify-between overflow-hidden bg-paper px-5 py-5 text-ink md:px-8 md:py-6"
+          className="fixed inset-0 z-[120] flex flex-col justify-between overflow-hidden bg-void px-5 py-5 text-fg md:px-8 md:py-6"
           exit={{ y: "-100%" }}
           transition={{ duration: 0.9, ease: [0.76, 0, 0.24, 1] }}
         >
-          <Contour
+          <Nebula
             className="pointer-events-none absolute inset-0 h-full w-full"
-            opacity={0.16}
+            opacity={0.5}
           />
 
           <span className="micro relative">{profile.kicker}</span>
@@ -101,9 +101,10 @@ export function Preloader() {
           </div>
 
           {/* Fill rule, driven by the same counter */}
-          <div className="relative h-px w-full bg-ink/15">
+          <div className="relative h-px w-full bg-line">
             <motion.span
-              className="absolute inset-y-0 left-0 bg-signal"
+              className="absolute inset-y-0 left-0"
+              style={{ backgroundImage: "var(--gradient-spectrum)" }}
               animate={{ width: `${count}%` }}
               transition={{ duration: 0.1, ease: "linear" }}
             />

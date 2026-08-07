@@ -497,13 +497,19 @@ export function getProject(slug: string): Project | undefined {
 }
 
 /**
- * Per-project tint. The palette is down to one accent, so these are no longer
- * UI colours — they are rim lights in the 3D work world and wash tints on the
- * generated visuals, which is the one place four projects genuinely need to be
- * told apart at a glance. Literal hex, not tokens: three.js needs a real colour.
+ * Per-project tint — the three stops of the spectrum ramp, used individually.
+ *
+ * These are not UI colours. They are rim lights in the 3D work world and wash
+ * tints on the generated visuals, which is the one place several projects
+ * genuinely need to be told apart at a glance. Because they are the same three
+ * stops the ramp is built from, a project lit by one of them still reads as
+ * part of the same system rather than as a fourth palette.
+ *
+ * Literal hex, not tokens: three.js needs a real colour, not a CSS variable.
+ * Keep these in sync with --spectrum-1/2/3 in globals.css.
  */
 export const accentColor: Record<AccentKey, string> = {
-  accent: "#c6ff3d",
-  "accent-2": "#b9a8e8",
-  alert: "#ff6b1f",
+  accent: "#ff2d8f", // magenta
+  "accent-2": "#7b5cff", // violet
+  alert: "#22e0ff", // cyan
 };

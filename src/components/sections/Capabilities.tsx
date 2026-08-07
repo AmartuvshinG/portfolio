@@ -2,26 +2,26 @@ import { capabilities } from "@/lib/content";
 import { SectionHeader } from "./SectionHeader";
 import { CapabilityCard } from "./CapabilityCard";
 import { RevealStagger, Reveal } from "@/components/motion/Reveal";
-import { Contour } from "@/components/layout/Contour";
+import { Nebula } from "@/components/layout/Nebula";
 
 /**
- * Back onto paper after the lavender flat. The fanned deck that used to live
+ * Lifted onto the deck after the bloom. The fanned deck that used to live
  * here has moved to the closing block, where a splayed arc of cards is what the
- * Lando reference actually uses it for — running the same trick twice on one
+ * references actually use it for — running the same trick twice on one
  * page spends the surprise for nothing.
  */
 export function Capabilities() {
   return (
     <section
       id="capabilities"
-      data-act="paper"
+      data-act="deck"
       data-chapter="CRAFT"
       className="relative overflow-hidden bg-bg py-24 md:py-36"
       aria-label="Capabilities"
     >
-      <Contour
-        className="pointer-events-none absolute inset-0 h-full w-full text-ink"
-        opacity={0.1}
+      <Nebula
+        className="pointer-events-none absolute inset-0 h-full w-full"
+        opacity={0.38}
       />
 
       <div className="relative mx-auto max-w-[1800px] px-5 md:px-8 lg:px-16">

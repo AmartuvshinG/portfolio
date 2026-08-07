@@ -4,12 +4,12 @@ import { SocialFan } from "./SocialFan";
 import { Reveal } from "@/components/motion/Reveal";
 
 /**
- * The closing block: back to black, with the lime rising off the bottom edge.
+ * The closing block: the base void, with the ramp rising off the bottom edge.
  *
- * The page opened on paper and spent its middle there, so ending dark closes
- * the loop the work world opened rather than introducing a third idea. The
- * gradient is the one place the acid green is allowed to take real estate —
- * it's a fill behind everything, never a colour anything is set in.
+ * The page opened on the void and lifted through its middle, so dropping back
+ * to it here closes the loop the work world opened rather than introducing a
+ * third idea. This bloom is the one place the ramp is allowed real estate — it
+ * is a wash behind everything, never a colour anything is set in.
  */
 export function Contact() {
   return (
@@ -39,7 +39,7 @@ export function Contact() {
                 <dd className="mt-2">
                   <a
                     href={`mailto:${contact.email}`}
-                    className="signal-underline font-display text-xl font-semibold text-fg md:text-2xl"
+                    className="spectrum-underline font-display text-xl font-semibold text-fg md:text-2xl"
                   >
                     {contact.email}
                   </a>
@@ -66,15 +66,19 @@ export function Contact() {
         </div>
       </div>
 
-      {/* --- The fan, over the lime wash --- */}
+      {/* --- The fan, over the spectrum bloom --- */}
       <div className="relative mt-24 pb-24 md:mt-32">
-        {/* Sits behind the fan and bleeds off the bottom of the page. */}
+        {/* Sits behind the fan and bleeds off the bottom of the page. The whole
+            ramp is spread across the width here rather than stacked, so the
+            page closes on the full accent instead of on one stop of it — this
+            is the largest chromatic area on the site and the only place the
+            ramp is allowed to read as a field. */}
         <div
           aria-hidden
-          className="pointer-events-none absolute inset-x-0 bottom-0 h-[70%]"
+          className="spectrum-bloom pointer-events-none absolute inset-x-0 bottom-0 h-[85%] blur-[40px]"
           style={{
-            background:
-              "linear-gradient(0deg, rgba(198,255,61,0.75) 0%, rgba(198,255,61,0.18) 45%, transparent 100%)",
+            maskImage: "linear-gradient(0deg, #000 55%, transparent 100%)",
+            WebkitMaskImage: "linear-gradient(0deg, #000 55%, transparent 100%)",
           }}
         />
 

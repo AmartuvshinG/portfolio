@@ -39,7 +39,7 @@ export function ProjectVisual({
         className="absolute inset-0 opacity-40"
         style={{
           backgroundImage:
-            "linear-gradient(rgba(244,243,239,0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(244,243,239,0.06) 1px, transparent 1px)",
+            "linear-gradient(rgba(236,238,251,0.07) 1px, transparent 1px), linear-gradient(90deg, rgba(236,238,251,0.07) 1px, transparent 1px)",
           backgroundSize: "48px 48px",
         }}
       />
@@ -65,7 +65,7 @@ export function ProjectVisual({
         >
           {category}
         </span>
-        <span className="display-caps text-3xl text-paper/90 md:text-5xl">
+        <span className="display-caps text-3xl text-fg/90 md:text-5xl">
           {title}
         </span>
       </div>

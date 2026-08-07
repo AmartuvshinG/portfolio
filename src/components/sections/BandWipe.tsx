@@ -8,10 +8,10 @@ import { useReducedMotion } from "@/hooks/useReducedMotion";
 /**
  * The band wipe.
  *
- * Two enormous serif words sit centred on paper; as you scroll, a full-bleed
+ * Two enormous serif words sit centred on the deck; as you scroll, a full-bleed
  * image band grows out of the middle of the line and swallows them. The type is
  * never fully readable at the same moment the image is fully open, and that
- * tension is the whole trick — it's the single best frame in the Lando capture
+ * tension is the whole trick — it is the single best frame in the reference capture
  * and it costs one pinned section and one height transform.
  *
  * Reduced motion gets the band already open with the words above it, which
@@ -45,7 +45,7 @@ export function BandWipe({ words, src, alt, caption }: BandWipeProps) {
       // can't be skipped), and it warns if its target never hydrates.
       <section
         ref={ref}
-        data-act="paper"
+        data-act="deck"
         className="relative bg-bg py-20"
         aria-label={alt}
       >
@@ -71,7 +71,7 @@ export function BandWipe({ words, src, alt, caption }: BandWipeProps) {
   return (
     <section
       ref={ref}
-      data-act="paper"
+      data-act="deck"
       className="relative flex min-h-[110vh] flex-col items-center justify-center overflow-hidden bg-bg py-24"
       aria-label={alt}
     >
@@ -96,7 +96,7 @@ export function BandWipe({ words, src, alt, caption }: BandWipeProps) {
           className="object-cover"
         />
         {caption && (
-          <span className="micro absolute bottom-4 left-5 !text-white/70 md:left-8">
+          <span className="micro absolute bottom-4 left-5 !text-fg/70 md:left-8">
             {caption}
           </span>
         )}

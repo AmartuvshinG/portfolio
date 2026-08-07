@@ -46,10 +46,10 @@ class SceneBoundary extends Component<
 /**
  * The dark act.
  *
- * Everything before this is paper and everything after it returns to paper, so
- * the drop into black is the structural centre of the page — it is doing the
- * job KPR gives its full-bleed chapters, which is to make the browsing surface
- * feel like a different place rather than a different section.
+ * The deck lifts either side of this and drops away to full void here, so this
+ * is the structural centre of the page — it is doing the job the references
+ * give their full-bleed chapters, which is to make the browsing surface feel
+ * like a different place rather than a different section.
  *
  * Scroll is captured by a tall sticky container: the section is `SCROLL_VH`
  * tall, the canvas sticks to the viewport inside it, and the ratio between the

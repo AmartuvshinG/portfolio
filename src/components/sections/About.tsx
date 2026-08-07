@@ -4,24 +4,36 @@ import { Reveal, RevealStagger } from "@/components/motion/Reveal";
 import { fadeUp } from "@/lib/motion";
 
 /**
- * The lavender interstitial — KPR's flat-colour chapter.
+ * The charged interstitial — the one chromatic ground on the site.
  *
  * Its job is structural rather than informational: after a full viewport of
- * paper, a saturated flat is what tells the eye a chapter ended. The copy could
- * sit on paper and lose nothing; the *break* is the point, and it's also what
- * earns the drop into the dark work world two sections later by establishing
- * that this site changes colour when it changes subject.
+ * near-black, a ground that visibly holds colour is what tells the eye a
+ * chapter ended. The copy could sit on the base void and lose nothing; the
+ * *break* is the point, and it is what earns the drop into the work world two
+ * sections later by establishing that this site shifts when it changes subject.
+ *
+ * This used to be a flat lavender panel. Flat colour is the one thing the
+ * palette rule forbids, so the shift is carried by a bloom over a deep violet-
+ * black instead — same structural beat, without a second palette appearing for
+ * one section and then never again.
  */
 export function About() {
   return (
     <section
       id="about"
-      data-act="flat"
+      data-act="bloom"
       data-chapter="PROFILE"
       className="relative overflow-hidden bg-bg py-24 text-fg md:py-36"
       aria-label="Profile"
     >
-      <div className="mx-auto max-w-[1800px] px-5 md:px-8 lg:px-16">
+      {/* The charge. Sits under everything and bleeds past all four edges so it
+          never resolves into a shape with a boundary. */}
+      <div
+        aria-hidden
+        className="spectrum-bloom pointer-events-none absolute -inset-x-[10%] -inset-y-[20%] animate-drift opacity-45 blur-[90px]"
+      />
+
+      <div className="relative mx-auto max-w-[1800px] px-5 md:px-8 lg:px-16">
         <div className="grid gap-14 md:grid-cols-12">
           {/* Lead — set large in the serif, treated as a pull quote rather
               than as body copy with a heading over it. */}
@@ -48,7 +60,7 @@ export function About() {
             second attempt at the hero. */}
         <div className="mt-20 grid gap-10 md:mt-28 md:grid-cols-12 md:items-end">
           <Reveal className="md:col-span-5" variants={fadeUp}>
-            <div className="notch-card relative aspect-[5/6] w-full overflow-hidden bg-black/10">
+            <div className="notch-card relative aspect-[5/6] w-full overflow-hidden bg-void/40">
               <Image
                 src="https://picsum.photos/seed/amara-operator/900/1120"
                 alt={`Portrait of ${profile.fullName}`}

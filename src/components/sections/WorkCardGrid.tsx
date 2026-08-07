@@ -37,7 +37,7 @@ export function WorkCardGrid() {
             key={project.slug}
             href={`/work/${project.slug}`}
             onClick={open(project)}
-            className="notch-card group relative block overflow-hidden bg-void-2 ring-1 ring-inset ring-white/10"
+            className="notch-card group relative block overflow-hidden bg-void-2 ring-1 ring-inset ring-line"
           >
             <div className="relative aspect-[8/5] w-full overflow-hidden">
               <ShotImage

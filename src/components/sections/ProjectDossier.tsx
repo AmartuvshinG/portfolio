@@ -175,7 +175,7 @@ export function ProjectDossier({
             role="dialog"
             aria-modal="true"
             aria-labelledby="dossier-title"
-            className="notch-card absolute flex flex-col overflow-hidden bg-void-2 ring-1 ring-inset ring-white/12"
+            className="notch-card absolute flex flex-col overflow-hidden bg-void-2 ring-1 ring-inset ring-line"
             initial={
               reduced
                 ? { ...box, opacity: 0 }
@@ -213,7 +213,7 @@ export function ProjectDossier({
                 className="pointer-events-none absolute inset-0"
                 style={{
                   background:
-                    "linear-gradient(0deg, rgba(11, 11, 12, 0.95), transparent 65%)",
+                    "linear-gradient(0deg, rgba(5, 6, 13, 0.95), transparent 65%)",
                 }}
               />
               <button
@@ -327,7 +327,8 @@ export function ProjectDossier({
                 <span className="micro hidden sm:inline">Esc to close</span>
                 <Link
                   href={`/work/${project.slug}`}
-                  className="group inline-flex items-center gap-2 rounded-full bg-signal px-5 py-3 font-mono text-[0.6875rem] uppercase tracking-[0.2em] text-ink transition-transform duration-300 hover:scale-[1.03]"
+                  style={{ backgroundImage: "var(--gradient-spectrum)" }}
+                  className="chamfer-sm group inline-flex items-center gap-2 px-5 py-3 font-mono text-[0.6875rem] uppercase tracking-[0.2em] text-void transition-transform duration-300 hover:scale-[1.03]"
                 >
                   Open full case file
                   <ArrowUpRight

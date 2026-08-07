@@ -7,7 +7,7 @@ import { useSmoothScroll } from "@/components/layout/SmoothScroll";
 /**
  * Footer, continuing the dark closing act — it carries `data-act="void"` so the
  * chrome above it stays inverted all the way to the bottom of the document
- * instead of snapping back to paper over a black background.
+ * instead of snapping a step lighter over a black background.
  */
 export function Footer() {
   const { scrollTo } = useSmoothScroll();
@@ -44,7 +44,7 @@ export function Footer() {
           </p>
           <a
             href={`mailto:${contact.email}`}
-            className="signal-underline mt-6 inline-block font-mono text-sm text-fg"
+            className="spectrum-underline mt-6 inline-block font-mono text-sm text-fg"
           >
             {contact.email}
           </a>

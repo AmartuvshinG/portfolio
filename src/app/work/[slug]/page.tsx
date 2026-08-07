@@ -5,7 +5,7 @@ import { notFound } from "next/navigation";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import { projects, getProject } from "@/lib/content";
 import { Reveal } from "@/components/motion/Reveal";
-import { Contour } from "@/components/layout/Contour";
+import { Nebula } from "@/components/layout/Nebula";
 
 export function generateStaticParams() {
   return projects.map((p) => ({ slug: p.slug }));
@@ -26,7 +26,7 @@ export async function generateMetadata({
 }
 
 /**
- * The full case file. Paper, unlike the work world it's reached from — this is
+ * The full case file. Lifted to the deck, unlike the work world it is reached from — this is
  * the reading surface, and long-form copy set on black is a worse experience
  * than the atmosphere is worth.
  */
@@ -44,12 +44,12 @@ export default async function WorkDetail({
 
   return (
     <article
-      data-act="paper"
+      data-act="deck"
       className="relative bg-bg pb-28 pt-28 md:pt-36"
     >
-      <Contour
-        className="pointer-events-none absolute inset-0 h-full w-full text-ink"
-        opacity={0.07}
+      <Nebula
+        className="pointer-events-none absolute inset-0 h-full w-full"
+        opacity={0.3}
       />
 
       <div className="relative mx-auto max-w-[1400px] px-5 md:px-8 lg:px-16">
@@ -94,7 +94,7 @@ export default async function WorkDetail({
         </header>
 
         <Reveal className="mt-12">
-          <div className="notch-card relative aspect-[16/9] w-full overflow-hidden bg-paper-2">
+          <div className="notch-card relative aspect-[16/9] w-full overflow-hidden bg-surface">
             <Image
               src={project.image}
               alt={`${project.title} — project visual`}
@@ -132,7 +132,7 @@ export default async function WorkDetail({
           </div>
 
           <aside className="md:col-span-5">
-            <Reveal className="notch-card bg-paper-2 p-7 ring-1 ring-inset ring-ink/10">
+            <Reveal className="notch-card bg-surface p-7 ring-1 ring-inset ring-line">
               <h2 className="micro mb-5">Stack</h2>
               <div className="flex flex-wrap gap-2">
                 {project.stack.map((s) => (
