@@ -41,7 +41,13 @@ export function WorkCardGrid() {
             tilt={7}
             className="notch-card block bg-surface ring-1 ring-inset ring-line"
           >
-            <div className="relative aspect-[8/5] w-full overflow-hidden">
+            <div
+              className="relative aspect-[8/5] w-full overflow-hidden"
+              /* Unique per slug: two elements sharing a
+                 view-transition-name in one document makes the whole
+                 transition abort. */
+              style={{ viewTransitionName: `vt-shot-${project.slug}` }}
+            >
               <ShotImage
                 project={project}
                 sizes="(max-width: 768px) 100vw, 50vw"
@@ -55,7 +61,10 @@ export function WorkCardGrid() {
                 <span className="micro tabular">
                   {project.index} — {project.category}
                 </span>
-                <h3 className="mt-2 font-tech text-2xl font-bold uppercase leading-none text-fg md:text-3xl">
+                <h3
+                  className="mt-2 font-tech text-2xl font-bold uppercase leading-none text-fg md:text-3xl"
+                  style={{ viewTransitionName: `vt-title-${project.slug}` }}
+                >
                   {project.title}
                 </h3>
               </div>

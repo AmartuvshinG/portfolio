@@ -196,7 +196,7 @@ function Tile({
       aria-label={`${project.title} — open case file`}
       className={cn(
         "group notch-card-sm relative aspect-[97/70] w-full overflow-hidden",
-        "focus-ring ring-1 ring-inset ring-line transition-[transform,box-shadow] duration-500",
+        "ring-1 ring-inset ring-line transition-[transform,box-shadow] duration-500",
         !reduced && "hover:z-10 hover:shadow-[0_30px_80px_rgba(0,0,0,0.7)]"
       )}
       /* Hover applies the inverse of the plane, so the tile lands facing the

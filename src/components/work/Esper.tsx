@@ -191,7 +191,7 @@ function Plate({
         type="button"
         onClick={onClose}
         aria-label="Close"
-        className="focus-ring absolute right-4 top-4 flex h-10 w-10 items-center justify-center border border-line bg-void/70 text-fg transition-colors hover:border-line-strong"
+        className="absolute right-4 top-4 flex h-10 w-10 items-center justify-center border border-line bg-void/70 text-fg transition-colors hover:border-line-strong"
       >
         <X size={16} />
       </button>

@@ -168,7 +168,7 @@ function StaticGrid({
             type="button"
             onClick={() => onEnhance(item)}
             aria-label={`Enhance — ${item.alt}`}
-            className="focus-ring relative block aspect-[4/5] w-full overflow-hidden bg-surface"
+            className="relative block aspect-[4/5] w-full overflow-hidden bg-surface"
           >
             <Image
               src={item.src}

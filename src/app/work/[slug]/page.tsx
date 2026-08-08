@@ -62,7 +62,10 @@ export default async function WorkDetail({
           </div>
           <h1
             className="display-caps mt-6 text-fg"
-            style={{ fontSize: "clamp(1.9rem, 6vw, 5.5rem)" }}
+            style={{
+              fontSize: "clamp(1.9rem, 6vw, 5.5rem)",
+              viewTransitionName: `vt-title-${slug}`,
+            }}
           >
             {project.title}
           </h1>
@@ -88,7 +91,10 @@ export default async function WorkDetail({
         </header>
 
         <Reveal className="mt-12">
-          <div className="notch-card relative aspect-[16/9] w-full overflow-hidden bg-surface">
+          <div
+            className="notch-card relative aspect-[16/9] w-full overflow-hidden bg-surface"
+            style={{ viewTransitionName: `vt-shot-${slug}` }}
+          >
             <Image
               src={project.image}
               alt={`${project.title} — project visual`}

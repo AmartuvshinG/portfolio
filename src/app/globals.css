@@ -228,6 +228,11 @@ body {
 }
 
 :focus-visible {
+  /* One ring for the whole site, on the bare pseudo-class so that *every*
+     focusable element gets it without opting in — which matters most for the
+     things whose affordance is hover-only and therefore invisible to a
+     keyboard: the glare tilt, the archive's ENHANCE label, the lab tiles.
+     `focus-visible`, not `focus`, so a mouse click never paints it. */
   outline: 2px solid var(--color-signal);
   outline-offset: 3px;
 }
@@ -382,18 +387,6 @@ html.hud-cursor * {
   border: 1px solid var(--color-line);
 }
 
-/* One focus ring for the whole site.
-   Defined once because every card, tile and archive fragment needs the same
-   one, and because hover-only affordances (the glare tilt, the archive's
-   ENHANCE label) are invisible to a keyboard without it. `focus-visible`, not
-   `focus`, so a mouse click never paints it. */
-@utility focus-ring {
-  &:focus-visible {
-    outline: 2px solid var(--color-signal);
-    outline-offset: 3px;
-  }
-}
-
 @utility glass {
   background: color-mix(in srgb, var(--color-bg) 74%, transparent);
   backdrop-filter: blur(16px) saturate(1.25);
@@ -531,6 +524,22 @@ html.hud-cursor * {
   [class*="animate-"] {
     animation: none !important;
   }
+
+  /* Route morphs too. A view transition is a full-screen animation of the
+     entire page and is exactly what the preference is asking to stop; without
+     this it runs regardless, because the browser drives it rather than us. */
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
+  }
+}
+
+/* The work card → case file morph. Slower than the browser default, on the
+   site's own easing, so it reads as one continuous move rather than a cut. */
+::view-transition-group(*) {
+  animation-duration: 480ms;
+  animation-timing-function: var(--ease-expo);
 }
 
 /* ---------------------------------------------------------------------------

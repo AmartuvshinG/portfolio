@@ -10,6 +10,8 @@ import { Preloader } from "@/components/chrome/Preloader";
 import { ChapterFrame } from "@/components/chrome/ChapterFrame";
 import { HudCursor } from "@/components/chrome/HudCursor";
 import { Navbar } from "@/components/chrome/Navbar";
+import { CommandPalette } from "@/components/chrome/CommandPalette";
+import { ChapterKeys } from "@/components/chrome/ChapterKeys";
 import { Footer } from "@/components/chrome/Footer";
 
 /**
@@ -105,6 +107,11 @@ export default function RootLayout({
 
           <Navbar />
           <ChapterFrame />
+
+          {/* Keyboard surfaces. Both headless, both stand down while a field
+              has focus or an overlay is open. */}
+          <CommandPalette />
+          <ChapterKeys />
           <main id="main" className="relative z-10">
             {children}
           </main>

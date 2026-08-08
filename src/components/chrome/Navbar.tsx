@@ -275,7 +275,7 @@ export function Navbar() {
                   e.preventDefault();
                   go("#hero");
                 }}
-                className="focus-ring flex shrink-0 items-center gap-3"
+                className="flex shrink-0 items-center gap-3"
                 aria-label={`${profile.wordmark} — back to top`}
               >
                 <Lamp />
@@ -286,7 +286,7 @@ export function Navbar() {
             ) : (
               <Link
                 href="/"
-                className="focus-ring flex shrink-0 items-center gap-3"
+                className="flex shrink-0 items-center gap-3"
                 aria-label={`${profile.wordmark} — home`}
               >
                 <Lamp />
@@ -358,7 +358,7 @@ export function Navbar() {
                           }}
                           aria-current={isActive ? "location" : undefined}
                           className={cn(
-                            "focus-ring relative flex items-center gap-2 whitespace-nowrap px-2.5 py-2 font-mono text-xs uppercase tracking-[0.16em] transition-colors @[76rem]:px-3.5",
+                            "relative flex items-center gap-2 whitespace-nowrap px-2.5 py-2 font-mono text-xs uppercase tracking-[0.16em] transition-colors @[76rem]:px-3.5",
                             isActive ? "text-fg" : "text-muted hover:text-fg"
                           )}
                         >
@@ -369,7 +369,7 @@ export function Navbar() {
                           href={`/${link.href}`}
                           aria-current={isActive ? "page" : undefined}
                           className={cn(
-                            "focus-ring relative flex items-center gap-2 whitespace-nowrap px-2.5 py-2 font-mono text-xs uppercase tracking-[0.16em] transition-colors @[76rem]:px-3.5",
+                            "relative flex items-center gap-2 whitespace-nowrap px-2.5 py-2 font-mono text-xs uppercase tracking-[0.16em] transition-colors @[76rem]:px-3.5",
                             isActive ? "text-fg" : "text-muted hover:text-fg"
                           )}
                         >
@@ -418,7 +418,7 @@ export function Navbar() {
                     e.preventDefault();
                     go("#contact");
                   }}
-                  className="chamfer-sm focus-ring hidden px-4 py-2 font-mono text-[0.6875rem] uppercase tracking-[0.18em] text-void transition-transform duration-300 hover:scale-[1.04] sm:block"
+                  className="chamfer-sm hidden px-4 py-2 font-mono text-[0.6875rem] uppercase tracking-[0.18em] text-void transition-transform duration-300 hover:scale-[1.04] sm:block"
                   style={{ backgroundImage: "var(--gradient-spectrum)" }}
                 >
                   Available
@@ -426,7 +426,7 @@ export function Navbar() {
               ) : (
                 <Link
                   href="/#contact"
-                  className="chamfer-sm focus-ring hidden px-4 py-2 font-mono text-[0.6875rem] uppercase tracking-[0.18em] text-void transition-transform duration-300 hover:scale-[1.04] sm:block"
+                  className="chamfer-sm hidden px-4 py-2 font-mono text-[0.6875rem] uppercase tracking-[0.18em] text-void transition-transform duration-300 hover:scale-[1.04] sm:block"
                   style={{ backgroundImage: "var(--gradient-spectrum)" }}
                 >
                   Available
@@ -440,7 +440,7 @@ export function Navbar() {
                 aria-label={open ? "Close menu" : "Open menu"}
                 aria-expanded={open}
                 aria-controls="mobile-nav"
-                className="focus-ring flex h-10 w-10 items-center justify-center border border-line text-fg min-[1080px]:hidden"
+                className="flex h-10 w-10 items-center justify-center border border-line text-fg min-[1080px]:hidden"
               >
                 {open ? <X size={18} /> : <Menu size={18} />}
               </button>
@@ -497,7 +497,7 @@ export function Navbar() {
                         e.preventDefault();
                         go(link.href);
                       }}
-                      className="focus-ring flex items-baseline gap-4 py-3"
+                      className="flex items-baseline gap-4 py-3"
                     >
                       <span className="spectrum-text font-mono text-xs">
                         {link.code}
@@ -510,7 +510,7 @@ export function Navbar() {
                     <Link
                       href={`/${link.href}`}
                       onClick={() => setOpen(false)}
-                      className="focus-ring flex items-baseline gap-4 py-3"
+                      className="flex items-baseline gap-4 py-3"
                     >
                       <span className="spectrum-text font-mono text-xs">
                         {link.code}

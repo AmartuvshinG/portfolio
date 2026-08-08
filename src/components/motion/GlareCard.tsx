@@ -186,7 +186,7 @@ export function GlareCard({
       onFocus={live ? onEnter : undefined}
       onBlur={live ? onLeave : undefined}
       className={cn(
-        "focus-ring group relative isolate overflow-hidden",
+        "group relative isolate overflow-hidden",
         className
       )}
       style={
