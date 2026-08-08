@@ -6,6 +6,7 @@ import { motion, useScroll, useTransform } from "framer-motion";
 import type { GalleryImage } from "@/lib/content";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
 import { Esper } from "@/components/work/Esper";
+import { GlareCard } from "@/components/motion/GlareCard";
 
 /**
  * The scattered archive.
@@ -110,11 +111,14 @@ function ScatterItem({
       }}
       className="absolute"
     >
-      <button
+      {/* `flat`: the figure already carries a scroll-driven `y`. */}
+      <GlareCard
+        as="button"
+        mode="flat"
         type="button"
         onClick={() => onEnhance(item)}
         aria-label={`Enhance — ${item.alt}`}
-        className="group focus-ring relative block w-full overflow-hidden bg-surface"
+        className="block w-full bg-surface"
         style={{ aspectRatio: `${item.width} / ${item.height}` }}
       >
         <Image
@@ -136,7 +140,7 @@ function ScatterItem({
         >
           <span className="micro !text-fg">ENHANCE</span>
         </span>
-      </button>
+      </GlareCard>
       {item.caption && (
         <figcaption className="micro mt-2 block">{item.caption}</figcaption>
       )}

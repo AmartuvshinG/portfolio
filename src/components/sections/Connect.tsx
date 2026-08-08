@@ -3,6 +3,7 @@
 import { useRef } from "react";
 import { motion, useScroll, useTransform } from "framer-motion";
 import { ArrowUpRight } from "lucide-react";
+import { GlareCard } from "@/components/motion/GlareCard";
 import { socials } from "@/lib/content";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
 import { ChapterSeam } from "@/components/chrome/ChapterSeam";
@@ -135,11 +136,15 @@ function FanCard({
       transition={{ type: "spring", stiffness: 300, damping: 24 }}
       className="group"
     >
-      <a
+      {/* `flat`: the fan already rotates every card, and a second rotation on
+          the same element simply fights the first. */}
+      <GlareCard
+        as="a"
+        mode="flat"
         href={social.href}
         target="_blank"
         rel="noreferrer noopener"
-        className="notch-card block w-28 overflow-hidden bg-surface ring-1 ring-inset ring-line transition-shadow duration-300 group-hover:ring-line-strong sm:w-40 md:w-52 lg:w-60"
+        className="notch-card block w-28 bg-surface ring-1 ring-inset ring-line transition-shadow duration-300 group-hover:ring-line-strong sm:w-40 md:w-52 lg:w-60"
       >
         <div className="relative aspect-[3/4] w-full">
           <ChannelPlate seed={index} />
@@ -172,7 +177,7 @@ function FanCard({
             </div>
           </div>
         </div>
-      </a>
+      </GlareCard>
     </motion.li>
   );
 }

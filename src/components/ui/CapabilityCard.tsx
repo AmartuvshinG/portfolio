@@ -1,8 +1,9 @@
 "use client";
 
-import { motion } from "framer-motion";
 import type { Capability } from "@/lib/content";
+import { motion } from "framer-motion";
 import { scaleIn } from "@/lib/motion";
+import { GlareCard } from "@/components/motion/GlareCard";
 import { HoverBorderGradient } from "@/components/motion/HoverBorderGradient";
 
 /**
@@ -19,12 +20,15 @@ import { HoverBorderGradient } from "@/components/motion/HoverBorderGradient";
  */
 export function CapabilityCard({ item }: { item: Capability }) {
   return (
-    <motion.article
-      variants={scaleIn}
-      className="notch-card group relative flex flex-col bg-surface p-6 ring-1 ring-inset ring-line transition-shadow duration-300"
-      whileHover={{ y: -5 }}
-      transition={{ type: "spring", stiffness: 300, damping: 24 }}
-    >
+    <motion.div variants={scaleIn} whileHover={{ y: -5 }} transition={{ type: "spring", stiffness: 300, damping: 24 }}>
+      {/* The lift stays on an outer wrapper: GlareCard owns `transform` on its
+          own root for the tilt, so a `y` animation on the same element would be
+          overwritten every frame. */}
+      <GlareCard
+        as="article"
+        tilt={8}
+        className="notch-card flex h-full flex-col bg-surface p-6 ring-1 ring-inset ring-line"
+      >
       <div className="flex items-center justify-between">
         <span className="micro tabular">{item.code}</span>
         <span className="tabular font-mono text-[0.65rem] text-faint">
@@ -74,6 +78,7 @@ export function CapabilityCard({ item }: { item: Capability }) {
           {item.code.split("/")[1]}
         </HoverBorderGradient>
       </div>
-    </motion.article>
+      </GlareCard>
+    </motion.div>
   );
 }

@@ -1,10 +1,10 @@
 "use client";
 
-import Link from "next/link";
 import { useState } from "react";
 import { projects, type Project } from "@/lib/content";
 import { ShotImage } from "@/components/work/ShotImage";
 import { ProjectDossier, type DossierOrigin } from "@/components/work/ProjectDossier";
+import { GlareCard } from "@/components/motion/GlareCard";
 
 /**
  * The work world's fallback, and a real layout in its own right — this is what
@@ -33,11 +33,13 @@ export function WorkCardGrid() {
     <>
       <div className="mx-auto grid max-w-[1800px] gap-4 px-5 md:grid-cols-2 md:px-8">
         {projects.map((project) => (
-          <Link
+          <GlareCard
             key={project.slug}
+            as="link"
             href={`/work/${project.slug}`}
             onClick={open(project)}
-            className="notch-card group relative block overflow-hidden bg-surface ring-1 ring-inset ring-line"
+            tilt={7}
+            className="notch-card block bg-surface ring-1 ring-inset ring-line"
           >
             <div className="relative aspect-[8/5] w-full overflow-hidden">
               <ShotImage
@@ -59,7 +61,7 @@ export function WorkCardGrid() {
               </div>
               <span className="micro tabular shrink-0">{project.year}</span>
             </div>
-          </Link>
+          </GlareCard>
         ))}
       </div>
 
