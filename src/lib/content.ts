@@ -530,6 +530,57 @@ export const gallery: GalleryImage[] = [
     w: 0.22,
     depth: 0.62,
   },
+  /* --- The tail.
+     Four more, authored down to y 4.3. The scatter used to stop at 3.5 and
+     the canvas ran to 5.1, so the last screen and a half of the archive was
+     empty — the "gap before Contact". The canvas is measured now
+     (see ScatterGallery), but a chapter that thins out to one item and stops
+     still reads as running out of material, so it is given something to
+     finish on. Both authoring rules still hold: no two neighbours share a
+     width, and `depth` alternates. */
+  {
+    src: "https://picsum.photos/seed/amara-m/1400/900",
+    alt: "Helix OS — telemetry overlay",
+    width: 1400,
+    height: 900,
+    x: 0.08,
+    y: 3.74,
+    w: 0.4,
+    depth: 0.18,
+    caption: "HELIX OS, 2025",
+  },
+  {
+    src: "https://picsum.photos/seed/amara-n/1000/1300",
+    alt: "Shader study — refraction tests",
+    width: 1000,
+    height: 1300,
+    x: 0.58,
+    y: 3.92,
+    w: 0.16,
+    depth: 0.84,
+    caption: "REFRACTION",
+  },
+  {
+    src: "https://picsum.photos/seed/amara-o/1600/1000",
+    alt: "Neon Atlas — map compositing",
+    width: 1600,
+    height: 1000,
+    x: 0.3,
+    y: 4.16,
+    w: 0.28,
+    depth: 0.3,
+    caption: "NEON ATLAS, 2024",
+  },
+  {
+    src: "https://picsum.photos/seed/amara-p/1300/1300",
+    alt: "Process — pinned board",
+    width: 1300,
+    height: 1300,
+    x: 0.78,
+    y: 4.3,
+    w: 0.2,
+    depth: 0.7,
+  },
 ];
 
 export const stats: Stat[] = [
