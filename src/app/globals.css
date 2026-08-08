@@ -42,6 +42,21 @@
      1px dots, focus rings, caret. Magenta because it holds up smallest. */
   --color-signal: #ff2d8f;
 
+  /* --- Sodium vapour. The only warm colour on the site, and the only one that
+         is not on the ramp.
+
+         Cyberpunk's signature colour relationship is neon cool against sodium
+         street-lamp warm; the ramp supplies all the cool and nothing supplied
+         the warm, so nothing on the page could read as *urgent* — every state,
+         live or dead, was some flavour of magenta-violet-cyan.
+
+         Rationed, and the ration is the point. Permitted: the AVAILABLE call to
+         action, the ONLINE lamp, form error states, the low-power indicator,
+         aviation lamps and window glow in the hero skyline. Forbidden: type at
+         any size above a micro-label, flat fills, and --gradient-spectrum. The
+         moment it appears in a third place it stops meaning anything. */
+  --color-hazard: #ffa02b;
+
   /* --- Hairlines. Resolved per depth by the [data-act] blocks below. */
   --color-line: rgba(236, 238, 251, 0.12);
   --color-line-strong: rgba(236, 238, 251, 0.3);
@@ -422,10 +437,68 @@ html.hud-cursor * {
   100% { transform: translate3d(-14%, 0, 0) rotate(0.001deg); }
 }
 
+/* ---------------------------------------------------------------------------
+   Hero atmosphere
+   ---------------------------------------------------------------------------
+   Every keyframe below animates `transform` or `opacity` and nothing else. Rain
+   in particular is the one that would be tempting to do with background-position
+   — that is a paint property, and animating it on a full-bleed layer is what put
+   the aurora veil on the perf pass's list.
+   ------------------------------------------------------------------------- */
+
+/* Aviation lamps on the skyline masts. */
+@keyframes hero-lamp {
+  0%, 46% { opacity: 0.15; }
+  50%, 56% { opacity: 1; }
+  60%, 100% { opacity: 0.15; }
+}
+.hero-lamp { animation: hero-lamp 3.4s steps(1, end) infinite; }
+
+/* Rain. Travels exactly one tile height, so the loop point is invisible. */
+@keyframes hero-rain {
+  from { transform: translate3d(0, -50%, 0); }
+  to { transform: translate3d(0, 0%, 0); }
+}
+
+/* A spinner's searchlight crossing the plates. Rotation about a point far below
+   the frame, so the beam sweeps rather than spins. */
+@keyframes hero-sweep {
+  0% { transform: rotate(-32deg); opacity: 0; }
+  12% { opacity: 0.5; }
+  50% { opacity: 0.7; }
+  88% { opacity: 0.4; }
+  100% { transform: rotate(30deg); opacity: 0; }
+}
+
+/* The off-world blimp, crossing the far plate. */
+@keyframes hero-blimp {
+  0% { transform: translate3d(-28vw, 0, 0); }
+  100% { transform: translate3d(128vw, 0, 0); }
+}
+
+/* Neon signage that has not been serviced in a while. Mostly lit, with a short
+   arrhythmic stutter — an even blink reads as a cursor, not as a failing tube. */
+@keyframes neon-flicker {
+  0%, 88%, 100% { opacity: 1; }
+  89% { opacity: 0.28; }
+  90.5% { opacity: 1; }
+  92% { opacity: 0.4; }
+  93% { opacity: 0.9; }
+}
+
 @utility animate-marquee { animation: marquee 32s linear infinite; }
 @utility animate-blink { animation: soft-blink 1.8s ease-in-out infinite; }
 @utility animate-drift { animation: spectrum-drift 34s ease-in-out infinite; }
 @utility animate-breathe { animation: breathe 9s ease-in-out infinite; }
+
+/* Everything in the hero atmosphere stops dead for reduced motion. The plates
+   still layer and still occlude — the composition survives; only the loops go. */
+@media (prefers-reduced-motion: reduce) {
+  .hero-lamp,
+  [class*="animate-"] {
+    animation: none !important;
+  }
+}
 
 /* ---------------------------------------------------------------------------
    Glitch text — RGB split, driven by GlitchText.tsx
