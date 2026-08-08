@@ -46,6 +46,12 @@ function measure(): Quality {
   const memory = nav.deviceMemory ?? 4;
   const finePointer = window.matchMedia("(hover: hover) and (pointer: fine)").matches;
 
+  /* Width first, because it is the one signal that cannot be wrong. Pointer
+     type is widely misreported — a 390px viewport was still claiming a fine
+     pointer under emulation and getting the full weather — and a phone-sized
+     screen has no business rendering rain and standing water whatever it
+     claims about its input devices. */
+  if (window.innerWidth < 900) return "lite";
   if (!finePointer) return "lite";
   if (cores <= 4) return "lite";
   if (memory <= 4) return "lite";
@@ -70,10 +76,14 @@ export function useQuality(): Quality {
 
     const mq = window.matchMedia("(hover: hover) and (pointer: fine)");
     mq.addEventListener("change", update);
+    /* Width is an input now, so a resize across the threshold has to re-decide
+       — otherwise dragging a window narrow keeps the full weather running. */
+    window.addEventListener("resize", update, { passive: true });
 
     return () => {
       observer.disconnect();
       mq.removeEventListener("change", update);
+      window.removeEventListener("resize", update);
     };
   }, []);
 
