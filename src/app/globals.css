@@ -382,6 +382,18 @@ html.hud-cursor * {
   border: 1px solid var(--color-line);
 }
 
+/* One focus ring for the whole site.
+   Defined once because every card, tile and archive fragment needs the same
+   one, and because hover-only affordances (the glare tilt, the archive's
+   ENHANCE label) are invisible to a keyboard without it. `focus-visible`, not
+   `focus`, so a mouse click never paints it. */
+@utility focus-ring {
+  &:focus-visible {
+    outline: 2px solid var(--color-signal);
+    outline-offset: 3px;
+  }
+}
+
 @utility glass {
   background: color-mix(in srgb, var(--color-bg) 74%, transparent);
   backdrop-filter: blur(16px) saturate(1.25);
@@ -485,6 +497,8 @@ html.hud-cursor * {
   92% { opacity: 0.4; }
   93% { opacity: 0.9; }
 }
+
+.neon-sign { animation: neon-flicker 9s steps(1, end) infinite; }
 
 @utility animate-marquee { animation: marquee 32s linear infinite; }
 @utility animate-blink { animation: soft-blink 1.8s ease-in-out infinite; }

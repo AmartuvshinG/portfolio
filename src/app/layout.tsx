@@ -5,6 +5,7 @@ import { site } from "@/lib/content";
 import { SmoothScroll } from "@/components/chrome/SmoothScroll";
 import { ActTheme } from "@/components/chrome/ActTheme";
 import { SiteBackdrop } from "@/components/backdrop/SiteBackdrop";
+import { Anamorphic } from "@/components/backdrop/Anamorphic";
 import { Preloader } from "@/components/chrome/Preloader";
 import { ChapterFrame } from "@/components/chrome/ChapterFrame";
 import { HudCursor } from "@/components/chrome/HudCursor";
@@ -108,6 +109,11 @@ export default function RootLayout({
             {children}
           </main>
           <Footer />
+
+          {/* The taking lens. Last in the tree and above the nav, because a
+              vignette that the header sits on top of is not a lens — it is a
+              decorative border. Below the preloader and the cursor. */}
+          <Anamorphic />
         </SmoothScroll>
       </body>
     </html>

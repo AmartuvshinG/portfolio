@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import { gsap, ScrollTrigger } from "@/lib/gsap";
 import { pad } from "@/lib/utils";
 
@@ -36,7 +37,14 @@ export function ChapterFrame() {
         start: "top 50%",
         end: "bottom 50%",
         onToggle: (self) => {
-          if (self.isActive) setActive(i);
+          if (!self.isActive) return;
+          setActive(i);
+          /* The lens overlay wants to stutter on a seam crossing, and this is
+             the only place that knows a crossing happened. An event rather than
+             shared state on purpose: ChapterFrame is `hidden lg:block`, so
+             anything that read the glitch off this component's render would
+             only fire on desktop. */
+          window.dispatchEvent(new CustomEvent("chapter-change"));
         },
       })
     );
@@ -61,6 +69,51 @@ export function ChapterFrame() {
         <span className="absolute left-1/2 top-1/2 h-px w-3 -translate-x-1/2 -translate-y-1/2 bg-current opacity-60" />
         <span className="absolute left-1/2 top-1/2 h-3 w-px -translate-x-1/2 -translate-y-1/2 bg-current opacity-60" />
       </span>
+
+      {/* --- Signage, right gutter.
+              The chapter name as a lit sign hung off the edge of the frame,
+              which is the one piece of Kowloon vocabulary the site was missing:
+              in a neon city the type is not printed on things, it is *mounted*
+              on them and it glows onto whatever is behind it.
+
+              Cheap by construction. The glow is a blurred copy of the panel,
+              and a blur that only ever re-rasterises when the chapter changes
+              is nothing like a blur that re-rasterises per scroll frame — this
+              is fixed chrome, so nothing underneath it invalidates it. The
+              flicker is pure opacity. */}
+      <div className="absolute right-5 top-1/2 -translate-y-1/2 translate-x-[0.55rem]">
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={chapters[active]}
+            initial={{ opacity: 0, y: 14 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -14 }}
+            transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
+            className="relative"
+          >
+            {/* The tube's spill. Sits behind the panel and is the only thing
+                that makes it read as lit rather than printed. */}
+            <span
+              aria-hidden
+              className="absolute inset-0 -z-10"
+              style={{
+                backgroundImage: "var(--gradient-spectrum)",
+                filter: "blur(13px)",
+                opacity: 0.55,
+              }}
+            />
+            <span
+              className="chamfer-sm neon-sign flex items-center gap-3 border border-line-strong bg-void/80 px-2 py-4 font-mono text-[0.6rem] uppercase tracking-[0.34em] text-fg"
+              style={{ writingMode: "vertical-rl" }}
+            >
+              <span className="spectrum-text font-semibold">
+                {chapters[active]}
+              </span>
+              <span className="tabular opacity-45">{pad(active + 1, 2)}</span>
+            </span>
+          </motion.div>
+        </AnimatePresence>
+      </div>
 
       {/* Chapter numbering, set vertically in the left gutter.
           It reads bottom-to-top up the rule rather than sitting horizontally in

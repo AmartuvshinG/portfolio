@@ -1,10 +1,11 @@
 "use client";
 
 import Image from "next/image";
-import { useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion, useScroll, useTransform } from "framer-motion";
 import type { GalleryImage } from "@/lib/content";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
+import { Esper } from "@/components/work/Esper";
 
 /**
  * The scattered archive.
@@ -18,28 +19,71 @@ import { useReducedMotion } from "@/hooks/useReducedMotion";
  * Placement is authored in `content.ts` rather than generated — random scatter
  * reliably produces clumps and dead zones, and the rhythm of the gaps is the
  * only thing holding the composition together.
+ *
+ * Every fragment is a button: clicking one runs the ESPER enhance over it.
  */
+
+/** Fallback viewport aspect for the first paint, before the real one is known.
+ *  Has to be a constant so the server and the client agree. */
+const SSR_ASPECT = 16 / 9;
+
 export function ScatterGallery({ items }: { items: GalleryImage[] }) {
   const reduced = useReducedMotion();
+  const [enhancing, setEnhancing] = useState<GalleryImage | null>(null);
 
-  if (reduced) return <StaticGrid items={items} />;
+  /* Item widths are in vw and their positions in vh, so the height an item
+     actually occupies depends on the viewport's aspect ratio — which is not
+     knowable during render. Seeded to 16/9 so hydration matches, then corrected. */
+  const [aspect, setAspect] = useState(SSR_ASPECT);
 
-  // Tallest item bottom + a viewport of run-out.
-  const height = Math.max(...items.map((i) => i.y)) + 1.6;
+  useEffect(() => {
+    const measure = () => setAspect(window.innerWidth / window.innerHeight);
+    measure();
+    window.addEventListener("resize", measure, { passive: true });
+    return () => window.removeEventListener("resize", measure);
+  }, []);
+
+  /* Canvas height = the real bottom edge of the lowest item, plus a quarter
+     viewport of run-out.
+
+     This used to be `max(item.y) + 1.6`, which is a fixed viewport and a half
+     of empty canvas bolted onto the end regardless of where the last item
+     actually finished. With the lowest item at y 3.5 that left over a full
+     screen of nothing between the archive and the section after it — the "gap
+     before Contact". Measuring the real bottom removes it without hand-tuning
+     a constant every time the scatter is re-authored. */
+  const bottom = Math.max(
+    ...items.map((i) => i.y + i.w * (i.height / i.width) * aspect)
+  );
+  const height = bottom + 0.25;
 
   return (
-    <div
-      className="relative w-full"
-      style={{ height: `${height * 100}vh` }}
-    >
-      {items.map((item) => (
-        <ScatterItem key={item.src} item={item} />
-      ))}
-    </div>
+    <>
+      {/* The overlay is mounted outside the branch on purpose: it renders null
+          until something is being enhanced, and returning early for reduced
+          motion left the static grid with buttons that opened nothing. */}
+      {reduced ? (
+        <StaticGrid items={items} onEnhance={setEnhancing} />
+      ) : (
+        <div className="relative w-full" style={{ height: `${height * 100}vh` }}>
+          {items.map((item) => (
+            <ScatterItem key={item.src} item={item} onEnhance={setEnhancing} />
+          ))}
+        </div>
+      )}
+
+      <Esper item={enhancing} onClose={() => setEnhancing(null)} />
+    </>
   );
 }
 
-function ScatterItem({ item }: { item: GalleryImage }) {
+function ScatterItem({
+  item,
+  onEnhance,
+}: {
+  item: GalleryImage;
+  onEnhance: (i: GalleryImage) => void;
+}) {
   const ref = useRef<HTMLDivElement>(null);
 
   const { scrollYProgress } = useScroll({
@@ -66,8 +110,11 @@ function ScatterItem({ item }: { item: GalleryImage }) {
       }}
       className="absolute"
     >
-      <div
-        className="relative w-full overflow-hidden bg-surface"
+      <button
+        type="button"
+        onClick={() => onEnhance(item)}
+        aria-label={`Enhance — ${item.alt}`}
+        className="group focus-ring relative block w-full overflow-hidden bg-surface"
         style={{ aspectRatio: `${item.width} / ${item.height}` }}
       >
         <Image
@@ -75,9 +122,21 @@ function ScatterItem({ item }: { item: GalleryImage }) {
           alt={item.alt}
           fill
           sizes={`${Math.round(item.w * 100)}vw`}
-          className="object-cover"
+          className="object-cover transition-transform duration-700 ease-out group-hover:scale-[1.03]"
         />
-      </div>
+        {/* The affordance. Archive items never looked clickable, and an enhance
+            nobody discovers is an enhance that does not exist. */}
+        <span
+          aria-hidden
+          className="pointer-events-none absolute inset-0 flex items-end justify-end p-3 opacity-0 transition-opacity duration-300 group-hover:opacity-100 group-focus-visible:opacity-100"
+          style={{
+            background:
+              "linear-gradient(0deg, color-mix(in srgb, var(--color-void) 78%, transparent), transparent 46%)",
+          }}
+        >
+          <span className="micro !text-fg">ENHANCE</span>
+        </span>
+      </button>
       {item.caption && (
         <figcaption className="micro mt-2 block">{item.caption}</figcaption>
       )}
@@ -88,14 +147,25 @@ function ScatterItem({ item }: { item: GalleryImage }) {
 /**
  * Reduced-motion fallback. A plain responsive grid — the scatter's whole
  * premise is differential motion, so there is nothing to preserve by faking
- * the positions without it.
+ * the positions without it. The enhance still works.
  */
-function StaticGrid({ items }: { items: GalleryImage[] }) {
+function StaticGrid({
+  items,
+  onEnhance,
+}: {
+  items: GalleryImage[];
+  onEnhance: (i: GalleryImage) => void;
+}) {
   return (
     <div className="mx-auto grid max-w-[1800px] grid-cols-2 gap-4 px-5 md:grid-cols-3 md:px-8">
       {items.map((item) => (
         <figure key={item.src}>
-          <div className="relative aspect-[4/5] w-full overflow-hidden bg-surface">
+          <button
+            type="button"
+            onClick={() => onEnhance(item)}
+            aria-label={`Enhance — ${item.alt}`}
+            className="focus-ring relative block aspect-[4/5] w-full overflow-hidden bg-surface"
+          >
             <Image
               src={item.src}
               alt={item.alt}
@@ -103,7 +173,7 @@ function StaticGrid({ items }: { items: GalleryImage[] }) {
               sizes="(max-width: 768px) 50vw, 33vw"
               className="object-cover"
             />
-          </div>
+          </button>
           {item.caption && (
             <figcaption className="micro mt-2 block">{item.caption}</figcaption>
           )}
