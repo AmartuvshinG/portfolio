@@ -85,16 +85,32 @@ export function ActTheme() {
        claimed the page several sections early and never handed back.
 
        Observing the body's height re-measures on the release, and also covers
-       late-loading media and font swaps reflowing the page under us. */
-    let frame = 0;
+       late-loading media and font swaps reflowing the page under us.
+
+       Two guards on that observer, both about cost. `ScrollTrigger.refresh()`
+       re-measures *every* trigger on the page and is one of the most expensive
+       calls GSAP has — on this page it was showing up as ~250ms frames. It was
+       previously debounced by a single animation frame, which is no debounce at
+       all when the thing changing size is a sticky section reflowing during a
+       scroll: the observer refired every frame, and each refresh reflowed the
+       document, which refired the observer.
+
+       So: a real trailing debounce, and a height threshold so sub-pixel and
+       scrollbar-sized changes are ignored entirely. */
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    let lastHeight = document.body.scrollHeight;
+
     const observer = new ResizeObserver(() => {
-      cancelAnimationFrame(frame);
-      frame = requestAnimationFrame(() => ScrollTrigger.refresh());
+      const height = document.body.scrollHeight;
+      if (Math.abs(height - lastHeight) < 4) return;
+      lastHeight = height;
+      clearTimeout(timer);
+      timer = setTimeout(() => ScrollTrigger.refresh(), 250);
     });
     observer.observe(document.body);
 
     return () => {
-      cancelAnimationFrame(frame);
+      clearTimeout(timer);
       observer.disconnect();
       triggers.forEach((t) => t.kill());
     };

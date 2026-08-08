@@ -53,10 +53,20 @@
   --color-muted: var(--color-bone-soft);
   --color-faint: var(--color-bone-faint);
 
-  /* --- Typography (wired to next/font CSS variables in layout.tsx) */
-  --font-editorial: var(--font-instrument), "Times New Roman", serif;
+  /* --- Typography (wired to next/font CSS variables in layout.tsx)
+         Three technical voices and no serif. The editorial serif that used to
+         carry every heading is gone: it was the one thing on the page that
+         read as a magazine rather than as hardware.
+
+         display — Michroma. Wide, square, single weight. Wordmark and section
+                   titles only; it is unusable below ~2rem and at any length.
+         tech    — Chakra Petch. Chamfered terminals, the same cut as the notch
+                   cards. Headings, leads, subheads.
+         sans    — Archivo. Body copy, where neither of the above is readable.
+         mono    — JetBrains Mono. Micro-labels and numbering. */
+  --font-display: var(--font-michroma), "Arial Black", sans-serif;
+  --font-tech: var(--font-chakra), ui-sans-serif, system-ui, sans-serif;
   --font-sans: var(--font-archivo), ui-sans-serif, system-ui, sans-serif;
-  --font-display: var(--font-archivo), "Arial Black", sans-serif;
   --font-mono: var(--font-mono-hud), ui-monospace, "Courier New", monospace;
 
   /* --- Radius: machined, not soft. ref1's panels are cut, not rounded. */
@@ -90,10 +100,24 @@
    These blocks are unlayered ON PURPOSE — they must outrank Tailwind's layers
    so a depth change wins over a utility. That is the mirror image of the
    `border-color` hazard documented under Base below.
-   ------------------------------------------------------------------------- */
+
+   Sections no longer *paint* their act. There is one fixed backdrop for the
+   whole document (SiteBackdrop) and every section is transparent over it, so a
+   boundary can never be a step change in the ground — which is what made the
+   page read as several sites bolted together. What an act now sets is:
+
+     --veil          a low-alpha wash the backdrop paints over its own field
+     --color-surface the fill for cards *on* that depth
+     text / line     the foreground scale
+
+   `--color-bg` survives only for the handful of things that genuinely need an
+   opaque ground of their own — the glass utility's mix, the navbar's contracted
+   console, the preloader, the skip link. Nothing that spans a section boundary
+   may use it. */
 :root,
 [data-act="void"] {
   --color-bg: var(--color-void);
+  --veil: transparent;
   --color-surface: var(--color-deck);
   --color-fg: var(--color-bone);
   --color-muted: var(--color-bone-soft);
@@ -105,6 +129,7 @@
 
 [data-act="deck"] {
   --color-bg: var(--color-deck);
+  --veil: rgba(11, 13, 26, 0.5);
   --color-surface: var(--color-deck-2);
   --color-fg: var(--color-bone);
   --color-muted: #9297b0;
@@ -114,10 +139,11 @@
   color-scheme: dark;
 }
 
-/* The one chromatic ground on the site. Still dark — it is a *charged* black,
-   not a colour field. The bloom washes are painted by the section itself. */
+/* The charged depth. Still dark — the veil is a violet-black wash, not a colour
+   field; the chroma comes from the shader gaining up underneath it. */
 [data-act="bloom"] {
   --color-bg: var(--color-bloom);
+  --veil: rgba(20, 16, 51, 0.42);
   --color-surface: #1c1745;
   --color-fg: #f4f2ff;
   --color-muted: #a99ede;
@@ -149,8 +175,10 @@ html {
      (preloader, dossier, mobile menu) removes the scrollbar and shifts the
      whole layout sideways — which also desyncs GSAP's pinned triggers. */
   scrollbar-gutter: stable;
-  background-color: var(--color-bg);
-  transition: background-color var(--act-fade) var(--ease-power);
+  /* The floor, and deliberately NOT `--color-bg`: this element spans every act,
+     so binding it to a per-act token is exactly the repaint the backdrop exists
+     to remove. It is only ever seen for the frame before SiteBackdrop paints. */
+  background-color: var(--color-void);
 }
 
 body {
@@ -189,19 +217,19 @@ body {
   outline-offset: 3px;
 }
 
-/* Editorial default: headings are the serif. The oversized grotesk caps
-   (`.display-caps`) are opted into, not inherited — they are a deliberate
-   art-direction move for a handful of moments, not a global heading style.
+/* Heading default: Chakra Petch, not Michroma. Michroma is opted into via
+   `.display-caps` for the handful of moments that can carry it — at heading
+   scale in a card or a list item it is simply too wide to read.
 
    MUST stay inside `@layer base`. Unlayered CSS outranks every layer, so as a
-   bare rule this silently beat `.display-caps` on any heading and every
-   oversized grotesk moment on the site rendered as serif instead. */
+   bare rule this silently beats `.display-caps` on any heading and every
+   oversized display moment on the site renders in the wrong face. */
 @layer base {
   h1, h2, h3, h4, h5, h6 {
-    font-family: var(--font-editorial);
-    font-weight: 400;
-    letter-spacing: -0.015em;
-    line-height: 1.02;
+    font-family: var(--font-tech);
+    font-weight: 600;
+    letter-spacing: 0.005em;
+    line-height: 1.06;
   }
 }
 
@@ -222,8 +250,8 @@ html.hud-cursor * {
 /* ---------------------------------------------------------------------------
    Typographic utilities
    ------------------------------------------------------------------------- */
-@utility font-editorial {
-  font-family: var(--font-editorial);
+@utility font-tech {
+  font-family: var(--font-tech);
 }
 @utility font-display {
   font-family: var(--font-display);
@@ -232,15 +260,26 @@ html.hud-cursor * {
   font-family: var(--font-mono);
 }
 
-/* Oversized caps grotesk, near-zero leading, tight tracking. The negative
-   letter-spacing is doing real work at 22vw — without it the word gaps blow
-   open and the block stops reading as one mass. */
+/* Michroma, oversized.
+   Three values here are not preferences — Michroma breaks without them:
+
+   weight 400  Michroma ships one weight. `font-synthesis-weight: none` on body
+               means a 900 request renders as 400 anyway, so asking for it just
+               makes the intent a lie.
+   tracking    POSITIVE, where the old grotesk wanted -0.035em. Michroma's
+               square terminals nearly touch at their default sidebearings;
+               pulling them tighter closes the counters into black.
+   leading     0.95, not 0.84. The caps are taller relative to the em, so the
+               old value overlapped consecutive lines.
+
+   Every clamp that feeds this had to come down ~40% as well — Michroma sets far
+   wider than the grotesk it replaced at the same pixel size. */
 @utility display-caps {
   font-family: var(--font-display);
-  font-weight: 900;
+  font-weight: 400;
   text-transform: uppercase;
-  letter-spacing: -0.035em;
-  line-height: 0.84;
+  letter-spacing: 0.005em;
+  line-height: 0.95;
 }
 
 /* Micro-label: the surviving HUD vocabulary, straight off ref3's tiny
@@ -373,10 +412,112 @@ html.hud-cursor * {
   50% { transform: scaleY(1.03) scaleX(1.015); opacity: 1; }
 }
 
+/* Aurora ribbons. Two repeating gradients at different scales sliding past one
+   another — the chromatic one supplies the colour, the black comb cuts it into
+   curtains. Both travel on the same keyframe so the interference pattern
+   between them is what actually moves, which is why it never reads as a loop. */
+@keyframes aurora {
+  0% { transform: translate3d(-14%, 0, 0) rotate(0.001deg); }
+  50% { transform: translate3d(6%, -4%, 0) rotate(0.001deg); }
+  100% { transform: translate3d(-14%, 0, 0) rotate(0.001deg); }
+}
+
 @utility animate-marquee { animation: marquee 32s linear infinite; }
 @utility animate-blink { animation: soft-blink 1.8s ease-in-out infinite; }
 @utility animate-drift { animation: spectrum-drift 34s ease-in-out infinite; }
 @utility animate-breathe { animation: breathe 9s ease-in-out infinite; }
+
+/* ---------------------------------------------------------------------------
+   Glitch text — RGB split, driven by GlitchText.tsx
+   ---------------------------------------------------------------------------
+   Restored from NEXUS and recoloured: the original split to `--color-cyan` and
+   `--color-red`, neither of which exists in this palette — left as-is the
+   layers would inherit `currentColor` and the effect would be three identical
+   copies of the text, i.e. nothing.
+
+   `mix-blend-mode: screen` is what makes the offsets read as light leaking
+   rather than as a drop shadow, and it is the reason the ground under this has
+   to stay dark. `steps(2)` keeps the shift snapping between positions instead
+   of sliding, which is the difference between a signal fault and a wobble.
+   ------------------------------------------------------------------------- */
+@keyframes glitch-shift {
+  0%, 100% { clip-path: inset(0 0 0 0); transform: translate(0); }
+  20% { clip-path: inset(20% 0 40% 0); transform: translate(-2px, 0); }
+  40% { clip-path: inset(60% 0 10% 0); transform: translate(2px, 0); }
+  60% { clip-path: inset(30% 0 50% 0); transform: translate(-1px, 0); }
+  80% { clip-path: inset(10% 0 70% 0); transform: translate(1px, 0); }
+}
+
+.glitch {
+  position: relative;
+  display: inline-block;
+}
+.glitch::before,
+.glitch::after {
+  content: attr(data-text);
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0;
+  clip-path: inset(0 0 0 0);
+  transition: opacity 160ms linear;
+}
+.glitch[data-active="true"]::before {
+  color: var(--spectrum-1);
+  opacity: 0.85;
+  transform: translate(-2px, 0);
+  animation: glitch-shift 0.4s steps(2) infinite;
+  mix-blend-mode: screen;
+}
+.glitch[data-active="true"]::after {
+  color: var(--spectrum-3);
+  opacity: 0.85;
+  transform: translate(2px, 0);
+  animation: glitch-shift 0.4s steps(2) infinite reverse;
+  mix-blend-mode: screen;
+}
+
+/* The aurora veil's paint. Lives here rather than in the component because a
+   keyframe animation can't be expressed inline, and splitting the two halves of
+   one effect across a style attribute and a stylesheet is worse than either. */
+.aurora-veil {
+  --aurora: repeating-linear-gradient(
+    100deg,
+    var(--spectrum-1) 10%,
+    var(--spectrum-2) 16%,
+    var(--spectrum-3) 22%,
+    var(--spectrum-2) 28%,
+    var(--spectrum-1) 34%
+  );
+  --comb: repeating-linear-gradient(
+    100deg,
+    #000 0%,
+    #000 7%,
+    transparent 10%,
+    transparent 12%,
+    #000 16%
+  );
+  background-image: var(--comb), var(--aurora);
+  background-size: 300%, 200%;
+  background-position: 50% 50%, 50% 50%;
+  filter: blur(34px);
+  opacity: 0.3;
+  mix-blend-mode: screen;
+  /* Driven by `transform`, not `background-position`.
+     Animating background-position is a paint property: it repainted a
+     viewport-sized layer *and re-ran its 34px gaussian* on every single frame,
+     forever, for the entire session. Transform is compositor-only — the layer
+     is rasterised and blurred once and then just moved. The element is
+     oversized and offset below so there is room to travel without exposing an
+     edge. */
+  will-change: transform;
+  animation: aurora 64s linear infinite;
+  /* Anchored off one corner. Unmasked it closes over the whole viewport and
+     stops being weather — it becomes a second background competing with the
+     field it is supposed to be sitting on. */
+  mask-image: radial-gradient(ellipse at 78% 4%, #000 6%, transparent 66%);
+  -webkit-mask-image: radial-gradient(ellipse at 78% 4%, #000 6%, transparent 66%);
+}
 
 /* ---------------------------------------------------------------------------
    Reveal primitive (opacity+transform; JS toggles .is-in)

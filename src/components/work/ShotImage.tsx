@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { useState } from "react";
 import type { Project } from "@/lib/content";
-import { ProjectVisual } from "./ProjectVisual";
+import { ProjectVisual } from "@/components/work/ProjectVisual";
 
 /**
  * A project's screenshot, with its generated visual permanently underneath.

@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { testimonials } from "@/lib/content";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
-import { Nebula } from "@/components/layout/Nebula";
+import { ChapterSeam } from "@/components/chrome/ChapterSeam";
 
 /** Dwell per quote, ms. */
 const HOLD = 6500;
@@ -37,13 +37,13 @@ export function Testimonials() {
       <section
         data-act="deck"
         data-chapter="VOICES"
-        className="relative bg-bg py-24"
+        className="relative py-24"
         aria-label="Testimonials"
       >
         <div className="mx-auto max-w-[1800px] space-y-16 px-5 md:px-8 lg:px-16">
           {testimonials.map((t) => (
             <figure key={t.author}>
-              <blockquote className="font-editorial text-[clamp(1.75rem,4vw,3.25rem)] leading-[1.1] text-fg">
+              <blockquote className="font-tech text-[clamp(1.75rem,4vw,3.25rem)] leading-[1.1] text-fg">
                 “{t.quote}”
               </blockquote>
               <figcaption className="micro mt-5">
@@ -62,13 +62,10 @@ export function Testimonials() {
     <section
       data-act="deck"
       data-chapter="VOICES"
-      className="relative flex min-h-[92vh] items-center overflow-hidden bg-bg py-24"
+      className="relative flex min-h-[92vh] items-center overflow-hidden py-24"
       aria-label="Testimonials"
     >
-      <Nebula
-        className="pointer-events-none absolute inset-0 h-full w-full"
-        opacity={0.34}
-      />
+      <ChapterSeam />
 
       <div className="relative mx-auto w-full max-w-[1800px] px-5 md:px-8 lg:px-16">
         <div className="flex items-center gap-4">
@@ -90,11 +87,11 @@ export function Testimonials() {
             transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
             className="mt-10"
           >
-            <blockquote className="font-editorial text-[clamp(2rem,5.4vw,5rem)] leading-[1.06] text-fg">
+            <blockquote className="font-tech text-[clamp(2rem,5.4vw,5rem)] leading-[1.06] text-fg">
               “{active.quote}”
             </blockquote>
             <figcaption className="mt-8 flex flex-wrap items-baseline gap-x-4">
-              <span className="font-display text-lg font-bold uppercase text-fg">
+              <span className="font-tech text-lg font-bold uppercase text-fg">
                 {active.author}
               </span>
               <span className="micro">

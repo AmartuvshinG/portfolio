@@ -2,7 +2,7 @@
 
 import { ArrowUp } from "lucide-react";
 import { navLinks, socials, profile, contact } from "@/lib/content";
-import { useSmoothScroll } from "@/components/layout/SmoothScroll";
+import { useSmoothScroll } from "@/components/chrome/SmoothScroll";
 
 /**
  * Footer, continuing the dark closing act — it carries `data-act="void"` so the
@@ -16,7 +16,7 @@ export function Footer() {
   return (
     <footer
       data-act="void"
-      className="relative bg-bg text-fg"
+      className="relative z-10 text-fg"
       aria-label="Footer"
     >
       {/* Marquee wordmark. Set in the outline weight rather than solid: at 8rem
@@ -27,7 +27,7 @@ export function Footer() {
           {Array.from({ length: 8 }).map((_, i) => (
             <span
               key={i}
-              className="display-caps text-6xl text-transparent md:text-8xl"
+              className="display-caps text-4xl text-transparent md:text-6xl"
               style={{ WebkitTextStroke: "1px var(--color-faint)" }}
             >
               {profile.wordmark} —
@@ -38,7 +38,7 @@ export function Footer() {
 
       <div className="mx-auto grid max-w-[1800px] gap-10 px-5 py-14 md:grid-cols-[2fr_1fr_1fr] md:px-8">
         <div>
-          <p className="font-editorial text-4xl text-fg">{profile.fullName}</p>
+          <p className="font-tech text-4xl text-fg">{profile.fullName}</p>
           <p className="mt-4 max-w-sm text-sm leading-relaxed text-muted">
             {profile.role} — {profile.discipline}.
           </p>

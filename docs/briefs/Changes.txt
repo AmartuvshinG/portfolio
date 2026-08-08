@@ -1,0 +1,26 @@
+List of changes:
+
+Make the text font consistent throughout the entire website: High-impact, cyberpunk, futuristic fonts, texts such as
+Interfaces that feel like hardware should be replaced with a futuristic style font. I really liked the previous Nexus website's hero's glitchy font style that animates when you hover your cursor, bring that back to the portfolio's hero section. Every single wall of text's font should match and/or at least match cyberpunk vibes and look very detailed and futuristic.
+
+Background rework: Right now the background looks fine but as you scroll down, the different sections in the navbar is clearly distinguishable as you see different sections, the background on all of them don't match consistently. So make the background one singular theme that matches the futuristic neo-Tokyo cyberpunk vibes. I want the whole background to feel like the user visiting it is going through a journey as they scroll down in a coherent way. Meaning, as they scroll down the experience is highly consistent, polished, and awwwards type of level website.
+
+The background style in Index for example looks good, just make it consistent throughout the entire website. Remove the current On screen flower picture or replace with a theme matching visual.
+
+I want the whole website to feel like a visual showcase type of journey that heavily relies on delivering a movie-like, cinematic experience to the user, everything has to be connected and coherent and most of all, transition very well. Emphasize transitions between each section seamlessly, this is VERY important.
+
+There's a lot of empty space between Work and Archive sections, populate/add newer things, can be placeholders for now for a typical portfolio website.
+
+As for the chronological timeline animation, have the years glow/hover/animate as the user is on a specific year scrolling down, right now the scrolling experience on the timeline feels way too fast to appreciate the special/unique scrolling beam animations, so I'll let you adjust that experience.
+
+The Find me elsewhere section at the very bottom feels out of place, it does look good but I think it would best suit with a Capabilities section somewhere placed up in Profile or something, make the size bigger and emphasize the cinematic animation and user experience most of all, up to your creative decision.
+
+For the Work animations, add in some placeholder pictures/gifs/animations anything that populates the current empty experience.
+
+Refer to 3-d marquee, aurora, hero, hover-gradient, parallax txt files so that you could take anything you'd like regarding design, for me personally, I really liked all the template designs so I'd like you to implement all of them to fit in the current cyberpunk vibes coherently without issues, errors.
+
+How about a liquid design to top it all off? Up to you.
+
+Refer to background-shader.txt, I really like the background design shader of that code, can you implement that sort of fluid, clean animation?
+
+Refer also to enter-animation.txt as well.

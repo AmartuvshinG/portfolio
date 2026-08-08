@@ -133,10 +133,12 @@ export const profile = {
 export const navLinks: NavLink[] = [
   { label: "Index", href: "#hero", code: "00" },
   { label: "Profile", href: "#about", code: "01" },
-  { label: "Craft", href: "#capabilities", code: "02" },
-  { label: "Work", href: "#work", code: "03" },
-  { label: "Archive", href: "#gallery", code: "04" },
-  { label: "Contact", href: "#contact", code: "05" },
+  { label: "Signal", href: "#connect", code: "02" },
+  { label: "Craft", href: "#capabilities", code: "03" },
+  { label: "Work", href: "#work", code: "04" },
+  { label: "Lab", href: "#lab", code: "05" },
+  { label: "Archive", href: "#gallery", code: "06" },
+  { label: "Contact", href: "#contact", code: "07" },
 ];
 
 export const about = {
@@ -309,6 +311,58 @@ export const projects: Project[] = [
       { label: "ADOPTION", value: "94%" },
     ],
   },
+  {
+    slug: "signal-drift",
+    index: "05",
+    title: "SIGNAL DRIFT",
+    category: "Audio-Reactive",
+    year: "2023",
+    role: "Creative Technologist",
+    summary:
+      "A generative visual instrument that renders a live audio stream as a drifting particle field.",
+    description:
+      "Signal Drift turns a live audio feed into a continuously evolving field of light. FFT bands drive a compute-shader particle system; the whole thing runs in a browser tab at 120fps and has been used as the stage visual for three touring sets.",
+    stack: ["WebGL", "Web Audio", "GLSL", "TypeScript"],
+    highlights: [
+      "120fps on integrated graphics",
+      "FFT-driven compute particle field",
+      "Used live on a three-city tour",
+    ],
+    accent: "accent-2",
+    image: "https://picsum.photos/seed/signal-drift/1600/1000",
+    shot: "/work/signal-drift.webp",
+    metrics: [
+      { label: "FPS", value: "120" },
+      { label: "PARTICLES", value: "260K" },
+      { label: "SHOWS", value: "12" },
+    ],
+  },
+  {
+    slug: "meridian-freight",
+    index: "06",
+    title: "MERIDIAN",
+    category: "Logistics Platform",
+    year: "2022",
+    role: "Front-end Architect",
+    summary:
+      "A freight-planning interface that made a spreadsheet workflow feel like a control surface.",
+    description:
+      "Meridian replaced a decade of spreadsheets with a single planning surface. The hard part was density: every screen holds thousands of rows and still has to feel calm. I built the virtualised grid, the routing map and the keyboard model the planners actually live in.",
+    stack: ["React", "MapLibre", "Web Workers", "Postgres"],
+    highlights: [
+      "40k-row grids at 60fps",
+      "Keyboard-first planning model",
+      "Cut plan time by 62%",
+    ],
+    accent: "alert",
+    image: "https://picsum.photos/seed/meridian-freight/1600/1000",
+    shot: "/work/meridian.webp",
+    metrics: [
+      { label: "ROWS", value: "40K" },
+      { label: "PLAN TIME", value: "-62%" },
+      { label: "SEATS", value: "340" },
+    ],
+  },
 ];
 
 /**
@@ -409,6 +463,49 @@ export const gallery: GalleryImage[] = [
     y: 2.3,
     w: 0.14,
     depth: 0.9,
+  },
+  {
+    src: "https://picsum.photos/seed/amara-i/1500/1000",
+    alt: "Signal Drift — particle field study",
+    width: 1500,
+    height: 1000,
+    x: 0.1,
+    y: 2.58,
+    w: 0.34,
+    depth: 0.2,
+    caption: "SIGNAL DRIFT, 2023",
+  },
+  {
+    src: "https://picsum.photos/seed/amara-j/1100/1400",
+    alt: "Type specimen sheets",
+    width: 1100,
+    height: 1400,
+    x: 0.62,
+    y: 2.86,
+    w: 0.18,
+    depth: 0.75,
+    caption: "SPECIMEN",
+  },
+  {
+    src: "https://picsum.photos/seed/amara-k/1800/1100",
+    alt: "Meridian — routing surface",
+    width: 1800,
+    height: 1100,
+    x: 0.2,
+    y: 3.2,
+    w: 0.46,
+    depth: 0.15,
+    caption: "MERIDIAN, 2022",
+  },
+  {
+    src: "https://picsum.photos/seed/amara-l/1200/1200",
+    alt: "Grid studies",
+    width: 1200,
+    height: 1200,
+    x: 0.76,
+    y: 3.5,
+    w: 0.22,
+    depth: 0.62,
   },
 ];
 

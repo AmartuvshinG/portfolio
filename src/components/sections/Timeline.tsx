@@ -6,6 +6,7 @@ import { timeline, stats } from "@/lib/content";
 import { AnimatedCounter } from "@/components/motion/AnimatedCounter";
 import { Reveal } from "@/components/motion/Reveal";
 import { cn } from "@/lib/utils";
+import { ChapterSeam } from "@/components/chrome/ChapterSeam";
 
 const STATUS_STYLES: Record<string, string> = {
   ACTIVE: "text-fg border-line-strong",
@@ -47,34 +48,74 @@ export function Timeline() {
     return () => ro.disconnect();
   }, []);
 
-  /* Spans list-height + a quarter viewport of scroll, so the beam tracks the
-     entry you're actually reading. A tighter range (e.g. "start 15%") fills
-     the whole rail within a few hundred pixels and the beam is just done. */
+  /* Deliberately the widest range on the page. The beam used to fill inside a
+     few hundred pixels of scroll and then just sit there — the animation was
+     over before you had read the first entry, which wasted the one moment on
+     this page that rewards slow scrolling. Starting a full viewport earlier and
+     ending a third of the way up stretches the same travel across roughly twice
+     the scroll distance, so the beam is always still moving while you read. */
   const { scrollYProgress } = useScroll({
     target: listRef,
-    offset: ["start 75%", "end 50%"],
+    offset: ["start 95%", "end 35%"],
   });
 
   const beamHeight = useTransform(scrollYProgress, [0, 1], [0, railHeight]);
-  const beamOpacity = useTransform(scrollYProgress, [0, 0.08], [0, 1]);
+  const beamOpacity = useTransform(scrollYProgress, [0, 0.06], [0, 1]);
+  /* The head — a bloom pinned to the beam's tip. The rail alone gives the eye
+     nothing to track; a travelling light does, and it is what makes the beam
+     read as something advancing rather than as a bar filling. */
+  const headY = useTransform(scrollYProgress, [0, 1], [0, railHeight]);
+  const headOpacity = useTransform(
+    scrollYProgress,
+    [0, 0.06, 0.94, 1],
+    [0, 1, 1, 0]
+  );
+
+  /* Which entry is under the reading line. Highest ratio wins rather than
+     last-intersecting, which is what stops the year flicking backwards when two
+     entries straddle the line — same rule the navbar's active pill uses. */
+  const [active, setActive] = useState(0);
+  const entryRefs = useRef<(HTMLDivElement | null)[]>([]);
+
+  useEffect(() => {
+    const nodes = entryRefs.current.filter((n): n is HTMLDivElement => !!n);
+    if (!nodes.length) return;
+
+    const io = new IntersectionObserver(
+      (entries) => {
+        const hit = entries
+          .filter((e) => e.isIntersecting)
+          .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
+        if (!hit) return;
+        const i = nodes.indexOf(hit.target as HTMLDivElement);
+        if (i >= 0) setActive(i);
+      },
+      { rootMargin: "-45% 0px -45% 0px", threshold: [0, 0.25, 0.5, 1] }
+    );
+
+    nodes.forEach((n) => io.observe(n));
+    return () => io.disconnect();
+  }, []);
 
   return (
     <section
       id="timeline"
       data-act="deck"
       data-chapter="LEDGER"
-      className="relative bg-bg"
+      className="relative"
       aria-label="Experience and numbers"
     >
+      <ChapterSeam />
+
       {/* --- Numbers --- */}
       <div className="mx-auto max-w-[1800px] px-5 pt-24 md:px-8 md:pt-36">
         <Reveal>
-          <span className="micro">05 — By the numbers</span>
+          <span className="micro">08 — By the numbers</span>
         </Reveal>
         <dl className="mt-10 grid grid-cols-2 gap-x-6 gap-y-12 border-t border-line pt-10 md:grid-cols-4">
           {stats.map((stat) => (
             <div key={stat.label}>
-              <dd className="display-caps text-[clamp(3rem,8vw,7rem)] text-fg">
+              <dd className="display-caps text-[clamp(2rem,5vw,4.5rem)] text-fg">
                 <AnimatedCounter
                   value={stat.value}
                   suffix={stat.suffix}
@@ -90,7 +131,7 @@ export function Timeline() {
       {/* --- Career log --- */}
       <div className="mx-auto max-w-[1600px] px-5 pb-24 pt-24 md:px-8 md:pb-36 md:pt-32">
         <Reveal>
-          <span className="micro">06 — Track record</span>
+          <span className="micro">09 — Track record</span>
         </Reveal>
 
         <div ref={listRef} className="relative mt-16 pl-10 md:pl-0">
@@ -117,46 +158,95 @@ export function Timeline() {
             />
           </div>
 
-          <div className="space-y-16 md:space-y-28">
-            {timeline.map((entry, i) => (
+          {/* The beam head. Outside the rail's `overflow-hidden` so its bloom
+              is not clipped to one pixel of width. */}
+          <motion.span
+            aria-hidden
+            className="absolute left-[3px] top-0 h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full md:left-[13.5rem]"
+            style={{
+              y: headY,
+              opacity: headOpacity,
+              background: "var(--spectrum-3)",
+              boxShadow:
+                "0 0 12px 4px color-mix(in srgb, var(--spectrum-3) 60%, transparent), 0 0 34px 12px color-mix(in srgb, var(--spectrum-2) 40%, transparent)",
+            }}
+          />
+
+          <div className="space-y-20 md:space-y-[34vh]">
+            {timeline.map((entry, i) => {
+              const isActive = i === active;
+              return (
               <div
                 key={entry.year + entry.title}
+                ref={(el) => {
+                  entryRefs.current[i] = el;
+                }}
                 className="relative grid gap-4 md:grid-cols-[13.5rem_1fr] md:gap-12"
               >
-                {/* Sticky year — the chapter heading */}
-                <div className="md:sticky md:top-32 md:self-start md:pr-10 md:text-right">
+                {/* Sticky year — the chapter heading.
+                    Held at 40% of the viewport rather than just under the navbar
+                    so it sits on the reading line while its entry passes, which
+                    is the whole reason it is sticky. */}
+                <div className="md:sticky md:top-[40vh] md:self-start md:pr-10 md:text-right">
                   <span
-                    className="tabular font-display font-black leading-none text-faint transition-colors"
-                    style={{ fontSize: "clamp(2.25rem, 6vw, 4.5rem)" }}
+                    className={cn(
+                      "tabular block origin-right font-display leading-none transition-all duration-500",
+                      // The active year carries the ramp; every other year stays
+                      // faint. Colour marks exactly one thing on this rail.
+                      isActive
+                        ? "spectrum-text scale-[1.06]"
+                        : "scale-100 text-faint"
+                    )}
+                    style={{
+                      fontSize: "clamp(1.5rem, 3.6vw, 3rem)",
+                      // Bloom behind the glyphs. Can't be a text-shadow on the
+                      // active state alone — `spectrum-text` makes the glyphs
+                      // transparent, so a text-shadow would draw the shadow of
+                      // nothing. This lights the box instead.
+                      filter: isActive
+                        ? "drop-shadow(0 0 18px color-mix(in srgb, var(--spectrum-2) 55%, transparent))"
+                        : "none",
+                    }}
                   >
                     {entry.year}
                   </span>
-                  <span className="mt-1 hidden font-mono text-[0.6rem] uppercase tracking-[0.28em] text-muted md:block">
+                  <span
+                    className={cn(
+                      "mt-2 hidden font-mono text-[0.6rem] uppercase tracking-[0.28em] transition-colors duration-500 md:block",
+                      isActive ? "text-fg" : "text-faint"
+                    )}
+                  >
                     {entry.org}
                   </span>
                 </div>
 
-                {/* Node marker on the rail. The active entry gets the ramp; the
-                    rest stay achromatic, so colour marks *one* thing. */}
+                {/* Node marker on the rail. Lights as the beam reaches it. */}
                 <span
                   aria-hidden
                   className={cn(
-                    "absolute left-0 top-3 h-2 w-2 border bg-bg md:left-[13.25rem]",
-                    entry.status === "ACTIVE"
-                      ? "animate-blink border-transparent"
-                      : "border-line-strong"
+                    "absolute left-0 top-3 h-2 w-2 border bg-void transition-all duration-500 md:left-[13.25rem]",
+                    isActive
+                      ? "scale-150 border-transparent"
+                      : entry.status === "ACTIVE"
+                        ? "animate-blink border-transparent"
+                        : "border-line-strong"
                   )}
                   style={
-                    entry.status === "ACTIVE"
+                    isActive || entry.status === "ACTIVE"
                       ? { backgroundImage: "var(--gradient-spectrum)" }
                       : undefined
                   }
                 />
 
                 <Reveal delay={i * 0.04} className="min-w-0">
-                  <div className="border-b border-line pb-8">
+                  <div
+                    className={cn(
+                      "border-b pb-8 transition-colors duration-500",
+                      isActive ? "border-line-strong" : "border-line"
+                    )}
+                  >
                     <div className="flex flex-wrap items-center gap-3">
-                      <h3 className="font-display text-2xl font-bold uppercase text-fg md:text-3xl">
+                      <h3 className="font-tech text-2xl font-bold uppercase text-fg md:text-3xl">
                         {entry.title}
                       </h3>
                       <span
@@ -177,7 +267,8 @@ export function Timeline() {
                   </div>
                 </Reveal>
               </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       </div>

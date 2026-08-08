@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Menu, X } from "lucide-react";
 import { navLinks, profile, contact } from "@/lib/content";
-import { useSmoothScroll } from "@/components/layout/SmoothScroll";
+import { useSmoothScroll } from "@/components/chrome/SmoothScroll";
 import { useLockScroll } from "@/hooks/useLockScroll";
 import { MagneticButton } from "@/components/motion/MagneticButton";
 import { cn } from "@/lib/utils";
@@ -127,11 +127,16 @@ export function Navbar() {
           transition={BAR_SPRING}
           className={cn(
             "relative mx-auto",
-            // `glass` alone is too sheer once the bar floats over body copy —
-            // the page text reads straight through it. The opaque base goes
-            // underneath so nav labels always win.
+            /* Opaque base, no backdrop-filter.
+               This used to carry `glass` as well — a 16px backdrop blur plus a
+               saturate, on a fixed element spanning the viewport. A
+               backdrop-filter has to re-read and re-blur everything behind it
+               on every frame the page scrolls, which is *every* frame, for the
+               entire session. At 92% opacity none of that blur was visible
+               anyway; the fill was already doing the work of keeping nav labels
+               legible over body copy. */
             contracted &&
-              "chamfer-lg glass bg-bg/92 shadow-[0_18px_60px_rgba(0,0,0,0.6)]"
+              "chamfer-lg border border-line bg-bg/95 shadow-[0_18px_60px_rgba(0,0,0,0.6)]"
           )}
         >
           <nav
@@ -154,7 +159,7 @@ export function Navbar() {
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-signal opacity-60" />
                 <span className="relative inline-flex h-2 w-2 rounded-full bg-signal" />
               </span>
-              <span className="font-display text-2xl font-black tracking-tight text-fg">
+              <span className="font-display text-xl text-fg">
                 {profile.wordmark}
               </span>
             </a>
@@ -305,7 +310,7 @@ export function Navbar() {
                     <span className="spectrum-text font-mono text-xs">
                       {link.code}
                     </span>
-                    <span className="font-display text-4xl font-bold uppercase text-fg">
+                    <span className="font-display text-3xl uppercase text-fg">
                       {link.label}
                     </span>
                   </a>

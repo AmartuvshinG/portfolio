@@ -3,8 +3,8 @@
 import Link from "next/link";
 import { useState } from "react";
 import { projects, type Project } from "@/lib/content";
-import { ShotImage } from "./ShotImage";
-import { ProjectDossier, type DossierOrigin } from "./ProjectDossier";
+import { ShotImage } from "@/components/work/ShotImage";
+import { ProjectDossier, type DossierOrigin } from "@/components/work/ProjectDossier";
 
 /**
  * The work world's fallback, and a real layout in its own right — this is what
@@ -37,7 +37,7 @@ export function WorkCardGrid() {
             key={project.slug}
             href={`/work/${project.slug}`}
             onClick={open(project)}
-            className="notch-card group relative block overflow-hidden bg-void-2 ring-1 ring-inset ring-line"
+            className="notch-card group relative block overflow-hidden bg-surface ring-1 ring-inset ring-line"
           >
             <div className="relative aspect-[8/5] w-full overflow-hidden">
               <ShotImage
@@ -53,7 +53,7 @@ export function WorkCardGrid() {
                 <span className="micro tabular">
                   {project.index} — {project.category}
                 </span>
-                <h3 className="mt-2 font-display text-2xl font-bold uppercase leading-none text-fg md:text-3xl">
+                <h3 className="mt-2 font-tech text-2xl font-bold uppercase leading-none text-fg md:text-3xl">
                   {project.title}
                 </h3>
               </div>

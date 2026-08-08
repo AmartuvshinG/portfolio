@@ -1,7 +1,8 @@
-import Image from "next/image";
 import { about, profile } from "@/lib/content";
+import { PortraitPlate } from "@/components/ui/PortraitPlate";
 import { Reveal, RevealStagger } from "@/components/motion/Reveal";
 import { fadeUp } from "@/lib/motion";
+import { ChapterSeam } from "@/components/chrome/ChapterSeam";
 
 /**
  * The charged interstitial — the one chromatic ground on the site.
@@ -23,14 +24,24 @@ export function About() {
       id="about"
       data-act="bloom"
       data-chapter="PROFILE"
-      className="relative overflow-hidden bg-bg py-24 text-fg md:py-36"
+      className="relative overflow-hidden py-24 text-fg md:py-36"
       aria-label="Profile"
     >
+      <ChapterSeam />
+
       {/* The charge. Sits under everything and bleeds past all four edges so it
           never resolves into a shape with a boundary. */}
       <div
         aria-hidden
-        className="spectrum-bloom pointer-events-none absolute -inset-x-[10%] -inset-y-[20%] animate-drift opacity-45 blur-[90px]"
+        /* A radial wash, not a 90px-blurred animated layer.
+           This was `spectrum-bloom … animate-drift blur-[90px]`, and the two
+           halves compounded: `spectrum-drift` animates `scale`, and scaling a
+           blurred element forces the browser to re-run the 90px gaussian over a
+           full-bleed surface on every frame of a 34-second loop, forever. It
+           was the largest single stall on the page. It is also redundant now —
+           the global backdrop already charges this act via `u_act`, and this
+           was a second bloom painted on top of the first. */
+        className="spectrum-bloom pointer-events-none absolute -inset-x-[10%] -inset-y-[20%] opacity-40"
       />
 
       <div className="relative mx-auto max-w-[1800px] px-5 md:px-8 lg:px-16">
@@ -39,7 +50,7 @@ export function About() {
               than as body copy with a heading over it. */}
           <Reveal className="md:col-span-7">
             <span className="micro">01 — {about.heading}</span>
-            <h2 className="mt-6 font-editorial text-[clamp(2.25rem,5vw,4.5rem)] leading-[1.04]">
+            <h2 className="mt-6 font-tech text-[clamp(2.25rem,5vw,4.5rem)] leading-[1.04]">
               {about.lead}
             </h2>
           </Reveal>
@@ -61,16 +72,10 @@ export function About() {
         <div className="mt-20 grid gap-10 md:mt-28 md:grid-cols-12 md:items-end">
           <Reveal className="md:col-span-5" variants={fadeUp}>
             <div className="notch-card relative aspect-[5/6] w-full overflow-hidden bg-void/40">
-              <Image
-                src="https://picsum.photos/seed/amara-operator/900/1120"
-                alt={`Portrait of ${profile.fullName}`}
-                fill
-                sizes="(max-width: 768px) 100vw, 40vw"
-                className="object-cover"
-              />
+              <PortraitPlate alt={`Portrait of ${profile.fullName}`} />
             </div>
             <div className="mt-4 flex items-baseline justify-between">
-              <span className="font-display text-lg font-bold uppercase">
+              <span className="font-tech text-lg font-bold uppercase">
                 {profile.fullName}
               </span>
               <span className="micro">{profile.role}</span>
@@ -82,10 +87,10 @@ export function About() {
               {about.signature.map((s) => (
                 <div
                   key={s.k}
-                  className="flex flex-col gap-3 bg-bg p-6"
+                  className="flex flex-col gap-3 bg-surface p-6"
                 >
                   <dt className="micro">{s.k}</dt>
-                  <dd className="font-display text-xl font-semibold uppercase leading-tight">
+                  <dd className="font-tech text-xl font-semibold uppercase leading-tight">
                     {s.v}
                   </dd>
                 </div>

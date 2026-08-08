@@ -11,12 +11,15 @@ import {
 } from "react";
 import { capabilities, projects, type Project } from "@/lib/content";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
+import { useElementProgress } from "@/hooks/useScrollProgress";
+import { setBackdropIntensity } from "@/lib/backdrop";
 import { useHasWebGL } from "@/lib/gpu";
-import { WorkCardGrid } from "./WorkCardGrid";
-import { ProjectDossier, type DossierOrigin } from "./ProjectDossier";
-import type { CardHit } from "@/components/three/WorkWorld";
+import { WorkCardGrid } from "@/components/work/WorkCardGrid";
+import { ProjectDossier, type DossierOrigin } from "@/components/work/ProjectDossier";
+import type { CardHit } from "@/components/work/WorkWorld";
+import { ChapterSeam } from "@/components/chrome/ChapterSeam";
 
-const WorkWorld = dynamic(() => import("@/components/three/WorkWorld"), {
+const WorkWorld = dynamic(() => import("@/components/work/WorkWorld"), {
   ssr: false,
 });
 
@@ -60,7 +63,6 @@ class SceneBoundary extends Component<
 export function SelectedWork() {
   const reduced = useReducedMotion();
   const ref = useRef<HTMLDivElement>(null);
-  const progress = useRef(0);
   const [origin, setOrigin] = useState<DossierOrigin | null>(null);
   const [hovered, setHovered] = useState<Project | null>(null);
   /* Both default to the flat layout, so SSR and first paint render the card
@@ -78,29 +80,29 @@ export function SelectedWork() {
 
   const flat = reduced || small || !gpu;
 
+  /* Dolly progress through the pinned section. Shared rAF with the rest of the
+     site's scroll consumers — see hooks/useScrollProgress. */
+  const progress = useElementProgress(ref, !flat);
+
+  /* While the world is pinned it covers the viewport completely, so the site
+     backdrop is both invisible and still rendering a 15-iteration fragment
+     shader per pixel. Stand it down for the duration — two full-screen WebGL
+     surfaces competing for the GPU is the one place this page can actually drop
+     frames. Restored on exit, and unconditionally on unmount so a route change
+     mid-section can't leave the backdrop dark. */
   useEffect(() => {
     if (flat) return;
-    let ticking = false;
-    const onScroll = () => {
-      if (ticking) return;
-      ticking = true;
-      requestAnimationFrame(() => {
-        const el = ref.current;
-        if (el) {
-          const { top, height } = el.getBoundingClientRect();
-          const travel = height - window.innerHeight;
-          progress.current =
-            travel > 0 ? Math.min(1, Math.max(0, -top / travel)) : 0;
-        }
-        ticking = false;
-      });
-    };
-    onScroll();
-    window.addEventListener("scroll", onScroll, { passive: true });
-    window.addEventListener("resize", onScroll);
+    const el = ref.current;
+    if (!el) return;
+
+    const io = new IntersectionObserver(
+      ([entry]) => setBackdropIntensity(entry.intersectionRatio > 0.85 ? 0.12 : 1),
+      { threshold: [0, 0.85, 1] }
+    );
+    io.observe(el);
     return () => {
-      window.removeEventListener("scroll", onScroll);
-      window.removeEventListener("resize", onScroll);
+      io.disconnect();
+      setBackdropIntensity(1);
     };
   }, [flat]);
 
@@ -113,9 +115,10 @@ export function SelectedWork() {
         id="work"
         data-act="void"
         data-chapter="WORK"
-        className="relative bg-bg py-24 md:py-32"
+        className="relative py-24 md:py-32"
         aria-label="Selected work"
       >
+        <ChapterSeam />
         <Header />
         <div className="mt-14">
           <WorkCardGrid />
@@ -130,7 +133,7 @@ export function SelectedWork() {
       data-act="void"
       data-chapter="WORK"
       ref={ref}
-      className="relative bg-bg"
+      className="relative"
       style={{ height: `${SCROLL_VH}vh` }}
       aria-label="Selected work"
     >
@@ -153,8 +156,8 @@ export function SelectedWork() {
                 where it stays crisp and selectable. --- */}
         <div className="pointer-events-none absolute inset-0 flex flex-col justify-between p-5 text-fg md:p-8 lg:px-16">
           <div className="pt-16 md:pt-20">
-            <span className="micro">03 — Selected work</span>
-            <h2 className="display-caps mt-3 text-[clamp(2.5rem,7vw,6rem)]">
+            <span className="micro">04 — Selected work</span>
+            <h2 className="display-caps mt-3 text-[clamp(1.6rem,4vw,3.75rem)]">
               Work
             </h2>
           </div>
@@ -184,7 +187,7 @@ export function SelectedWork() {
               <p className="micro min-h-4">
                 {hovered ? hovered.role : `${projects.length} case files`}
               </p>
-              <p className="mt-2 max-w-xs font-editorial text-lg leading-snug text-fg md:text-xl">
+              <p className="mt-2 max-w-xs font-tech text-lg leading-snug text-fg md:text-xl">
                 {hovered ? hovered.summary : "Drag through. Click any card."}
               </p>
             </div>
@@ -200,8 +203,8 @@ export function SelectedWork() {
 function Header() {
   return (
     <div className="mx-auto max-w-[1800px] px-5 md:px-8 lg:px-16">
-      <span className="micro">03 — Selected work</span>
-      <h2 className="display-caps mt-3 text-[clamp(2.5rem,7vw,6rem)] text-fg">
+      <span className="micro">04 — Selected work</span>
+      <h2 className="display-caps mt-3 text-[clamp(1.6rem,4vw,3.75rem)] text-fg">
         Work
       </h2>
       <p className="mt-5 max-w-xl text-base leading-relaxed text-muted">

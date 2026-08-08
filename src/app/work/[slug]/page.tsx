@@ -5,7 +5,6 @@ import { notFound } from "next/navigation";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import { projects, getProject } from "@/lib/content";
 import { Reveal } from "@/components/motion/Reveal";
-import { Nebula } from "@/components/layout/Nebula";
 
 export function generateStaticParams() {
   return projects.map((p) => ({ slug: p.slug }));
@@ -45,13 +44,8 @@ export default async function WorkDetail({
   return (
     <article
       data-act="deck"
-      className="relative bg-bg pb-28 pt-28 md:pt-36"
+      className="relative pb-28 pt-28 md:pt-36"
     >
-      <Nebula
-        className="pointer-events-none absolute inset-0 h-full w-full"
-        opacity={0.3}
-      />
-
       <div className="relative mx-auto max-w-[1400px] px-5 md:px-8 lg:px-16">
         <Link
           href="/#work"
@@ -68,11 +62,11 @@ export default async function WorkDetail({
           </div>
           <h1
             className="display-caps mt-6 text-fg"
-            style={{ fontSize: "clamp(3rem, 10vw, 9rem)" }}
+            style={{ fontSize: "clamp(1.9rem, 6vw, 5.5rem)" }}
           >
             {project.title}
           </h1>
-          <p className="mt-6 max-w-2xl font-editorial text-2xl leading-snug text-fg md:text-3xl">
+          <p className="mt-6 max-w-2xl font-tech text-2xl leading-snug text-fg md:text-3xl">
             {project.summary}
           </p>
 
@@ -85,7 +79,7 @@ export default async function WorkDetail({
             ].map((row) => (
               <div key={row.k}>
                 <dt className="micro">{row.k}</dt>
-                <dd className="mt-2 font-display text-lg font-semibold uppercase text-fg">
+                <dd className="mt-2 font-tech text-lg font-semibold uppercase text-fg">
                   {row.v}
                 </dd>
               </div>
@@ -149,7 +143,7 @@ export default async function WorkDetail({
                 {project.metrics.map((m) => (
                   <div key={m.label}>
                     <span className="micro">{m.label}</span>
-                    <p className="tabular mt-2 font-display text-2xl font-black text-fg">
+                    <p className="tabular mt-2 font-display text-xl text-fg">
                       {m.value}
                     </p>
                   </div>
@@ -165,7 +159,7 @@ export default async function WorkDetail({
         >
           <div>
             <span className="micro">Next case file</span>
-            <p className="display-caps mt-3 text-4xl text-fg md:text-6xl">
+            <p className="display-caps mt-3 text-2xl text-fg md:text-4xl">
               {next.title}
             </p>
           </div>

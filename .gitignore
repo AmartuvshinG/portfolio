@@ -40,5 +40,8 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# design reference footage — ~93MB of mp4, kept locally, never in history
+# design reference footage — ~108MB of mp4, kept locally, never in history.
+# The clips moved to docs/reference/video/ when the loose root .txt references
+# were filed; this rule has to follow them or the whole lot lands in history.
 /reference/
+docs/reference/video/

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useSyncExternalStore } from "react";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
 
 /**
@@ -32,20 +32,32 @@ import { useReducedMotion } from "@/hooks/useReducedMotion";
 /** Matches the `md` breakpoint. Below this the ring is not drawn at all. */
 const MIN_WIDTH = 768;
 
+/**
+ * Both eligibility conditions as one query, so they can never drift apart —
+ * which is fault 2 above. Read through `useSyncExternalStore` rather than
+ * measured into state from an effect: this is external environment state, and
+ * setting it from an effect commits a render with the wrong answer first.
+ */
+const QUERY = `(pointer: fine) and (min-width: ${MIN_WIDTH}px)`;
+
+function subscribe(onChange: () => void) {
+  const mq = window.matchMedia(QUERY);
+  mq.addEventListener("change", onChange);
+  return () => mq.removeEventListener("change", onChange);
+}
+
 export function HudCursor() {
   const reduced = useReducedMotion();
   const ringRef = useRef<HTMLDivElement>(null);
-  const [active, setActive] = useState(false);
+  const eligible = useSyncExternalStore(
+    subscribe,
+    () => window.matchMedia(QUERY).matches,
+    () => false
+  );
+  const active = eligible && !reduced;
 
   useEffect(() => {
-    if (reduced) return;
-
-    const eligible = () =>
-      window.matchMedia("(pointer: fine)").matches &&
-      window.innerWidth >= MIN_WIDTH;
-
-    if (!eligible()) return;
-    setActive(true);
+    if (!active) return;
 
     const root = document.documentElement;
     root.classList.add("hud-cursor");
@@ -83,24 +95,17 @@ export function HudCursor() {
     window.addEventListener("mousemove", onMove, { passive: true });
     raf = requestAnimationFrame(render);
 
-    // A window narrowed past the breakpoint must hand the native cursor back,
-    // otherwise fault 2 returns at a different size.
-    const onResize = () => {
-      const ok = eligible();
-      root.classList.toggle("hud-cursor", ok);
-      setActive(ok);
-    };
-    window.addEventListener("resize", onResize);
-
+    /* A window narrowed past the breakpoint hands the native cursor back for
+       free now: the media query flips, `active` goes false, and this effect
+       tears down — which is the whole reason eligibility moved out of state. */
     return () => {
       window.removeEventListener("mousemove", onMove);
-      window.removeEventListener("resize", onResize);
       cancelAnimationFrame(raf);
       root.classList.remove("hud-cursor");
     };
-  }, [reduced]);
+  }, [active]);
 
-  if (reduced || !active) return null;
+  if (!active) return null;
 
   return (
     <div

@@ -1,8 +1,8 @@
 import { capabilities } from "@/lib/content";
-import { SectionHeader } from "./SectionHeader";
-import { CapabilityCard } from "./CapabilityCard";
+import { SectionHeader } from "@/components/ui/SectionHeader";
+import { CapabilityCard } from "@/components/ui/CapabilityCard";
 import { RevealStagger, Reveal } from "@/components/motion/Reveal";
-import { Nebula } from "@/components/layout/Nebula";
+import { ChapterSeam } from "@/components/chrome/ChapterSeam";
 
 /**
  * Lifted onto the deck after the bloom. The fanned deck that used to live
@@ -16,17 +16,14 @@ export function Capabilities() {
       id="capabilities"
       data-act="deck"
       data-chapter="CRAFT"
-      className="relative overflow-hidden bg-bg py-24 md:py-36"
+      className="relative overflow-hidden py-24 md:py-36"
       aria-label="Capabilities"
     >
-      <Nebula
-        className="pointer-events-none absolute inset-0 h-full w-full"
-        opacity={0.38}
-      />
+      <ChapterSeam />
 
       <div className="relative mx-auto max-w-[1800px] px-5 md:px-8 lg:px-16">
         <div className="flex flex-col justify-between gap-8 md:flex-row md:items-end">
-          <SectionHeader index="02" label="What I do" title="Craft" />
+          <SectionHeader index="03" label="What I do" title="Craft" />
           <Reveal>
             <p className="max-w-xs text-sm leading-relaxed text-muted">
               A full-stack toolkit for building interfaces that are equal parts

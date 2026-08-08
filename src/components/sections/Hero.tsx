@@ -2,8 +2,10 @@
 
 import { motion } from "framer-motion";
 import { profile, contact } from "@/lib/content";
-import { ApertureSlab } from "@/components/sections/ApertureSlab";
-import { Nebula } from "@/components/layout/Nebula";
+import { GlowHorizon } from "@/components/ui/GlowHorizon";
+import { GlitchText } from "@/components/motion/GlitchText";
+import { ScrambleText } from "@/components/motion/ScrambleText";
+import { usePointerDrift } from "@/hooks/usePointerDrift";
 
 const rise = {
   hidden: { y: "110%" },
@@ -14,55 +16,65 @@ const rise = {
 };
 
 /**
- * The opening frame: one enormous subject centred in the dark, the name set at
- * a scale that has to break to fit, and almost nothing else.
+ * The opening frame: the name at a scale that has to break to fit, and a
+ * horizon of light rising past it.
  *
- * The single detail that makes it work is depth order — the wordmark is painted
- * *behind* the aperture, so the shaft of light cuts through the letterforms.
- * That one relationship is what turns type-on-a-background into a composition.
- * It used to be carried by a stock photo of a spider web; it is now carried by
- * the light itself, which costs no image and never 404s.
+ * The relationship that makes it a composition rather than type on a background
+ * is depth order — the wordmark is painted *behind* the horizon, so the crown
+ * of the arc cuts across the letterforms. That job was previously done by a
+ * shaft of light (and before that by a stock photo); it is now done by the
+ * glow-horizon arcs, which are the same gesture the preloader hands off with
+ * and the same one every section boundary uses. The hero is where that language
+ * is stated at full strength.
+ *
+ * Hovering the wordmark splits it into magenta and cyan — the NEXUS glitch,
+ * restored, and the only interaction in the frame.
  */
 export function Hero() {
+  const drift = usePointerDrift(30);
+
   return (
     <section
       id="hero"
       data-act="void"
       data-chapter="INDEX"
-      className="relative flex min-h-dvh w-full flex-col justify-end overflow-hidden bg-bg"
+      className="relative flex min-h-dvh w-full flex-col justify-end overflow-hidden"
       aria-label="Introduction"
     >
-      <Nebula className="pointer-events-none absolute inset-0 h-full w-full" opacity={0.42} />
-
-      {/* --- Layer 1: the wordmark, behind everything --- */}
-      <div className="pointer-events-none absolute inset-x-0 top-[16vh] flex justify-center md:top-[14vh]">
-        <h1 className="display-caps flex overflow-hidden text-[26vw] leading-[0.8] text-fg md:text-[22vw]">
+      {/* --- Layer 1: the wordmark, behind everything.
+              `pointer-events-auto` on the glyphs only — the wrapper stays
+              transparent to the cursor so it can't eat clicks across the whole
+              upper viewport, but the glitch still needs a hover target. */}
+      <div className="pointer-events-none absolute inset-x-0 top-[18vh] flex justify-center md:top-[16vh]">
+        <h1 className="display-caps flex overflow-hidden text-[15vw] leading-[0.95] text-fg md:text-[13vw]">
           <motion.span
             variants={rise}
             initial="hidden"
             animate="show"
-            className="block"
+            className="pointer-events-auto block"
             style={{ paddingBottom: "0.08em" }}
           >
-            {profile.wordmark}
+            <GlitchText text={profile.wordmark} />
           </motion.span>
         </h1>
       </div>
 
-      {/* --- Layer 2: the aperture, cutting through it --- */}
-      <motion.div
-        initial={{ opacity: 0, scaleY: 0.92 }}
-        animate={{ opacity: 1, scaleY: 1 }}
-        transition={{ duration: 1.6, ease: [0.16, 1, 0.3, 1], delay: 0.25 }}
-        className="absolute inset-x-0 bottom-0 top-[8vh] origin-bottom"
+      {/* --- Layer 2: the horizon, cresting through it.
+              Delayed past the preloader's 0.9s curtain lift so the arcs are
+              still arriving as the curtain clears — the hand-off is one
+              continuous move rather than two sequential ones. */}
+      <div
+        ref={drift}
+        className="pointer-events-none absolute inset-x-0 bottom-[-18vh] top-[22vh] will-change-transform"
       >
-        <ApertureSlab />
-      </motion.div>
+        <GlowHorizon variant="bottom" idle delay={0.35} />
+      </div>
 
       {/* Legibility scrim, small screens only. On desktop the copy sits in the
-          margins either side of the aperture, but a phone has no margins — the
-          serif line and the sub land directly on the light and neither is
-          readable without this. */}
+          margins either side of the horizon, but a phone has no margins — the
+          lead line and the sub land directly on the light and neither is
+          readable without this. The arcs are brighter than the shaft they
+          replaced, so this matters more than it used to, not less. */}
       <div
         aria-hidden
         className="pointer-events-none absolute inset-x-0 bottom-0 h-[62%] md:hidden"
@@ -84,7 +96,7 @@ export function Hero() {
             className="notch-card-sm w-fit border border-line bg-deck/80 px-5 py-4 backdrop-blur-md"
           >
             <span className="micro">Currently</span>
-            <p className="mt-2 max-w-[15rem] font-display text-sm font-semibold uppercase leading-tight text-fg">
+            <p className="mt-2 max-w-[15rem] font-tech text-sm font-semibold uppercase leading-tight text-fg">
               {profile.status}
             </p>
             <a
@@ -101,9 +113,10 @@ export function Hero() {
             transition={{ delay: 1.05, duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
             className="max-w-md md:text-right"
           >
-            {/* The serif line. One editorial voice against all the grotesk
-                is what stops the page reading as a tech template. */}
-            <p className="font-editorial text-3xl leading-[1.08] text-fg md:text-4xl">
+            {/* The lead. Chakra Petch rather than the display face — its
+                chamfered terminals carry the same cut as the notch cards while
+                staying readable at paragraph scale, which Michroma does not. */}
+            <p className="font-tech text-3xl font-medium leading-[1.12] text-fg md:text-4xl">
               {profile.heroLead}
             </p>
             <p className="mt-4 text-sm leading-relaxed text-muted">
@@ -118,7 +131,7 @@ export function Hero() {
           transition={{ delay: 1.3, duration: 1 }}
           className="flex items-center justify-between border-t border-line pt-4"
         >
-          <span className="micro">{profile.kicker}</span>
+          <ScrambleText text={profile.kicker} immediate className="micro" />
           <span className="micro hidden md:block">{profile.location}</span>
           <span className="micro flex items-center gap-2">
             <span className="h-1.5 w-1.5 animate-blink rounded-full bg-signal" />

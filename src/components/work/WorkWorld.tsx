@@ -13,7 +13,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 import { projects, type Project } from "@/lib/content";
 import { accentColor } from "@/lib/content";
-import { buildCardTexture } from "@/lib/cardTexture";
+import { buildCardTexture } from "@/components/work/cardTexture";
+import { createDepthScanMaterial } from "./depthScan";
 import { srand } from "@/lib/utils";
 
 /* -------------------------------------------------------------------------- */
@@ -110,6 +111,15 @@ function Card({
     gl.domElement.style.cursor = hovered ? "pointer" : "";
   }, [hovered, gl]);
 
+  /* One material per card: the scan's progress and hover level are per-instance
+     uniforms, so a shared material would make every card in the world scan in
+     lockstep with whichever one was hovered last. */
+  const material = useMemo(
+    () => (texture ? createDepthScanMaterial(texture, tint) : null),
+    [texture, tint]
+  );
+  useEffect(() => () => material?.dispose(), [material]);
+
   useFrame((state, delta) => {
     const g = group.current;
     if (!g) return;
@@ -130,9 +140,20 @@ function Card({
     const k = 1 - Math.pow(0.0015, delta);
     g.rotation.y += (targetY - g.rotation.y) * k;
     g.scale.lerp(scratch.setScalar(targetScale), k);
+
+    /* Drive the depth scan. The band runs on a sine so it sweeps in and back
+       out through the card's depth rather than snapping from far to near, and
+       `uHover` eases on the same curve as everything else here so the scan
+       fades up rather than switching on. */
+    if (material) {
+      const u = material.uniforms;
+      u.uProgress.value = Math.sin(t * 0.5 + index) * 0.5 + 0.5;
+      u.uHover.value += ((hovered ? 1 : 0) - u.uHover.value) * k;
+      u.uPointer.value.set(state.pointer.x, state.pointer.y);
+    }
   });
 
-  if (!texture) return null;
+  if (!texture || !material) return null;
 
   return (
     <group ref={group} position={position}>
@@ -184,7 +205,10 @@ function Card({
         }}
       >
         <planeGeometry />
-        <meshBasicMaterial map={texture} transparent toneMapped={false} />
+        {/* The depth scan replaces a plain textured plane. See work/depthScan.ts
+            — this is the one place on the site the real screenshots are shown
+            large, so it is where the treatment earns its cost. */}
+        <primitive object={material} attach="material" />
       </mesh>
     </group>
   );

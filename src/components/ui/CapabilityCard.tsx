@@ -3,6 +3,7 @@
 import { motion } from "framer-motion";
 import type { Capability } from "@/lib/content";
 import { scaleIn } from "@/lib/motion";
+import { HoverBorderGradient } from "@/components/motion/HoverBorderGradient";
 
 /**
  * A capability, as a notched card.
@@ -31,7 +32,7 @@ export function CapabilityCard({ item }: { item: Capability }) {
         </span>
       </div>
 
-      <h3 className="mt-8 font-display text-2xl font-bold uppercase leading-tight text-fg">
+      <h3 className="mt-8 font-tech text-2xl font-bold uppercase leading-tight text-fg">
         {item.title}
       </h3>
 
@@ -52,7 +53,7 @@ export function CapabilityCard({ item }: { item: Capability }) {
         />
       </div>
 
-      <div className="mt-5 flex flex-wrap gap-x-4 gap-y-1">
+      <div className="mt-5 flex flex-wrap items-center gap-x-4 gap-y-1">
         {item.tags.map((tag) => (
           <span
             key={tag}
@@ -61,6 +62,17 @@ export function CapabilityCard({ item }: { item: Capability }) {
             {tag}
           </span>
         ))}
+        {/* The one moving light on the card. It idles around the chip's edge and
+            floods with the ramp on hover — enough to make the grid feel powered
+            without putting a travelling border on all six cards at once, which
+            would read as six things demanding attention rather than a system. */}
+        <HoverBorderGradient
+          as="span"
+          containerClassName="ml-auto"
+          className="px-2.5 py-1 font-mono text-[0.6rem] uppercase tracking-[0.18em] text-muted"
+        >
+          {item.code.split("/")[1]}
+        </HoverBorderGradient>
       </div>
     </motion.article>
   );

@@ -9,11 +9,12 @@ interface SectionHeaderProps {
   className?: string;
   align?: "left" | "center";
   /**
-   * `caps` sets the title in KPR's oversized grotesk; `serif` in the editorial
-   * face. Alternating between them across the page is what gives the acts
-   * distinct voices — a single treatment everywhere flattens them back out.
+   * `caps` sets the title in the wide display face, `tech` in the chamfered
+   * working face. Alternating between them across the page is what gives the
+   * acts distinct voices — a single treatment everywhere flattens them back
+   * out. `tech` also exists for titles too long to survive Michroma's width.
    */
-  voice?: "caps" | "serif";
+  voice?: "caps" | "tech";
 }
 
 /**
@@ -49,14 +50,14 @@ export function SectionHeader({
       {voice === "caps" ? (
         <h2
           className="display-caps text-fg"
-          style={{ fontSize: "clamp(2.75rem, 8vw, 8rem)" }}
+          style={{ fontSize: "clamp(1.6rem, 4.4vw, 4.25rem)" }}
         >
           {title}
         </h2>
       ) : (
         <h2
-          className="font-editorial leading-[1.02] text-fg"
-          style={{ fontSize: "clamp(2.5rem, 6vw, 5.5rem)" }}
+          className="font-tech font-semibold leading-[1.04] text-fg"
+          style={{ fontSize: "clamp(2.25rem, 5.5vw, 5rem)" }}
         >
           {title}
         </h2>

@@ -1,0 +1,139 @@
+You are given a task to integrate an existing React component in the codebase
+
+The codebase should support:
+- shadcn project structure  
+- Tailwind CSS
+- Typescript
+
+If it doesn't, provide instructions on how to setup project via shadcn CLI, install Tailwind or Typescript.
+
+Determine the default path for components and styles. 
+If default path for components is not /components/ui, provide instructions on why it's important to create this folder
+Copy-paste this component to /components/ui folder:
+```tsx
+glow-horizon.tsx
+"use client";
+
+import { motion } from "framer-motion";
+
+const EASE = [0.16, 1, 0.3, 1] as const;
+const DURATION = 2;
+
+export type GlowHorizonVariant = "top" | "bottom" | "left" | "right";
+
+const VARIANTS: Record<GlowHorizonVariant, {
+  axis: "x" | "y";
+  scaleAxis: "scaleX" | "scaleY";
+  enterPct: string;
+  restPct: string;
+}> = {
+  top:    { axis: "y", scaleAxis: "scaleY", enterPct: "-100%", restPct: "-50%" },
+  bottom: { axis: "y", scaleAxis: "scaleY", enterPct:  "100%", restPct:  "50%" },
+  left:   { axis: "x", scaleAxis: "scaleX", enterPct:  "100%", restPct:  "50%" },
+  right:  { axis: "x", scaleAxis: "scaleX", enterPct: "-100%", restPct: "-50%" },
+};
+
+export interface GlowHorizonProps {
+  className?: string;
+  variant?: GlowHorizonVariant;
+}
+
+export default function GlowHorizonFM({ className, variant = "top" }: GlowHorizonProps) {
+  const { axis, scaleAxis, enterPct, restPct } = VARIANTS[variant];
+
+  return (
+    <motion.div
+      className={"absolute w-full h-full " + (className ?? "")}
+      style={{ isolation: "isolate" }}
+      initial={{ [axis]: enterPct, [scaleAxis]: 1.5, opacity: 0, filter: "blur(15px)" }}
+      animate={{ [axis]: restPct,  [scaleAxis]: 1,   opacity: 1, filter: "blur(0px)"  }}
+      transition={{ duration: DURATION, ease: EASE }}
+    >
+      <Arc variant={variant} color="#FFFFFF" size="132%" boxShadow="0px -4px 23px 0px #ffffffb5" delay={1.2} />
+      <Arc variant={variant} color="#A558FB" size="120%" initialOffset="10%" blur={31} delay={0.6} />
+      <Arc variant={variant} color="#4922E5" size="124%" initialOffset="10%" blur={21} delay={0}   />
+      <Arc variant={variant} color="#000"    size="120%" initialOffset="10%" blur={51} delay={0}   />
+    </motion.div>
+  );
+}
+
+function Arc({
+  variant,
+  color,
+  size,
+  initialOffset,
+  blur,
+  boxShadow,
+  delay,
+}: {
+  variant: GlowHorizonVariant;
+  color: string;
+  size: string;
+  initialOffset?: string;
+  blur?: number;
+  boxShadow?: string;
+  delay: number;
+}) {
+  const scale = parseFloat(size) / 100;
+  const { axis, enterPct } = VARIANTS[variant];
+  const sign = enterPct.startsWith("-") ? -1 : 1;
+  const startPct = initialOffset
+    ? `${sign * Math.abs(parseFloat(initialOffset) - 50)}%`
+    : undefined;
+
+  return (
+    <motion.div
+      aria-hidden
+      className="absolute inset-0 rounded-[100%]"
+      style={{
+        scale,
+        background: color,
+        ...(blur !== undefined && { filter: `blur(${blur}px)` }),
+        ...(boxShadow && { boxShadow }),
+      }}
+      initial={startPct ? { [axis]: startPct } : false}
+      animate={startPct ? { [axis]: 0 } : undefined}
+      transition={{ duration: DURATION, ease: EASE, delay }}
+    />
+  );
+}
+
+
+demo.tsx
+import GlowHorizonFM from "@/components/ui/glow-horizon";
+import { AnimatedTitleFM } from "../components/ui/glow-horizon-utils/animated-title-fm";
+
+export default function GlowHorizonDemo() {
+  return (
+    <div style={{ width: "100%", height: "100vh", position: "relative", overflow: "hidden", background: "#050507" }}>
+      <GlowHorizonFM variant="top" />
+      <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
+        <AnimatedTitleFM open={true} />
+      </div>
+    </div>
+  );
+}
+
+```
+
+Install NPM dependencies:
+```bash
+framer-motion
+```
+
+Implementation Guidelines
+ 1. Analyze the component structure and identify all required dependencies
+ 2. Review the component's argumens and state
+ 3. Identify any required context providers or hooks and install them
+ 4. Questions to Ask
+ - What data/props will be passed to this component?
+ - Are there any specific state management requirements?
+ - Are there any required assets (images, icons, etc.)?
+ - What is the expected responsive behavior?
+ - What is the best place to use this component in the app?
+
+Steps to integrate
+ 0. Copy paste all the code above in the correct directories
+ 1. Install external dependencies
+ 2. Fill image assets with Unsplash stock images you know exist
+ 3. Use lucide-react icons for svgs or logos if component requires them

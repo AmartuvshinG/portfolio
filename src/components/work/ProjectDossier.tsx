@@ -17,7 +17,7 @@ import { useReducedMotion } from "@/hooks/useReducedMotion";
 import { useLockScroll } from "@/hooks/useLockScroll";
 import { useOutsideClick } from "@/hooks/useOutsideClick";
 import { EASE_EXPO } from "@/lib/motion";
-import { ProjectVisual } from "./ProjectVisual";
+import { ProjectVisual } from "@/components/work/ProjectVisual";
 
 export interface DossierOrigin {
   project: Project;
@@ -175,7 +175,7 @@ export function ProjectDossier({
             role="dialog"
             aria-modal="true"
             aria-labelledby="dossier-title"
-            className="notch-card absolute flex flex-col overflow-hidden bg-void-2 ring-1 ring-inset ring-line"
+            className="notch-card absolute flex flex-col overflow-hidden bg-surface ring-1 ring-inset ring-line"
             initial={
               reduced
                 ? { ...box, opacity: 0 }
@@ -245,7 +245,7 @@ export function ProjectDossier({
                 </div>
                 <h2
                   id="dossier-title"
-                  className="display-caps mt-3 text-4xl text-fg md:text-5xl"
+                  className="display-caps mt-3 text-2xl text-fg md:text-3xl"
                 >
                   {project.title}
                 </h2>
@@ -298,7 +298,7 @@ export function ProjectDossier({
                         <div key={m.label}>
                           <span className="micro">{m.label}</span>
                           <p
-                            className="tabular mt-1 font-display text-2xl font-black text-fg"
+                            className="tabular mt-1 font-display text-xl text-fg"
                           >
                             {m.value}
                           </p>

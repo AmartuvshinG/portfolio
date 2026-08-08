@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { useSmoothScroll } from "@/components/layout/SmoothScroll";
+import { useSmoothScroll } from "@/components/chrome/SmoothScroll";
 
 /**
  * Freezes page scrolling while `active` is true, releasing on cleanup.
