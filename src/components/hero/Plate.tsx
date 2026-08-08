@@ -29,8 +29,11 @@ import { cn } from "@/lib/utils";
 export interface PlateSpec {
   /** Travel over the full scroll run, in vh. Negative travels up the screen. */
   travel: number;
-  /** Scale at the end of the run. 1 = no growth. */
-  scale: number;
+  /**
+   * Scale at the end of the run. **Only set this where the growth is doing
+   * visible work**, and read the note below before adding another.
+   */
+  scale?: number;
   /** Paint order. Higher is nearer the viewer, and occludes what is below it. */
   z: number;
 }
@@ -52,7 +55,24 @@ export function Plate({
   children?: ReactNode;
 }) {
   const y = useTransform(progress, [0, 1], ["0vh", `${spec.travel}vh`]);
-  const scale = useTransform(progress, [0, 1], [1, spec.scale]);
+  const scale = useTransform(progress, [0, 1], [1, spec.scale ?? 1]);
+
+  /* Promote every plate while the hero is on screen.
+     Selective promotion was tried — only the fast-moving near plates — and
+     measured *worse*: an unpromoted layer carrying a full-bleed gradient
+     re-rasterises on every frame it moves, and the far plates carry the
+     largest gradients on the page. */
+  const promote = active;
+
+  /* **Translate freely; scale sparingly.**
+     Ten full-viewport layers translating is close to free — the compositor
+     moves an existing raster. Ten *scaling* is not: a scale resamples the whole
+     surface every frame, and measured against the previous hero it cost 67ms of
+     a 183ms frame at 6x CPU throttle, on GPU rasterisation as well as software.
+     Differential *travel* is what produces the depth; the growth only earns its
+     cost on the two plates where you can actually see something get bigger —
+     the wordmark and the centrepiece. Everything else translates only. */
+  const dollies = (spec.scale ?? 1) !== 1;
 
   return (
     <motion.div
@@ -63,9 +83,9 @@ export function Plate({
           ? { zIndex: spec.z }
           : {
               y,
-              scale,
+              ...(dollies && { scale }),
               zIndex: spec.z,
-              willChange: active ? "transform" : "auto",
+              willChange: promote ? "transform" : "auto",
             }
       }
     >

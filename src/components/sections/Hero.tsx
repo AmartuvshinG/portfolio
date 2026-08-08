@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { motion, useScroll, useTransform } from "framer-motion";
 import { profile, contact } from "@/lib/content";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
+import { useQuality } from "@/hooks/useQuality";
 import { setBackdropIntensity } from "@/lib/backdrop";
 import { GlitchText } from "@/components/motion/GlitchText";
 import { ScrambleText } from "@/components/motion/ScrambleText";
@@ -15,10 +16,8 @@ import { EntranceArc, Focus } from "@/components/hero/Entrance";
 import {
   Blimp,
   Fog,
-  GodRays,
   Parapet,
   Rain,
-  Searchlight,
   Sky,
   SunDisc,
   WetGround,
@@ -51,24 +50,37 @@ import {
    spread between these numbers is the depth — measured off `parallax-2.mp4`
    frames 0 → 9, then scaled to this section's runway. */
 const P = {
-  sky: { travel: -4, scale: 1.02, z: 10 },
-  far: { travel: -14, scale: 1.06, z: 20 },
-  air: { travel: -22, scale: 1.1, z: 30 },
-  beam: { travel: -28, scale: 1.16, z: 38 },
+  sky: { travel: -4, z: 10 },
+  far: { travel: -14, z: 20 },
+  air: { travel: -24, z: 30 },
+  /* The wordmark is one of only two plates that grows, and the growth is the
+     point: without it the stack reads as a slideshow of layers sliding past
+     rather than as a camera moving through them. */
   mark: { travel: -38, scale: 1.28, z: 40 },
-  arc: { travel: -42, scale: 1.3, z: 45 },
-  mid: { travel: -58, scale: 1.45, z: 60 },
-  haze: { travel: -66, scale: 1.52, z: 65 },
+  arc: { travel: -42, z: 45 },
+  mid: { travel: -58, z: 60 },
   /* In front of the city, not between it and the name. Slotted behind the mid
      skyline first, which put a tower squarely over it and hid two thirds of the
      object — the centrepiece cannot be the thing being occluded. It still
      crosses the wordmark, which is all the depth sandwich actually requires, and
      travelling faster than the skyline is what a near object should do. */
   core: { travel: -64, scale: 1.5, z: 68 },
-  rain: { travel: -74, scale: 1.6, z: 70 },
-  wet: { travel: -92, scale: 1.74, z: 75 },
-  near: { travel: -104, scale: 1.9, z: 80 },
+  rain: { travel: -74, z: 70 },
+  wet: { travel: -92, z: 75 },
+  near: { travel: -104, z: 80 },
 } satisfies Record<string, PlateSpec>;
+
+/* Twelve plates became ten, and the two that went were pure cost: a separate
+   plate for the searchlight and a second for the warm fog were each a
+   full-viewport gradient surface being transformed every frame, for a depth
+   difference of 6vh that nobody can perceive. Both are now children of `air`.
+
+   Only `mark` and `core` scale — see the note in Plate.tsx. Everything else
+   translates, which is what the depth is actually made of.
+
+   The rule this leaves behind: a new atmospheric effect belongs on an existing
+   plate unless it genuinely needs to move at a different rate, and it does not
+   get a `scale` unless you can point at what visibly grows. */
 
 /** Scroll runway. Long enough that the separation is legible, short enough that
  *  nobody thinks the page has stopped. */
@@ -77,6 +89,9 @@ const RUN_VH = 220;
 export function Hero() {
   const ref = useRef<HTMLElement>(null);
   const reduced = useReducedMotion();
+  /* `lite` keeps the whole composition and drops only the weather — see
+     useQuality for what that buys and why the line is drawn there. */
+  const full = useQuality() === "full";
   const [active, setActive] = useState(false);
 
   const { scrollYProgress } = useScroll({
@@ -159,13 +174,10 @@ export function Hero() {
 
         {plate(P.air, (
           <>
-            <GodRays />
-            <Fog tone="cool" />
-            {!reduced && <Blimp />}
+            <Fog beam={full} />
+            {full && <Blimp />}
           </>
         ))}
-
-        {!reduced && plate(P.beam, <Searchlight />)}
 
         {/* The name. Painted *between* the far city and the near one — this
             plate is the reason the whole stack exists. */}
@@ -212,19 +224,11 @@ export function Hero() {
           <Skyline variant="mid" className="absolute inset-0 h-full w-full" />
         )}
 
-        {plate(P.haze, <Fog tone="warm" />)}
-
         {plate(P.core, <PointCloud progress={scrollYProgress} active={active} />)}
 
-        {!reduced && plate(P.rain, <Rain />)}
+        {full && plate(P.rain, <Rain />)}
 
-        {!reduced &&
-          plate(
-            P.wet,
-            <WetGround>
-              <Skyline variant="mid" className="absolute inset-0 h-full w-full" />
-            </WetGround>
-          )}
+        {full && plate(P.wet, <WetGround />)}
 
         {plate(P.near, <Parapet />)}
 

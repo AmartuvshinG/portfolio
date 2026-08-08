@@ -34,8 +34,8 @@ import { srand } from "@/lib/utils";
    become a surface once neighbouring dots nearly touch. Doubling the count and
    shrinking the sphere fixes it far better than making the dots bigger, which
    just produces a blurry ball. */
-const RINGS = 46;
-const PER_RING = 40;
+const RINGS = 38;
+const PER_RING = 34;
 
 /** Backing-buffer ceiling. Cost is per pixel, so this — not DPR — is the knob. */
 const MAX_PIXELS = 420_000;
@@ -221,11 +221,34 @@ export function PointCloud({
     }
 
     // Only run while the hero is actually on screen.
+    let onScreen = false;
     const io = new IntersectionObserver(
-      ([e]) => (e.isIntersecting ? startLoop() : stopLoop()),
+      ([e]) => {
+        onScreen = e.isIntersecting;
+        if (onScreen) startLoop();
+        else stopLoop();
+      },
       { threshold: 0 }
     );
     io.observe(canvas);
+
+    /* And **not** while the page is being scrolled.
+       This is the same on-demand bargain the navbar's glass makes. Redrawing
+       ~1300 arcs is the most expensive thing in the hero on a slow CPU, and
+       during a scroll it is also the least visible: the object is already
+       sweeping across the frame on its plate, so a 30fps rotation underneath
+       that motion is imperceptible. Suspending the loop hands those frames
+       straight back to the compositor, and it resumes 140ms after the scroll
+       stops — which is when somebody is actually looking at it. */
+    let idle: ReturnType<typeof setTimeout>;
+    const onScroll = () => {
+      stopLoop();
+      clearTimeout(idle);
+      idle = setTimeout(() => {
+        if (onScreen) startLoop();
+      }, 140);
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
 
     const onResize = () => {
       if (size()) draw(performance.now());
@@ -235,6 +258,8 @@ export function PointCloud({
     return () => {
       io.disconnect();
       stopLoop();
+      clearTimeout(idle);
+      window.removeEventListener("scroll", onScroll);
       window.removeEventListener("resize", onResize);
     };
   }, [reduced]);

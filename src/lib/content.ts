@@ -130,6 +130,14 @@ export const profile = {
   kicker: "PORTFOLIO — 2026",
 };
 
+/**
+ * The section map.
+ *
+ * Voices and Path are listed even though they were not before: the nav jumped
+ * straight from Archive to Contact across two full chapters, which is why that
+ * stretch read as a gap in the page rather than as two sections the map had
+ * simply failed to mention.
+ */
 export const navLinks: NavLink[] = [
   { label: "Index", href: "#hero", code: "00" },
   { label: "Profile", href: "#about", code: "01" },
@@ -138,7 +146,22 @@ export const navLinks: NavLink[] = [
   { label: "Work", href: "#work", code: "04" },
   { label: "Lab", href: "#lab", code: "05" },
   { label: "Archive", href: "#gallery", code: "06" },
-  { label: "Contact", href: "#contact", code: "07" },
+  { label: "Voices", href: "#testimonials", code: "07" },
+  { label: "Path", href: "#timeline", code: "08" },
+  { label: "Contact", href: "#contact", code: "09" },
+];
+
+/**
+ * Which section a non-home route belongs to.
+ *
+ * On `/work/helix-os` there is no `#work` element to observe, so the navbar has
+ * nothing to highlight and used to leave INDEX lit — telling the visitor they
+ * were at the top of the home page while they read a case file. Matching the
+ * pathname instead gives the right answer, and an unmatched route correctly
+ * gets no highlight at all rather than a wrong one.
+ */
+export const routeSections: { prefix: string; href: string }[] = [
+  { prefix: "/work", href: "#work" },
 ];
 
 export const about = {

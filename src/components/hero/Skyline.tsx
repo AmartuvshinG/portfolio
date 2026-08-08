@@ -146,11 +146,15 @@ export function Skyline({
           <rect width={W} height={H} fill={`url(#${uid}-fade)`} />
         </mask>
 
-        {row.detail && (
-          <filter id={`${uid}-bloom`} x="-60%" y="-60%" width="220%" height="220%">
-            <feGaussianBlur stdDeviation="7" />
-          </filter>
-        )}
+        {/* No `feGaussianBlur` anywhere in here, deliberately.
+
+            The obvious way to make a crown or a sign glow is `filter=url(#bloom)`
+            — but a filter reference is applied *per element*, and with 20 towers
+            that is ~26 offscreen surfaces in one SVG, on a plate that rescales
+            every scroll frame. Measured at 6x CPU throttle that alone moved the
+            hero's median frame from 117ms to ~180ms. Glow is faked below with
+            stacked translucent rects instead: three paints, no surfaces, and at
+            this scale the picture is the same. */}
       </defs>
 
       <g opacity={row.opacity} mask={`url(#${uid}-mask)`}>
@@ -180,7 +184,29 @@ export function Skyline({
             )}
 
             {/* Rim light along the crown — the one place colour touches the
-                silhouette, and what stops the row reading as a black bar. */}
+                silhouette, and what stops the row reading as a black bar.
+                Glow is three stacked rects at falling opacity rather than a
+                gaussian: the eye reads the gradient of alpha as a bloom. */}
+            {row.detail && (
+              <>
+                <rect
+                  x={(t.x - 6).toFixed(1)}
+                  y={(t.y - 7).toFixed(1)}
+                  width={(t.w + 12).toFixed(1)}
+                  height="16"
+                  fill={STOPS[t.hue]}
+                  opacity="0.12"
+                />
+                <rect
+                  x={(t.x - 2).toFixed(1)}
+                  y={(t.y - 3).toFixed(1)}
+                  width={(t.w + 4).toFixed(1)}
+                  height="8"
+                  fill={STOPS[t.hue]}
+                  opacity="0.3"
+                />
+              </>
+            )}
             <rect
               x={t.x.toFixed(1)}
               y={t.y.toFixed(1)}
@@ -188,19 +214,27 @@ export function Skyline({
               height={row.detail ? 2 : 1}
               fill={STOPS[t.hue]}
               opacity={row.detail ? 0.9 : 0.45}
-              {...(row.detail && { filter: `url(#${uid}-bloom)` })}
             />
 
             {t.sign && (
-              <rect
-                x={(t.x + t.w * 0.62).toFixed(1)}
-                y={(t.y + 34).toFixed(1)}
-                width="7"
-                height={Math.min(150, (H - t.y) * 0.42).toFixed(1)}
-                fill={STOPS[(t.hue + 1) % 3]}
-                opacity="0.85"
-                filter={`url(#${uid}-bloom)`}
-              />
+              <>
+                <rect
+                  x={(t.x + t.w * 0.62 - 5).toFixed(1)}
+                  y={(t.y + 29).toFixed(1)}
+                  width="17"
+                  height={(Math.min(150, (H - t.y) * 0.42) + 10).toFixed(1)}
+                  fill={STOPS[(t.hue + 1) % 3]}
+                  opacity="0.16"
+                />
+                <rect
+                  x={(t.x + t.w * 0.62).toFixed(1)}
+                  y={(t.y + 34).toFixed(1)}
+                  width="7"
+                  height={Math.min(150, (H - t.y) * 0.42).toFixed(1)}
+                  fill={STOPS[(t.hue + 1) % 3]}
+                  opacity="0.85"
+                />
+              </>
             )}
 
             {t.mast && (

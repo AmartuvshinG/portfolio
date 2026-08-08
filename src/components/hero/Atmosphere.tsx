@@ -63,47 +63,56 @@ export function SunDisc() {
   );
 }
 
-export function GodRays() {
-  return (
-    <div
-      aria-hidden
-      className="absolute inset-0"
-      style={{
-        /* Wedges radiating from the sun's position. A conic gradient gives all
-           of them for one paint, where separate rotated elements would be one
-           layer each. */
-        background:
-          "conic-gradient(from 178deg at 50% 16%, transparent 0deg, color-mix(in srgb, var(--spectrum-2) 13%, transparent) 4deg, transparent 9deg, transparent 18deg, color-mix(in srgb, var(--spectrum-3) 9%, transparent) 22deg, transparent 27deg, transparent 336deg, color-mix(in srgb, var(--spectrum-1) 11%, transparent) 342deg, transparent 348deg)",
-        maskImage:
-          "radial-gradient(70% 80% at 50% 16%, #000 0%, transparent 78%)",
-        WebkitMaskImage:
-          "radial-gradient(70% 80% at 50% 16%, #000 0%, transparent 78%)",
-      }}
-    />
-  );
-}
-
 /* -------------------------------------------------------------------------
-   Sodium fog. Warm pockets drifting between the cool plates — this is where the
-   hazard token earns its place, and it is the single cheapest thing in the file
-   that makes the palette read as Blade Runner rather than as synthwave.
-   ---------------------------------------------------------------------- */
-export function Fog({ tone = "warm" }: { tone?: "warm" | "cool" }) {
-  const stop =
-    tone === "warm" ? "var(--color-hazard)" : "var(--spectrum-3)";
-  const alpha = tone === "warm" ? 18 : 12;
+   Fog + searchlight, on one layer.
 
+   These began as three separate plates — cool fog, warm fog, and a swept beam —
+   and together they were the most expensive thing in the hero: ~83ms of a
+   183ms frame at 6x throttle. Not because any one of them is costly, but
+   because each was a full-viewport gradient surface being rescaled every frame
+   by its plate. Three surfaces became one, the god rays (a full-bleed conic
+   gradient, and invisible in every screenshot taken of this hero) were dropped
+   outright, and the warm and cool pockets are now stops in a single paint.
+
+   The lesson is the one the site already learned about filters: the count of
+   full-bleed surfaces is the budget, and the cheapest surface is the one that
+   was merged into its neighbour.
+   ---------------------------------------------------------------------- */
+export function Fog({ beam = true }: { beam?: boolean }) {
   return (
-    <div
-      aria-hidden
-      className="absolute inset-0 animate-drift"
-      style={{
-        background: [
-          `radial-gradient(46% 26% at 24% 72%, color-mix(in srgb, ${stop} ${alpha}%, transparent) 0%, transparent 72%)`,
-          `radial-gradient(38% 22% at 74% 62%, color-mix(in srgb, ${stop} ${alpha - 6}%, transparent) 0%, transparent 70%)`,
-        ].join(", "),
-      }}
-    />
+    <div aria-hidden className="absolute inset-0 overflow-hidden">
+      <div
+        className="absolute inset-0"
+        style={{
+          background: [
+            /* Sodium pockets low and left, cool haze high and right — the warm
+               against cool split is the whole point of the layer. */
+            "radial-gradient(46% 26% at 24% 74%, color-mix(in srgb, var(--color-hazard) 20%, transparent) 0%, transparent 72%)",
+            "radial-gradient(34% 20% at 66% 84%, color-mix(in srgb, var(--color-hazard) 13%, transparent) 0%, transparent 70%)",
+            "radial-gradient(40% 24% at 78% 58%, color-mix(in srgb, var(--spectrum-3) 12%, transparent) 0%, transparent 70%)",
+            "radial-gradient(36% 22% at 14% 46%, color-mix(in srgb, var(--spectrum-2) 10%, transparent) 0%, transparent 72%)",
+          ].join(", "),
+        }}
+      />
+
+      {/* The spinner's beam. Kept because it is the one moving light in the
+          frame, narrowed because its cost is its painted area, and dropped
+          entirely on the lite tier — it is the most expensive thing here and
+          the least load-bearing. */}
+      {beam && (
+      <div
+        className="absolute left-1/2 top-[-60%] h-[170%] w-[24vw] -translate-x-1/2"
+        style={{
+          transformOrigin: "50% 0%",
+          background:
+            "linear-gradient(180deg, color-mix(in srgb, var(--color-hazard) 20%, transparent) 0%, color-mix(in srgb, #eceefb 7%, transparent) 34%, transparent 74%)",
+          clipPath: "polygon(46% 0, 54% 0, 100% 100%, 0 100%)",
+          animation: "hero-sweep 19s ease-in-out infinite",
+          willChange: "transform, opacity",
+        }}
+      />
+      )}
+    </div>
   );
 }
 
@@ -147,27 +156,6 @@ export function Rain() {
     <div aria-hidden className="absolute inset-0 overflow-hidden">
       <RainLayer angle={99} gap={13} speed={0.62} opacity={0.16} />
       <RainLayer angle={102} gap={27} speed={1.05} opacity={0.1} />
-    </div>
-  );
-}
-
-/* -------------------------------------------------------------------------
-   Searchlight. A spinner passing overhead, out of frame.
-   ---------------------------------------------------------------------- */
-export function Searchlight() {
-  return (
-    <div aria-hidden className="absolute inset-0 overflow-hidden">
-      <div
-        className="absolute left-1/2 top-[-60%] h-[170%] w-[36vw] -translate-x-1/2"
-        style={{
-          transformOrigin: "50% 0%",
-          background:
-            "linear-gradient(180deg, color-mix(in srgb, var(--color-hazard) 22%, transparent) 0%, color-mix(in srgb, #eceefb 8%, transparent) 34%, transparent 76%)",
-          clipPath: "polygon(46% 0, 54% 0, 100% 100%, 0 100%)",
-          animation: "hero-sweep 19s ease-in-out infinite",
-          willChange: "transform, opacity",
-        }}
-      />
     </div>
   );
 }
@@ -259,25 +247,39 @@ export function Parapet() {
    2 and is what this is written to avoid; the horizontal band mask does the
    work that an animated ripple would otherwise be asked to do.
    ---------------------------------------------------------------------- */
-export function WetGround({ children }: { children: React.ReactNode }) {
+export function WetGround() {
   return (
     <div aria-hidden className="absolute inset-x-0 bottom-0 top-[62%] overflow-hidden">
+      {/* Reflected neon, generated.
+
+          This began as a real mirror: a second `<Skyline>` flipped on Y under a
+          `blur(5px)`. It looked right and cost far too much — a whole second
+          copy of a twenty-tower SVG, re-rasterised through a filter every time
+          its plate rescaled, which is every scroll frame.
+
+          Standing water does not return a legible image anyway; it returns
+          smeared vertical columns of colour with the horizontal chop of the
+          surface cut through them. That is two gradients, and it reads *better*
+          than the mirror did — a sharp reflection is what makes CGI water look
+          like a mirror instead of like water. */}
       <div
         className="absolute inset-0"
         style={{
-          transform: "scaleY(-1)",
-          filter: "blur(5px) saturate(1.3)",
-          opacity: 0.34,
+          backgroundImage: [
+            "repeating-linear-gradient(90deg, transparent 0 38px, color-mix(in srgb, var(--spectrum-1) 26%, transparent) 38px 46px, transparent 46px 104px)",
+            "repeating-linear-gradient(90deg, transparent 0 71px, color-mix(in srgb, var(--spectrum-3) 20%, transparent) 71px 76px, transparent 76px 173px)",
+            "repeating-linear-gradient(90deg, transparent 0 122px, color-mix(in srgb, var(--color-hazard) 24%, transparent) 122px 131px, transparent 131px 268px)",
+          ].join(", "),
+          /* One mask, not two composited. `mask-composite: intersect` needs
+             both masks rasterised and then combined — the surface chop is
+             folded into the single gradient's stops instead. */
           maskImage:
-            "linear-gradient(0deg, transparent 4%, #000 46%, #000 100%), repeating-linear-gradient(0deg, #000 0 3px, rgba(0,0,0,0.45) 3px 6px)",
+            "linear-gradient(180deg, #000 0%, rgba(0,0,0,0.55) 34%, rgba(0,0,0,0.25) 60%, transparent 84%)",
           WebkitMaskImage:
-            "linear-gradient(0deg, transparent 4%, #000 46%, #000 100%), repeating-linear-gradient(0deg, #000 0 3px, rgba(0,0,0,0.45) 3px 6px)",
-          maskComposite: "intersect",
-          WebkitMaskComposite: "source-in",
+            "linear-gradient(180deg, #000 0%, rgba(0,0,0,0.55) 34%, rgba(0,0,0,0.25) 60%, transparent 84%)",
+          opacity: 0.5,
         }}
-      >
-        {children}
-      </div>
+      />
 
       {/* Specular sheen on the standing water, and the near edge going dark. */}
       <div

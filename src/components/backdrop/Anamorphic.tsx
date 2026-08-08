@@ -77,22 +77,24 @@ export function Anamorphic() {
 
       {/* Edge fringing. Magenta leading, cyan trailing, both confined to the
           outer few percent where a real lens actually splits. */}
+      {/* No `mix-blend-mode` on these two, despite screen being the physically
+          right operator for added light. A blend mode on a *fixed* full-height
+          layer makes the compositor read the page behind it every frame it
+          scrolls — the same class of cost as a backdrop-filter, and the reason
+          the navbar's glass was removed. Plain translucent gradients over a
+          ground this dark land within a shade or two of the blended version. */}
       <div
         className="absolute inset-y-0 left-0 w-[7%]"
         style={{
           background:
-            "linear-gradient(90deg, color-mix(in srgb, var(--spectrum-1) 22%, transparent), transparent)",
-          mixBlendMode: "screen",
-          opacity: 0.5,
+            "linear-gradient(90deg, color-mix(in srgb, var(--spectrum-1) 13%, transparent), transparent)",
         }}
       />
       <div
         className="absolute inset-y-0 right-0 w-[7%]"
         style={{
           background:
-            "linear-gradient(270deg, color-mix(in srgb, var(--spectrum-3) 22%, transparent), transparent)",
-          mixBlendMode: "screen",
-          opacity: 0.5,
+            "linear-gradient(270deg, color-mix(in srgb, var(--spectrum-3) 13%, transparent), transparent)",
         }}
       />
 

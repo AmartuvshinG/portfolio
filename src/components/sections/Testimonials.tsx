@@ -35,6 +35,7 @@ export function Testimonials() {
   if (reduced) {
     return (
       <section
+        id="testimonials"
         data-act="deck"
         data-chapter="VOICES"
         className="relative py-24"
@@ -60,6 +61,9 @@ export function Testimonials() {
 
   return (
     <section
+      /* Both branches need the id — the nav observes it, and a reduced-motion
+         visitor navigating to Voices must land somewhere. */
+      id="testimonials"
       data-act="deck"
       data-chapter="VOICES"
       className="relative flex min-h-[92vh] items-center overflow-hidden py-24"
