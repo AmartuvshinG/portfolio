@@ -73,7 +73,7 @@ export function CapabilityCard({ item }: { item: Capability }) {
         <HoverBorderGradient
           as="span"
           containerClassName="ml-auto"
-          className="px-2.5 py-1 font-mono text-[0.6rem] uppercase tracking-[0.18em] text-muted"
+          className="px-2.5 py-1 font-mono text-[0.625rem] uppercase tracking-[0.18em] text-muted"
         >
           {item.code.split("/")[1]}
         </HoverBorderGradient>

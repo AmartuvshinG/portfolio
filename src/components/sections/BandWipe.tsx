@@ -27,10 +27,20 @@ interface BandWipeProps {
   words: [string, string];
   /** Describes the band for assistive tech; the visual itself is decorative. */
   label: string;
+  /**
+   * The chapter signage's name for this section.
+   *
+   * Required, not optional. This section carried `data-act` but no
+   * `data-chapter`, so the frame kept displaying whatever the previous section
+   * had set — LAB, held across a `min-h-[110vh]` block that is plainly not the
+   * lab — and the counter read `/011` for a page with twelve sections. A
+   * default would just make the same omission quieter.
+   */
+  chapter: string;
   caption?: string;
 }
 
-export function BandWipe({ words, label, caption }: BandWipeProps) {
+export function BandWipe({ words, label, chapter, caption }: BandWipeProps) {
   const ref = useRef<HTMLDivElement>(null);
   const reduced = useReducedMotion();
 
@@ -51,6 +61,7 @@ export function BandWipe({ words, label, caption }: BandWipeProps) {
       <section
         ref={ref}
         data-act="deck"
+        data-chapter={chapter}
         className="relative py-20"
         aria-label={label}
       >
@@ -71,6 +82,7 @@ export function BandWipe({ words, label, caption }: BandWipeProps) {
     <section
       ref={ref}
       data-act="deck"
+      data-chapter={chapter}
       className="relative flex min-h-[110vh] flex-col items-center justify-center overflow-hidden py-24"
       aria-label={label}
     >

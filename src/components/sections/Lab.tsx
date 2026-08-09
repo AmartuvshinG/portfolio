@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
-import { projects, gallery, type Project } from "@/lib/content";
+import { projects, gallery, type Project, sectionIndex } from "@/lib/content";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
 import { usePointerDrift } from "@/hooks/usePointerDrift";
 import { ChapterSeam } from "@/components/chrome/ChapterSeam";
@@ -36,7 +36,50 @@ const PLANE = "rotateX(52deg) rotateY(0deg) rotateZ(-42deg)";
 /** Exactly the inverse, applied in reverse order. */
 const INVERSE = "rotateZ(42deg) rotateY(0deg) rotateX(-52deg)";
 
-const COLUMNS = 4;
+/**
+ * Column count, plane width and scale, per tier.
+ *
+ * This was one fixed `w-[1720px] scale-[0.45]`, and `scale` is a transform:
+ * the *layout* box stayed 1720px wide however small the viewport got. On a
+ * 390px phone that put roughly 192px of plane past each edge — the outer
+ * columns of a four-column grid simply were not on screen. The plane is
+ * *meant* to run off the corners; the bug was showing four columns' worth of
+ * content in space for two.
+ *
+ * So the column count moves with the width instead of the width being cropped
+ * to fit the count. Fewer columns is also fewer promoted layers, which is the
+ * other thing a phone GPU cares about here. The last row reproduces the
+ * previous desktop values exactly — above 1024px nothing changes.
+ */
+const TIERS = [
+  { max: 640, columns: 2, width: 860, scale: 0.62 },
+  { max: 1024, columns: 3, width: 1290, scale: 0.6 },
+  { max: Infinity, columns: 4, width: 1720, scale: 0.78 },
+] as const;
+
+type Tier = (typeof TIERS)[number];
+
+/**
+ * Widest tier first so SSR and the first client render agree — the effect then
+ * narrows it. Rendering the *narrow* tier by default would be the wrong bet:
+ * the plane sits inside `overflow-hidden`, so an over-wide first frame is
+ * cropped, whereas an over-narrow one is a visible pop outward.
+ */
+function useLabTier(): Tier {
+  const [tier, setTier] = useState<Tier>(TIERS[TIERS.length - 1]);
+
+  useEffect(() => {
+    const pick = () => {
+      const w = window.innerWidth;
+      setTier(TIERS.find((t) => w <= t.max) ?? TIERS[TIERS.length - 1]);
+    };
+    pick();
+    window.addEventListener("resize", pick);
+    return () => window.removeEventListener("resize", pick);
+  }, []);
+
+  return tier;
+}
 
 export function Lab() {
   const reduced = useReducedMotion();
@@ -46,13 +89,15 @@ export function Lab() {
   const [held, setHeld] = useState(false);
   const [onScreen, setOnScreen] = useState(false);
 
+  const tier = useLabTier();
+
   /* Four tiles per column, drawn from the real project and gallery data so the
      plane is showing actual work rather than placeholder rectangles. Four and
      not six: the plane is scaled to 0.78 and rotated 52° away, so the outer
      tiles of a six-row column are off the vignette entirely — they cost a
      composited layer each and were never visible. */
-  const tiles = Array.from({ length: COLUMNS * 4 }, (_, i) => i);
-  const chunks = Array.from({ length: COLUMNS }, (_, c) =>
+  const tiles = Array.from({ length: tier.columns * 4 }, (_, i) => i);
+  const chunks = Array.from({ length: tier.columns }, (_, c) =>
     tiles.slice(c * 4, c * 4 + 4)
   );
 
@@ -86,7 +131,7 @@ export function Lab() {
         <div className="flex flex-col justify-between gap-6 md:flex-row md:items-end">
           <div className="flex flex-col gap-5">
             <div className="flex items-center gap-4">
-              <span className="micro tabular">05</span>
+              <span className="micro tabular">{sectionIndex("#lab")}</span>
               <span className="h-px w-10 bg-current opacity-25" />
               <span className="micro">Process, in the open</span>
             </div>
@@ -114,14 +159,24 @@ export function Lab() {
         onPointerLeave={() => setHeld(false)}
       >
         <div ref={drift} className="flex size-full items-center justify-center">
-          <div className="w-[1720px] shrink-0 scale-[0.45] sm:scale-[0.6] lg:scale-[0.78]">
+          <div
+            className="shrink-0"
+            style={{ width: tier.width, transform: `scale(${tier.scale})` }}
+          >
             <div
-              className="grid origin-center grid-cols-4 gap-8"
+              className="grid origin-center gap-8"
               /* No `preserve-3d`. Only this wrapper is rotated and every tile
                  below it is flat, so preserving 3D just gave each of the
                  sixteen tiles its own 3D rendering context for nothing — and
-                 the un-skew below composes correctly without it. */
-              style={{ transform: PLANE }}
+                 the un-skew below composes correctly without it.
+
+                 The column count is inline rather than a `grid-cols-*` class:
+                 it is a runtime value, and Tailwind cannot generate a class it
+                 never sees in the source. */
+              style={{
+                transform: PLANE,
+                gridTemplateColumns: `repeat(${tier.columns}, minmax(0, 1fr))`,
+              }}
             >
               {chunks.map((chunk, col) => (
                 <motion.div

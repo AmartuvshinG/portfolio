@@ -42,6 +42,7 @@ export default function Home() {
       <BandWipe
         words={["On", "Screen"]}
         label="Neo-Tokyo skyline interstitial"
+        chapter="SCREEN"
         caption="STUDIO — 2026"
       />
       <Showcase />

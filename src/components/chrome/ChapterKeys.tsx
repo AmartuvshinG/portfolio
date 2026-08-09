@@ -3,6 +3,7 @@
 import { useEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
 import { navLinks } from "@/lib/content";
+import { isInteractive, isTextEntry, modalOpen } from "@/lib/keys";
 import { useSmoothScroll } from "@/components/chrome/SmoothScroll";
 
 /**
@@ -17,9 +18,10 @@ import { useSmoothScroll } from "@/components/chrome/SmoothScroll";
  * that is deliberately this long, somebody who wants the work should not have
  * to scroll past a city to reach it.
  *
- * Both are inert while a field has focus, and both stand down while an overlay
- * is open — arrow keys belong to the palette's result list when it is up, and
- * to the dossier when that is.
+ * Both stand down while an overlay is open — arrow keys belong to the palette's
+ * result list when it is up, and to the dossier when that is. The arrows are
+ * further limited to the case where focus is on the document itself; see the
+ * handler. Any subtree can opt out entirely with `data-chapter-keys="off"`.
  *
  * Headless (renders nothing): it is behaviour, not chrome.
  */
@@ -61,27 +63,31 @@ export function ChapterKeys() {
     /* --- Chapter keys. */
     const onKey = (e: KeyboardEvent) => {
       if (e.metaKey || e.ctrlKey || e.altKey) return;
+      /* Holding a key would fire one jump per repeat and fling you through the
+         page; one press, one chapter. */
+      if (e.repeat) return;
 
-      const el = document.activeElement as HTMLElement | null;
-      if (
-        el instanceof HTMLInputElement ||
-        el instanceof HTMLTextAreaElement ||
-        el?.isContentEditable
-      )
-        return;
+      const el = document.activeElement;
 
-      /* An overlay owns the arrow keys while it is up. Checked from the DOM
+      /* An overlay owns the keyboard while it is up. Checked from the DOM
          rather than by wiring state between three unrelated components. */
-      if (document.querySelector('[role="dialog"][aria-modal="true"]')) return;
+      if (modalOpen()) return;
+      /* An explicit opt-out for any subtree that needs the arrows for itself. */
+      if (el?.closest('[data-chapter-keys="off"]')) return;
 
-      const step =
-        e.key === "j" || e.key === "ArrowDown"
-          ? 1
-          : e.key === "k" || e.key === "ArrowUp"
-            ? -1
-            : 0;
-      if (!step) return;
+      const vertical = e.key === "ArrowDown" || e.key === "ArrowUp";
+      const vim = e.key === "j" || e.key === "k";
+      if (!vertical && !vim) return;
 
+      /* The rule, and the whole fix in this file: the arrows are only ours
+         while focus is on the *document* — reading, not operating a control.
+         The old test excluded text fields alone, so a focused link or button
+         also lost arrow-key scrolling, and since clicking anything leaves it
+         focused, that was most keyboard users most of the time. `j`/`k` stay
+         unconditional outside text entry: they steal no native behaviour. */
+      if (vertical ? isInteractive(el) : isTextEntry(el)) return;
+
+      const step = e.key === "ArrowDown" || e.key === "j" ? 1 : -1;
       const next = current.current + step;
       if (next < 0 || next >= sections.length) return;
       e.preventDefault();

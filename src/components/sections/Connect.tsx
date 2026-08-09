@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { motion, useScroll, useTransform } from "framer-motion";
 import { ArrowUpRight } from "lucide-react";
 import { GlareCard } from "@/components/motion/GlareCard";
-import { socials } from "@/lib/content";
+import { socials, sectionIndex } from "@/lib/content";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
 import { ChapterSeam } from "@/components/chrome/ChapterSeam";
 import { srand } from "@/lib/utils";
@@ -97,7 +97,7 @@ export function Connect() {
         <div className="flex flex-col justify-between gap-6 md:flex-row md:items-end">
           <div className="flex flex-col gap-5">
             <div className="flex items-center gap-4">
-              <span className="micro tabular">02</span>
+              <span className="micro tabular">{sectionIndex("#connect")}</span>
               <span className="h-px w-10 bg-current opacity-25" />
               <span className="micro">Find me elsewhere</span>
             </div>

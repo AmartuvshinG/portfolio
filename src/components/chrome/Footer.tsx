@@ -28,7 +28,15 @@ export function Footer() {
             <span
               key={i}
               className="display-caps text-4xl text-transparent md:text-6xl"
-              style={{ WebkitTextStroke: "1px var(--color-faint)" }}
+              /* Hard-coded, and the one place on the site that is. This used to
+                 read `var(--color-faint)`, and when that token was lifted for
+                 contrast (2.59:1 → 5.08:1) the stroke came with it — nearly
+                 double the luminance on a 6rem wordmark, which is exactly the
+                 "steals the last word of the page" failure the comment above
+                 describes. The contrast rule does not apply here: this is
+                 decorative repetition of the wordmark, not text anyone reads.
+                 The old faint value, frozen. */
+              style={{ WebkitTextStroke: "1px #4d5166" }}
             >
               {profile.wordmark} —
             </span>
@@ -93,7 +101,10 @@ export function Footer() {
         <button
           type="button"
           onClick={() => scrollTo(0)}
-          className="flex items-center gap-2 rounded-full border border-line px-4 py-2 transition-colors hover:border-current hover:text-fg"
+          /* `h-11`, not `py-2` — the padded box came out at ~34px. The border
+             is the visible shape, so the height goes on the box and the
+             padding stays where it was. */
+          className="flex h-11 items-center gap-2 rounded-full border border-line px-4 transition-colors hover:border-current hover:text-fg"
         >
           <ArrowUp size={12} /> Top
         </button>

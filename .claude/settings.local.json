@@ -8,7 +8,9 @@
       "Bash(node \"C:/Users/Amara/AppData/Local/Temp/claude/c--Users-Amara-Downloads-portfolio/b59446e3-ab7b-4c91-a277-ece480cfcd67/scratchpad/rename-tokens.mjs\")",
       "Bash(npm run *)",
       "Bash(npx eslint *)",
-      "Bash(node /c/Users/Amara/AppData/Local/Temp/claude/c--Users-Amara-Downloads-portfolio/e49256a0-cdf5-4def-929b-621668983b7d/scratchpad/ab.mjs)"
+      "Bash(node /c/Users/Amara/AppData/Local/Temp/claude/c--Users-Amara-Downloads-portfolio/e49256a0-cdf5-4def-929b-621668983b7d/scratchpad/ab.mjs)",
+      "mcp__playwright__browser_evaluate",
+      "mcp__playwright__browser_take_screenshot"
     ],
     "defaultMode": "acceptEdits"
   }

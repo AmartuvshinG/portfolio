@@ -1,4 +1,4 @@
-import { gallery } from "@/lib/content";
+import { gallery, sectionIndex } from "@/lib/content";
 import { ScatterGallery } from "@/components/ui/ScatterGallery";
 import { SectionHeader } from "@/components/ui/SectionHeader";
 import { ChapterSeam } from "@/components/chrome/ChapterSeam";
@@ -23,7 +23,7 @@ export function Showcase() {
 
       <div className="relative mx-auto max-w-[1800px] px-5 md:px-8 lg:px-16">
         <SectionHeader
-          index="06"
+          index={sectionIndex("#gallery")}
           label="Selected fragments"
           title="Archive"
           voice="tech"

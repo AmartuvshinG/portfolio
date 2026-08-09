@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -14,7 +14,7 @@ import {
 import { Menu, X } from "lucide-react";
 import { navLinks, routeSections, profile, contact } from "@/lib/content";
 import { useSmoothScroll } from "@/components/chrome/SmoothScroll";
-import { useLockScroll } from "@/hooks/useLockScroll";
+import { useOverlay } from "@/hooks/useOverlay";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
 import { MagneticButton } from "@/components/motion/MagneticButton";
 import { cn } from "@/lib/utils";
@@ -84,8 +84,19 @@ export function Navbar() {
   const [scrolling, setScrolling] = useState(false);
   const [glassLive, setGlassLive] = useState(false);
   const toggleRef = useRef<HTMLButtonElement>(null);
+  const sheetRef = useRef<HTMLDivElement>(null);
 
-  useLockScroll(open);
+  const closeSheet = useCallback(() => setOpen(false), []);
+
+  /* The sheet is a real modal now — same trap, restore and lock as the dossier,
+     the palette and ESPER. See the sheet's own markup below for why that forced
+     it to grow a header of its own. */
+  useOverlay({
+    open,
+    onClose: closeSheet,
+    ref: sheetRef,
+    restoreFocus: toggleRef,
+  });
 
   /* Off the home route there is nothing to observe, so the active item is
      derived from the URL. `null` when nothing matches — no pill at all is the
@@ -244,17 +255,18 @@ export function Navbar() {
     return () => clearInterval(id);
   }, []);
 
-  /* Escape closes the mobile sheet and returns focus to its trigger. */
+  /* Close the sheet the moment the viewport reaches the desktop breakpoint.
+     The sheet and its toggle are both `min-[1080px]:hidden`, so widening the
+     window with it open hid the whole thing in CSS while `open` stayed true —
+     leaving a scroll lock held by a dialog that no longer exists on screen and
+     no control left to close it. The query must match the one in the class. */
   useEffect(() => {
     if (!open) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        setOpen(false);
-        toggleRef.current?.focus();
-      }
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    const mq = window.matchMedia("(min-width: 1080px)");
+    const check = () => mq.matches && setOpen(false);
+    check();
+    mq.addEventListener("change", check);
+    return () => mq.removeEventListener("change", check);
   }, [open]);
 
   const go = (href: string) => {
@@ -426,7 +438,7 @@ export function Navbar() {
                 aria-label={open ? "Close menu" : "Open menu"}
                 aria-expanded={open}
                 aria-controls="mobile-nav"
-                className="flex h-10 w-10 items-center justify-center border border-line text-fg min-[1080px]:hidden"
+                className="flex h-11 w-11 items-center justify-center border border-line text-fg min-[1080px]:hidden"
               >
                 {open ? <X size={18} /> : <Menu size={18} />}
               </button>
@@ -447,23 +459,56 @@ export function Navbar() {
         </motion.div>
       </header>
 
-      {/* Mobile full-screen sheet */}
+      {/* Mobile full-screen sheet.
+          A real modal: `z-80` so it is over the header rather than under it,
+          and `aria-modal` so the page behind is gone from the a11y tree. That
+          last one is why it carries its own wordmark, lamp and close button —
+          the header's copies are outside the dialog, and `aria-modal` makes
+          them unreachable to a screen reader, so a sheet without its own close
+          affordance would have had no way out but the Escape key. */}
       <AnimatePresence>
         {open && (
           <motion.div
+            ref={sheetRef}
             id="mobile-nav"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Site menu"
             initial={{ opacity: 0, clipPath: "inset(0 0 100% 0)" }}
             animate={{ opacity: 1, clipPath: "inset(0 0 0% 0)" }}
             exit={{ opacity: 0, clipPath: "inset(0 0 100% 0)" }}
             transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-            className="fixed inset-0 z-[59] flex flex-col justify-center bg-bg/95 px-8 backdrop-blur-xl min-[1080px]:hidden"
+            className="fixed inset-0 z-[80] flex flex-col bg-bg/95 px-8 backdrop-blur-xl min-[1080px]:hidden"
             style={{
               paddingTop: "env(safe-area-inset-top)",
               paddingBottom: "env(safe-area-inset-bottom)",
             }}
           >
             <div className="holo-grid absolute inset-0 opacity-20" aria-hidden />
-            <ul className="relative space-y-1">
+
+            {/* The sheet's own header row. `h-16` matches the bar it covers, so
+                the wordmark lands on the same optical line it was already on
+                and the transition reads as the page opening rather than as two
+                headers swapping. */}
+            <div className="relative flex h-16 shrink-0 items-center justify-between">
+              <span className="flex items-center gap-3">
+                <Lamp />
+                <span className="font-display text-xl text-fg">
+                  {profile.wordmark}
+                </span>
+              </span>
+              <button
+                type="button"
+                data-autofocus
+                onClick={closeSheet}
+                aria-label="Close menu"
+                className="-mr-2 flex h-11 w-11 items-center justify-center border border-line text-fg"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <ul className="relative my-auto space-y-1">
               {navLinks.map((link, i) => (
                 <motion.li
                   key={link.href}
@@ -511,7 +556,7 @@ export function Navbar() {
             </ul>
             <a
               href={`mailto:${contact.email}`}
-              className="hud-label absolute bottom-10 left-8"
+              className="hud-label relative mb-6 flex h-11 shrink-0 items-center"
             >
               {contact.email}
             </a>
@@ -598,7 +643,11 @@ function DockLink({
           the mobile sheet keeps it too. */}
       <span
         className={cn(
-          "text-[0.6rem] opacity-50",
+          /* Was `text-[0.6rem] opacity-50` — 9.6px, and the opacity composited
+             muted down to 2.34:1, which is worse than any raw token on the
+             site. The subordination is now carried by `--color-faint`, which
+             is a real 5:1 step below muted rather than a half-erased one. */
+          "text-[0.625rem] text-faint",
           contracted ? "hidden" : "hidden @[70rem]:inline"
         )}
       >

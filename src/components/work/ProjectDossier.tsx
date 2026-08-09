@@ -14,7 +14,7 @@ import { ArrowUpRight, X } from "lucide-react";
 import type { Project } from "@/lib/content";
 import { accentColor } from "@/lib/content";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
-import { useLockScroll } from "@/hooks/useLockScroll";
+import { useOverlay } from "@/hooks/useOverlay";
 import { useOutsideClick } from "@/hooks/useOutsideClick";
 import { EASE_EXPO } from "@/lib/motion";
 import { ProjectVisual } from "@/components/work/ProjectVisual";
@@ -90,7 +90,6 @@ export function ProjectDossier({
   const [resizeTick, setResizeTick] = useState(0);
 
   const open = Boolean(origin);
-  useLockScroll(open);
 
   /* The target box is derived during render, not set from an effect. Deriving
      it means the panel exists on the very first open render — an effect would
@@ -111,42 +110,12 @@ export function ProjectDossier({
   const close = useCallback(() => onClose(), [onClose]);
   useOutsideClick(panelRef, close, open);
 
-  /* Escape to dismiss + a focus trap for the duration. */
-  useEffect(() => {
-    if (!open) return;
-    const previous = document.activeElement as HTMLElement | null;
-    const panel = panelRef.current;
-    panel?.querySelector<HTMLElement>("[data-autofocus]")?.focus();
-
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        close();
-        return;
-      }
-      if (e.key !== "Tab" || !panelRef.current) return;
-
-      const focusables = panelRef.current.querySelectorAll<HTMLElement>(
-        'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])'
-      );
-      if (focusables.length === 0) return;
-      const first = focusables[0];
-      const last = focusables[focusables.length - 1];
-
-      if (e.shiftKey && document.activeElement === first) {
-        e.preventDefault();
-        last.focus();
-      } else if (!e.shiftKey && document.activeElement === last) {
-        e.preventDefault();
-        first.focus();
-      }
-    };
-
-    window.addEventListener("keydown", onKey);
-    return () => {
-      window.removeEventListener("keydown", onKey);
-      previous?.focus();
-    };
-  }, [open, close]);
+  /* Escape, the focus trap, restore and the scroll lock all live in the hook
+     now — this component was the only surface on the site that had them right,
+     so they were lifted out of it verbatim and the other three overlays were
+     moved onto the same contract. Behaviour here is unchanged by design: it is
+     the regression baseline for the other three. */
+  useOverlay({ open, onClose: close, ref: panelRef });
 
   if (!isClient) return null;
 
@@ -221,7 +190,7 @@ export function ProjectDossier({
                 data-autofocus
                 onClick={close}
                 aria-label="Close case file"
-                className="absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-full border border-line bg-void/70 text-fg backdrop-blur transition-colors hover:border-current"
+                className="absolute right-3 top-3 flex h-11 w-11 items-center justify-center rounded-full border border-line bg-void/70 text-fg backdrop-blur transition-colors hover:border-current"
               >
                 <X size={16} />
               </button>

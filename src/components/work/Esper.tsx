@@ -6,7 +6,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { X } from "lucide-react";
 import type { GalleryImage } from "@/lib/content";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
-import { useLockScroll } from "@/hooks/useLockScroll";
+import { useOverlay } from "@/hooks/useOverlay";
 import { EASE_EXPO } from "@/lib/motion";
 
 /**
@@ -45,22 +45,21 @@ export function Esper({
 }) {
   const reduced = useReducedMotion();
   const close = useCallback(() => onClose(), [onClose]);
+  const figureRef = useRef<HTMLElement>(null);
 
-  useLockScroll(Boolean(item));
-
-  useEffect(() => {
-    if (!item) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") close();
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [item, close]);
+  /* Escape used to be all this had — no trap, no initial focus, no restore, so
+     tabbing out of an open ESPER landed you in the archive behind a dialog that
+     `aria-modal` says isn't there. Same contract as the dossier now. */
+  useOverlay({ open: Boolean(item), onClose: close, ref: figureRef });
 
   return (
     <AnimatePresence>
       {item && (
         <motion.div
+          /* Pinned rather than inherited, for the same reason the dossier pins
+             it: this covers the viewport at z-100 with no section to take its
+             tokens from, and `<html data-act>` may be mid-transition. */
+          data-act="void"
           role="dialog"
           aria-modal="true"
           aria-label={`Enhance — ${item.alt}`}
@@ -75,7 +74,13 @@ export function Esper({
               and the sweep restarts from zero by itself — rather than being
               reset by an effect, which is both a lint error and one committed
               frame showing the previous image already resolved. */}
-          <Plate key={item.src} item={item} reduced={reduced} onClose={close} />
+          <Plate
+            key={item.src}
+            ref={figureRef}
+            item={item}
+            reduced={reduced}
+            onClose={close}
+          />
         </motion.div>
       )}
     </AnimatePresence>
@@ -86,10 +91,12 @@ function Plate({
   item,
   reduced,
   onClose,
+  ref,
 }: {
   item: GalleryImage;
   reduced: boolean;
   onClose: () => void;
+  ref: React.Ref<HTMLElement>;
 }) {
   /* Starts resolved under reduced motion — there is no sweep to watch, and a
      plate that sits at 0 would show an unscanned image with a stuck readout. */
@@ -114,6 +121,7 @@ function Plate({
 
   return (
     <motion.figure
+      ref={ref}
       initial={reduced ? false : { scale: 0.94, opacity: 0 }}
       animate={{ scale: 1, opacity: 1 }}
       exit={{ scale: 0.97, opacity: 0 }}
@@ -189,9 +197,10 @@ function Plate({
 
       <button
         type="button"
+        data-autofocus
         onClick={onClose}
         aria-label="Close"
-        className="absolute right-4 top-4 flex h-10 w-10 items-center justify-center border border-line bg-void/70 text-fg transition-colors hover:border-line-strong"
+        className="absolute right-4 top-4 flex h-11 w-11 items-center justify-center border border-line bg-void/70 text-fg transition-colors hover:border-line-strong"
       >
         <X size={16} />
       </button>

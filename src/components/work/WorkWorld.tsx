@@ -15,6 +15,7 @@ import { projects, type Project } from "@/lib/content";
 import { accentColor } from "@/lib/content";
 import { buildCardTexture } from "@/components/work/cardTexture";
 import { createDepthScanMaterial } from "./depthScan";
+import { RUNOUT, SPACING, START_Z, travelFor } from "./worldLayout";
 import { srand } from "@/lib/utils";
 
 /* -------------------------------------------------------------------------- */
@@ -31,18 +32,13 @@ import { srand } from "@/lib/utils";
 /*  point of putting real work in the frame.                                   */
 /* -------------------------------------------------------------------------- */
 
-/** Z-gap between consecutive cards. */
-const SPACING = 9;
-/** How far past the last card the dolly runs out. */
-const RUNOUT = 4;
+/* SPACING, RUNOUT and START_Z now live in `worldLayout.ts`. They are imported
+   above rather than declared here because `SelectedWork` has to derive scroll
+   positions from the same geometry, and this module cannot be imported from a
+   server component — it is the one that pulls in three.js. */
+
 /** Lateral spread. Cards alternate sides so the camera weaves between them. */
 const SWING = 3.4;
-/**
- * Where the camera starts, in front of the first card. Sized so a 6.4-wide card
- * fills roughly a third of the frame: closer than this and the opening shot is
- * inside the first card rather than looking at it.
- */
-const START_Z = 14;
 
 export interface CardHit {
   project: Project;
@@ -55,6 +51,16 @@ const scratch = new THREE.Vector3();
 interface WorkWorldProps {
   /** Scroll progress through the pinned section, 0–1. */
   progress: React.RefObject<number>;
+  /**
+   * Index of the card the keyboard roster currently has focus on, or `-1`.
+   *
+   * A ref, not a prop value, for the same reason `progress` is one: it is read
+   * inside `useFrame` and must not re-render the tree. Without it, tabbing the
+   * roster dollies the camera to a card that lights up no differently from its
+   * neighbours — the movement happens and nothing says which card it was for,
+   * which reads as the control being broken.
+   */
+  activeIndex: React.RefObject<number>;
   onSelect: (hit: CardHit) => void;
   onHover: (project: Project | null) => void;
 }
@@ -73,15 +79,18 @@ function layout(i: number) {
 function Card({
   project,
   index,
+  activeIndex,
   onSelect,
   onHover,
 }: {
   project: Project;
   index: number;
+  activeIndex: React.RefObject<number>;
   onSelect: (hit: CardHit) => void;
   onHover: (project: Project | null) => void;
 }) {
   const group = useRef<THREE.Group>(null);
+  const rim = useRef<THREE.MeshBasicMaterial>(null);
   const [texture, setTexture] = useState<THREE.CanvasTexture | null>(null);
   const [hovered, setHovered] = useState(false);
   const { gl, camera, size } = useThree();
@@ -125,6 +134,11 @@ function Card({
     if (!g) return;
 
     const t = state.clock.getElapsedTime();
+    /* Pointer hover and keyboard focus are the same state as far as the card is
+       concerned. Read from the ref rather than from React so a Tab through the
+       roster costs no renders — this runs every frame. */
+    const lit = hovered || activeIndex.current === index;
+
     // Slow independent drift, so the field never looks like a fixed diorama.
     g.position.y = position.y + Math.sin(t * 0.35 + index) * 0.16;
 
@@ -135,11 +149,19 @@ function Card({
       camera.position.z - g.position.z
     );
     const targetY = toCamera * 0.45 + Math.sin(t * 0.25 + index) * 0.05;
-    const targetScale = hovered ? 1.06 : 1;
+    const targetScale = lit ? 1.06 : 1;
 
     const k = 1 - Math.pow(0.0015, delta);
     g.rotation.y += (targetY - g.rotation.y) * k;
     g.scale.lerp(scratch.setScalar(targetScale), k);
+
+    /* The rim plate eases here rather than switching in render. It used to be
+       `opacity={hovered ? …}`, which cannot see the focus ref at all — and
+       eased, it now matches the scale and the scan instead of snapping ahead
+       of them. */
+    if (rim.current) {
+      rim.current.opacity += ((lit ? 0.42 : 0.16) - rim.current.opacity) * k;
+    }
 
     /* Drive the depth scan. The band runs on a sine so it sweeps in and back
        out through the card's depth rather than snapping from far to near, and
@@ -148,7 +170,7 @@ function Card({
     if (material) {
       const u = material.uniforms;
       u.uProgress.value = Math.sin(t * 0.5 + index) * 0.5 + 0.5;
-      u.uHover.value += ((hovered ? 1 : 0) - u.uHover.value) * k;
+      u.uHover.value += ((lit ? 1 : 0) - u.uHover.value) * k;
       u.uPointer.value.set(state.pointer.x, state.pointer.y);
     }
   });
@@ -166,9 +188,10 @@ function Card({
       <mesh position={[0, 0, -0.02]} scale={[6.62, 4.14, 1]}>
         <planeGeometry />
         <meshBasicMaterial
+          ref={rim}
           color={tint}
           transparent
-          opacity={hovered ? 0.42 : 0.16}
+          opacity={0.16}
           blending={THREE.AdditiveBlending}
           depthWrite={false}
         />
@@ -259,7 +282,8 @@ function Rig({ progress }: { progress: React.RefObject<number> }) {
   const { camera } = useThree();
   // Ends the same distance in front of the last card as it started from the
   // first, so the closing frame is composed rather than jammed against a plane.
-  const travel = (projects.length - 1) * SPACING + RUNOUT;
+  // `cardProgress` inverts this exact relation — keep them in one place.
+  const travel = travelFor(projects.length);
   const current = useRef(0);
 
   useFrame((state, delta) => {
@@ -285,11 +309,24 @@ function Rig({ progress }: { progress: React.RefObject<number> }) {
 
 export default function WorkWorld({
   progress,
+  activeIndex,
   onSelect,
   onHover,
 }: WorkWorldProps) {
   return (
     <Canvas
+      /* Out of the accessibility tree entirely. Every card in here is a
+         three.js `<mesh>` — no DOM node, no name, no tab stop — so the scene
+         could only ever have been an unlabelled interactive black hole. The
+         case-file roster in `SelectedWork` is its accessible representation;
+         this is the picture.
+
+         Note where these land: r3f spreads unrecognised props onto its own
+         wrapper `<div>`, not onto the `<canvas>` inside it. That is the right
+         element anyway — `aria-hidden` on the wrapper hides the whole subtree,
+         and a bare `<canvas>` is not in the tab order to begin with. */
+      aria-hidden
+      tabIndex={-1}
       dpr={[1, 1.75]}
       camera={{ position: [0, 0, 6], fov: 42, near: 0.1, far: 120 }}
       gl={{ antialias: true, alpha: false }}
@@ -305,6 +342,7 @@ export default function WorkWorld({
           key={project.slug}
           project={project}
           index={i}
+          activeIndex={activeIndex}
           onSelect={onSelect}
           onHover={onHover}
         />

@@ -28,7 +28,11 @@
   /* --- Foreground: cool bone, not white. */
   --color-bone: #eceefb;
   --color-bone-soft: #8a8fa8;
-  --color-bone-faint: #4d5166;
+  /* Lightness lifted from #4d5166 (2.59:1 — fails at every act). Hue and chroma
+     are untouched; only L moved, so the step below --color-muted survives while
+     the token clears 4.5:1 both on the ground and on the lighter card surface.
+     Same move in both [data-act] blocks below. */
+  --color-bone-faint: #787e9d;
 
   /* --- The spectrum ramp. THE accent — a ramp, not a colour. Applied as
          --grad-spectrum wherever a gradient can go. The three stops exist
@@ -148,7 +152,7 @@
   --color-surface: var(--color-deck-2);
   --color-fg: var(--color-bone);
   --color-muted: #9297b0;
-  --color-faint: #565b74;
+  --color-faint: #7d83a8; /* was #565b74 — 2.89:1 */
   --color-line: rgba(236, 238, 251, 0.14);
   --color-line-strong: rgba(236, 238, 251, 0.32);
   color-scheme: dark;
@@ -162,7 +166,7 @@
   --color-surface: #1c1745;
   --color-fg: #f4f2ff;
   --color-muted: #a99ede;
-  --color-faint: #6b5fa8;
+  --color-faint: #8e80da; /* was #6b5fa8 — 3.32:1 */
   --color-line: rgba(244, 242, 255, 0.16);
   --color-line-strong: rgba(244, 242, 255, 0.36);
   color-scheme: dark;

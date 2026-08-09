@@ -1,4 +1,4 @@
-import { capabilities } from "@/lib/content";
+import { capabilities, sectionIndex } from "@/lib/content";
 import { SectionHeader } from "@/components/ui/SectionHeader";
 import { CapabilityCard } from "@/components/ui/CapabilityCard";
 import { RevealStagger, Reveal } from "@/components/motion/Reveal";
@@ -25,7 +25,11 @@ export function Capabilities() {
 
       <div className="relative mx-auto max-w-[1800px] px-5 md:px-8 lg:px-16">
         <div className="flex flex-col justify-between gap-8 md:flex-row md:items-end">
-          <SectionHeader index="03" label="What I do" title="Craft" />
+          <SectionHeader
+            index={sectionIndex("#capabilities")}
+            label="What I do"
+            title="Craft"
+          />
           <Reveal>
             <p className="max-w-xs text-sm leading-relaxed text-muted">
               A full-stack toolkit for building interfaces that are equal parts

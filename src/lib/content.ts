@@ -161,6 +161,25 @@ export const navLinks: NavLink[] = [
 ];
 
 /**
+ * The on-page index for a section, by its anchor.
+ *
+ * Every section masthead used to carry its number as a string literal, and the
+ * two lists had drifted apart: the page ran `00,01,02,03,04,05,06,–,08,09,10`
+ * while the nav said Voices `07`, Path `08`, Contact `09`. Voices printed no
+ * index at all, the ledger spent two on its two internal blocks, and Contact
+ * showed `10` for a nav code of `09` — so the last four sections disagreed with
+ * the navigation about what they were called.
+ *
+ * Deriving them from `navLinks` makes that class of drift impossible: the
+ * numbering has exactly one source, and adding a section to the nav renumbers
+ * the page. `--` rather than a throw for an unknown anchor — a wrong number is
+ * a bug, a missing one is only a gap, and this must never take the page down.
+ */
+export function sectionIndex(href: string): string {
+  return navLinks.find((l) => l.href === href)?.code ?? "--";
+}
+
+/**
  * Which section a non-home route belongs to.
  *
  * On `/work/helix-os` there is no `#work` element to observe, so the navbar has

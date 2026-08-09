@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { motion, useScroll, useTransform } from "framer-motion";
 import { projects } from "@/lib/content";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
@@ -52,9 +52,44 @@ const PANELS: Panel[] = [
   { top: 22.5, left: 25, w: 15, h: 15, scale: 9 },
 ];
 
+/**
+ * The portrait table.
+ *
+ * `PANELS` is authored in landscape: `w` in vw against `h` in vh, with offsets
+ * reaching `left: -25vw`. Rotate the viewport to 390×844 and the same numbers
+ * produce a 97×211px sliver pushed a quarter-screen off the edge — the
+ * composition inverts, because every proportion in it assumed the wide axis was
+ * horizontal.
+ *
+ * Five panels rather than seven, and not only for the framing: seven
+ * simultaneously-scaling promoted layers is the heaviest single thing on this
+ * page for a phone GPU, and each one costs a full-viewport rasterisation.
+ *
+ * `h-[300vh]` is unchanged — the run length is right on both.
+ */
+const PANELS_SM: Panel[] = [
+  { top: 0, left: 0, w: 58, h: 22, scale: 4 },
+  { top: -26, left: -6, w: 46, h: 18, scale: 5.5 },
+  { top: 24, left: 8, w: 50, h: 20, scale: 6 },
+  { top: -4, left: 30, w: 30, h: 26, scale: 7 },
+  { top: 20, left: -30, w: 34, h: 18, scale: 8 },
+];
+
 export function ZoomParallax() {
   const ref = useRef<HTMLDivElement>(null);
   const reduced = useReducedMotion();
+  /* Desktop first so SSR and hydration agree; narrowed by the effect. */
+  const [narrow, setNarrow] = useState(false);
+
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 640px)");
+    const update = () => setNarrow(mq.matches);
+    update();
+    mq.addEventListener("change", update);
+    return () => mq.removeEventListener("change", update);
+  }, []);
+
+  const panels = narrow ? PANELS_SM : PANELS;
 
   const { scrollYProgress } = useScroll({
     target: ref,
@@ -89,7 +124,7 @@ export function ZoomParallax() {
         aria-label="Work in passing"
       >
         <div className="mx-auto grid max-w-[1800px] grid-cols-2 gap-4 px-5 md:grid-cols-4 md:px-8">
-          {PANELS.map((_, i) => (
+          {panels.map((_, i) => (
             <div key={i} className="notch-card-sm relative aspect-[4/3] overflow-hidden">
               <Plate index={i} />
             </div>
@@ -108,7 +143,7 @@ export function ZoomParallax() {
       aria-label="Work in passing"
     >
       <div className="sticky top-0 h-dvh overflow-hidden">
-        {PANELS.map((panel, i) => (
+        {panels.map((panel, i) => (
           <Flying key={i} panel={panel} index={i} progress={scrollYProgress} />
         ))}
 

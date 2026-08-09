@@ -2,7 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import { motion, useScroll, useTransform } from "framer-motion";
-import { timeline, stats } from "@/lib/content";
+import { timeline, stats, sectionIndex } from "@/lib/content";
+import { useReducedMotion } from "@/hooks/useReducedMotion";
 import { AnimatedCounter } from "@/components/motion/AnimatedCounter";
 import { Reveal } from "@/components/motion/Reveal";
 import { cn } from "@/lib/utils";
@@ -31,8 +32,16 @@ const STATUS_STYLES: Record<string, string> = {
  * used on the site this is the best fit: a single travelling line is exactly
  * the shape a gradient wants to be, and it puts the accent in the motion rather
  * than in a fill.
+ *
+ * **Under reduced motion** the beam, the head and the sticky year all go, and
+ * the 34vh gaps collapse. Those gaps exist to give the beam room to travel
+ * between entries; with no beam they are a third of a screen of nothing, ten
+ * times over, and the section becomes a long scroll past empty space. What
+ * stays is the IntersectionObserver — which era you are in is information, not
+ * motion, and the preference asks for one and not the other.
  */
 export function Timeline() {
+  const reduced = useReducedMotion();
   const listRef = useRef<HTMLDivElement>(null);
   const [railHeight, setRailHeight] = useState(0);
 
@@ -110,7 +119,9 @@ export function Timeline() {
       {/* --- Numbers --- */}
       <div className="mx-auto max-w-[1800px] px-5 pt-24 md:px-8 md:pt-36">
         <Reveal>
-          <span className="micro">08 — By the numbers</span>
+          <span className="micro">
+            {sectionIndex("#timeline")} — By the numbers
+          </span>
         </Reveal>
         <dl className="mt-10 grid grid-cols-2 gap-x-6 gap-y-12 border-t border-line pt-10 md:grid-cols-4">
           {stats.map((stat) => (
@@ -131,7 +142,11 @@ export function Timeline() {
       {/* --- Career log --- */}
       <div className="mx-auto max-w-[1600px] px-5 pb-24 pt-24 md:px-8 md:pb-36 md:pt-32">
         <Reveal>
-          <span className="micro">09 — Track record</span>
+          {/* Unnumbered. This is the ledger's second *block*, not the page's
+              next section — it used to print `09`, which took Contact's number
+              and pushed every index after it out of step with the nav. One
+              section, one index, and it is on the block above. */}
+          <span className="micro">Track record</span>
         </Reveal>
 
         <div ref={listRef} className="relative mt-16 pl-10 md:pl-0">
@@ -147,32 +162,36 @@ export function Timeline() {
                 "linear-gradient(to bottom, transparent 0%, black 6%, black 92%, transparent 100%)",
             }}
           >
-            <motion.div
-              className="absolute inset-x-0 top-0 w-px rounded-full"
-              style={{
-                height: beamHeight,
-                opacity: beamOpacity,
-                background:
-                  "linear-gradient(to top, var(--spectrum-1) 0%, var(--spectrum-2) 40%, var(--spectrum-3) 72%, transparent 100%)",
-              }}
-            />
+            {!reduced && (
+              <motion.div
+                className="absolute inset-x-0 top-0 w-px rounded-full"
+                style={{
+                  height: beamHeight,
+                  opacity: beamOpacity,
+                  background:
+                    "linear-gradient(to top, var(--spectrum-1) 0%, var(--spectrum-2) 40%, var(--spectrum-3) 72%, transparent 100%)",
+                }}
+              />
+            )}
           </div>
 
           {/* The beam head. Outside the rail's `overflow-hidden` so its bloom
               is not clipped to one pixel of width. */}
-          <motion.span
-            aria-hidden
-            className="absolute left-[3px] top-0 h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full md:left-[13.5rem]"
-            style={{
-              y: headY,
-              opacity: headOpacity,
-              background: "var(--spectrum-3)",
-              boxShadow:
-                "0 0 12px 4px color-mix(in srgb, var(--spectrum-3) 60%, transparent), 0 0 34px 12px color-mix(in srgb, var(--spectrum-2) 40%, transparent)",
-            }}
-          />
+          {!reduced && (
+            <motion.span
+              aria-hidden
+              className="absolute left-[3px] top-0 h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full md:left-[13.5rem]"
+              style={{
+                y: headY,
+                opacity: headOpacity,
+                background: "var(--spectrum-3)",
+                boxShadow:
+                  "0 0 12px 4px color-mix(in srgb, var(--spectrum-3) 60%, transparent), 0 0 34px 12px color-mix(in srgb, var(--spectrum-2) 40%, transparent)",
+              }}
+            />
+          )}
 
-          <div className="space-y-20 md:space-y-[34vh]">
+          <div className={cn("space-y-20", reduced ? "md:space-y-24" : "md:space-y-[34vh]")}>
             {timeline.map((entry, i) => {
               const isActive = i === active;
               return (
@@ -187,7 +206,12 @@ export function Timeline() {
                     Held at 40% of the viewport rather than just under the navbar
                     so it sits on the reading line while its entry passes, which
                     is the whole reason it is sticky. */}
-                <div className="md:sticky md:top-[40vh] md:self-start md:pr-10 md:text-right">
+                <div
+                  className={cn(
+                    "md:self-start md:pr-10 md:text-right",
+                    !reduced && "md:sticky md:top-[40vh]"
+                  )}
+                >
                   <span
                     className={cn(
                       "tabular block origin-right font-display leading-none transition-all duration-500",
@@ -212,7 +236,10 @@ export function Timeline() {
                   </span>
                   <span
                     className={cn(
-                      "mt-2 hidden font-mono text-[0.6rem] uppercase tracking-[0.28em] transition-colors duration-500 md:block",
+                      // 0.625rem, not 0.6: 10px is the floor for type on this
+                      // site. Below it the mono face loses its counters at any
+                      // tracking and stops being readable at all on a phone.
+                      "mt-2 hidden font-mono text-[0.625rem] uppercase tracking-[0.28em] transition-colors duration-500 md:block",
                       isActive ? "text-fg" : "text-faint"
                     )}
                   >
@@ -251,7 +278,7 @@ export function Timeline() {
                       </h3>
                       <span
                         className={cn(
-                          "border px-2 py-0.5 font-mono text-[0.6rem] uppercase tracking-widest",
+                          "border px-2 py-0.5 font-mono text-[0.625rem] uppercase tracking-widest",
                           STATUS_STYLES[entry.status]
                         )}
                       >

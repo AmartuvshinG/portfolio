@@ -1,4 +1,4 @@
-import { contact, profile } from "@/lib/content";
+import { contact, profile, sectionIndex } from "@/lib/content";
 import { ContactForm } from "@/components/ui/ContactForm";
 import { GlowHorizon } from "@/components/ui/GlowHorizon";
 import { Reveal } from "@/components/motion/Reveal";
@@ -27,7 +27,9 @@ export function Contact() {
 
       <div className="relative mx-auto max-w-[1800px] px-5 md:px-8 lg:px-16">
         <Reveal className="flex flex-col gap-4">
-          <span className="micro">10 — {contact.heading}</span>
+          <span className="micro">
+            {sectionIndex("#contact")} — {contact.heading}
+          </span>
           <h2 className="display-caps text-[clamp(1.9rem,6vw,6rem)] text-fg">
             Let&apos;s build
           </h2>

@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { motion, useScroll, useTransform } from "framer-motion";
 import type { GalleryImage } from "@/lib/content";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
@@ -29,9 +29,60 @@ import { ClipReveal } from "@/components/motion/ClipReveal";
  *  Has to be a constant so the server and the client agree. */
 const SSR_ASPECT = 16 / 9;
 
+/** Below this the desktop scatter stops being a composition. */
+const NARROW = 700;
+
+/**
+ * The phone scatter, derived rather than authored.
+ *
+ * `content.ts` places these by hand across a wide canvas, and on a 390px screen
+ * the same fractions give you postage stamps clustered against one edge with
+ * dead space through the middle — a 0.18vw item is 70px wide, and three of them
+ * side by side read as debris rather than as an archive.
+ *
+ * Deriving beats a second hand-authored table: the placement in `content.ts` is
+ * the composition, and forking it means every future re-scatter has to be done
+ * twice and kept in agreement. Four moves, each one undoing a specific way the
+ * wide layout fails narrow:
+ *
+ *   widen      items grow toward a readable minimum
+ *   centre     horizontal spread contracts, since there is no width to spread in
+ *   stretch    the vertical rhythm grows with the items, or the widened
+ *              fragments start overlapping each other
+ *   settle     parallax halves — the same `depth` over a shorter viewport is
+ *              proportionally a much longer drift
+ *
+ * **These constants want tuning by eye, not by arithmetic.** The rhythm of the
+ * gaps is what holds this together, and no formula finds it.
+ */
+function narrowScatter(items: GalleryImage[]): GalleryImage[] {
+  return items.map((item) => {
+    const w = Math.min(0.78, item.w * 1.85);
+    /* Contract toward centre, then keep the item on screen. The clamp is what
+       stops `left: -25%`-style overhang, which is the actual reported bug. */
+    const centred = 0.5 + (item.x + item.w / 2 - 0.5) * 0.42;
+    const x = Math.min(Math.max(centred - w / 2, 0.04), 0.96 - w);
+    return { ...item, w, x, y: item.y * 1.4, depth: item.depth * 0.5 };
+  });
+}
+
 export function ScatterGallery({ items }: { items: GalleryImage[] }) {
   const reduced = useReducedMotion();
   const [enhancing, setEnhancing] = useState<GalleryImage | null>(null);
+  const [narrow, setNarrow] = useState(false);
+
+  useEffect(() => {
+    const mq = window.matchMedia(`(max-width: ${NARROW - 1}px)`);
+    const update = () => setNarrow(mq.matches);
+    update();
+    mq.addEventListener("change", update);
+    return () => mq.removeEventListener("change", update);
+  }, []);
+
+  const placed = useMemo(
+    () => (narrow ? narrowScatter(items) : items),
+    [narrow, items]
+  );
 
   /* Item widths are in vw and their positions in vh, so the height an item
      actually occupies depends on the viewport's aspect ratio — which is not
@@ -55,7 +106,7 @@ export function ScatterGallery({ items }: { items: GalleryImage[] }) {
      before Contact". Measuring the real bottom removes it without hand-tuning
      a constant every time the scatter is re-authored. */
   const bottom = Math.max(
-    ...items.map((i) => i.y + i.w * (i.height / i.width) * aspect)
+    ...placed.map((i) => i.y + i.w * (i.height / i.width) * aspect)
   );
   const height = bottom + 0.25;
 
@@ -68,7 +119,7 @@ export function ScatterGallery({ items }: { items: GalleryImage[] }) {
         <StaticGrid items={items} onEnhance={setEnhancing} />
       ) : (
         <div className="relative w-full" style={{ height: `${height * 100}vh` }}>
-          {items.map((item) => (
+          {placed.map((item) => (
             <ScatterItem key={item.src} item={item} onEnhance={setEnhancing} />
           ))}
         </div>

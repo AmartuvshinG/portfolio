@@ -9,12 +9,15 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { capabilities, projects, type Project } from "@/lib/content";
+import { projects, sectionIndex, type Project } from "@/lib/content";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
 import { useElementProgress } from "@/hooks/useScrollProgress";
+import { useSmoothScroll } from "@/components/chrome/SmoothScroll";
 import { setBackdropIntensity } from "@/lib/backdrop";
 import { useHasWebGL } from "@/lib/gpu";
 import { WorkCardGrid } from "@/components/work/WorkCardGrid";
+import { WorkIndexList } from "@/components/work/WorkIndexList";
+import { cardProgress } from "@/components/work/worldLayout";
 import { ProjectDossier, type DossierOrigin } from "@/components/work/ProjectDossier";
 import type { CardHit } from "@/components/work/WorkWorld";
 import { ChapterSeam } from "@/components/chrome/ChapterSeam";
@@ -69,6 +72,11 @@ export function SelectedWork() {
      grid and the world is opted into only once we know it can run. */
   const [small, setSmall] = useState(true);
   const gpu = useHasWebGL();
+  const { scrollTo } = useSmoothScroll();
+  /* Which card the roster is pointing at, for the render loop. A ref because
+     `useFrame` reads it every frame; the matching `hovered` state below is what
+     the DOM renders from, and both are written by the same handler. */
+  const activeIndex = useRef(-1);
 
   useEffect(() => {
     const mq = window.matchMedia("(min-width: 768px)");
@@ -108,6 +116,36 @@ export function SelectedWork() {
 
   const onSelect = useCallback((hit: CardHit) => setOrigin(hit), []);
   const onHover = useCallback((p: Project | null) => setHovered(p), []);
+
+  /**
+   * Point the world at card `i` (`-1` clears).
+   *
+   * The camera is moved **through the scroll position**, not by reaching into
+   * the r3f scene. Scroll offset is the one value the pin, the hash sync, the
+   * nav pill, the chapter frame and the backdrop observer all derive from —
+   * dollying the camera directly would move the picture while every one of
+   * those kept insisting you were still at the top of the section.
+   */
+  const focusCard = useCallback(
+    (i: number) => {
+      activeIndex.current = i;
+      setHovered(i < 0 ? null : (projects[i] ?? null));
+      if (i < 0) return;
+
+      const el = ref.current;
+      if (!el) return;
+      const travel = el.offsetHeight - window.innerHeight;
+      if (travel <= 0) return;
+      const top = el.getBoundingClientRect().top + window.scrollY;
+      scrollTo(top + cardProgress(i, projects.length) * travel);
+    },
+    [scrollTo]
+  );
+
+  const openFromRoster = useCallback(
+    (project: Project, rect: DOMRect) => setOrigin({ project, rect }),
+    []
+  );
 
   if (flat) {
     return (
@@ -154,6 +192,7 @@ export function SelectedWork() {
         >
           <WorkWorld
             progress={progress}
+            activeIndex={activeIndex}
             onSelect={onSelect}
             onHover={onHover}
           />
@@ -163,34 +202,34 @@ export function SelectedWork() {
                 where it stays crisp and selectable. --- */}
         <div className="pointer-events-none absolute inset-0 flex flex-col justify-between p-5 text-fg md:p-8 lg:px-16">
           <div className="pt-16 md:pt-20">
-            <span className="micro">04 — Selected work</span>
+            <span className="micro">{sectionIndex("#work")} — Selected work</span>
             <h2 className="display-caps mt-3 text-[clamp(1.6rem,4vw,3.75rem)]">
               Work
             </h2>
           </div>
 
           <div className="flex items-end justify-between gap-8">
-            {/* Active Theory's filter list. Not interactive filters — these are
-                the disciplines the work covers, which is the question the list
-                is really answering. */}
-            <div className="hidden md:block">
-              <span className="micro">What are you looking for?</span>
-              <ul className="mt-3 space-y-1.5">
-                {capabilities.slice(0, 5).map((c) => (
-                  <li
-                    key={c.code}
-                    className="font-mono text-[0.6875rem] uppercase tracking-[0.16em] text-muted"
-                  >
-                    <span className="mr-2 text-signal">{"->"}</span>
-                    {c.title}
-                  </li>
-                ))}
-              </ul>
+            {/* The roster. This slot used to hold five inert capability titles
+                under "What are you looking for?" — a list-shaped answer that
+                wasn't the answer, in the one place in the composition already
+                shaped like a list of links. It is now the eight real case
+                files, and the section's only keyboard surface. */}
+            {/* `shrink-0`. As a shrinkable flex item next to the hover
+                readout this collapsed to min-content and every row wrapped
+                onto two lines — "HELIX / OS". The readout beside it is the one
+                that should give way; it already caps itself at `max-w-xs`. */}
+            <div className="hidden shrink-0 md:block">
+              <WorkIndexList
+                onFocusCard={focusCard}
+                onOpen={openFromRoster}
+                activeSlug={hovered?.slug ?? null}
+              />
             </div>
 
             <div className="ml-auto text-right">
               {/* Hover readout. The card art carries the title already, so this
-                  adds the one-line summary rather than repeating the name. */}
+                  adds the one-line summary rather than repeating the name.
+                  Driven by the roster too, so focusing a row says what it is. */}
               <p className="micro min-h-4">
                 {hovered ? hovered.role : `${projects.length} case files`}
               </p>
@@ -210,7 +249,7 @@ export function SelectedWork() {
 function Header() {
   return (
     <div className="mx-auto max-w-[1800px] px-5 md:px-8 lg:px-16">
-      <span className="micro">04 — Selected work</span>
+      <span className="micro">{sectionIndex("#work")} — Selected work</span>
       <h2 className="display-caps mt-3 text-[clamp(1.6rem,4vw,3.75rem)] text-fg">
         Work
       </h2>

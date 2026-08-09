@@ -6,7 +6,8 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Check, Copy, Search, Zap } from "lucide-react";
 import { navLinks, projects, contact } from "@/lib/content";
 import { useSmoothScroll } from "@/components/chrome/SmoothScroll";
-import { useLockScroll } from "@/hooks/useLockScroll";
+import { useOverlay } from "@/hooks/useOverlay";
+import { isTextEntry, modalOpen } from "@/lib/keys";
 import { EASE_EXPO } from "@/lib/motion";
 import { cn } from "@/lib/utils";
 
@@ -47,9 +48,8 @@ export function CommandPalette() {
   const [copied, setCopied] = useState(false);
   const [lowPower, setLowPower] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
   const restoreFocus = useRef<HTMLElement | null>(null);
-
-  useLockScroll(open);
 
   const isHome = pathname === "/";
 
@@ -115,36 +115,61 @@ export function CommandPalette() {
     );
   }, [commands, query]);
 
-  /* Global shortcuts. Deliberately inert while the caret is in a text field —
-     otherwise "/" becomes impossible to type in the contact form. */
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      const el = document.activeElement as HTMLElement | null;
-      const typing =
-        el instanceof HTMLInputElement ||
-        el instanceof HTMLTextAreaElement ||
-        el?.isContentEditable;
-
-      if ((e.key === "k" && (e.metaKey || e.ctrlKey)) || (e.key === "/" && !typing)) {
-        e.preventDefault();
-        restoreFocus.current = el ?? null;
-        setOpen((v) => !v);
-      }
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, []);
-
   const close = useCallback(() => {
     setOpen(false);
     setQuery("");
     setCursor(0);
     setCopied(false);
-    restoreFocus.current?.focus?.();
+    /* Focus restoration is the hook's, not ours — it holds the `isConnected`
+       guard and the `preventScroll` that a bare `.focus()` here didn't. */
   }, []);
 
+  /* Trap, Escape, restore and the scroll lock. `restoreFocus` has to be passed
+     explicitly: it is captured in the shortcut handler *before* `open` flips,
+     because ⌘K fires while focus is still on whatever you were reading, and by
+     the time the hook's effect runs the input already has it. */
+  useOverlay({
+    open,
+    onClose: close,
+    ref: panelRef,
+    initialFocus: inputRef,
+    restoreFocus,
+  });
+
+  /* Global shortcuts. Deliberately inert while the caret is in a text field —
+     otherwise "/" becomes impossible to type in the contact form. */
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.repeat) return;
+      /* Another overlay owns the keyboard while it is up. Without this, "/"
+         opened the palette *underneath* an open dossier — two `aria-modal`
+         dialogs and two scroll locks stacked, with the trap of the one you
+         couldn't see fighting the one you could. */
+      if (!open && modalOpen()) return;
+
+      const el = document.activeElement as HTMLElement | null;
+      const typing = isTextEntry(el);
+
+      if ((e.key === "k" && (e.metaKey || e.ctrlKey)) || (e.key === "/" && !typing)) {
+        e.preventDefault();
+        /* Not a `setOpen(v => !v)` toggle. Closing has to run `close()` so the
+           query, the cursor and the copied flag reset and focus goes back —
+           the toggle skipped all of it, so ⌘K-to-dismiss left the palette's
+           state dirty for the next open. */
+        if (open) {
+          close();
+        } else {
+          restoreFocus.current = el ?? null;
+          setOpen(true);
+        }
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [open, close]);
+
   const onKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Escape") return close();
+    /* Escape is the hook's, on document in the capture phase. */
     if (e.key === "ArrowDown" || (e.key === "n" && e.ctrlKey)) {
       e.preventDefault();
       setCursor((c) => (results.length ? (c + 1) % results.length : 0));
@@ -178,6 +203,7 @@ export function CommandPalette() {
           onClick={close}
         >
           <motion.div
+            ref={panelRef}
             role="dialog"
             aria-modal="true"
             aria-label="Command palette"
@@ -195,7 +221,9 @@ export function CommandPalette() {
               <Search size={16} className="shrink-0 text-muted" />
               <input
                 ref={inputRef}
-                autoFocus
+                /* No `autoFocus`. The overlay hook owns initial focus for all
+                   four surfaces, and React's autoFocus scrolls the document to
+                   the element — under a held Lenis lock that desyncs the pins. */
                 value={query}
                 onChange={(e) => {
                   setQuery(e.target.value);
@@ -211,7 +239,19 @@ export function CommandPalette() {
                 aria-expanded
                 aria-controls="palette-results"
                 aria-activedescendant={results[cursor]?.id}
-                className="w-full bg-transparent py-4 font-mono text-sm text-fg outline-none placeholder:text-faint"
+                /* Negative offset, not `outline-none`. The global ring is
+                   unlayered, so it outranks `outline-none` and drew anyway —
+                   at the default +3px it crowds the panel edge and the
+                   `chamfer-lg` clip-path is waiting to slice it. Inset, the
+                   ring reads as the field's own frame.
+
+                   The `!` is not optional and not a shortcut: `:focus-visible`
+                   in globals.css is deliberately unlayered so that *every*
+                   focusable element gets a ring, and unlayered CSS outranks
+                   every cascade layer — so a plain utility here loses no
+                   matter what its specificity is. Same hazard the two `@layer
+                   base` comments in that file describe. */
+                className="w-full bg-transparent py-4 font-mono text-sm text-fg placeholder:text-faint focus-visible:[outline-offset:-4px]!"
               />
               <kbd className="hud-label shrink-0 border border-line px-1.5 py-0.5">
                 ESC
