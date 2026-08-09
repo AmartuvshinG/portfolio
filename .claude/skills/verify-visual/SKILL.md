@@ -238,13 +238,19 @@ loaded there — that is why this is a script. Two further gotchas baked into it
 `browser.newContext()`, and the `<canvas>` is excluded on purpose (it is
 `aria-hidden` with the case-file roster as its accessible representation).
 
-Triage the output against intent rather than accepting the count — but note that
-the sweep is *not* currently clean, so a non-empty result is not automatically
-pre-existing. Known open finding:
+The sweep is **clean as of `dbe26f9`**, and it runs in CI on every push, so any
+violation you see is almost certainly yours. Triage against intent rather than
+accepting the count, but start from the assumption that it is new.
 
-- **`aria-prohibited-attr` on `WordReveal` and `ScrambleText`** (`src/components/motion/`).
-  Both put `aria-label` on a `<p>`/`<span>` and mark the animated fragments
-  `aria-hidden`. The intent is right — one clean sentence instead of a per-word
-  stutter — but a generic element does not support naming, so the label is
-  *ignored* and every child is hidden: the hero lead and kicker are announced as
-  nothing at all. Fix is an `.sr-only` sibling carrying the real text, not ARIA.
+The one finding it used to carry is fixed, and the shape of the fix is the part
+worth remembering: `WordReveal` and `ScrambleText` named themselves with an
+`aria-label` on a `<p>`/`<span>` while marking every animated fragment
+`aria-hidden`. Neither element has a role, and **an element with no role does not
+support naming** — the label was discarded, every child was hidden, and the hero
+lead and kicker announced as nothing at all. The text now lives in an `.sr-only`
+first child instead.
+
+So: when you split text into animated fragments, the real string goes in a
+visually-hidden **text node**, never an ARIA attribute on a generic wrapper. Keep
+it *inside* the element rather than beside it — the DOM shape stays put and the
+heading level survives when `WordReveal` is used `as="h1"`.
