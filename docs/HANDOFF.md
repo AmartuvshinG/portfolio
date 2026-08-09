@@ -123,52 +123,57 @@ and both motion modes, and exits non-zero on any violation.
 `.github/workflows/ci.yml` runs on every push to `main` and every pull request:
 
 ```
-npm ci → typecheck → lint → build
+npm ci → typecheck → lint → build → axe
 ```
 
-About two minutes, no browser. Green as of `775065a`. See it at
-**github.com/AmartuvshinG/portfolio/actions**.
+See it at **github.com/AmartuvshinG/portfolio/actions**.
 
 This was the biggest gap in the repo — nothing verified a push at all. Two of the
 four contact-form bugs fixed this week were statically visible and would have
 been caught here the moment they were typed.
 
-### Adding the axe sweep later
+### The axe sweep
 
-Deliberately left out for now, because it would be red from its first run and a
-permanently red pipeline is one everyone learns to ignore. Once the aria bug in
-§5 is fixed, add to the end of the `check` job:
+Added once the aria bug in §5 was fixed — it was held back while that bug existed,
+because a pipeline that is red from its first run is one everyone learns to
+ignore. It is the last step in the `check` job and the only one that needs a
+browser and a running server, which is also why it is last: `npm run start`
+serves the output of the `build` step above it and will not work without it.
 
-```yaml
-      - run: npx playwright install --with-deps chrome
-      - name: Accessibility
-        run: |
-          npm run start &
-          npx --yes wait-on http://localhost:3000 --timeout 60000
-          npm run axe
-```
+Two things about that step are worth not undoing:
 
-`scripts/axe.mjs` already exits non-zero on any violation, so nothing else needs
-to change. Two caveats, since this block is **written but not yet tested in CI**:
-`npm run start` needs the `build` step above it to have run, and `scripts/axe.mjs`
-launches `channel: "chrome"` headed — on a headless runner that needs
-`xvfb-run`, or switch the launch to headless and accept that any performance
-number from it is meaningless (correctness assertions are unaffected).
+- It installs Google Chrome explicitly. `scripts/axe.mjs` uses `channel: "chrome"`,
+  which means the distro package rather than a Playwright-pinned build. The runner
+  image happens to ship Chrome already, but that is an implementation detail of
+  the image and the job should not quietly depend on it.
+- It runs under `xvfb-run`, rather than flipping the script to headless. The
+  script launches headed on purpose; a virtual display keeps one code path, so a
+  local run and a CI run are the same run. There is no GPU on a runner either
+  way — correctness assertions do not care, but treat any *performance* number
+  out of this job as fiction.
+
+**Not yet proven.** This step is written and its YAML parses, but as of this
+edit it has never executed — xvfb does not exist on the dev machine and the only
+real test is a push. If the first run is red, suspect the Chrome install or the
+`wait-on` timeout before suspecting the sweep itself; `npm run axe` is clean
+locally in all three acts and both motion modes.
 
 ---
 
 ## 5. Open items
 
-**The hero is silent to screen readers.** `WordReveal` and `ScrambleText` in
-`src/components/motion/` both put `aria-label` on a `<p>`/`<span>` and mark every
-animated fragment `aria-hidden`. The intent is right — one clean sentence instead
-of a per-word stutter — but a generic element does not support naming, so the
-label is *discarded* and all the children are hidden. Net effect: the hero lead
-("Interfaces that feel like hardware.") and the kicker are announced as **nothing
-at all**.
+~~**The hero is silent to screen readers.**~~ **Fixed 2026-08-09.** `WordReveal`
+and `ScrambleText` put `aria-label` on a `<p>`/`<span>` and marked every animated
+fragment `aria-hidden`. The intent was right — one clean sentence instead of a
+per-word stutter — but a generic element does not support naming, so the label
+was *discarded* and all the children were hidden: the hero lead ("Interfaces that
+feel like hardware.") and the kicker announced as nothing at all.
 
-Fix is an `.sr-only` sibling carrying the real text, not ARIA. Roughly three
-lines across two files. This predates the QA pass; axe found it on its first run.
+Both now carry the real string in an `.sr-only` first child instead of an
+`aria-label`. It is out of flow, so it costs no layout, and keeping it *inside*
+the element preserves the heading level when `WordReveal` is used `as="h1"`.
+`npm run axe` went 6 → **0** violations and now exits clean in all three acts,
+both motion modes. The sweep it was blocking is now wired into CI — see §4.
 
 **Vercel MCP — unanswered.** Worth adding only if Vercel is the host. There is no
 `vercel.json` and no deploy config in the repo, so nobody has confirmed where

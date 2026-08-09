@@ -47,3 +47,8 @@ next-env.d.ts
 docs/reference/video/
 # loose clips dropped at root while diagnosing something (problem.mp4 &c.)
 /*.mp4
+
+# Playwright MCP scratch — snapshots, console logs and screenshots it writes
+# while verifying a change. Regenerated every session, useful to nobody later.
+.playwright-mcp/
+/*.png
