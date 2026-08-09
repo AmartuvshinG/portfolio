@@ -1,0 +1,59 @@
+# Static checks on every push and pull request.
+#
+# This repo had no tests and no CI, which meant nothing at all verified a push.
+# That was a larger reliability gap than any amount of tooling could close: at
+# least two of the four contact-form bugs fixed in 01a075f were statically
+# visible and would have been caught here the moment they were written.
+#
+# Deliberately browser-free. `npm run axe` needs Chrome and a running server and
+# takes ~5 minutes, and it currently fails on a known aria bug in WordReveal /
+# ScrambleText — wiring it in now would mean a permanently red pipeline, which
+# trains everyone to ignore it. Add it here once that is fixed; the script
+# already exists and is written to exit non-zero on any violation.
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# A second push to the same branch makes the first run irrelevant. Cancel it
+# rather than queueing behind it.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          # Matches local development. Pinning to an older LTS would mean CI and
+          # the machine the code is written on disagree about what passes, which
+          # is worse than either version on its own.
+          node-version: '24'
+          cache: npm
+
+      # `npm ci`, never `npm install`: it installs exactly the committed
+      # lockfile and fails if package.json and the lock have drifted apart,
+      # which is itself worth catching.
+      - run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      # Last, and not redundant with the two above: `next build` runs the React
+      # Compiler, prerenders every route and resolves the Tailwind v4 pipeline —
+      # a whole class of failure that only appears in a production build. The
+      # Tailwind v3-syntax bug fixed in 01a075f lived in exactly that gap.
+      - name: Build
+        run: npm run build
