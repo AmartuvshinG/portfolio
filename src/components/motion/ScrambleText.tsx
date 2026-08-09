@@ -26,9 +26,13 @@ interface ScrambleTextProps {
  * label doing it reads as instrumentation coming online, which is the whole
  * point of the vocabulary.
  *
- * The animating span is `aria-hidden` under a labelled wrapper, so assistive
- * tech gets the final string immediately and never the intermediate noise.
- * Reduced motion renders the text directly and never starts the interval.
+ * The animating span is `aria-hidden` and the final string is carried by an
+ * `.sr-only` sibling, so assistive tech gets the settled label immediately and
+ * never the intermediate glyph noise. The wrapper cannot do that job with an
+ * `aria-label` — a bare `span` has no role, naming is not supported on it, so
+ * the label is dropped and the only child is hidden: the label announces as
+ * nothing. Reduced motion renders the text directly and never starts the
+ * interval.
  */
 export function ScrambleText({
   text,
@@ -96,7 +100,8 @@ export function ScrambleText({
   }, [text, reduced, immediate, speed, revealDelay]);
 
   return (
-    <span ref={ref} className={cn(className)} aria-label={text}>
+    <span ref={ref} className={cn(className)}>
+      <span className="sr-only">{text}</span>
       {/* Non-breaking space rather than empty, so the label reserves its line
           box before the first frame and nothing below it shifts. */}
       <span aria-hidden>{reduced ? text : display || " "}</span>

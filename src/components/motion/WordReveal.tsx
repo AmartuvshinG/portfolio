@@ -15,9 +15,15 @@ import { cn } from "@/lib/utils";
  * snapping into register. Fringing that stays is noise; fringing that resolves
  * is a lens.
  *
- * Both copies are `aria-hidden` and the container carries the real string as an
- * `aria-label`, so assistive tech gets one clean sentence rather than a stutter
- * of duplicated words.
+ * Every animated fragment is `aria-hidden` and the real sentence is carried by
+ * an `.sr-only` sibling ahead of them, so assistive tech gets one clean string
+ * rather than a stutter of duplicated words.
+ *
+ * That has to be a *text node*, not an `aria-label` on the container: `p`, `span`
+ * and friends have no role, and elements with no role do not support naming — the
+ * label is discarded and, with every child hidden, the line is announced as
+ * nothing at all. It was, until axe caught it. `sr-only` is out of flow, so it
+ * costs no layout and the heading level (when `as` is `h1`/`h2`) survives intact.
  *
  * Reduced motion gets the whole line at once with no split — the effect is
  * entirely motion, so there is nothing to preserve by staging it statically.
@@ -78,12 +84,13 @@ export function WordReveal({
 
   return (
     <Motion
-      aria-label={text}
       className={className}
       variants={container(cadence, delay)}
       initial="hidden"
       animate={play ? "show" : "hidden"}
     >
+      <span className="sr-only">{text}</span>
+
       {words.map((w, i) => (
         <motion.span
           key={`${w}-${i}`}
