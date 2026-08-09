@@ -452,33 +452,13 @@ html.hud-cursor * {
    ------------------------------------------------------------------------- */
 
 /* Aviation lamps on the skyline masts. */
-@keyframes hero-lamp {
-  0%, 46% { opacity: 0.15; }
-  50%, 56% { opacity: 1; }
-  60%, 100% { opacity: 0.15; }
-}
-.hero-lamp { animation: hero-lamp 3.4s steps(1, end) infinite; }
-
-/* Rain. Travels exactly one tile height, so the loop point is invisible. */
-@keyframes hero-rain {
+/* The lens' rolling shutter — a soft band travelling down the frame, one tile
+   height per cycle so the loop point is invisible. Named `hero-rain` while the
+   hero had rain to drive; the hero has no weather now and this is the only
+   surviving caller, so it is named for what it actually does. */
+@keyframes lens-roll {
   from { transform: translate3d(0, -50%, 0); }
   to { transform: translate3d(0, 0%, 0); }
-}
-
-/* A spinner's searchlight crossing the plates. Rotation about a point far below
-   the frame, so the beam sweeps rather than spins. */
-@keyframes hero-sweep {
-  0% { transform: rotate(-32deg); opacity: 0; }
-  12% { opacity: 0.5; }
-  50% { opacity: 0.7; }
-  88% { opacity: 0.4; }
-  100% { transform: rotate(30deg); opacity: 0; }
-}
-
-/* The off-world blimp, crossing the far plate. */
-@keyframes hero-blimp {
-  0% { transform: translate3d(-28vw, 0, 0); }
-  100% { transform: translate3d(128vw, 0, 0); }
 }
 
 /* Neon signage that has not been serviced in a while. Mostly lit, with a short

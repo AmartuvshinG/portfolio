@@ -125,6 +125,15 @@ export const profile = {
   heroName: ["AMA", "RA"],
   /** Set in the editorial serif under the name. */
   heroLead: "Interfaces that feel like hardware.",
+  /**
+   * The same line, broken for the hero's word-by-word arrival.
+   *
+   * Two lines rather than one because the reference clip's headline lands as
+   * two — the second starting a beat behind the first — and a single five-word
+   * line has nowhere for that lag to live. `heroLead` stays as the flat string
+   * for anywhere that needs one (metadata, reduced motion).
+   */
+  heroLeadLines: ["Interfaces that feel", "like hardware."],
   heroSub:
     "Creative technologist. I design and engineer the web at the seam where cinematic motion, real-time graphics and obsessive performance meet.",
   kicker: "PORTFOLIO — 2026",

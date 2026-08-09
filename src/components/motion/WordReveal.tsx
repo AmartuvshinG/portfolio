@@ -55,12 +55,15 @@ export function WordReveal({
   text,
   delay = 0,
   cadence = CADENCE,
+  play = true,
   className,
   as: Tag = "p",
 }: {
   text: string;
   delay?: number;
   cadence?: number;
+  /** Hold every word at its initial frame until true. See `useBootReady`. */
+  play?: boolean;
   className?: string;
   as?: "p" | "h1" | "h2" | "span";
 }) {
@@ -79,7 +82,7 @@ export function WordReveal({
       className={className}
       variants={container(cadence, delay)}
       initial="hidden"
-      animate="show"
+      animate={play ? "show" : "hidden"}
     >
       {words.map((w, i) => (
         <motion.span
@@ -122,6 +125,7 @@ export function WordRevealLines({
   delay = 0,
   lineLag = 0.35,
   cadence = CADENCE,
+  play = true,
   className,
 }: {
   lines: string[];
@@ -129,6 +133,7 @@ export function WordRevealLines({
   /** Measured off the reference: the second line starts 0.35s behind. */
   lineLag?: number;
   cadence?: number;
+  play?: boolean;
   className?: string;
 }) {
   return (
@@ -139,6 +144,7 @@ export function WordRevealLines({
           text={line}
           delay={delay + i * lineLag}
           cadence={cadence}
+          play={play}
           className={cn(className)}
         />
       ))}

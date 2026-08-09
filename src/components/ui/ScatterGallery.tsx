@@ -7,6 +7,7 @@ import type { GalleryImage } from "@/lib/content";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
 import { Esper } from "@/components/work/Esper";
 import { GlareCard } from "@/components/motion/GlareCard";
+import { ClipReveal } from "@/components/motion/ClipReveal";
 
 /**
  * The scattered archive.
@@ -121,13 +122,22 @@ function ScatterItem({
         className="block w-full bg-surface"
         style={{ aspectRatio: `${item.width} / ${item.height}` }}
       >
-        <Image
-          src={item.src}
-          alt={item.alt}
-          fill
-          sizes={`${Math.round(item.w * 100)}vw`}
-          className="object-cover transition-transform duration-700 ease-out group-hover:scale-[1.03]"
-        />
+        {/* The fragment assembles out of tiles as it comes into view, and
+            re-assembles on hover — the archive's items are *fragments*, and
+            having them arrive in pieces is the one place on the page where the
+            idea and the animation are the same thing.
+
+            Wrapped around the image alone, never the whole card: the clip would
+            otherwise take the ENHANCE affordance and the focus ring with it. */}
+        <ClipReveal rows={4} cols={4} className="absolute inset-0">
+          <Image
+            src={item.src}
+            alt={item.alt}
+            fill
+            sizes={`${Math.round(item.w * 100)}vw`}
+            className="object-cover transition-transform duration-700 ease-out group-hover:scale-[1.03]"
+          />
+        </ClipReveal>
         {/* The affordance. Archive items never looked clickable, and an enhance
             nobody discovers is an enhance that does not exist. */}
         <span

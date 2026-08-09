@@ -21,7 +21,9 @@ export function Contact() {
       className="relative overflow-hidden pt-24 md:pt-36"
       aria-label="Contact"
     >
-      <ChapterSeam />
+      {/* Shuttered: the close. The last thing the page does before it asks for
+          something is change gear visibly. */}
+      <ChapterSeam wipe />
 
       <div className="relative mx-auto max-w-[1800px] px-5 md:px-8 lg:px-16">
         <Reveal className="flex flex-col gap-4">

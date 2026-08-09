@@ -3,15 +3,39 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { AnimatePresence, motion } from "framer-motion";
+import {
+  AnimatePresence,
+  motion,
+  useMotionValue,
+  useSpring,
+  useTransform,
+  type MotionValue,
+} from "framer-motion";
 import { Menu, X } from "lucide-react";
 import { navLinks, routeSections, profile, contact } from "@/lib/content";
 import { useSmoothScroll } from "@/components/chrome/SmoothScroll";
 import { useLockScroll } from "@/hooks/useLockScroll";
+import { useReducedMotion } from "@/hooks/useReducedMotion";
 import { MagneticButton } from "@/components/motion/MagneticButton";
 import { cn } from "@/lib/utils";
 
 const BAR_SPRING = { type: "spring", stiffness: 200, damping: 50 } as const;
+
+/* --- The dock.
+   Lifted from the macOS-dock reference, with one substitution that is the whole
+   design decision: it magnifies **words, not icons**. There is no guessable
+   glyph for "Signal" or "Craft", so an icon dock turns every visit into a
+   hover-hunt for a section you could otherwise have read. The magnification is
+   the part of that pattern worth having; the iconography is not.
+
+   The reference's spring, unchanged — it is doing the work. */
+const DOCK_SPRING = { mass: 0.1, stiffness: 150, damping: 12 } as const;
+/** Influence either side of a link's centre, px. */
+const REACH = 150;
+/** Scale at dead centre. */
+const PEAK = 1.24;
+/** Lift at dead centre, px. */
+const LIFT = -6;
 
 /** How long after the last scroll event the glass comes back, ms. */
 const GLASS_DELAY = 150;
@@ -44,6 +68,13 @@ export function Navbar() {
   const { scrollTo } = useSmoothScroll();
   const pathname = usePathname();
   const isHome = pathname === "/";
+  const reduced = useReducedMotion();
+
+  /* Pointer position across the link row, in viewport coordinates. `Infinity`
+     parks every link at rest — the distance transform clamps, so the value
+     never has to be special-cased downstream. */
+  const mouseX = useMotionValue(Infinity);
+  const [dockable, setDockable] = useState(false);
 
   const [contracted, setContracted] = useState(false);
   const [observed, setObserved] = useState<string | null>("#hero");
@@ -186,6 +217,19 @@ export function Navbar() {
     return () => cancelAnimationFrame(id);
   }, [isHome, scrollTo]);
 
+  /* The dock only exists where there is a pointer to drive it. On touch the
+     magnification could only ever fire on tap — landing a label at 1.24x under
+     the finger that is already navigating away from it — and reduced motion has
+     asked for exactly this class of thing to stop. Measured once and on change
+     rather than read during render, so SSR and hydration agree on `false`. */
+  useEffect(() => {
+    const mq = window.matchMedia("(hover: hover) and (pointer: fine)");
+    const update = () => setDockable(mq.matches && !reduced);
+    update();
+    mq.addEventListener("change", update);
+    return () => mq.removeEventListener("change", update);
+  }, [reduced]);
+
   /* Live clock (UTC) */
   useEffect(() => {
     const update = () =>
@@ -305,81 +349,23 @@ export function Navbar() {
                 reports everything is fine. Refusing to shrink turns a silent
                 overlap into a visible overflow that the ladder below can be
                 measured against. */}
-            <ul className="hidden shrink-0 flex-nowrap items-center gap-0.5 min-[1080px]:flex">
-              {navLinks.map((link) => {
-                const isActive = active === link.href;
-                const label = (
-                  <>
-                    {/* The numbering is HUD decoration, and it is the first
-                        thing to go — measured, it costs ~260px across ten
-                        links, which is more than a compact console has spare at
-                        any viewport width. So it belongs to the full-width bar
-                        at the top of the page and not to the floating console;
-                        the mobile sheet keeps it too. Trying to fit it into the
-                        console with container queries alone is how this ended
-                        up overlapping the status cluster. */}
-                    <span
-                      className={cn(
-                        "text-[0.6rem] opacity-50",
-                        contracted ? "hidden" : "hidden @[70rem]:inline"
-                      )}
-                    >
-                      {link.code}
-                    </span>
-                    <span>{link.label}</span>
-                  </>
-                );
-
-                return (
-                  <li key={link.href} className="relative">
-                    {/* The pill sits outside MagneticButton on purpose: the
-                        magnetic wrapper writes a raw CSS transform, and layout
-                        projection measured through it would drift while the
-                        active link is also the hovered one. */}
-                    {isActive && (
-                      <motion.span
-                        layoutId="nav-active"
-                        aria-hidden
-                        className="chamfer-sm absolute inset-0 border border-line-strong"
-                        style={{
-                          background:
-                            "linear-gradient(100deg, rgba(255,45,143,0.16), rgba(123,92,255,0.16), rgba(34,224,255,0.16))",
-                        }}
-                        transition={BAR_SPRING}
-                      />
-                    )}
-                    <MagneticButton strength={0.2}>
-                      {isHome ? (
-                        <a
-                          href={link.href}
-                          onClick={(e) => {
-                            e.preventDefault();
-                            go(link.href);
-                          }}
-                          aria-current={isActive ? "location" : undefined}
-                          className={cn(
-                            "relative flex items-center gap-2 whitespace-nowrap px-2.5 py-2 font-mono text-xs uppercase tracking-[0.16em] transition-colors @[76rem]:px-3.5",
-                            isActive ? "text-fg" : "text-muted hover:text-fg"
-                          )}
-                        >
-                          {label}
-                        </a>
-                      ) : (
-                        <Link
-                          href={`/${link.href}`}
-                          aria-current={isActive ? "page" : undefined}
-                          className={cn(
-                            "relative flex items-center gap-2 whitespace-nowrap px-2.5 py-2 font-mono text-xs uppercase tracking-[0.16em] transition-colors @[76rem]:px-3.5",
-                            isActive ? "text-fg" : "text-muted hover:text-fg"
-                          )}
-                        >
-                          {label}
-                        </Link>
-                      )}
-                    </MagneticButton>
-                  </li>
-                );
-              })}
+            <ul
+              className="hidden shrink-0 flex-nowrap items-center gap-0.5 min-[1080px]:flex"
+              onMouseMove={(e) => dockable && mouseX.set(e.clientX)}
+              onMouseLeave={() => mouseX.set(Infinity)}
+            >
+              {navLinks.map((link) => (
+                <DockLink
+                  key={link.href}
+                  link={link}
+                  isActive={active === link.href}
+                  isHome={isHome}
+                  contracted={contracted}
+                  dockable={dockable}
+                  mouseX={mouseX}
+                  go={go}
+                />
+              ))}
             </ul>
 
             {/* Right: status + clock, CTA, menu button.
@@ -533,6 +519,159 @@ export function Navbar() {
         )}
       </AnimatePresence>
     </>
+  );
+}
+
+/**
+ * One link in the dock.
+ *
+ * Three things here are deliberate and each one is a fix rather than a taste:
+ *
+ * 1. **Scale, never width.** The console is a `clip-path` (`chamfer-lg`) with
+ *    `flex-nowrap` contents, so it clips overflow silently — no scrollbar, no
+ *    warning, the tail links simply vanish behind the chamfer. Animating the
+ *    *width* of a magnified link would push the last two links out of the panel
+ *    on any narrow-ish viewport. `scale` changes what you see and not what the
+ *    row measures, so the layout is identical at rest and at full deflection.
+ *    The growth is absorbed by the existing horizontal padding, which is why
+ *    `PEAK` is 1.24 and not the reference's 1.6.
+ *
+ * 2. **`transformOrigin: 50% 100%`.** Growing from the baseline is what makes
+ *    this read as a dock; growing from the centre reads as a zoom.
+ *
+ * 3. **The transform is not on the `MagneticButton`.** That component writes a
+ *    raw CSS `transform` every frame for its own magnet effect, so the two
+ *    would overwrite each other at frame rate. The dock transform goes on the
+ *    `<li>`, outside it — the same reason the active pill already sits out
+ *    there.
+ */
+function DockLink({
+  link,
+  isActive,
+  isHome,
+  contracted,
+  dockable,
+  mouseX,
+  go,
+}: {
+  link: (typeof navLinks)[number];
+  isActive: boolean;
+  isHome: boolean;
+  contracted: boolean;
+  dockable: boolean;
+  mouseX: MotionValue<number>;
+  go: (href: string) => void;
+}) {
+  const ref = useRef<HTMLLIElement>(null);
+
+  /* Signed distance from the pointer to this link's centre. Measured per frame
+     off the live rect rather than cached: the row reflows when the bar
+     contracts, and a cached centre would leave every link magnifying at the
+     wrong moment for the rest of the session. */
+  const distance = useTransform(mouseX, (x: number) => {
+    const box = ref.current?.getBoundingClientRect();
+    if (!box) return REACH * 2;
+    return x - box.left - box.width / 2;
+  });
+
+  const scale = useSpring(
+    useTransform(distance, [-REACH, 0, REACH], [1, PEAK, 1]),
+    DOCK_SPRING
+  );
+  const y = useSpring(
+    useTransform(distance, [-REACH, 0, REACH], [0, LIFT, 0]),
+    DOCK_SPRING
+  );
+  /* A tighter falloff than the scale, so the hairline belongs to one link
+     rather than smearing across three. */
+  const rule = useSpring(
+    useTransform(distance, [-REACH * 0.4, 0, REACH * 0.4], [0, 1, 0]),
+    DOCK_SPRING
+  );
+
+  const label = (
+    <>
+      {/* The numbering is HUD decoration, and it is the first thing to go —
+          measured, it costs ~260px across ten links, which is more than a
+          compact console has spare at any viewport width. So it belongs to the
+          full-width bar at the top of the page and not to the floating console;
+          the mobile sheet keeps it too. */}
+      <span
+        className={cn(
+          "text-[0.6rem] opacity-50",
+          contracted ? "hidden" : "hidden @[70rem]:inline"
+        )}
+      >
+        {link.code}
+      </span>
+      <span>{link.label}</span>
+    </>
+  );
+
+  const linkClass = cn(
+    "relative flex items-center gap-2 whitespace-nowrap px-2.5 py-2 font-mono text-xs uppercase tracking-[0.16em] transition-colors @[76rem]:px-3.5",
+    isActive ? "text-fg" : "text-muted hover:text-fg"
+  );
+
+  return (
+    <motion.li
+      ref={ref}
+      className="relative"
+      style={
+        dockable
+          ? { scale, y, transformOrigin: "50% 100%" }
+          : undefined
+      }
+    >
+      {isActive && (
+        <motion.span
+          layoutId="nav-active"
+          aria-hidden
+          className="chamfer-sm absolute inset-0 border border-line-strong"
+          style={{
+            background:
+              "linear-gradient(100deg, rgba(255,45,143,0.16), rgba(123,92,255,0.16), rgba(34,224,255,0.16))",
+          }}
+          transition={BAR_SPRING}
+        />
+      )}
+
+      <MagneticButton strength={0.2}>
+        {isHome ? (
+          <a
+            href={link.href}
+            onClick={(e) => {
+              e.preventDefault();
+              go(link.href);
+            }}
+            aria-current={isActive ? "location" : undefined}
+            className={linkClass}
+          >
+            {label}
+          </a>
+        ) : (
+          <Link
+            href={`/${link.href}`}
+            aria-current={isActive ? "page" : undefined}
+            className={linkClass}
+          >
+            {label}
+          </Link>
+        )}
+      </MagneticButton>
+
+      {/* The dock's indicator. A ramp hairline drawing itself under the nearest
+          link — the one piece of colour the row gets, and it replaces the
+          reference's floating tooltip, which would be repeating a word the
+          visitor is already reading. */}
+      {dockable && (
+        <motion.span
+          aria-hidden
+          className="spectrum-rule absolute inset-x-2 bottom-0 h-px origin-center"
+          style={{ scaleX: rule, opacity: rule }}
+        />
+      )}
+    </motion.li>
   );
 }
 

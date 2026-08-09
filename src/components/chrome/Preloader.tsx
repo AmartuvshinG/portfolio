@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
 import { useLockScroll } from "@/hooks/useLockScroll";
+import { markBooted } from "@/hooks/useBootReady";
 import { profile } from "@/lib/content";
 import { Nebula } from "@/components/backdrop/Nebula";
 import { GlowHorizon } from "@/components/ui/GlowHorizon";
@@ -36,6 +37,15 @@ export function Preloader() {
   const finished = reduced || done;
 
   useLockScroll(!finished);
+
+  /* Release the hero. Fired as the curtain *starts* to lift, so the entrance
+     underneath is already in motion when the reveal uncovers it — see
+     useBootReady for why the hero cannot simply animate on mount. Also covers
+     the reduced-motion path, where `finished` is true on the first render and
+     there is no curtain at all. */
+  useEffect(() => {
+    if (finished) markBooted();
+  }, [finished]);
 
   useEffect(() => {
     if (reduced) return;

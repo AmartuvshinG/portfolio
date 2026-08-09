@@ -118,6 +118,13 @@ export function SelectedWork() {
         className="relative py-24 md:py-32"
         aria-label="Selected work"
       >
+        {/* Not shuttered, and deliberately so: this fallback is the only branch
+            of Work that *has* a seam. The primary branch is a pinned world with
+            a sticky child that owns the whole viewport and no ChapterSeam at
+            all, so a shutter here would appear for some visitors and not
+            others — a boundary treatment that fires inconsistently is worse
+            than one that never fires. The third shutter lives on Archive
+            instead. */}
         <ChapterSeam />
         <Header />
         <div className="mt-14">

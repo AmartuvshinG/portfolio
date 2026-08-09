@@ -31,9 +31,12 @@ const COLLAPSE = 1.2;
 
 export function EntranceArc({
   delay = 0.35,
+  play = true,
   className,
 }: {
   delay?: number;
+  /** Hold at the initial frame until true. See `useBootReady`. */
+  play?: boolean;
   className?: string;
 }) {
   const reduced = useReducedMotion();
@@ -51,7 +54,7 @@ export function EntranceArc({
       <motion.div
         className="absolute inset-0"
         initial={{ scale: 2.6 }}
-        animate={{ scale: 1 }}
+        animate={{ scale: play ? 1 : 2.6 }}
         transition={{ duration: COLLAPSE, ease: EASE_EXPO, delay }}
         style={{ willChange: "transform" }}
       >
@@ -67,7 +70,7 @@ export function EntranceArc({
         aria-hidden
         className="pointer-events-none absolute inset-0"
         initial={{ opacity: 0.92 }}
-        animate={{ opacity: 0 }}
+        animate={{ opacity: play ? 0 : 0.92 }}
         transition={{ duration: COLLAPSE * 0.95, ease: EASE_EXPO, delay }}
         style={{
           background:
@@ -90,12 +93,15 @@ export function Focus({
   delay = 0,
   amount = 28,
   duration = 0.9,
+  play = true,
   className,
 }: {
   children: ReactNode;
   delay?: number;
   amount?: number;
   duration?: number;
+  /** Hold out of focus until true. See `useBootReady`. */
+  play?: boolean;
   className?: string;
 }) {
   const reduced = useReducedMotion();
@@ -107,7 +113,11 @@ export function Focus({
     <motion.div
       className={className}
       initial={{ filter: `blur(${amount}px)`, opacity: 0.4 }}
-      animate={{ filter: "blur(0px)", opacity: 1 }}
+      animate={
+        play
+          ? { filter: "blur(0px)", opacity: 1 }
+          : { filter: `blur(${amount}px)`, opacity: 0.4 }
+      }
       transition={{ duration, ease: EASE_EXPO, delay }}
       onAnimationComplete={() => setLanded(true)}
       style={landed ? { filter: "none" } : undefined}

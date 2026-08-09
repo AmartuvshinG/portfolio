@@ -36,15 +36,14 @@ export function ChapterFrame() {
         trigger: el,
         start: "top 50%",
         end: "bottom 50%",
+        /* Nothing but the signage reads this. There used to be a
+           `chapter-change` event dispatched here for the lens overlay to
+           stutter on; it was the source of the horizontal cyan/magenta bars
+           reported on every scroll. See the header of `Anamorphic.tsx` for why
+           it is gone rather than tuned. */
         onToggle: (self) => {
           if (!self.isActive) return;
           setActive(i);
-          /* The lens overlay wants to stutter on a seam crossing, and this is
-             the only place that knows a crossing happened. An event rather than
-             shared state on purpose: ChapterFrame is `hidden lg:block`, so
-             anything that read the glitch off this component's render would
-             only fire on desktop. */
-          window.dispatchEvent(new CustomEvent("chapter-change"));
         },
       })
     );

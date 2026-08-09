@@ -10,7 +10,7 @@ import {
 import { GlowHorizon } from "@/components/ui/GlowHorizon";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
 import { pulseBackdrop } from "@/lib/backdrop";
-import { cn } from "@/lib/utils";
+import { cn, srand } from "@/lib/utils";
 
 /**
  * The join between two sections.
@@ -50,10 +50,18 @@ import { cn } from "@/lib/utils";
  */
 export function ChapterSeam({
   intensity = 0.42,
+  wipe = false,
   className,
 }: {
   /** 0–1. Seams run well under the hero so they punctuate rather than compete. */
   intensity?: number;
+  /**
+   * Add the shutter blind — a row of vertical bars that stagger open as you
+   * cross. **Only three sections pass this.** Nine shuttering boundaries is a
+   * tic; three is punctuation, and the difference between the two is the whole
+   * reason the datamosh this replaces had to be deleted rather than tuned.
+   */
+  wipe?: boolean;
   className?: string;
 }) {
   const ref = useRef<HTMLDivElement>(null);
@@ -116,6 +124,8 @@ export function ChapterSeam({
         <div className="spectrum-rule absolute inset-x-0 top-0 h-px opacity-40" />
       ) : (
         <>
+          {near && wipe && <Shutter progress={scrollYProgress} />}
+
           {near && (
             <GlowHorizon
               lite
@@ -135,5 +145,85 @@ export function ChapterSeam({
         </>
       )}
     </div>
+  );
+}
+
+/* How many slats. Enough that the row reads as a texture rather than as a set
+   of countable rectangles, few enough that it is 18 compositor transforms and
+   not 60. */
+const SLATS = 18;
+
+/**
+ * The shutter blind — a row of slats that stagger open across the join.
+ *
+ * This is the ref1 move, and it exists because of what it replaced. There used
+ * to be a "datamosh" firing at every one of these boundaries: six full-width
+ * bars in `screen` blend that read, correctly, as the page tearing. The
+ * instinct behind it was right — a boundary should have graphic snap — but a
+ * *random* stutter is indistinguishable from a fault, whereas a *structured*
+ * one cannot be mistaken for anything but deliberate. Same energy, opposite
+ * reading.
+ *
+ * Three things it does not do:
+ *
+ * - It does not play at you. Every slat is scrubbed by the same scroll progress
+ *   that drives the arc and the hairline, so crossing the seam is something you
+ *   drive at your own speed and can reverse.
+ * - It does not open left to right. A linear sweep reads as a page transition
+ *   from a template; the seeded offsets below make it read as a mechanism.
+ * - It does not blend. `scaleY` on a flat translucent fill is a compositor
+ *   transform on an already-rasterised layer, which is the entire reason this
+ *   can afford to be 18 elements while the six datamosh bars could not.
+ */
+function Shutter({
+  progress,
+}: {
+  progress: import("framer-motion").MotionValue<number>;
+}) {
+  return (
+    <div
+      aria-hidden
+      className="absolute inset-x-0 top-0 flex h-[16vh] gap-px overflow-hidden"
+    >
+      {Array.from({ length: SLATS }, (_, i) => (
+        <Slat key={i} index={i} progress={progress} />
+      ))}
+    </div>
+  );
+}
+
+function Slat({
+  index,
+  progress,
+}: {
+  index: number;
+  progress: import("framer-motion").MotionValue<number>;
+}) {
+  /* Seeded rather than random: a `Math.random()` here would give the server and
+     the client different offsets and desynchronise on hydration. `srand` is an
+     integer hash, so it is bit-exact in Node and in the browser. */
+  const offset = srand(index * 17 + 3) * 0.42;
+  /* Alternating anchors, so the slats retract to both edges and the row reads
+     as a shutter rather than as a bar chart draining downward. */
+  const fromTop = srand(index * 29 + 11) > 0.45;
+
+  const scaleY = useTransform(progress, [offset, offset + 0.5], [1, 0]);
+  const opacity = useTransform(progress, [offset, offset + 0.5], [0.5, 0]);
+
+  return (
+    <motion.span
+      className="h-full flex-1"
+      style={{
+        scaleY,
+        opacity,
+        transformOrigin: fromTop ? "50% 0%" : "50% 100%",
+        background:
+          index % 3 === 0
+            ? "linear-gradient(180deg, color-mix(in srgb, var(--spectrum-1) 34%, transparent), transparent)"
+            : index % 3 === 1
+              ? "linear-gradient(180deg, color-mix(in srgb, var(--spectrum-2) 30%, transparent), transparent)"
+              : "linear-gradient(180deg, color-mix(in srgb, var(--spectrum-3) 26%, transparent), transparent)",
+      }}
+    />
   );
 }

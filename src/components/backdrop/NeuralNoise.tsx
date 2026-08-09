@@ -291,8 +291,13 @@ export function NeuralNoise({
        4K display a 1× cap is still 8.3 million pixels of a ten-iteration trig
        loop, every frame. That was the lag. The field is nothing but soft
        gradients, so rendering it at ~1.1MP and letting the browser scale the
-       canvas up is visually free — there is no detail in it to lose. */
-    const MAX_PIXELS = 1_100_000;
+       canvas up is visually free — there is no detail in it to lose.
+
+       Halved again on phone-sized viewports. A 1.1MP ceiling was set against a
+       desktop GPU; the same buffer on a mid-range phone is the single most
+       expensive thing on the page, and at that screen size the field is four
+       inches of soft gradient where nobody can see the difference. */
+    const MAX_PIXELS = window.innerWidth < 900 ? 550_000 : 1_100_000;
 
     const resize = () => {
       const w = window.innerWidth;
@@ -375,7 +380,12 @@ export function NeuralNoise({
          is periodic. */
       gl.uniform1f(u.time, (now % 600000) * 0.001);
       gl.uniform2f(u.pointer, pos.x, pos.y);
-      gl.uniform1f(u.speed, 0.42 * speed);
+      /* Scroll speed feeds the field's own speed, not its brightness. Pushing
+         gain would make the whole frame flash on every flick; pushing speed
+         makes the field *smear* with the movement and settle when you stop,
+         which is the thing that reads as the page having weight. Capped at a
+         third — this is a texture on the motion, not a second animation. */
+      gl.uniform1f(u.speed, 0.42 * speed * (1 + backdrop.velocity * 0.34));
       gl.uniform1f(u.scroll, scroll.current);
       gl.uniform1f(u.gain, gain * backdrop.intensity);
       gl.uniform1f(u.burst, backdrop.burst);

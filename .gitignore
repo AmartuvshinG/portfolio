@@ -45,3 +45,5 @@ next-env.d.ts
 # were filed; this rule has to follow them or the whole lot lands in history.
 /reference/
 docs/reference/video/
+# loose clips dropped at root while diagnosing something (problem.mp4 &c.)
+/*.mp4

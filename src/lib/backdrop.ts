@@ -21,7 +21,30 @@ export const backdrop = {
    * full-screen visuals never compete.
    */
   intensity: 1,
+  /**
+   * How hard the page is currently being scrolled, 0–1, signed away.
+   *
+   * Written by `SmoothScroll` off Lenis's own velocity; read by `NeuralNoise`
+   * (field gain) and `Anamorphic` (edge fringing). It is what makes a hard
+   * flick *feel* like one — the frame smears with you and settles when you
+   * stop, which is the difference between a page that animates and a page that
+   * has weight.
+   *
+   * Deliberately read in only two places, and deliberately not exposed as a CSS
+   * custom property on `<html>`: writing a variable to the root element every
+   * scroll frame invalidates style for the entire document, which is one of the
+   * four things that made this site laggy the first time.
+   */
+  velocity: 0,
 };
+
+/** Clamp of the raw Lenis velocity, px/frame, mapped to `velocity` 0–1. */
+const VELOCITY_FULL = 55;
+
+/** Write the current scroll speed. Called from the Lenis scroll handler. */
+export function setScrollVelocity(raw: number) {
+  backdrop.velocity = Math.min(1, Math.abs(raw) / VELOCITY_FULL);
+}
 
 /** Kick the field. Called at section boundaries. */
 export function pulseBackdrop(strength = 1) {

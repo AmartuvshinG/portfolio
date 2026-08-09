@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef } from "react";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
-import { srand } from "@/lib/utils";
+import { backdrop } from "@/lib/backdrop";
 
 /**
  * The lens the whole site is seen through.
@@ -25,39 +25,57 @@ import { srand } from "@/lib/utils";
  * gradients that sell the same idea at the edges, where aberration actually
  * lives, for the price of one paint.
  *
- * The datamosh is here rather than in `ChapterFrame` because it belongs to the
- * lens, and because ChapterFrame is `hidden lg:block` — a glitch that only fires
- * on desktop would be a strange thing to ship.
+ * ---------------------------------------------------------------------------
+ * **There was a datamosh here, and it was the bug.** Six full-width bars in
+ * `mix-blend-mode: screen`, fired by a `chapter-change` event, meant to stutter
+ * for 180ms as you crossed a seam. The intent was a charming glitch. The effect,
+ * with nine sections on the page, was a band of cyan and magenta tearing across
+ * the viewport on more or less every scroll — reported as "a glitchy stripe type
+ * of effect", and read, correctly, as the page being broken rather than as an
+ * effect.
+ *
+ * The lesson is not "no glitches". It is that an effect indistinguishable from a
+ * rendering fault has to be *rare* to survive being mistaken for one, and a
+ * per-section trigger is the opposite of rare. Boundaries are marked by the
+ * shutter wipe in `ChapterSeam` instead: structured, so it can only read as
+ * deliberate.
+ * ---------------------------------------------------------------------------
  */
-
-/** How long a seam crossing stutters for. Long enough to register, short
- *  enough that it never reads as a rendering fault. */
-const MOSH_MS = 180;
-
-const BARS = Array.from({ length: 6 }, (_, i) => ({
-  top: srand(i * 37 + 3) * 92,
-  height: 0.8 + srand(i * 53 + 7) * 5,
-  shift: (srand(i * 71 + 11) - 0.5) * 26,
-  cyan: srand(i * 91 + 13) > 0.5,
-}));
-
 export function Anamorphic() {
   const reduced = useReducedMotion();
-  const [moshing, setMoshing] = useState(false);
+  const fringes = useRef<HTMLDivElement>(null);
 
+  /* Scroll speed widens the colour split, which is what a real taking lens does
+     when the image is moving across it.
+     Written straight to the two gradient layers from one rAF rather than
+     through React state or a custom property on `<html>`: this updates at
+     scroll frequency, and both of those routes would invalidate far more than
+     the two elements that actually change. The loop idles at zero cost once the
+     page is still, because the value it reads is already zero and the early
+     return skips the writes. */
   useEffect(() => {
     if (reduced) return;
-    let timer: ReturnType<typeof setTimeout>;
-    const onSeam = () => {
-      setMoshing(true);
-      clearTimeout(timer);
-      timer = setTimeout(() => setMoshing(false), MOSH_MS);
+    const el = fringes.current;
+    if (!el) return;
+
+    let raf = 0;
+    let painted = -1;
+
+    const tick = () => {
+      const v = backdrop.velocity;
+      /* Snap to 2 decimals and skip identical frames — at rest this loop then
+         costs one comparison. */
+      const next = Math.round(v * 100) / 100;
+      if (next !== painted) {
+        painted = next;
+        el.style.setProperty("--fringe", String(0.55 + next * 0.9));
+        el.style.setProperty("--fringe-w", `${7 + next * 5}%`);
+      }
+      raf = requestAnimationFrame(tick);
     };
-    window.addEventListener("chapter-change", onSeam);
-    return () => {
-      window.removeEventListener("chapter-change", onSeam);
-      clearTimeout(timer);
-    };
+
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
   }, [reduced]);
 
   return (
@@ -83,55 +101,45 @@ export function Anamorphic() {
           scrolls — the same class of cost as a backdrop-filter, and the reason
           the navbar's glass was removed. Plain translucent gradients over a
           ground this dark land within a shade or two of the blended version. */}
-      <div
-        className="absolute inset-y-0 left-0 w-[7%]"
-        style={{
-          background:
-            "linear-gradient(90deg, color-mix(in srgb, var(--spectrum-1) 13%, transparent), transparent)",
-        }}
-      />
-      <div
-        className="absolute inset-y-0 right-0 w-[7%]"
-        style={{
-          background:
-            "linear-gradient(270deg, color-mix(in srgb, var(--spectrum-3) 13%, transparent), transparent)",
-        }}
-      />
+      <div ref={fringes} className="absolute inset-0" style={{ "--fringe": 0.55, "--fringe-w": "7%" } as React.CSSProperties}>
+        <div
+          className="absolute inset-y-0 left-0"
+          style={{
+            width: "var(--fringe-w)",
+            opacity: "var(--fringe)",
+            background:
+              "linear-gradient(90deg, color-mix(in srgb, var(--spectrum-1) 13%, transparent), transparent)",
+          }}
+        />
+        <div
+          className="absolute inset-y-0 right-0"
+          style={{
+            width: "var(--fringe-w)",
+            opacity: "var(--fringe)",
+            background:
+              "linear-gradient(270deg, color-mix(in srgb, var(--spectrum-3) 13%, transparent), transparent)",
+          }}
+        />
+      </div>
 
       {/* Rolling shutter. One band, 14s for a full pass — slow enough that it
-          is never the thing you are looking at. */}
+          is never the thing you are looking at.
+
+          At 2.8% of a bone white over a near-black ground this is about one
+          value step, which is the entire budget a rolling shutter gets. The
+          datamosh above it failed by being twenty times louder than this. */}
       {!reduced && (
         <div
           className="absolute inset-x-0 h-[22vh]"
           style={{
             background:
               "linear-gradient(180deg, transparent, rgba(236,238,251,0.028) 46%, transparent)",
-            animation: "hero-rain 14s linear infinite",
+            animation: "lens-roll 14s linear infinite",
             top: "-22vh",
             willChange: "transform",
           }}
         />
       )}
-
-      {/* Datamosh. Fires on a chapter seam and is gone before you can look at
-          it directly, which is the only way this kind of thing stays charming
-          rather than becoming a tic. */}
-      {moshing &&
-        BARS.map((b, i) => (
-          <div
-            key={i}
-            className="absolute inset-x-0"
-            style={{
-              top: `${b.top}%`,
-              height: `${b.height}vh`,
-              transform: `translate3d(${b.shift}px,0,0)`,
-              background: b.cyan
-                ? "color-mix(in srgb, var(--spectrum-3) 30%, transparent)"
-                : "color-mix(in srgb, var(--spectrum-1) 30%, transparent)",
-              mixBlendMode: "screen",
-            }}
-          />
-        ))}
     </div>
   );
 }

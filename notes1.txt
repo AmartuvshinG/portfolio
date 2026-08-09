@@ -1,0 +1,18 @@
+Remove all the rain, glitchy animations present in the current portfolio website hero section, bring back the checkpoint git commit spectrum hero section with the glitchy big text. Along with that, refer to hero-2.mp4 and hero-animation.mp4 in the reference/video folder. I wanted exactly those 2 separate animations bundled into one on my website. Do not waste time and resource implementing rain, other artificial effects when I'm giving you an easy reference to implement, don't do that again. Make the hero experience a cinematic landing experience. Do not do 3d objects again. Remove the artificial 3d objects present.
+
+Implement navbar-dock.txt design/animation to the navbar. Do you think smaller icons that expands upon hover will look impressive or just the current text design?
+
+For hero section, I really want those 2 reference mp4 files as my hero entrance and animation, implement that within the current theme.
+
+Do expand on hover animation on Signal section cards, the current card sizes are very small, so make them look impactful and wow factor included whenever the user visits this section, make the card size more impactful and big enough to notice and emphasize the wow factor.
+
+Refer to animation.txt at root to implement that animation wherever necessary.
+
+Refer to problem.mp4 in root, there's a glitchy stripe type of effect whenever I scroll down, fix that issue, it's a huge problem. Optimize the site's performance, and make sure everything is smooth as sail, optimize view for mobile phones as well.
+
+As for the background, I want the background to be one singular background theme, there's a bit of cut off looking around if you know what I mean, in each navbar section whenever the user scrolls down. Make sure the whole scrolling experience is seamless and polished.
+
+Refer to ref1.mp4 as a creative inspiration for the whole parallax animation when scrolling down, it looks really impressive. Refer to parallax-2.mp4 for creative inspiration as well.
+
+Offer any creative improvements that the website needs? Regarding the overall futuristic, neo-Tokyo, cyberpunk, blade runner esque theme? I want to iterate even further. Come up with creative ideas.
+

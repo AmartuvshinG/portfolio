@@ -19,7 +19,9 @@ export function Capabilities() {
       className="relative overflow-hidden py-24 md:py-36"
       aria-label="Capabilities"
     >
-      <ChapterSeam />
+      {/* One of three shuttered seams on the page — this is where the reading
+          stretch ends and the working sections begin. */}
+      <ChapterSeam wipe />
 
       <div className="relative mx-auto max-w-[1800px] px-5 md:px-8 lg:px-16">
         <div className="flex flex-col justify-between gap-8 md:flex-row md:items-end">

@@ -16,7 +16,10 @@ export function Showcase() {
       className="relative overflow-hidden pt-24 md:pt-36"
       aria-label="Archive"
     >
-      <ChapterSeam />
+      {/* Shuttered — the middle of the three. Coming out of the enclosed work
+          world and the band wipe into a loose, sprawling spread is the biggest
+          change of register on the page. */}
+      <ChapterSeam wipe />
 
       <div className="relative mx-auto max-w-[1800px] px-5 md:px-8 lg:px-16">
         <SectionHeader
