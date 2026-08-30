@@ -154,10 +154,11 @@ export const navLinks: NavLink[] = [
   { label: "Craft", href: "#capabilities", code: "03" },
   { label: "Work", href: "#work", code: "04" },
   { label: "Lab", href: "#lab", code: "05" },
-  { label: "Archive", href: "#gallery", code: "06" },
-  { label: "Voices", href: "#testimonials", code: "07" },
-  { label: "Path", href: "#timeline", code: "08" },
-  { label: "Contact", href: "#contact", code: "09" },
+  { label: "Lookbook", href: "#lookbook", code: "06" },
+  { label: "Archive", href: "#gallery", code: "07" },
+  { label: "Voices", href: "#testimonials", code: "08" },
+  { label: "Path", href: "#timeline", code: "09" },
+  { label: "Contact", href: "#contact", code: "10" },
 ];
 
 /**
