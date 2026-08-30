@@ -10,7 +10,8 @@
       "Bash(npx eslint *)",
       "Bash(node /c/Users/Amara/AppData/Local/Temp/claude/c--Users-Amara-Downloads-portfolio/e49256a0-cdf5-4def-929b-621668983b7d/scratchpad/ab.mjs)",
       "mcp__playwright__browser_evaluate",
-      "mcp__playwright__browser_take_screenshot"
+      "mcp__playwright__browser_take_screenshot",
+      "mcp__playwright__browser_run_code_unsafe"
     ],
     "defaultMode": "acceptEdits"
   }
