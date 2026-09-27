@@ -79,7 +79,6 @@ export function Navbar() {
   const [contracted, setContracted] = useState(false);
   const [observed, setObserved] = useState<string | null>("#hero");
   const [open, setOpen] = useState(false);
-  const [clock, setClock] = useState("--:--:--");
   const [progress, setProgress] = useState(0);
   const [scrolling, setScrolling] = useState(false);
   const [glassLive, setGlassLive] = useState(false);
@@ -241,20 +240,6 @@ export function Navbar() {
     return () => mq.removeEventListener("change", update);
   }, [reduced]);
 
-  /* Live clock (UTC) */
-  useEffect(() => {
-    const update = () =>
-      setClock(
-        new Date().toLocaleTimeString("en-GB", {
-          hour12: false,
-          timeZone: "UTC",
-        })
-      );
-    update();
-    const id = setInterval(update, 1000);
-    return () => clearInterval(id);
-  }, []);
-
   /* Close the sheet the moment the viewport reaches the desktop breakpoint.
      The sheet and its toggle are both `min-[1080px]:hidden`, so widening the
      window with it open hid the whole thing in CSS while `open` stayed true —
@@ -380,14 +365,18 @@ export function Navbar() {
               ))}
             </ul>
 
-            {/* Right: status + clock, CTA, menu button.
+            {/* Right: status, CTA, menu button.
                 The ladder here is the fix for the clipping — each item declares
-                the console width below which it is not worth its space. */}
+                the console width below which it is not worth its space. There
+                used to be a live UTC clock here too: it re-rendered the navbar
+                every second to show a timezone nobody visiting needs, and after
+                the type scale went up it was the item pushing the CTA off the
+                edge at 1440px. */}
             <div className="flex shrink-0 items-center gap-4">
               <span
                 className={cn(
                   "hud-label shrink-0 items-center gap-2 whitespace-nowrap !text-fg",
-                  contracted ? "hidden @[74rem]:flex" : "hidden @[56rem]:flex"
+                  contracted ? "hidden @[84rem]:flex" : "hidden @[80rem]:flex"
                 )}
               >
                 <span
@@ -395,17 +384,6 @@ export function Navbar() {
                   style={{ background: "var(--color-hazard)" }}
                 />
                 ONLINE
-              </span>
-              {/* Clock on the full-width bar only. A live readout is the least
-                  useful thing in the row and the second most expensive in
-                  width; the console has better uses for 110px. */}
-              <span
-                className={cn(
-                  "hud-label tabular whitespace-nowrap",
-                  contracted ? "hidden" : "hidden @[64rem]:inline"
-                )}
-              >
-                {clock} UTC
               </span>
 
               {/* The one gradient-filled element in the chrome. */}
@@ -416,7 +394,7 @@ export function Navbar() {
                     e.preventDefault();
                     go("#contact");
                   }}
-                  className="chamfer-sm hidden px-4 py-2 font-mono text-[0.6875rem] uppercase tracking-[0.18em] text-void transition-transform duration-300 hover:scale-[1.04] sm:block"
+                  className="chamfer-sm hidden px-4 py-2 font-mono text-[0.8125rem] uppercase tracking-[0.18em] text-void transition-transform duration-300 hover:scale-[1.04] sm:block"
                   style={{ backgroundImage: "var(--gradient-spectrum)" }}
                 >
                   Available
@@ -424,7 +402,7 @@ export function Navbar() {
               ) : (
                 <Link
                   href="/#contact"
-                  className="chamfer-sm hidden px-4 py-2 font-mono text-[0.6875rem] uppercase tracking-[0.18em] text-void transition-transform duration-300 hover:scale-[1.04] sm:block"
+                  className="chamfer-sm hidden px-4 py-2 font-mono text-[0.8125rem] uppercase tracking-[0.18em] text-void transition-transform duration-300 hover:scale-[1.04] sm:block"
                   style={{ backgroundImage: "var(--gradient-spectrum)" }}
                 >
                   Available
@@ -647,8 +625,8 @@ function DockLink({
              muted down to 2.34:1, which is worse than any raw token on the
              site. The subordination is now carried by `--color-faint`, which
              is a real 5:1 step below muted rather than a half-erased one. */
-          "text-[0.625rem] text-faint",
-          contracted ? "hidden" : "hidden @[70rem]:inline"
+          "text-[0.75rem] text-faint",
+          contracted ? "hidden" : "hidden @[84rem]:inline"
         )}
       >
         {link.code}

@@ -302,7 +302,7 @@ export function Hero() {
               </p>
               <a
                 href={`mailto:${contact.email}`}
-                className="spectrum-underline mt-3 inline-block font-mono text-[0.6875rem] lowercase tracking-wider text-fg"
+                className="spectrum-underline mt-3 inline-block font-mono text-[0.8125rem] lowercase tracking-wider text-fg"
               >
                 {contact.email}
               </a>

@@ -70,7 +70,7 @@ export function WorkIndexList({
                 onOpen(project, e.currentTarget.getBoundingClientRect());
               }}
               className={cn(
-                "flex items-baseline gap-2 font-mono text-[0.6875rem] uppercase tracking-[0.16em] transition-colors",
+                "flex items-baseline gap-2 font-mono text-[0.8125rem] uppercase tracking-[0.16em] transition-colors",
                 activeSlug === project.slug ? "text-fg" : "text-muted hover:text-fg"
               )}
             >

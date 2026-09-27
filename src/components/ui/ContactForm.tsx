@@ -187,7 +187,7 @@ export function ContactForm() {
           disabled={status === "sending"}
           style={{ backgroundImage: "var(--gradient-spectrum)" }}
           className={cn(
-            "group relative flex w-fit items-center justify-center gap-3 px-7 py-3.5 font-mono text-[0.6875rem] uppercase tracking-[0.2em] transition-transform duration-300",
+            "group relative flex w-fit items-center justify-center gap-3 px-7 py-3.5 font-mono text-[0.8125rem] uppercase tracking-[0.2em] transition-transform duration-300",
             // The ramp carries the colour and the label stays dark against it.
             // Bone on magenta is only ~3:1 — the fill has to be the bright side.
             "chamfer-sm text-void hover:scale-[1.03] disabled:opacity-70"

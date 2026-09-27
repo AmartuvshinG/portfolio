@@ -21,7 +21,7 @@ export default function NotFound() {
       <Link
         href="/"
         style={{ backgroundImage: "var(--gradient-spectrum)" }}
-        className="chamfer-sm relative mt-10 inline-flex items-center gap-3 px-7 py-3.5 font-mono text-[0.6875rem] uppercase tracking-[0.2em] text-void transition-transform duration-300 hover:scale-[1.03]"
+        className="chamfer-sm relative mt-10 inline-flex items-center gap-3 px-7 py-3.5 font-mono text-[0.8125rem] uppercase tracking-[0.2em] text-void transition-transform duration-300 hover:scale-[1.03]"
       >
         <ArrowLeft size={14} /> Back to the index
       </Link>

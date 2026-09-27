@@ -102,7 +102,7 @@ export function ChapterFrame() {
               }}
             />
             <span
-              className="chamfer-sm neon-sign flex items-center gap-3 border border-line-strong bg-void/80 px-2 py-4 font-mono text-[0.625rem] uppercase tracking-[0.34em] text-fg"
+              className="chamfer-sm neon-sign flex items-center gap-3 border border-line-strong bg-void/80 px-2 py-4 font-mono text-[0.75rem] uppercase tracking-[0.34em] text-fg"
               style={{ writingMode: "vertical-rl" }}
             >
               <span className="spectrum-text font-semibold">

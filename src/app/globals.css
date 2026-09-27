@@ -88,6 +88,24 @@
   --font-sans: var(--font-archivo), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-mono-hud), ui-monospace, "Courier New", monospace;
 
+  /* --- Text scale, one step up from Tailwind's defaults.
+         The stock scale set body copy at 14–16px and every label at 10–11px,
+         which reads as refined on a designer's 27" display and as a squint on
+         the phone a recruiter actually opens the link on. Overriding the steps
+         here, rather than editing call sites, moves every `text-*` on the site
+         at once and keeps the relative hierarchy intact. Nothing a person is
+         meant to read goes below 0.75rem (12px). */
+  --text-xs: 0.875rem;
+  --text-xs--line-height: 1.5;
+  --text-sm: 1rem;
+  --text-sm--line-height: 1.6;
+  --text-base: 1.125rem;
+  --text-base--line-height: 1.7;
+  --text-lg: 1.25rem;
+  --text-lg--line-height: 1.6;
+  --text-xl: 1.375rem;
+  --text-xl--line-height: 1.5;
+
   /* --- Radius: machined, not soft. ref1's panels are cut, not rounded. */
   --radius-sm: 2px;
   --radius-md: 6px;
@@ -307,13 +325,16 @@ html.hud-cursor * {
 }
 
 /* Micro-label: the surviving HUD vocabulary, straight off ref3's tiny
-   technical metadata. */
+   technical metadata. 13px, not the 11px it started at — at 11px uppercase mono
+   it was decoration, and these labels carry real information (section indices,
+   captions, dates). Tracking comes down as the size goes up, so the labels keep
+   roughly the same width and nothing that was sized around them reflows. */
 @utility micro {
   font-family: var(--font-mono);
   text-transform: uppercase;
-  letter-spacing: 0.22em;
-  font-size: 0.6875rem;
-  line-height: 1;
+  letter-spacing: 0.16em;
+  font-size: 0.8125rem;
+  line-height: 1.2;
   color: var(--color-muted);
 }
 
@@ -321,8 +342,8 @@ html.hud-cursor * {
 @utility hud-label {
   font-family: var(--font-mono);
   text-transform: uppercase;
-  letter-spacing: 0.28em;
-  font-size: 0.625rem;
+  letter-spacing: 0.2em;
+  font-size: 0.75rem;
   line-height: 1;
   color: var(--color-muted);
 }

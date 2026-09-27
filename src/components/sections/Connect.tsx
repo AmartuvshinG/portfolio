@@ -220,7 +220,7 @@ function ChannelPanel({
 
         <div className="absolute inset-0 flex flex-col justify-between p-4 md:p-6">
           <div className="flex items-start justify-between gap-3">
-            <span className="font-mono text-[0.7rem] tracking-[0.24em] text-fg md:text-xs">
+            <span className="font-mono text-[0.8125rem] tracking-[0.24em] text-fg md:text-xs">
               {social.code}
             </span>
             <ArrowUpRight

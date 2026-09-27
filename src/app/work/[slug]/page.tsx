@@ -98,7 +98,7 @@ export default async function WorkDetail({
                     href={l.href}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="chamfer-sm group inline-flex items-center gap-2 border border-line-strong px-5 py-3 font-mono text-[0.6875rem] uppercase tracking-[0.2em] text-fg transition-colors hover:border-fg"
+                    className="chamfer-sm group inline-flex items-center gap-2 border border-line-strong px-5 py-3 font-mono text-[0.8125rem] uppercase tracking-[0.2em] text-fg transition-colors hover:border-fg"
                   >
                     {l.label}
                     <ArrowUpRight

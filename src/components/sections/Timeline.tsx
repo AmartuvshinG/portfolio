@@ -236,10 +236,10 @@ export function Timeline() {
                   </span>
                   <span
                     className={cn(
-                      // 0.625rem, not 0.6: 10px is the floor for type on this
-                      // site. Below it the mono face loses its counters at any
-                      // tracking and stops being readable at all on a phone.
-                      "mt-2 hidden font-mono text-[0.625rem] uppercase tracking-[0.28em] transition-colors duration-500 md:block",
+                      // 0.75rem: 12px is the floor for type on this site.
+                      // Below it the mono face loses its counters at any
+                      // tracking and stops being readable on a phone.
+                      "mt-2 hidden font-mono text-[0.75rem] uppercase tracking-[0.28em] transition-colors duration-500 md:block",
                       isActive ? "text-fg" : "text-faint"
                     )}
                   >
@@ -278,7 +278,7 @@ export function Timeline() {
                       </h3>
                       <span
                         className={cn(
-                          "border px-2 py-0.5 font-mono text-[0.625rem] uppercase tracking-widest",
+                          "border px-2 py-0.5 font-mono text-[0.75rem] uppercase tracking-widest",
                           STATUS_STYLES[entry.status]
                         )}
                       >

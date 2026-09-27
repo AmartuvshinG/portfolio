@@ -70,7 +70,7 @@ export function ProjectVisual({
 
       <div className="absolute inset-0 flex flex-col justify-between p-6">
         <span
-          className="font-mono text-[0.6875rem] uppercase tracking-[0.22em]"
+          className="font-mono text-[0.8125rem] uppercase tracking-[0.22em]"
           style={{ color }}
         >
           {category}

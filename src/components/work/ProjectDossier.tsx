@@ -254,7 +254,7 @@ export function ProjectDossier({
                       {project.stack.map((s) => (
                         <span
                           key={s}
-                          className="rounded-full border border-line px-2.5 py-1 font-mono text-[0.65rem] uppercase tracking-wider text-fg"
+                          className="rounded-full border border-line px-2.5 py-1 font-mono text-[0.8125rem] uppercase tracking-wider text-fg"
                         >
                           {s}
                         </span>
@@ -323,7 +323,7 @@ export function ProjectDossier({
                 <Link
                   href={`/work/${project.slug}`}
                   style={{ backgroundImage: "var(--gradient-spectrum)" }}
-                  className="chamfer-sm group inline-flex items-center gap-2 px-5 py-3 font-mono text-[0.6875rem] uppercase tracking-[0.2em] text-void transition-transform duration-300 hover:scale-[1.03]"
+                  className="chamfer-sm group inline-flex items-center gap-2 px-5 py-3 font-mono text-[0.8125rem] uppercase tracking-[0.2em] text-void transition-transform duration-300 hover:scale-[1.03]"
                 >
                   Open full case file
                   <ArrowUpRight

@@ -42,7 +42,7 @@ export function CapabilityCard({ item }: { item: Capability }) {
         {item.tags.map((tag) => (
           <span
             key={tag}
-            className="font-mono text-[0.65rem] uppercase tracking-wider text-faint"
+            className="font-mono text-[0.8125rem] uppercase tracking-wider text-faint"
           >
             {tag}
           </span>
@@ -54,7 +54,7 @@ export function CapabilityCard({ item }: { item: Capability }) {
         <HoverBorderGradient
           as="span"
           containerClassName="ml-auto"
-          className="px-2.5 py-1 font-mono text-[0.625rem] uppercase tracking-[0.18em] text-muted"
+          className="px-2.5 py-1 font-mono text-[0.75rem] uppercase tracking-[0.18em] text-muted"
         >
           {item.code.split("/")[1]}
         </HoverBorderGradient>
