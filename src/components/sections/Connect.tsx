@@ -8,6 +8,7 @@ import { socials, sectionIndex } from "@/lib/content";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
 import { ChapterSeam } from "@/components/chrome/ChapterSeam";
 import { srand } from "@/lib/utils";
+import { GitHubMark, LinkedInMark } from "@/components/ui/BrandMarks";
 
 /**
  * "Find me elsewhere", at the scale it should always have been.
@@ -215,6 +216,8 @@ function ChannelPanel({
           }}
         />
 
+        <ChannelArt social={social} lit={expanded} />
+
         <div className="absolute inset-0 flex flex-col justify-between p-4 md:p-6">
           <div className="flex items-start justify-between gap-3">
             <span className="font-mono text-[0.7rem] tracking-[0.24em] text-fg md:text-xs">
@@ -277,10 +280,75 @@ function ChannelPanel({
 }
 
 /**
+ * What the channel *is*, drawn large enough to read across the room: the
+ * service's own mark for a profile, the document itself for a resume.
+ *
+ * It sits above the ramp wash and the floor gradient in the stack, never under
+ * them. The wash is an `overlay` blend, and running it across a trademark would
+ * recolour it — which both brands' guidelines rule out. So the marks stay at
+ * full, untinted white in every state; only their scale answers the accordion.
+ * The resume sheet is the site's own material and is allowed to dim at rest.
+ *
+ * Sized off the panel's *height*, not its width: the same box has to hold a
+ * mark in a closed desktop column (tall and narrow), an open one, and a phone
+ * row (wide and short), and height is the one dimension all three share.
+ */
+function ChannelArt({
+  social,
+  lit,
+}: {
+  social: (typeof socials)[number];
+  lit: boolean;
+}) {
+  if (social.mark) {
+    const Mark = social.mark === "github" ? GitHubMark : LinkedInMark;
+    return (
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-x-0 bottom-[46%] top-[16%] flex items-center justify-center md:bottom-[40%] md:top-[20%]"
+      >
+        <div
+          className="flex h-full max-w-[64%] items-center justify-center transition-transform duration-500 ease-out"
+          style={{ transform: `scale(${lit ? 1 : 0.86})` }}
+        >
+          <Mark className="h-full max-h-full w-auto max-w-full object-contain" />
+        </div>
+      </div>
+    );
+  }
+
+  if (social.preview) {
+    return (
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-x-0 bottom-[42%] top-[12%] flex items-center justify-center md:bottom-[34%] md:top-[14%]"
+      >
+        {/* eslint-disable-next-line @next/next/no-img-element -- decorative, fixed asset */}
+        <img
+          src={social.preview}
+          alt=""
+          width={1191}
+          height={1684}
+          loading="lazy"
+          className="h-full w-auto max-w-[78%] rounded-[2px] object-contain shadow-[0_24px_60px_-12px_rgba(0,0,0,0.7)] transition-[transform,opacity] duration-500 ease-out"
+          style={{
+            opacity: lit ? 1 : 0.62,
+            transform: `rotate(${lit ? -2 : -5}deg) scale(${lit ? 1 : 0.92})`,
+          }}
+        />
+      </div>
+    );
+  }
+
+  return null;
+}
+
+/**
  * Card art, generated. The row used to pull four picsum thumbnails — four
  * network requests for four pictures of nothing. This is drawn from the ramp
  * instead, so the panels are on-palette by construction and there is nothing
- * to 404.
+ * to 404. It is the ground now, not the subject: `ChannelArt` above it says
+ * which channel this is.
  *
  * `lit` brightens the signal arcs on the open panel, so the art is part of the
  * expansion rather than a static backing plate behind it.

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, ArrowRight, ArrowUpRight } from "lucide-react";
@@ -182,6 +183,35 @@ export default async function WorkDetail({
             </Reveal>
           </aside>
         </div>
+
+        {project.gallery?.length ? (
+          <section className="mt-24" aria-label="Gallery">
+            <Reveal>
+              <h2 className="micro mb-8">Gallery</h2>
+            </Reveal>
+            <div className="grid gap-x-6 gap-y-12 md:grid-cols-2">
+              {project.gallery.map((g, i) => (
+                <Reveal key={g.src} delay={(i % 2) * 0.08}>
+                  <figure>
+                    <div className="notch-card relative overflow-hidden bg-surface ring-1 ring-inset ring-line">
+                      <Image
+                        src={g.src}
+                        alt={g.alt}
+                        width={2000}
+                        height={1250}
+                        sizes="(max-width: 768px) 100vw, (max-width: 1400px) 50vw, 680px"
+                        className="h-auto w-full"
+                      />
+                    </div>
+                    {g.caption && (
+                      <figcaption className="micro mt-3">{g.caption}</figcaption>
+                    )}
+                  </figure>
+                </Reveal>
+              ))}
+            </div>
+          </section>
+        ) : null}
 
         <Link
           href={`/work/${next.slug}`}

@@ -51,6 +51,11 @@ export interface Project {
   metrics: { label: string; value: string }[];
   /** Outbound links shown on the case file and dossier (live site, code). */
   links?: { label: string; href: string }[];
+  /**
+   * Further screenshots for the case file, at the same 2000×1250 spec as
+   * `shot`. Captured from the live sites by `scripts/capture-shots.mjs`.
+   */
+  gallery?: { src: string; alt: string; caption?: string }[];
 }
 
 export interface TimelineEntry {
@@ -74,6 +79,10 @@ export interface SocialLink {
   href: string;
   /** Two-letter HUD glyph used by the console dock. */
   code: string;
+  /** The service's own mark, drawn large on its Signal panel. */
+  mark?: "github" | "linkedin";
+  /** A rendered page, shown as a sheet on its Signal panel (resumes). */
+  preview?: string;
 }
 
 /* -------------------------------------------------------------------------- */
@@ -264,6 +273,23 @@ export const projects: Project[] = [
       { label: "Live site", href: "https://spotfixes.com" },
       { label: "Code", href: "https://github.com/tajmilur-rahman/senior-design-2025" },
     ],
+    gallery: [
+      {
+        src: "/work/spotfixes-capabilities.webp",
+        alt: "Spotfixes landing page: six capability cards — ML classification, semantic search, tenant isolation, role-based permissions, CSV and JSON import, fix surfacing.",
+        caption: "Core platform · public landing page, team project",
+      },
+      {
+        src: "/work/spotfixes-accuracy.webp",
+        alt: "Spotfixes landing page: the adaptive ML engine section — TF-IDF feature extraction, vector RAG duplicate detection, feedback-driven retraining, 222k+ Firefox training records.",
+        caption: "ML engine · public landing page, team project",
+      },
+      {
+        src: "/work/spotfixes-stack.webp",
+        alt: "Spotfixes landing page: infrastructure section with a row-level security status badge and a technology matrix of stack logos.",
+        caption: "Infrastructure · public landing page, team project",
+      },
+    ],
   },
   {
     slug: "web-design",
@@ -291,6 +317,28 @@ export const projects: Project[] = [
       { label: "KRYOS", href: "https://kryos.amartuvshin.work" },
       { label: "VOIDGATE", href: "https://voidgate.amartuvshin.work" },
     ],
+    gallery: [
+      {
+        src: "/work/kryos.webp",
+        alt: "KRYOS hero: the headline “Worlds that remember you” over a faceted crystal, framed by a game-HUD overlay.",
+        caption: "KRYOS · fictional game studio",
+      },
+      {
+        src: "/work/kryos-works.webp",
+        alt: "KRYOS works section: large cards for two invented games, Project Halcyon and Nightfold, with generated key art.",
+        caption: "KRYOS · works",
+      },
+      {
+        src: "/work/voidgate.webp",
+        alt: "VOIDGATE hero: glowing wordmark, a command-line input, and a framed image of a server-room console.",
+        caption: "VOIDGATE · fictional sci-fi storyworld",
+      },
+      {
+        src: "/work/voidgate-archive.webp",
+        alt: "VOIDGATE archive section: lore text, a protocol status table and faction cards beside a generated image of a data vault.",
+        caption: "VOIDGATE · the archive",
+      },
+    ],
   },
   {
     slug: "portfolio",
@@ -315,6 +363,18 @@ export const projects: Project[] = [
     shot: "/work/portfolio.webp",
     // Only put numbers here once they are measured on the deployed site.
     metrics: [],
+    gallery: [
+      {
+        src: "/work/portfolio-work.webp",
+        alt: "This site's work section: case-file cards floating in a scroll-driven 3D world, with a roster of project links.",
+        caption: "The work world",
+      },
+      {
+        src: "/work/portfolio-path.webp",
+        alt: "This site's ledger section: four headline figures above a career timeline with a glowing rail.",
+        caption: "The ledger",
+      },
+    ],
   },
   {
     slug: "coursework",
@@ -402,15 +462,34 @@ export const RESUME_EN = "/resume/Amartuvshin-Ganzorig-Resume.pdf";
 export const RESUME_MN = "/resume/Amartuvshin-Ganzorig-Resume-MN.pdf";
 
 export const socials: SocialLink[] = [
-  { label: "GITHUB", handle: "@amartuvshing", href: "https://github.com/amartuvshing", code: "GH" },
+  {
+    label: "GITHUB",
+    handle: "@amartuvshing",
+    href: "https://github.com/amartuvshing",
+    code: "GH",
+    mark: "github",
+  },
   {
     label: "LINKEDIN",
     handle: "in/amartuvshinganzorig",
     href: "https://www.linkedin.com/in/amartuvshinganzorig/",
     code: "IN",
+    mark: "linkedin",
   },
-  { label: "RESUME", handle: "PDF · English", href: RESUME_EN, code: "CV" },
-  { label: "RESUME (MN)", handle: "PDF · Монгол", href: RESUME_MN, code: "MN" },
+  {
+    label: "RESUME",
+    handle: "PDF · English",
+    href: RESUME_EN,
+    code: "CV",
+    preview: "/resume/Amartuvshin-Ganzorig-Resume-preview.webp",
+  },
+  {
+    label: "RESUME (MN)",
+    handle: "PDF · Монгол",
+    href: RESUME_MN,
+    code: "MN",
+    preview: "/resume/Amartuvshin-Ganzorig-Resume-MN-preview.webp",
+  },
 ];
 
 export function getProject(slug: string): Project | undefined {

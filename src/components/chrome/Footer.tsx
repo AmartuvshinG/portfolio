@@ -3,6 +3,7 @@
 import { ArrowUp } from "lucide-react";
 import { navLinks, socials, profile, contact } from "@/lib/content";
 import { useSmoothScroll } from "@/components/chrome/SmoothScroll";
+import { BRAND_CREDIT } from "@/components/ui/BrandMarks";
 
 /**
  * Footer, continuing the dark closing act — it carries `data-act="void"` so the
@@ -95,9 +96,17 @@ export function Footer() {
       </div>
 
       <div className="flex flex-col items-start justify-between gap-3 border-t border-line px-5 py-5 font-mono text-[0.65rem] uppercase tracking-[0.2em] text-faint md:flex-row md:items-center md:px-8">
-        <span>
-          © {year} {profile.fullName}
-        </span>
+        <div className="flex flex-col gap-2">
+          <span>
+            © {year} {profile.fullName}
+          </span>
+          {/* The trademark credit for the marks on the Signal panels. Sentence
+              case and normal tracking: it is a sentence someone may actually
+              need to read, not a HUD label. */}
+          <span className="max-w-2xl font-sans text-[0.6875rem] normal-case leading-relaxed tracking-normal">
+            {BRAND_CREDIT}
+          </span>
+        </div>
         <button
           type="button"
           onClick={() => scrollTo(0)}
