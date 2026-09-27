@@ -93,13 +93,28 @@ function ramp(ctx: CanvasRenderingContext2D, x0: number, y0: number, x1: number,
   return g;
 }
 
-export async function drawPanels(specs: PanelSpec[]): Promise<HTMLCanvasElement[]> {
+/** Type scale per layout. `compact` is for phones, where a panel is shown at
+    about a third of its texture size and the desktop scale would set the
+    description near 11px. */
+const SCALES = {
+  regular: { title: 80, titleLead: 86, body: 40, bodyLead: 56, bodyLines: 6, tag: 30 },
+  compact: { title: 100, titleLead: 104, body: 50, bodyLead: 66, bodyLines: 5, tag: 36 },
+};
+
+export async function drawPanels(
+  specs: PanelSpec[],
+  compact = false
+): Promise<HTMLCanvasElement[]> {
   const faces = readFaces();
   await loadFaces(faces, specs.map((s) => `${s.title} ${s.description} ${s.proofLabel ?? ""}`).join(" "));
-  return Promise.all(specs.map((s) => drawPanel(s, faces)));
+  return Promise.all(specs.map((s) => drawPanel(s, faces, SCALES[compact ? "compact" : "regular"])));
 }
 
-async function drawPanel(spec: PanelSpec, f: Faces): Promise<HTMLCanvasElement> {
+async function drawPanel(
+  spec: PanelSpec,
+  f: Faces,
+  k: (typeof SCALES)["regular"]
+): Promise<HTMLCanvasElement> {
   const canvas = document.createElement("canvas");
   canvas.width = PANEL_W;
   canvas.height = PANEL_H;
@@ -160,42 +175,45 @@ async function drawPanel(spec: PanelSpec, f: Faces): Promise<HTMLCanvasElement> 
 
   /* Title. */
   let y = PAD + chip + 70;
-  ctx.font = `700 80px ${f.tech}`;
+  ctx.font = `700 ${k.title}px ${f.tech}`;
   ctx.letterSpacing = "0px";
   ctx.fillStyle = "#eceefb";
   for (const line of wrap(ctx, spec.title.toUpperCase(), PANEL_W - PAD * 2, 3)) {
     ctx.fillText(line, PAD, y);
-    y += 86;
+    y += k.titleLead;
   }
 
   /* Description. */
   y += 30;
-  ctx.font = `400 40px ${f.sans}`;
+  ctx.font = `400 ${k.body}px ${f.sans}`;
   ctx.fillStyle = "rgba(200,204,232,0.92)";
-  for (const line of wrap(ctx, spec.description, PANEL_W - PAD * 2, 6)) {
+  for (const line of wrap(ctx, spec.description, PANEL_W - PAD * 2, k.bodyLines)) {
     ctx.fillText(line, PAD, y);
-    y += 56;
+    y += k.bodyLead;
   }
 
-  /* Tags, as pills. */
+  /* Tags, as pills — as many as fit above the proof footer. */
   y += 36;
-  ctx.font = `500 30px ${f.mono}`;
+  const tagFloor = spec.proofTitle ? PANEL_H - PAD - 96 - 60 : PANEL_H - PAD;
+  const pillH = k.tag + 26;
+  ctx.font = `500 ${k.tag}px ${f.mono}`;
   ctx.letterSpacing = "1px";
   let x = PAD;
   for (const tag of spec.tags) {
     const w = ctx.measureText(tag).width + 48;
     if (x + w > PANEL_W - PAD) {
       x = PAD;
-      y += 70;
+      y += pillH + 14;
     }
-    roundRect(ctx, x, y, w, 56, 28);
+    if (y + pillH > tagFloor) break;
+    roundRect(ctx, x, y, w, pillH, pillH / 2);
     ctx.fillStyle = "rgba(236,238,251,0.06)";
     ctx.fill();
     ctx.lineWidth = 2;
     ctx.strokeStyle = "rgba(236,238,251,0.22)";
     ctx.stroke();
     ctx.fillStyle = "rgba(236,238,251,0.9)";
-    ctx.fillText(tag, x + 24, y + 13);
+    ctx.fillText(tag, x + 24, y + (pillH - k.tag) / 2);
     x += w + 14;
   }
 

@@ -72,7 +72,7 @@ export function Capabilities() {
         </div>
 
         {carousel ? (
-          <div ref={stageRef} className="mt-10 min-h-[min(86vh,820px)]">
+          <div ref={stageRef} className="mt-10 min-h-[min(72vh,640px)] sm:min-h-[min(86vh,820px)]">
             {near && <LiquidGlassCarousel onFail={() => setFailed(true)} />}
           </div>
         ) : (

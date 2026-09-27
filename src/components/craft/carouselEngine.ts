@@ -250,7 +250,7 @@ export function createCarousel(
   let W = Math.max(1, mount.clientWidth);
   let H = Math.max(1, mount.clientHeight);
   const panelHFor = () =>
-    Math.max(160, Math.min(options.panelHeight, Math.round(H * 0.74), Math.round(W * 1.02)));
+    Math.max(160, Math.min(options.panelHeight, Math.round(H * 0.74), Math.round(W * 1.12)));
   let PANEL_H = panelHFor();
   const GAP = options.gap;
   const EASE = reduced ? 0.28 : 0.09;

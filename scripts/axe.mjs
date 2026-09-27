@@ -47,8 +47,10 @@ const TAGS = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"];
 const SETTLE = 2600;
 
 /**
- * The only canvas left is the backdrop shader — `aria-hidden` decoration, so axe
- * flagging it would be a false positive. Nothing else is excluded.
+ * The only canvas left is the Craft carousel's WebGL surface. It is
+ * `aria-hidden`: its content is duplicated in a visually hidden list and every
+ * control is a real button, so axe flagging the canvas itself would be a false
+ * positive. Nothing else is excluded.
  */
 const EXCLUDE = ["canvas"];
 

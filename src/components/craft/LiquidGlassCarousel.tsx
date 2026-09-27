@@ -35,6 +35,16 @@ export function LiquidGlassCarousel({ onFail }: { onFail: () => void }) {
   const [active, setActive] = useState(0);
   const [focused, setFocused] = useState(false);
   const [ready, setReady] = useState(false);
+  /* Phones get a larger type scale baked into the panels. */
+  const [compact, setCompact] = useState(false);
+
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 639px)");
+    const update = () => setCompact(mq.matches);
+    update();
+    mq.addEventListener("change", update);
+    return () => mq.removeEventListener("change", update);
+  }, []);
   const labelId = useId();
 
   useEffect(() => {
@@ -44,8 +54,8 @@ export function LiquidGlassCarousel({ onFail }: { onFail: () => void }) {
   const current = items[active] ?? items[0];
   const proof = current.proof ? c.projects.find((p) => p.slug === current.proof) : undefined;
 
-  /* Build the panels, then the engine. Rebuilt on a language change, because
-     the text is baked into the textures. */
+  /* Build the panels, then the engine. Rebuilt on a language or layout
+     change, because the text is baked into the textures. */
   useEffect(() => {
     const mount = mountRef.current;
     const iconHost = iconsRef.current;
@@ -67,7 +77,7 @@ export function LiquidGlassCarousel({ onFail }: { onFail: () => void }) {
       };
     });
 
-    drawPanels(specs).then((canvases) => {
+    drawPanels(specs, compact).then((canvases) => {
       if (cancelled) return;
       engine = createCarousel(mount, cursorRef.current, {
         items: canvases.map((canvas) => ({ canvas })),
@@ -93,7 +103,7 @@ export function LiquidGlassCarousel({ onFail }: { onFail: () => void }) {
     };
     /* `c` and `t` change identity with `locale`; the locale is the real key. */
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [locale]);
+  }, [locale, compact]);
 
   const onKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
     const eng = engineRef.current;
@@ -115,7 +125,7 @@ export function LiquidGlassCarousel({ onFail }: { onFail: () => void }) {
 
   return (
     <div
-      className="relative h-[min(86vh,820px)] w-full"
+      className="relative h-[min(72vh,640px)] w-full sm:h-[min(86vh,820px)]"
       tabIndex={0}
       role="region"
       aria-roledescription="carousel"
