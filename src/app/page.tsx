@@ -5,6 +5,7 @@ import { Capabilities } from "@/components/sections/Capabilities";
 import { SelectedWork } from "@/components/sections/SelectedWork";
 import { Timeline } from "@/components/sections/Timeline";
 import { Contact } from "@/components/sections/Contact";
+import { CaseFileHost } from "@/components/work/CaseFile";
 
 /**
  * The descent.
@@ -31,6 +32,9 @@ export default function Home() {
       <Capabilities />
       <Timeline />
       <Contact />
+      {/* Case files open over the page, keyed to `#case=<slug>`. The site is
+          one route: there is nowhere else to navigate to. */}
+      <CaseFileHost />
     </>
   );
 }

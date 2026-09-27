@@ -62,8 +62,8 @@ Sections by act (check `data-act` on the section if unsure):
 - **bloom** — `#about`
 
 Reduced motion is a genuinely different render, not a subtle one: `SelectedWork`
-swaps the WebGL world for `WorkCardGrid`, the hero drops its sticky runway, and
-`Timeline` drops its beam and sticky years.
+swaps the pinned theatre for a plain card list (phones get sticky-stacked cards
+instead), the hero drops its sticky runway, and `Timeline` drops its beam.
 Verifying only the default branch leaves half the components untested.
 
 With Playwright MCP, force it through `browser_run_code_unsafe`:
@@ -127,7 +127,8 @@ and a scroll issued while an overlay holds the lock does nothing at all
 the page is broken.
 
 `scrollIntoView()` puts a section's **top** at the viewport top. For a tall
-pinned section (`#work` is 75vh per case file)
+pinned section (`#work` is ~95vh of scroll per case file, resting on a plateau
+at each one)
 that leaves the thing you wanted to see off screen, and an "is it visible" test
 returns 0. Scroll to the child, `{ block: 'center' }`.
 
@@ -179,9 +180,6 @@ bar**. Both currently clear 4.5:1 with little room — 4.95:1 and 5.10:1.
   CSS outranks every cascade layer regardless of specificity. To change the ring
   on one element you need a trailing bang: `focus-visible:[outline-offset:-4px]!`.
   Same hazard as the two `@layer base` comments in that file.
-- **r3f props land on a wrapper `<div>`, not the `<canvas>`.** `<Canvas aria-hidden>`
-  produces `<div aria-hidden><div><canvas></div></div>`. That is the correct
-  element anyway — it hides the whole subtree.
 - **The first keypress after `goto` can land pre-hydration** and do nothing.
   Press again before concluding a shortcut is broken.
 - **The dark circular badge at the bottom-left in dev screenshots** is the
@@ -235,8 +233,13 @@ npm run axe          # scripts/axe.mjs — 3 acts x 2 motion modes, exits 1 on a
 `require` nor a dynamic-import callback, so `@axe-core/playwright` cannot be
 loaded there — that is why this is a script. Two further gotchas baked into it:
 `AxeBuilder` rejects a page from `browser.newPage()` and needs an explicit
-`browser.newContext()`, and the `<canvas>` is excluded on purpose (it is
-`aria-hidden` with the case-file roster as its accessible representation).
+`browser.newContext()`, and the `<canvas>` is excluded on purpose (the only
+one left is the backdrop shader, which is `aria-hidden` decoration).
+
+Text drawn for effect — the hero's chromatic fringe — is generated content
+(`::before { content: attr(data-text) }`), not a text node. As real text, axe
+measured its contrast at whatever opacity it caught it mid-animation and failed
+the sweep intermittently. Do the same for any new decorative copy of a string.
 
 The sweep is **clean as of `dbe26f9`**, and it runs in CI on every push, so any
 violation you see is almost certainly yours. Triage against intent rather than

@@ -43,9 +43,8 @@ const TAGS = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"];
 const SETTLE = 2600;
 
 /**
- * The canvas is `aria-hidden` with the case-file roster as its accessible
- * representation, so axe flagging it would be a false positive on a decision
- * that was made deliberately. Nothing else is excluded.
+ * The only canvas left is the backdrop shader — `aria-hidden` decoration, so axe
+ * flagging it would be a false positive. Nothing else is excluded.
  */
 const EXCLUDE = ["canvas"];
 

@@ -68,6 +68,11 @@
   /* --- Semantic aliases. Components style against these and never against a
          literal depth colour, which is what lets the act system shift them. */
   --color-bg: var(--color-void);
+  /* Registered here so `bg-surface` exists as a utility at all. It used to be
+     set only by the act blocks below, which Tailwind never sees — so every
+     `bg-surface` on the site compiled to nothing and "cards on a depth" were
+     transparent. The act blocks still own the value per depth. */
+  --color-surface: var(--color-deck);
   --color-fg: var(--color-bone);
   --color-muted: var(--color-bone-soft);
   --color-faint: var(--color-bone-faint);

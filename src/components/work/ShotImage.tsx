@@ -36,7 +36,7 @@ export function ShotImage({
         category={project.category}
         accent={project.accent}
       />
-      {!missing && (
+      {project.shot && !missing && (
         <Image
           src={project.shot}
           alt=""

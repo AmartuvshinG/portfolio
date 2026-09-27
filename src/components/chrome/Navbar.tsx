@@ -14,13 +14,13 @@ import {
 import { Menu, X } from "lucide-react";
 import {
   navLinks as sectionLinks,
-  routeSections,
   RESUME_EN,
   RESUME_MN,
   type NavLink,
 } from "@/lib/content";
 import { useI18n } from "@/lib/i18n";
 import { LangToggle } from "@/components/chrome/LangToggle";
+import { isCaseHash } from "@/lib/caseFile";
 import { useSmoothScroll } from "@/components/chrome/SmoothScroll";
 import { useOverlay } from "@/hooks/useOverlay";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
@@ -108,12 +108,10 @@ export function Navbar() {
     restoreFocus: toggleRef,
   });
 
-  /* Off the home route there is nothing to observe, so the active item is
-     derived from the URL. `null` when nothing matches — no pill at all is the
-     correct answer for a 404, and a great deal better than lighting INDEX. */
-  const routeActive =
-    routeSections.find((r) => pathname.startsWith(r.prefix))?.href ?? null;
-  const active = isHome ? observed : routeActive;
+  /* The site is one route. Off it (a 404) there is nothing to observe, and no
+     pill at all is the correct answer — a great deal better than lighting
+     INDEX. */
+  const active = isHome ? observed : null;
 
   /* Contract past the fold, track read progress, and drive the glass. */
   useEffect(() => {
@@ -234,8 +232,11 @@ export function Navbar() {
      does not act on the browser's own hash jump, so the page lands at the top
      with the right URL. One frame later, put it where it was asked to go. */
   useEffect(() => {
-    if (!isHome || !window.location.hash) return;
-    const target = document.querySelector(window.location.hash);
+    const hash = window.location.hash;
+    /* `#case=…` belongs to the case-file host, and is not a valid selector —
+       `querySelector` would throw on the `=`. Look up plain ids only. */
+    if (!isHome || !hash || isCaseHash(hash)) return;
+    const target = document.getElementById(decodeURIComponent(hash.slice(1)));
     if (!target) return;
     const id = requestAnimationFrame(() => scrollTo(window.location.hash));
     return () => cancelAnimationFrame(id);

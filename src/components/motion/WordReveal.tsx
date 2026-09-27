@@ -104,22 +104,26 @@ export function WordReveal({
           {w}
           {i < words.length - 1 ? " " : ""}
 
+          {/* The fringe. Its glyphs come from a pseudo-element, not a text
+              node: they are decoration, but as real text an accessibility
+              sweep measured their contrast at whatever opacity it caught them
+              mid-flight, and failed the hero intermittently. Generated
+              content is not text to the accessibility tree or to axe, and it
+              renders identically. */}
           <motion.span
             aria-hidden
+            data-text={w}
             variants={ghost(-1)}
-            className="absolute inset-0 whitespace-pre"
+            className="absolute inset-0 whitespace-pre before:content-[attr(data-text)]"
             style={{ color: "var(--spectrum-1)", mixBlendMode: "screen" }}
-          >
-            {w}
-          </motion.span>
+          />
           <motion.span
             aria-hidden
+            data-text={w}
             variants={ghost(1)}
-            className="absolute inset-0 whitespace-pre"
+            className="absolute inset-0 whitespace-pre before:content-[attr(data-text)]"
             style={{ color: "var(--spectrum-3)", mixBlendMode: "screen" }}
-          >
-            {w}
-          </motion.span>
+          />
         </motion.span>
       ))}
     </Motion>

@@ -5,6 +5,7 @@ import { useRouter, usePathname } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import { Check, Copy, Languages, Search, Zap } from "lucide-react";
 import { useI18n } from "@/lib/i18n";
+import { openCase } from "@/lib/caseFile";
 import { useSmoothScroll } from "@/components/chrome/SmoothScroll";
 import { useOverlay } from "@/hooks/useOverlay";
 import { isTextEntry, modalOpen } from "@/lib/keys";
@@ -77,7 +78,7 @@ export function CommandPalette() {
       label: p.title,
       hint: p.category,
       group: t.palette.caseFiles,
-      run: () => router.push(`/work/${p.slug}`),
+      run: () => openCase(p.slug),
     }));
 
     const actions: Command[] = [
@@ -122,7 +123,7 @@ export function CommandPalette() {
     }
 
     return [...sections, ...files, ...actions];
-  }, [go, router, lowPower, navLinks, projects, contact, t, locale, setLocale, available]);
+  }, [go, lowPower, navLinks, projects, contact, t, locale, setLocale, available]);
 
   const results = useMemo(() => {
     const q = query.trim().toLowerCase();

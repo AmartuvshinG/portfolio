@@ -1,265 +1,666 @@
 "use client";
 
-import dynamic from "next/dynamic";
+import { useCallback, useEffect, useRef, useState } from "react";
+import Image from "next/image";
 import {
-  Component,
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-  type ReactNode,
-} from "react";
-import { projects, sectionIndex, type Project } from "@/lib/content";
+  cubicBezier,
+  motion,
+  useMotionValueEvent,
+  useScroll,
+  useTransform,
+  type MotionValue,
+} from "framer-motion";
+import { ArrowLeft, ArrowRight, ArrowUpRight } from "lucide-react";
+import { accentColor, projects as baseProjects, sectionIndex, type Project } from "@/lib/content";
+import { useI18n } from "@/lib/i18n";
+import { openCase } from "@/lib/caseFile";
+import { isInteractive, modalOpen } from "@/lib/keys";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
-import { useElementProgress } from "@/hooks/useScrollProgress";
 import { useSmoothScroll } from "@/components/chrome/SmoothScroll";
 import { setBackdropIntensity } from "@/lib/backdrop";
-import { useHasWebGL } from "@/lib/gpu";
-import { WorkCardGrid } from "@/components/work/WorkCardGrid";
-import { WorkIndexList } from "@/components/work/WorkIndexList";
-import { cardProgress } from "@/components/work/worldLayout";
-import { ProjectDossier, type DossierOrigin } from "@/components/work/ProjectDossier";
-import type { CardHit } from "@/components/work/WorkWorld";
+import { ShotImage } from "@/components/work/ShotImage";
 import { ChapterSeam } from "@/components/chrome/ChapterSeam";
+import { cn } from "@/lib/utils";
 
-const WorkWorld = dynamic(() => import("@/components/work/WorkWorld"), {
-  ssr: false,
-});
+/* ---------------------------------------------------------------------------
+   The work theatre.
 
-/**
- * Viewport heights of scroll the pinned world consumes — a fixed share per
- * case file. It was a flat 420 tuned for six; with fewer cards that left long
- * stretches of flying through empty fog between them.
- */
-const SCROLL_VH = 75 * projects.length;
+   A pinned stage that plays the case files one at a time as you scroll: the
+   live site on a monitor to the right, the story of it to the left, and the
+   next file wiping up over the last. It replaces a WebGL world of flat cards
+   flying at the camera — which read as rectangles passing by, cost three.js,
+   r3f and a post-processing stack, and put every screenshot at an angle.
 
-/**
- * A WebGL context failure surfaces as a render throw from inside the Canvas.
- * Without a boundary that takes down the whole page, so the world degrades to
- * the card grid instead.
- */
-class SceneBoundary extends Component<
-  { children: ReactNode; fallback: ReactNode },
-  { failed: boolean }
-> {
-  state = { failed: false };
-  static getDerivedStateFromError() {
-    return { failed: true };
-  }
-  render() {
-    return this.state.failed ? this.props.fallback : this.props.children;
-  }
+   **Rhythm.** Scroll position is mapped onto a continuous `pos` where each case
+   file sits at an integer. Around every integer there is a *plateau* (±HOLD)
+   where nothing moves, and the transitions live in the gaps between plateaus.
+   So wherever a reader stops, they stop on a resolved frame — there is no
+   scroll-snap fighting their wheel, because there is nothing half-finished to
+   snap away from. EDGE extends the first and last plateau so the section does
+   not start or end mid-transition.
+
+   **Cost.** One `useScroll` drives everything through `useTransform`; nothing
+   re-renders per frame except a single `active` index, which only changes at
+   plateau midpoints. Every moving property is `transform` or `opacity`. The
+   screen wipe is a translate on a clipping wrapper against a counter-translate
+   on its child — the look of a clip-path reveal with none of the repaint.
+
+   **Clicks.** A reader should never have to scroll to find something: the rail
+   ticks, prev/next and ←/→ all jump to a plateau through Lenis, and the monitor
+   itself opens the case file.
+   ------------------------------------------------------------------------- */
+
+/** Half-width of each resting plateau, in case-file units. */
+const HOLD = 0.26;
+/** Extra rest before the first file and after the last. */
+const EDGE = 0.32;
+/** Scroll distance per case file, in viewport heights. */
+const STEP_VH = 95;
+/** The `pos` range the section scrolls through, first plateau to last. */
+const SPAN = projectCount() - 1 + EDGE * 2;
+
+/* Every locale lists the same case files, so the count is locale-free. */
+function projectCount() {
+  return baseProjects.length;
 }
 
-/* -------------------------------------------------------------------------- */
-
-/**
- * The dark act.
- *
- * The deck lifts either side of this and drops away to full void here, so this
- * is the structural centre of the page — it is doing the job the references
- * give their full-bleed chapters, which is to make the browsing surface feel
- * like a different place rather than a different section.
- *
- * Scroll is captured by a tall sticky container: the section is `SCROLL_VH`
- * tall, the canvas sticks to the viewport inside it, and the ratio between the
- * two is the camera dolly. Progress is written to a ref rather than to state —
- * this updates every frame, and re-rendering the React tree at 60fps to move a
- * camera would be pure waste.
- */
 export function SelectedWork() {
   const reduced = useReducedMotion();
-  const ref = useRef<HTMLDivElement>(null);
-  const [origin, setOrigin] = useState<DossierOrigin | null>(null);
-  const [hovered, setHovered] = useState<Project | null>(null);
-  /* Both default to the flat layout, so SSR and first paint render the card
-     grid and the world is opted into only once we know it can run. */
-  const [small, setSmall] = useState(true);
-  const gpu = useHasWebGL();
-  const { scrollTo } = useSmoothScroll();
-  /* Which card the roster is pointing at, for the render loop. A ref because
-     `useFrame` reads it every frame; the matching `hovered` state below is what
-     the DOM renders from, and both are written by the same handler. */
-  const activeIndex = useRef(-1);
+  /* Stacked layout until we know there is room to pin; SSR and first paint
+     agree on it. */
+  const [wide, setWide] = useState(false);
 
   useEffect(() => {
     const mq = window.matchMedia("(min-width: 768px)");
-    const update = () => setSmall(!mq.matches);
+    const update = () => setWide(mq.matches);
     update();
     mq.addEventListener("change", update);
     return () => mq.removeEventListener("change", update);
   }, []);
 
-  const flat = reduced || small || !gpu;
+  const { t } = useI18n();
+  const ref = useRef<HTMLElement>(null);
+  const pinned = wide && !reduced;
 
-  /* Dolly progress through the pinned section. Shared rAF with the rest of the
-     site's scroll consumers — see hooks/useScrollProgress. */
-  const progress = useElementProgress(ref, !flat);
+  /* One <section> for both layouts, never swapped. The navbar's section
+     observer, ChapterFrame's triggers and ChapterKeys all grab `#work` once at
+     mount; when the layouts rendered their own <section>, switching from the
+     SSR stack to the theatre replaced the node under all three and left them
+     watching a detached element — the nav went on lighting SIGNAL through the
+     whole of Work. */
+  return (
+    <section
+      id="work"
+      ref={ref}
+      data-act="void"
+      data-chapter="WORK"
+      aria-label={t.work.aria}
+      className={pinned ? "relative" : "relative py-24 md:py-32"}
+      style={pinned ? { height: `${SPAN * STEP_VH + 100}vh` } : undefined}
+    >
+      {pinned ? <Theatre sectionRef={ref} /> : <Stack reduced={reduced} />}
+    </section>
+  );
+}
 
-  /* While the world is pinned it covers the viewport completely, so the site
-     backdrop is both invisible and still rendering a 15-iteration fragment
-     shader per pixel. Stand it down for the duration — two full-screen WebGL
-     surfaces competing for the GPU is the one place this page can actually drop
-     frames. Restored on exit, and unconditionally on unmount so a route change
-     mid-section can't leave the backdrop dark. */
+/* -------------------------------------------------------------------------- */
+
+function Theatre({ sectionRef: ref }: { sectionRef: React.RefObject<HTMLElement | null> }) {
+  const { c, t } = useI18n();
+  const projects = c.projects;
+  const n = projects.length;
+  const span = SPAN;
+
+  const { scrollTo } = useSmoothScroll();
+  const { scrollYProgress } = useScroll({ target: ref, offset: ["start start", "end end"] });
+  const pos = useTransform(scrollYProgress, (p) => p * span - EDGE);
+
+  const [active, setActive] = useState(0);
+  useMotionValueEvent(pos, "change", (v) => {
+    const next = Math.min(n - 1, Math.max(0, Math.round(v)));
+    setActive((a) => (a === next ? a : next));
+  });
+
+  /* Whether the stage is anywhere near the viewport. Every moving layer is
+     promoted (`will-change`) only while this is true: unpromoted, each scroll
+     frame repainted a full-screen gradient, four paragraphs and the
+     screenshots — measured, that doubled the long frames through this section.
+     Promoted permanently, the layers would hold GPU memory for the whole
+     session for a section that is on screen for a fraction of it. */
+  const [live, setLive] = useState(false);
+
+  /* The site backdrop steps back while the stage owns the viewport, so the
+     screenshots are the brightest thing in frame. */
   useEffect(() => {
-    if (flat) return;
     const el = ref.current;
     if (!el) return;
-
     const io = new IntersectionObserver(
-      ([entry]) => setBackdropIntensity(entry.intersectionRatio > 0.85 ? 0.12 : 1),
-      { threshold: [0, 0.85, 1] }
+      ([entry]) => {
+        setLive(entry.isIntersecting);
+        setBackdropIntensity(entry.intersectionRatio > 0.6 ? 0.45 : 1);
+      },
+      { threshold: [0, 0.6, 1], rootMargin: "50% 0px" }
     );
     io.observe(el);
     return () => {
       io.disconnect();
       setBackdropIntensity(1);
     };
-  }, [flat]);
+  }, [ref]);
 
-  const onSelect = useCallback((hit: CardHit) => setOrigin(hit), []);
-  const onHover = useCallback((p: Project | null) => setHovered(p), []);
-
-  /**
-   * Point the world at card `i` (`-1` clears).
-   *
-   * The camera is moved **through the scroll position**, not by reaching into
-   * the r3f scene. Scroll offset is the one value the pin, the hash sync, the
-   * nav pill, the chapter frame and the backdrop observer all derive from —
-   * dollying the camera directly would move the picture while every one of
-   * those kept insisting you were still at the top of the section.
-   */
-  const focusCard = useCallback(
-    (i: number) => {
-      activeIndex.current = i;
-      setHovered(i < 0 ? null : (projects[i] ?? null));
-      if (i < 0) return;
-
+  /** Scroll to case file `k`'s plateau. */
+  const goTo = useCallback(
+    (k: number) => {
       const el = ref.current;
       if (!el) return;
-      const travel = el.offsetHeight - window.innerHeight;
-      if (travel <= 0) return;
+      const i = Math.min(n - 1, Math.max(0, k));
       const top = el.getBoundingClientRect().top + window.scrollY;
-      scrollTo(top + cardProgress(i, projects.length) * travel);
+      const travel = el.offsetHeight - window.innerHeight;
+      scrollTo(top + ((i + EDGE) / span) * travel);
     },
-    [scrollTo]
+    [n, span, scrollTo, ref]
   );
 
-  const openFromRoster = useCallback(
-    (project: Project, rect: DOMRect) => setOrigin({ project, rect }),
-    []
-  );
+  /* ←/→ while the stage is pinned. Up/down and j/k stay with ChapterKeys. */
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      if (modalOpen() || isInteractive(document.activeElement)) return;
+      const r = ref.current?.getBoundingClientRect();
+      if (!r || r.top > 1 || r.bottom < window.innerHeight - 1) return;
+      e.preventDefault();
+      goTo(active + (e.key === "ArrowRight" ? 1 : -1));
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [active, goTo, ref]);
 
-  if (flat) {
-    return (
-      <section
-        id="work"
-        data-act="void"
-        data-chapter="WORK"
-        className="relative py-24 md:py-32"
-        aria-label="Selected work"
-      >
-        {/* Not shuttered, and deliberately so: this fallback is the only branch
-            of Work that *has* a seam. The primary branch is a pinned world with
-            a sticky child that owns the whole viewport and no ChapterSeam at
-            all, so a shutter here would appear for some visitors and not
-            others — a boundary treatment that fires inconsistently is worse
-            than one that never fires. */}
-        <ChapterSeam />
-        <Header />
-        <div className="mt-14">
-          <WorkCardGrid />
-        </div>
-      </section>
-    );
-  }
+  const current = projects[active];
 
   return (
-    <section
-      id="work"
-      data-act="void"
-      data-chapter="WORK"
-      ref={ref}
-      className="relative"
-      style={{ height: `${SCROLL_VH}vh` }}
-      aria-label="Selected work"
-    >
+    <>
       <div className="sticky top-0 h-dvh w-full overflow-hidden">
-        <SceneBoundary
-          fallback={
-            <div className="flex h-full items-center overflow-y-auto py-24">
-              <WorkCardGrid />
-            </div>
-          }
-        >
-          <WorkWorld
-            progress={progress}
-            activeIndex={activeIndex}
-            onSelect={onSelect}
-            onHover={onHover}
-          />
-        </SceneBoundary>
+        {/* Per-file light. A radial gradient each, crossfaded on opacity — no
+            blur filter, so nothing here is re-rasterised on scroll. */}
+        {projects.map((p, i) => (
+          <Glow key={p.slug} pos={pos} i={i} n={n} live={live} color={accentColor[p.accent]} />
+        ))}
 
-        {/* --- DOM overlay. The world is behind glass; all the type is here,
-                where it stays crisp and selectable. --- */}
-        <div className="pointer-events-none absolute inset-0 flex flex-col justify-between p-5 text-fg md:p-8 lg:px-16">
-          <div className="pt-16 md:pt-20">
-            <span className="micro">{sectionIndex("#work")} — Selected work</span>
-            <h2 className="display-caps mt-3 text-[clamp(1.6rem,4vw,3.75rem)]">
-              Work
-            </h2>
+        <div className="relative mx-auto flex h-full max-w-[1800px] flex-col px-5 pb-8 pt-24 md:px-8 lg:px-16">
+          {/* Masthead */}
+          <div className="flex items-end justify-between gap-6">
+            <div>
+              <span className="micro">
+                {sectionIndex("#work")} — {t.work.eyebrow}
+              </span>
+              <h2 className="display-caps mt-3 text-[clamp(1.6rem,3.4vw,3.25rem)] text-fg">
+                {t.work.title}
+              </h2>
+            </div>
+            <span className="micro tabular hidden lg:block">{t.work.hint}</span>
           </div>
 
-          <div className="flex items-end justify-between gap-8">
-            {/* The roster. This slot used to hold five inert capability titles
-                under "What are you looking for?" — a list-shaped answer that
-                wasn't the answer, in the one place in the composition already
-                shaped like a list of links. It is now the real case files,
-                and the section's only keyboard surface. */}
-            {/* `shrink-0`. As a shrinkable flex item next to the hover
-                readout this collapsed to min-content and every row wrapped
-                onto two lines — "WEB / DESIGN / LAB". The readout beside it is the one
-                that should give way; it already caps itself at `max-w-xs`. */}
-            <div className="hidden shrink-0 md:block">
-              <WorkIndexList
-                onFocusCard={focusCard}
-                onOpen={openFromRoster}
-                activeSlug={hovered?.slug ?? null}
-              />
+          {/* Stage */}
+          <div className="grid min-h-0 flex-1 grid-cols-[minmax(0,5fr)_minmax(0,7fr)] items-center gap-8 lg:gap-14">
+            {/* Story */}
+            <div className="relative h-full max-h-[34rem] min-h-[26rem]">
+              {projects.map((p, i) => (
+                <Story key={p.slug} project={p} pos={pos} i={i} n={n} live={live} active={i === active} />
+              ))}
             </div>
 
-            <div className="ml-auto text-right">
-              {/* Hover readout. The card art carries the title already, so this
-                  adds the one-line summary rather than repeating the name.
-                  Driven by the roster too, so focusing a row says what it is. */}
-              <p className="micro min-h-4">
-                {hovered ? hovered.role : `${projects.length} case files`}
-              </p>
-              <p className="mt-2 max-w-xs font-tech text-lg leading-snug text-fg md:text-xl">
-                {hovered ? hovered.summary : "Drag through. Click any card."}
-              </p>
+            {/* Monitor */}
+            <div className="relative flex items-center justify-center">
+              <div className="relative w-full" style={{ maxWidth: "min(100%, calc((100dvh - 17rem) * 1.6))" }}>
+                {projects.map((p, i) => (
+                  <Plates key={p.slug} project={p} pos={pos} i={i} n={n} live={live} />
+                ))}
+
+                <button
+                  type="button"
+                  onClick={() => openCase(current.slug)}
+                  aria-label={t.work.preview(current.title)}
+                  className="group relative block w-full text-left"
+                >
+                  <div className="notch-card relative overflow-hidden bg-surface ring-1 ring-inset ring-line-strong shadow-[0_40px_120px_-20px_rgba(0,0,0,0.85)] transition-transform duration-500 ease-out group-hover:-translate-y-1">
+                    {/* Browser bar */}
+                    <div className="relative flex h-9 items-center gap-3 border-b border-line bg-deck px-4">
+                      <span className="flex gap-1.5" aria-hidden>
+                        {[0, 1, 2].map((d) => (
+                          <span key={d} className="h-2.5 w-2.5 rounded-full bg-fg/20" />
+                        ))}
+                      </span>
+                      <div className="relative h-5 flex-1">
+                        {projects.map((p, i) => (
+                          <Address key={p.slug} project={p} pos={pos} i={i} n={n} live={live} fallback={t.work.noSite} />
+                        ))}
+                      </div>
+                      <span className="micro flex items-center gap-1.5 !text-fg opacity-0 transition-opacity duration-300 group-hover:opacity-100" aria-hidden>
+                        {t.work.open} <ArrowUpRight size={13} />
+                      </span>
+                    </div>
+
+                    {/* Screens */}
+                    <div className="relative aspect-[16/10] w-full overflow-hidden bg-void">
+                      {projects.map((p, i) => (
+                        <Screen key={p.slug} project={p} pos={pos} i={i} n={n} live={live} />
+                      ))}
+                    </div>
+                  </div>
+                </button>
+              </div>
             </div>
+          </div>
+
+          {/* Controls */}
+          <div className="mt-6 flex items-center justify-between gap-6">
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => goTo(active - 1)}
+                disabled={active === 0}
+                aria-label={t.work.prev}
+                className="flex h-11 w-11 items-center justify-center border border-line text-fg transition-colors hover:border-line-strong disabled:opacity-30"
+              >
+                <ArrowLeft size={16} />
+              </button>
+              <button
+                type="button"
+                onClick={() => goTo(active + 1)}
+                disabled={active === n - 1}
+                aria-label={t.work.next}
+                className="flex h-11 w-11 items-center justify-center border border-line text-fg transition-colors hover:border-line-strong disabled:opacity-30"
+              >
+                <ArrowRight size={16} />
+              </button>
+              <span className="micro tabular ml-2 !text-fg">{t.work.count(active + 1, n)}</span>
+            </div>
+
+            {/* The rail: every file by name, one click away. */}
+            <nav aria-label={t.work.rail} className="min-w-0">
+              <ol className="flex items-center gap-1">
+                {projects.map((p, i) => (
+                  <li key={p.slug}>
+                    <button
+                      type="button"
+                      onClick={() => goTo(i)}
+                      aria-current={i === active ? "step" : undefined}
+                      className={cn(
+                        "group flex h-11 items-center gap-2 px-2.5 font-mono text-[0.8125rem] uppercase tracking-[0.14em] transition-colors",
+                        i === active ? "text-fg" : "text-faint hover:text-muted"
+                      )}
+                    >
+                      <span
+                        className="block h-px transition-all duration-500"
+                        style={{
+                          width: i === active ? 28 : 12,
+                          background: i === active ? accentColor[p.accent] : "currentColor",
+                        }}
+                      />
+                      <span className="tabular">{p.index}</span>
+                      <span className={cn("hidden xl:inline", i === active ? "" : "opacity-70")}>{p.title}</span>
+                    </button>
+                  </li>
+                ))}
+              </ol>
+            </nav>
           </div>
         </div>
       </div>
-
-      <ProjectDossier origin={origin} onClose={() => setOrigin(null)} />
-    </section>
+    </>
   );
 }
 
-function Header() {
+/* -------------------------------------------------------------------------- */
+/* Per-file layers. Each reads the shared `pos` and nothing else.              */
+/* -------------------------------------------------------------------------- */
+
+interface Layer {
+  pos: MotionValue<number>;
+  i: number;
+  n: number;
+  /** Promote while the stage is near the viewport — see `live` above. */
+  live: boolean;
+}
+
+function promote(live: boolean, props = "transform, opacity") {
+  return live ? props : "auto";
+}
+
+/**
+ * The four breakpoints of file `i` on the `pos` axis: arrive, settle, hold,
+ * leave. The first file is already settled at the top of the section and the
+ * last never leaves, so their outer points are pushed out of reach.
+ */
+function stops(i: number, n: number): [number, number, number, number] {
+  return [
+    i === 0 ? -99 : i - 1 + HOLD,
+    i === 0 ? -98 : i - HOLD,
+    i === n - 1 ? 98 : i + HOLD,
+    i === n - 1 ? 99 : i + 1 - HOLD,
+  ];
+}
+
+/** In-out on the two moving segments, nothing on the hold between them. */
+const inOut = cubicBezier(0.65, 0, 0.35, 1);
+const linear = (t: number) => t;
+const EASE = { ease: [inOut, linear, inOut] };
+
+/**
+ * Tighter stops for type. The screens can share a transition — one wipes over
+ * the other — but two paragraphs cannot: crossfaded, they overlap as a ghosted
+ * double exposure. So the outgoing story is fully gone by the midpoint and the
+ * incoming one only starts there.
+ */
+function textStops(i: number, n: number): [number, number, number, number] {
+  return [
+    i === 0 ? -99 : i - 0.5,
+    i === 0 ? -98 : i - HOLD,
+    i === n - 1 ? 98 : i + HOLD,
+    i === n - 1 ? 99 : i + 0.5,
+  ];
+}
+
+function useTextFade({ pos, i, n }: Layer, travel = 48) {
+  const s = textStops(i, n);
+  const opacity = useTransform(pos, s, [0, 1, 1, 0], EASE);
+  const y = useTransform(pos, s, [travel, 0, 0, -travel], EASE);
+  return { opacity, y, s };
+}
+
+function useFade({ pos, i, n }: Layer, travel = 56) {
+  const s = stops(i, n);
+  const opacity = useTransform(pos, s, [0, 1, 1, 0], EASE);
+  const y = useTransform(pos, s, [travel, 0, 0, -travel], EASE);
+  return { opacity, y };
+}
+
+function Glow({ color, ...layer }: Layer & { color: string }) {
+  const { opacity } = useFade(layer);
   return (
-    <div className="mx-auto max-w-[1800px] px-5 md:px-8 lg:px-16">
-      <span className="micro">{sectionIndex("#work")} — Selected work</span>
-      <h2 className="display-caps mt-3 text-[clamp(1.6rem,4vw,3.75rem)] text-fg">
-        Work
-      </h2>
-      <p className="mt-5 max-w-xl text-base leading-relaxed text-muted">
-        Systems designed and engineered end to end — each built for performance,
-        motion and impact.
-      </p>
-    </div>
+    <motion.div
+      aria-hidden
+      className="pointer-events-none absolute inset-0"
+      style={{
+        opacity,
+        willChange: promote(layer.live, "opacity"),
+        background: `radial-gradient(60% 55% at 70% 55%, color-mix(in srgb, ${color} 22%, transparent) 0%, transparent 70%)`,
+      }}
+    />
+  );
+}
+
+function Story({ project, active, ...layer }: Layer & { project: Project; active: boolean }) {
+  const { t } = useI18n();
+  const { opacity, y, s } = useTextFade(layer);
+  /* The title rises out of its own mask, a beat behind the rest. */
+  const titleY = useTransform(layer.pos, s, ["110%", "0%", "0%", "-110%"], EASE);
+  const live = project.links?.[0];
+  const color = accentColor[project.accent];
+
+  return (
+    <motion.div
+      className="absolute inset-0 flex flex-col justify-center"
+      style={{ opacity, willChange: promote(layer.live, "opacity") }}
+      aria-hidden={!active}
+      inert={!active}
+    >
+      <motion.span
+        aria-hidden
+        className="pointer-events-none absolute -left-2 top-1/2 -translate-y-1/2 select-none font-display leading-none text-transparent"
+        style={{
+          y,
+          willChange: promote(layer.live, "transform"),
+          fontSize: "clamp(8rem, 17vw, 17rem)",
+          WebkitTextStroke: "1px color-mix(in srgb, var(--color-fg) 9%, transparent)",
+        }}
+      >
+        {project.index}
+      </motion.span>
+
+      <motion.div className="relative" style={{ y, willChange: promote(layer.live, "transform") }}>
+        <div className="flex items-center gap-3">
+          <span className="font-mono text-sm tabular" style={{ color }}>
+            {project.index}
+          </span>
+          <span className="h-px w-8 bg-current opacity-25" />
+          <span className="micro">
+            {project.category} · {project.year}
+          </span>
+        </div>
+
+        <div className="mt-4 overflow-hidden pb-1">
+          <motion.h3
+            className="display-caps text-fg"
+            style={{ y: titleY, willChange: promote(layer.live, "transform"), fontSize: "clamp(1.9rem, 3.3vw, 3.6rem)" }}
+          >
+            {project.title}
+          </motion.h3>
+        </div>
+
+        <p className="micro mt-4 !text-fg">{project.role}</p>
+        <p className="mt-4 max-w-xl text-base leading-relaxed text-muted">{project.summary}</p>
+
+        {project.metrics.length > 0 && (
+          <dl className="mt-6 flex flex-wrap gap-x-8 gap-y-3">
+            {project.metrics.map((m) => (
+              <div key={m.label}>
+                <dd className="tabular font-display text-2xl text-fg">{m.value}</dd>
+                <dt className="micro mt-1.5">{m.label}</dt>
+              </div>
+            ))}
+          </dl>
+        )}
+
+        <div className="mt-7 flex flex-wrap items-center gap-3">
+          <button
+            type="button"
+            onClick={() => openCase(project.slug)}
+            className="chamfer-sm inline-flex h-11 items-center gap-2 px-5 font-mono text-[0.8125rem] uppercase tracking-[0.18em] text-void transition-transform duration-300 hover:scale-[1.03]"
+            style={{ backgroundImage: "var(--gradient-spectrum)" }}
+          >
+            {t.work.open}
+            <ArrowRight size={15} aria-hidden />
+          </button>
+          {live && (
+            <a
+              href={live.href}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex h-11 items-center gap-2 border border-line-strong px-5 font-mono text-[0.8125rem] uppercase tracking-[0.18em] text-fg transition-colors hover:border-fg"
+            >
+              {live.label}
+              <ArrowUpRight size={15} aria-hidden />
+              <span className="sr-only">{t.common.newTab}</span>
+            </a>
+          )}
+        </div>
+      </motion.div>
+    </motion.div>
+  );
+}
+
+/** The address bar's text, crossfaded per file. */
+function Address({ project, fallback, ...layer }: Layer & { project: Project; fallback: string }) {
+  const { opacity } = useTextFade(layer, 0);
+  const href = project.links?.[0]?.href;
+  /* "This site" has no link to itself — its address is wherever it is being
+     read. Client-only render, so reading `location` here is safe. */
+  let host = project.self ? window.location.host : fallback;
+  if (href) {
+    try {
+      host = new URL(href).host.replace(/^www\./, "");
+    } catch {
+      /* keep the fallback */
+    }
+  }
+  return (
+    <motion.span
+      aria-hidden
+      className="absolute inset-0 flex items-center justify-center truncate rounded-sm bg-fg/[0.06] px-3 font-mono text-xs text-muted"
+      style={{ opacity, willChange: promote(layer.live, "opacity") }}
+    >
+      {host}
+    </motion.span>
+  );
+}
+
+/**
+ * One screen. Files stack in order, so a later screen wipes up *over* the one
+ * before it: the wrapper slides up from below while its content counter-slides,
+ * which reads as a mask opening rather than a picture moving. The screen being
+ * covered sinks and dims a little, so the change has depth.
+ */
+function Screen({ project, ...layer }: Layer & { project: Project }) {
+  const { pos, i, n } = layer;
+  const s = stops(i, n);
+  const wrapY = useTransform(pos, [s[0], s[1]], ["100%", "0%"], { ease: inOut });
+  const innerY = useTransform(pos, [s[0], s[1]], ["-55%", "0%"], { ease: inOut });
+  const sink = useTransform(pos, [s[2], s[3]], [1, 0.94], { ease: inOut });
+  const shade = useTransform(pos, [s[2], s[3]], [0, 0.6], { ease: inOut });
+
+  return (
+    /* `bg-void`: the generated fallback visual is partly transparent, and the
+       screen underneath showed through it. */
+    <motion.div
+      className="absolute inset-0 overflow-hidden bg-void"
+      style={{ y: wrapY, zIndex: i + 1, willChange: promote(layer.live, "transform") }}
+    >
+      <motion.div
+        className="absolute inset-0"
+        style={{ y: innerY, scale: sink, willChange: promote(layer.live, "transform") }}
+      >
+        <ShotImage
+          project={project}
+          sizes="(max-width: 1280px) 58vw, 900px"
+          className="object-cover object-top"
+        />
+      </motion.div>
+      <motion.div
+        aria-hidden
+        className="absolute inset-0 bg-void"
+        style={{ opacity: shade, willChange: promote(layer.live, "opacity") }}
+      />
+    </motion.div>
+  );
+}
+
+/**
+ * Two gallery shots fanned behind the monitor, so a file reads as a body of
+ * work rather than one screenshot. They drift in from the side a little slower
+ * than the screen wipes, which is where the sense of depth comes from.
+ */
+function Plates({ project, ...layer }: Layer & { project: Project }) {
+  const { opacity } = useFade(layer, 0);
+  const s = stops(layer.i, layer.n);
+  const x = useTransform(layer.pos, s, [60, 0, 0, -60], EASE);
+  const shots = (project.gallery ?? []).slice(0, 2);
+  if (!shots.length) return null;
+
+  return (
+    <motion.div
+      aria-hidden
+      className="pointer-events-none absolute inset-0"
+      style={{ opacity, x, willChange: promote(layer.live) }}
+    >
+      {shots.map((g, k) => (
+        <div
+          key={g.src}
+          className="notch-card-sm absolute w-[46%] overflow-hidden ring-1 ring-inset ring-line"
+          style={
+            k === 0
+              ? { top: "-9%", right: "-7%", rotate: "4deg" }
+              : { bottom: "-11%", left: "-8%", rotate: "-5deg" }
+          }
+        >
+          <Image src={g.src} alt="" width={2000} height={1250} sizes="26vw" className="h-auto w-full opacity-70" />
+        </div>
+      ))}
+    </motion.div>
+  );
+}
+
+/* -------------------------------------------------------------------------- */
+/* Phones and reduced motion: a stack of cards, no pin.                        */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Below the pin breakpoint each file is a card, and on phones the cards stack:
+ * each one sticks under the navbar and the next slides up over it, so the
+ * section still feels like a deck being dealt without a scroll-jacked stage on
+ * a 390px screen. Under reduced motion it is a plain list.
+ */
+function Stack({ reduced }: { reduced: boolean }) {
+  const { c, t } = useI18n();
+
+  return (
+    <>
+      <ChapterSeam />
+      <div className="mx-auto max-w-[1800px] px-5 md:px-8 lg:px-16">
+        <span className="micro">
+          {sectionIndex("#work")} — {t.work.eyebrow}
+        </span>
+        <h2 className="display-caps mt-3 text-[clamp(1.6rem,4vw,3.75rem)] text-fg">{t.work.title}</h2>
+
+        <div className={cn("mt-12", reduced ? "grid gap-8 md:grid-cols-2" : "space-y-6")}>
+          {c.projects.map((p, i) => {
+            const live = p.links?.[0];
+            return (
+              <article
+                key={p.slug}
+                className={cn(
+                  "notch-card overflow-hidden bg-surface ring-1 ring-inset ring-line",
+                  !reduced && "sticky"
+                )}
+                style={reduced ? undefined : { top: `calc(5rem + ${i * 0.9}rem)` }}
+              >
+                <button
+                  type="button"
+                  onClick={() => openCase(p.slug)}
+                  aria-label={t.work.preview(p.title)}
+                  className="relative block aspect-[16/10] w-full overflow-hidden"
+                >
+                  <ShotImage project={p} sizes="(max-width: 768px) 100vw, 50vw" className="object-cover object-top" />
+                </button>
+                <div className="p-5 md:p-6">
+                  <div className="flex items-center gap-3">
+                    <span className="font-mono text-sm tabular" style={{ color: accentColor[p.accent] }}>
+                      {p.index}
+                    </span>
+                    <span className="micro">
+                      {p.category} · {p.year}
+                    </span>
+                  </div>
+                  <h3 className="display-caps mt-3 text-[clamp(1.4rem,6vw,2rem)] text-fg">{p.title}</h3>
+                  <p className="mt-3 text-base leading-relaxed text-muted">{p.summary}</p>
+                  <div className="mt-5 flex flex-wrap gap-3">
+                    <button
+                      type="button"
+                      onClick={() => openCase(p.slug)}
+                      className="chamfer-sm inline-flex h-11 items-center gap-2 px-5 font-mono text-[0.8125rem] uppercase tracking-[0.16em] text-void"
+                      style={{ backgroundImage: "var(--gradient-spectrum)" }}
+                    >
+                      {t.work.open} <ArrowRight size={15} aria-hidden />
+                    </button>
+                    {live && (
+                      <a
+                        href={live.href}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex h-11 items-center gap-2 border border-line-strong px-4 font-mono text-[0.8125rem] uppercase tracking-[0.16em] text-fg"
+                      >
+                        {live.label} <ArrowUpRight size={15} aria-hidden />
+                        <span className="sr-only">{t.common.newTab}</span>
+                      </a>
+                    )}
+                  </div>
+                </div>
+              </article>
+            );
+          })}
+        </div>
+      </div>
+    </>
   );
 }

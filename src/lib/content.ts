@@ -39,14 +39,13 @@ export interface Project {
   stack: string[];
   highlights: string[];
   accent: AccentKey;
-  /** Hero image on the full case-file page. Falls back to the generated visual while missing. */
-  image: string;
   /**
-   * Real screenshot, textured onto this project's card in the 3D work world.
-   * Drop the file at the path below; while it's missing the world falls back to
-   * the generated `ProjectVisual` for this project, with no layout shift.
+   * Real screenshot (2000×1250 webp in `public/work/`), shown on the work
+   * monitor and at the top of the case file. Optional: a project without one —
+   * coursework, today — renders its generated `ProjectVisual` instead and never
+   * requests a file that isn't there.
    */
-  shot: string;
+  shot?: string;
   /** Measured figures only. Empty is fine — the strip is hidden. */
   metrics: { label: string; value: string }[];
   /** Outbound links shown on the case file and dossier (live site, code). */
@@ -56,6 +55,8 @@ export interface Project {
    * `shot`. Captured from the live sites by `scripts/capture-shots.mjs`.
    */
   gallery?: { src: string; alt: string; caption?: string }[];
+  /** True for the portfolio itself — its address is wherever it is served. */
+  self?: boolean;
 }
 
 export interface TimelineEntry {
@@ -168,19 +169,6 @@ export function sectionIndex(href: string): string {
   return navLinks.find((l) => l.href === href)?.code ?? "--";
 }
 
-/**
- * Which section a non-home route belongs to.
- *
- * On `/work/spotfixes` there is no `#work` element to observe, so the navbar
- * has nothing to highlight and used to leave INDEX lit — telling the visitor
- * they were at the top of the home page while they read a case file. Matching
- * the pathname instead gives the right answer, and an unmatched route correctly
- * gets no highlight at all rather than a wrong one.
- */
-export const routeSections: { prefix: string; href: string }[] = [
-  { prefix: "/work", href: "#work" },
-];
-
 export const about = {
   heading: "OPERATOR PROFILE",
   lead: "I'm a software engineer who likes turning messy, real-world data into tools people actually use.",
@@ -262,7 +250,6 @@ export const projects: Project[] = [
       "Deployed live at spotfixes.com with GitHub Actions CI/CD",
     ],
     accent: "accent",
-    image: "/work/spotfixes.webp",
     shot: "/work/spotfixes.webp",
     metrics: [
       { label: "ACCURACY", value: "89%" },
@@ -310,7 +297,6 @@ export const projects: Project[] = [
       "Fictional brands — the studio, universe and claims are part of the design brief",
     ],
     accent: "accent-2",
-    image: "/work/web-design.webp",
     shot: "/work/web-design.webp",
     metrics: [],
     links: [
@@ -343,6 +329,7 @@ export const projects: Project[] = [
   {
     slug: "portfolio",
     index: "03",
+    self: true,
     title: "THIS SITE",
     category: "Personal Portfolio",
     year: "2026",
@@ -359,7 +346,6 @@ export const projects: Project[] = [
       "Responsive from 390px phones to desktop",
     ],
     accent: "alert",
-    image: "/work/portfolio.webp",
     shot: "/work/portfolio.webp",
     // Only put numbers here once they are measured on the deployed site.
     metrics: [],
@@ -394,8 +380,6 @@ export const projects: Project[] = [
       "Android apps with external API integration",
     ],
     accent: "accent",
-    image: "/work/coursework.webp",
-    shot: "/work/coursework.webp",
     metrics: [],
   },
 ];

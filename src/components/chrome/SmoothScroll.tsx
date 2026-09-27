@@ -16,7 +16,13 @@ import { useReducedMotion } from "@/hooks/useReducedMotion";
 import { setScrollVelocity } from "@/lib/backdrop";
 
 interface LenisContextValue {
-  scrollTo: (target: string | number | HTMLElement, offset?: number) => void;
+  /** `immediate` jumps without the 1.2s glide — for restoring a position, not
+      for navigating to one. */
+  scrollTo: (
+    target: string | number | HTMLElement,
+    offset?: number,
+    immediate?: boolean
+  ) => void;
   /** Freeze scrolling (Lenis + native fallback). Reference-counted. */
   stop: () => void;
   /** Release one freeze. Scrolling resumes when the count reaches zero. */
@@ -88,9 +94,12 @@ export function SmoothScroll({ children }: { children: ReactNode }) {
   }, [reduced]);
 
   const scrollTo = useCallback<LenisContextValue["scrollTo"]>(
-    (target, offset = 0) => {
+    (target, offset = 0, immediate = false) => {
       if (lenisRef.current) {
-        lenisRef.current.scrollTo(target, { offset, duration: 1.2 });
+        lenisRef.current.scrollTo(
+          target,
+          immediate ? { offset, immediate: true, force: true } : { offset, duration: 1.2 }
+        );
         return;
       }
       // Reduced-motion / no-Lenis fallback

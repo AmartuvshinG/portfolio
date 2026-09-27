@@ -3,6 +3,7 @@
 import { useEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
 import { navLinks } from "@/lib/content";
+import { isCaseHash } from "@/lib/caseFile";
 import { isInteractive, isTextEntry, modalOpen } from "@/lib/keys";
 import { useSmoothScroll } from "@/components/chrome/SmoothScroll";
 
@@ -52,6 +53,10 @@ export function ChapterKeys() {
         if (i < 0) return;
         current.current = i;
         const href = sections[i].href;
+        /* An open case file owns the hash (`#case=…`) — overwriting it with
+           the section under it would break the share link and the Back
+           button's "close" in one go. */
+        if (isCaseHash(window.location.hash)) return;
         if (window.location.hash !== href) {
           window.history.replaceState(null, "", href);
         }

@@ -296,7 +296,10 @@ export function Hero() {
               initial={reduced ? false : { opacity: 0, y: 20 }}
               animate={play || reduced ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
               transition={{ delay: 2.7, duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-              className="notch-card-sm w-fit border border-line bg-deck/80 px-5 py-4 backdrop-blur-md"
+              /* 95%, not 80: the card sits on the brightest part of the
+                 horizon, and at 80% the arc bled through enough to take the
+                 muted label to 3.36:1. */
+              className="notch-card-sm w-fit border border-line bg-deck/95 px-5 py-4 backdrop-blur-md"
             >
               <span className="micro">{t.hero.currently}</span>
               <p className="mt-2 max-w-[15rem] font-tech text-sm font-semibold uppercase leading-tight text-fg">
