@@ -6,6 +6,10 @@ import { SelectedWork } from "@/components/sections/SelectedWork";
 import { Timeline } from "@/components/sections/Timeline";
 import { Contact } from "@/components/sections/Contact";
 import { CaseFileHost } from "@/components/work/CaseFile";
+import { getGitHubSummary } from "@/lib/github";
+
+/* The Signal panel's GitHub numbers are fetched here and refreshed daily. */
+export const revalidate = 86400;
 
 /**
  * The descent.
@@ -22,12 +26,13 @@ import { CaseFileHost } from "@/components/work/CaseFile";
  * content was replaced: they had no real material to show, and they doubled the
  * scroll between the one project that matters and the contact form.
  */
-export default function Home() {
+export default async function Home() {
+  const github = await getGitHubSummary();
   return (
     <>
       <Hero />
       <About />
-      <Connect />
+      <Connect github={github} />
       <SelectedWork />
       <Capabilities />
       <Timeline />

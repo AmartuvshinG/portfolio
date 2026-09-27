@@ -98,6 +98,11 @@ export interface SocialLink {
   mark?: "github" | "linkedin";
   /** A rendered page, shown as a sheet on its Signal panel (resumes). */
   preview?: string;
+  /** A screenshot, shown in a browser frame on its Signal panel (live sites). */
+  shot?: string;
+  /** Other versions of the same thing, offered as a switch on the panel — the
+      résumé in each language. The panel itself opens `href`. */
+  alternates?: { label: string; href: string }[];
 }
 
 /* -------------------------------------------------------------------------- */
@@ -394,7 +399,7 @@ export const stats: Stat[] = [
   { label: "BUG RECORDS TRAINED ON", value: 222, suffix: "K+" },
   { label: "MODEL ACCURACY", value: 89, unit: "%" },
   { label: "GPA, FINAL FOUR SEMESTERS", value: 3.68, unit: "/4" },
-  { label: "LANGUAGES SPOKEN", value: 2 },
+  { label: "AVERAGE PREDICTION TIME", value: 3.4, unit: "s" },
 ];
 
 export const timeline: TimelineEntry[] = [
@@ -473,18 +478,22 @@ export const socials: SocialLink[] = [
     mark: "linkedin",
   },
   {
+    label: "SPOTFIXES",
+    handle: "spotfixes.com · live",
+    href: "https://spotfixes.com",
+    code: "LV",
+    shot: "/work/spotfixes.webp",
+  },
+  {
     label: "RESUME",
-    handle: "PDF · English",
+    handle: "PDF · English / Монгол",
     href: RESUME_EN,
     code: "CV",
     preview: "/resume/Amartuvshin-Ganzorig-Resume-preview.webp",
-  },
-  {
-    label: "RESUME (MN)",
-    handle: "PDF · Монгол",
-    href: RESUME_MN,
-    code: "MN",
-    preview: "/resume/Amartuvshin-Ganzorig-Resume-MN-preview.webp",
+    alternates: [
+      { label: "EN", href: RESUME_EN },
+      { label: "МН", href: RESUME_MN },
+    ],
   },
 ];
 
@@ -548,3 +557,12 @@ export const accentColor: Record<AccentKey, string> = {
   "accent-2": "#7b5cff", // violet
   alert: "#22e0ff", // cyan
 };
+
+/**
+ * An accent lifted toward white for use as *text*. Pure violet on the void
+ * measures under 4.5:1 at small sizes; a third white clears it and still reads
+ * as the same hue. Fills and glows keep the pure stop.
+ */
+export function readable(accent: string): string {
+  return `color-mix(in srgb, ${accent} 66%, #ffffff)`;
+}

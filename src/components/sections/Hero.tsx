@@ -182,20 +182,20 @@ export function Hero() {
               </a>
             </motion.div>
 
-            <div className="max-w-md md:text-right">
+            <div className="max-w-xl md:text-right lg:max-w-2xl">
               {/* The lead, arriving a word at a time. Chakra Petch rather than
                   the display face: Michroma is unreadable at this size. */}
               <WordRevealLines
                 lines={profile.heroLeadLines}
                 delay={1.15}
                 play={play}
-                className="font-tech text-3xl font-medium leading-[1.12] text-fg md:text-4xl"
+                className="font-tech text-3xl font-medium leading-[1.1] text-fg md:text-4xl lg:text-5xl"
               />
               <motion.p
                 initial={reduced ? false : { opacity: 0, y: 12 }}
                 animate={play || reduced ? { opacity: 1, y: 0 } : { opacity: 0, y: 12 }}
                 transition={{ delay: 1.7, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-                className="mt-4 text-sm leading-relaxed text-muted"
+                className="mt-5 text-base leading-relaxed text-fg/75 md:text-lg"
               >
                 {profile.heroSub}
               </motion.p>

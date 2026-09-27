@@ -397,7 +397,11 @@ export function Navbar() {
               onMouseMove={(e) => dockable && mouseX.set(e.clientX)}
               onMouseLeave={() => mouseX.set(Infinity)}
             >
-              {navLinks.map((link) => (
+              {/* No INDEX here: the wordmark beside this row already goes to
+                  the top, and seven links plus the language switch and the
+                  CTA crowded the capsule. The sheet, palette and footer keep
+                  it. */}
+              {navLinks.filter((l) => l.href !== "#hero").map((link) => (
                 <DockLink
                   key={link.href}
                   link={link}

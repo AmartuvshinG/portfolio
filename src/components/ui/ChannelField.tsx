@@ -6,6 +6,8 @@ import { srand } from "@/lib/utils";
  *   github    a contribution grid; a diagonal wave runs through it when lit
  *   linkedin  a small network whose connections draw themselves in when lit
  *   resume    ruled paper with a scan bar passing down it when lit
+ *   live      stacked heartbeat traces that draw themselves in when lit — the
+ *             service is up
  *
  * It replaced a static plate of concentric arcs that was identical in kind on
  * all four panels. Nothing here is data: the grid levels and node positions
@@ -20,7 +22,7 @@ import { srand } from "@/lib/utils";
  * This is always *under* the channel's mark. The marks are never tinted.
  */
 
-export type ChannelKind = "github" | "linkedin" | "resume";
+export type ChannelKind = "github" | "linkedin" | "resume" | "live";
 
 const W = 300;
 const H = 700;
@@ -49,6 +51,7 @@ export function ChannelField({
       {kind === "github" && <Grid seed={seed} />}
       {kind === "linkedin" && <Network seed={seed} />}
       {kind === "resume" && <Ruled seed={seed} />}
+      {kind === "live" && <Pulse seed={seed} />}
     </svg>
   );
 }
@@ -165,6 +168,44 @@ function Ruled({ seed }: { seed: number }) {
         ))}
       </g>
       <rect className="cf-scan" x="0" y="-120" width={W} height="120" fill={`url(#${id})`} />
+    </g>
+  );
+}
+
+/* --- Live site: heartbeat traces down the panel. Each is one path with a
+   normalised dash (the same `cf-edge` draw-in as the network), plus a node
+   pulsing at its spike. Seeded spike positions, never "real" uptime data. */
+function Pulse({ seed }: { seed: number }) {
+  const rows = 9;
+  return (
+    <g fill="none" strokeLinejoin="round" strokeLinecap="round">
+      {Array.from({ length: rows }, (_, i) => {
+        const y = 60 + i * ((H - 120) / (rows - 1));
+        const spike = 60 + srand(seed * 131 + i) * (W - 120);
+        const amp = 14 + srand(seed * 71 + i) * 26;
+        const d = `M 20 ${y} L ${spike - 24} ${y} L ${spike - 12} ${y - amp * 0.4} L ${spike} ${y + amp} L ${spike + 10} ${y - amp} L ${spike + 22} ${y} L ${W - 20} ${y}`;
+        return (
+          <g key={i}>
+            <path
+              className="cf-edge"
+              pathLength={1}
+              d={d}
+              stroke={STOPS[i % 3]}
+              strokeOpacity={0.55}
+              strokeWidth={1.6}
+              style={{ transitionDelay: `${(i * 0.06).toFixed(2)}s` }}
+            />
+            <circle
+              className="cf-node"
+              cx={(spike + 10).toFixed(1)}
+              cy={(y - amp).toFixed(1)}
+              r={2.6}
+              fill="#eceefb"
+              style={{ animationDelay: `${((i * 0.27) % 2.4).toFixed(2)}s` }}
+            />
+          </g>
+        );
+      })}
     </g>
   );
 }

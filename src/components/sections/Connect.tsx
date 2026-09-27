@@ -10,6 +10,8 @@ import { useReducedMotion } from "@/hooks/useReducedMotion";
 import { ChapterSeam } from "@/components/chrome/ChapterSeam";
 import { ChannelField } from "@/components/ui/ChannelField";
 import { GitHubMark, LinkedInMark } from "@/components/ui/BrandMarks";
+import type { GitHubSummary } from "@/lib/github";
+import { cn } from "@/lib/utils";
 
 /**
  * "Find me elsewhere", at the scale it should always have been.
@@ -56,7 +58,7 @@ const REST = 1;
 
 const PANEL_SPRING = { type: "spring", stiffness: 210, damping: 30 } as const;
 
-export function Connect() {
+export function Connect({ github }: { github: GitHubSummary | null }) {
   const { c, t } = useI18n();
   const { socials } = c;
   const ref = useRef<HTMLElement>(null);
@@ -138,6 +140,7 @@ export function Connect() {
               open={open}
               reduced={reduced}
               onEnter={() => accordion && setHovered(i)}
+              github={social.mark === "github" ? github : null}
             />
           ))}
         </ul>
@@ -156,6 +159,7 @@ function ChannelPanel({
   open,
   reduced,
   onEnter,
+  github,
 }: {
   social: SocialLink;
   index: number;
@@ -166,8 +170,15 @@ function ChannelPanel({
   open: import("framer-motion").MotionValue<number>;
   reduced: boolean;
   onEnter: () => void;
+  github: GitHubSummary | null;
 }) {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
+  const kind = social.mark ?? (social.shot ? "live" : "resume");
+  const openLabel = social.href.endsWith(".pdf")
+    ? t.connect.openPdf
+    : social.shot
+      ? t.connect.openSite
+      : t.connect.openProfile;
   /* The arrival: the panels rise and settle in sequence as the section enters,
      so the row has already performed once before the pointer ever reaches it.
      Later panels start lower and land later — the same stagger the fan had,
@@ -196,7 +207,7 @@ function ChannelPanel({
         className="liquid-glass group/panel relative block h-[30vh] w-full overflow-hidden rounded-3xl md:h-full"
       >
         <ChannelField
-          kind={social.mark ?? "resume"}
+          kind={kind}
           seed={index}
           lit={expanded}
         />
@@ -265,7 +276,7 @@ function ChannelPanel({
             </span>
 
             <div
-              className="transition-opacity duration-300 md:absolute md:bottom-0 md:left-0 md:w-max"
+              className="transition-opacity duration-300 md:absolute md:bottom-0 md:left-0 md:w-max md:max-w-full"
               style={{ opacity: expanded ? 1 : 0 }}
             >
               <span className="block whitespace-nowrap font-tech text-2xl font-bold uppercase leading-tight text-fg md:text-4xl">
@@ -274,14 +285,55 @@ function ChannelPanel({
               <span className="mt-1 block font-mono text-xs lowercase tracking-wider text-muted md:text-sm">
                 {social.handle}
               </span>
-              <span className="micro mt-4 hidden md:block">
-                {social.href.endsWith(".pdf") ? t.connect.openPdf : t.connect.openProfile}
-              </span>
+              {github && (
+                <span className="mt-3 block font-mono text-xs tracking-wider text-fg/80 md:text-sm">
+                  {t.connect.repos(github.repos)}
+                  {github.lastPush && (
+                    <>
+                      {" · "}
+                      {t.connect.lastPush} {formatMonth(github.lastPush, locale)}
+                    </>
+                  )}
+                </span>
+              )}
+              {github && github.recent.length > 0 && (
+                <span className="mt-1.5 hidden whitespace-normal font-mono text-xs lowercase tracking-wider text-muted md:block">
+                  {github.recent.map((r) => r.name).join(" · ")}
+                </span>
+              )}
+              <span className="micro mt-4 hidden md:block">{openLabel}</span>
               <span className="sr-only">{t.common.newTab}</span>
             </div>
           </div>
         </div>
       </GlareCard>
+
+      {/* The other language of the same document. A sibling of the panel's
+          link, not a child: links cannot nest. */}
+      {social.alternates && (
+        <div
+          role="group"
+          aria-label={t.connect.resumeIn}
+          className="liquid-glass absolute right-4 top-14 z-10 flex gap-1 rounded-full p-1 transition-opacity duration-300 md:right-6 md:top-16"
+          style={{ opacity: expanded ? 1 : 0, pointerEvents: expanded ? "auto" : "none" }}
+        >
+          {social.alternates.map((alt) => (
+            <a
+              key={alt.href}
+              href={alt.href}
+              target="_blank"
+              rel="noreferrer noopener"
+              tabIndex={expanded ? 0 : -1}
+              className={cn(
+                "rounded-full px-3 py-1.5 font-mono text-xs font-semibold tracking-wider transition-colors",
+                alt.href === social.href ? "bg-fg/15 text-fg" : "text-muted hover:text-fg"
+              )}
+            >
+              {alt.label} · PDF
+            </a>
+          ))}
+        </div>
+      )}
     </motion.li>
   );
 }
@@ -324,6 +376,34 @@ function ChannelArt({
     );
   }
 
+  if (social.shot) {
+    /* The live product, as a browser window. Landscape inside a panel that is
+       tall when closed, so it is sized off the width instead. */
+    return (
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-x-0 bottom-[42%] top-[14%] flex items-center justify-center md:bottom-[36%] md:top-[16%]"
+      >
+        <div
+          className="w-[88%] max-w-[34rem] overflow-hidden rounded-lg shadow-[0_24px_60px_-12px_rgba(0,0,0,0.75)] ring-1 ring-white/10 transition-[transform,opacity] duration-300 ease-out"
+          style={{
+            opacity: lit ? 1 : 0.7,
+            transform: `perspective(900px) rotateY(${lit ? -4 : -12}deg) scale(${lit ? 1 : 0.9})`,
+          }}
+        >
+          <div className="flex items-center gap-1.5 bg-[#12142a] px-2.5 py-1.5">
+            <span className="h-2 w-2 rounded-full bg-white/25" />
+            <span className="h-2 w-2 rounded-full bg-white/25" />
+            <span className="h-2 w-2 rounded-full bg-white/25" />
+            <span className="ml-2 truncate font-mono text-[0.625rem] text-white/60">spotfixes.com</span>
+          </div>
+          {/* eslint-disable-next-line @next/next/no-img-element -- decorative, fixed asset */}
+          <img src={social.shot} alt="" loading="lazy" className="block aspect-[16/10] w-full object-cover object-top" />
+        </div>
+      </div>
+    );
+  }
+
   if (social.preview) {
     return (
       <div
@@ -348,4 +428,11 @@ function ChannelArt({
   }
 
   return null;
+}
+
+/** "May 2026" in English; the resume's own "2026.05" style in Mongolian. */
+function formatMonth(iso: string, locale: string) {
+  const d = new Date(iso);
+  if (locale === "mn") return `${d.getUTCFullYear()}.${String(d.getUTCMonth() + 1).padStart(2, "0")}`;
+  return d.toLocaleDateString("en-US", { month: "short", year: "numeric", timeZone: "UTC" });
 }

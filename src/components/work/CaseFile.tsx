@@ -5,7 +5,7 @@ import { createPortal } from "react-dom";
 import Image from "next/image";
 import { AnimatePresence, motion } from "framer-motion";
 import { ArrowLeft, ArrowRight, ArrowUpRight, X } from "lucide-react";
-import { accentColor, type Project } from "@/lib/content";
+import { accentColor, readable, type Project } from "@/lib/content";
 import { useI18n } from "@/lib/i18n";
 import { CASE_EVENT, clearCase, readCase, replaceCase } from "@/lib/caseFile";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
@@ -143,7 +143,7 @@ function CaseFile({
             {/* Bar */}
             <div className="flex h-16 shrink-0 items-center justify-between gap-4 border-b border-line px-5 md:px-8">
               <div className="flex min-w-0 items-center gap-3">
-                <span className="font-mono text-sm tabular" style={{ color }}>
+                <span className="font-mono text-sm tabular" style={{ color: color && readable(color) }}>
                   {project.index}
                 </span>
                 <span className="micro truncate">{t.caseFile.label}</span>

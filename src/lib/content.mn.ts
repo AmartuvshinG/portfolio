@@ -13,9 +13,11 @@
 
 import {
   en,
+  RESUME_MN,
   type Capability,
   type Project,
   type SiteContent,
+  type SocialLink,
   type TimelineEntry,
 } from "@/lib/content";
 
@@ -209,18 +211,24 @@ const nav: Record<string, string> = {
   "#contact": "Холбогдох",
 };
 
-const socials: Record<string, { label: string; handle: string }> = {
+/* The résumé panel opens the Mongolian PDF here; its switch still offers both. */
+const socials: Record<string, Partial<SocialLink>> = {
   GH: { label: "GITHUB", handle: "@amartuvshing" },
   IN: { label: "LINKEDIN", handle: "in/amartuvshinganzorig" },
-  CV: { label: "РЕЗЮМЕ (EN)", handle: "PDF · Англи" },
-  MN: { label: "РЕЗЮМЕ", handle: "PDF · Монгол" },
+  LV: { label: "SPOTFIXES", handle: "spotfixes.com · ажиллаж буй" },
+  CV: {
+    label: "РЕЗЮМЕ",
+    handle: "PDF · Монгол / English",
+    href: RESUME_MN,
+    preview: "/resume/Amartuvshin-Ganzorig-Resume-MN-preview.webp",
+  },
 };
 
 const statLabels = [
   "СУРГАЛТАД АШИГЛАСАН АЛДААНЫ БҮРТГЭЛ",
   "ЗАГВАРЫН НАРИЙВЧЛАЛ",
   "СҮҮЛИЙН 4 УЛИРЛЫН ГОЛЧ ДҮН",
-  "ЭЗЭМШСЭН ХЭЛ",
+  "ТААМАГЛАЛЫН ДУНДАЖ ХУГАЦАА",
 ];
 
 function required<T>(v: T | undefined, what: string): T {

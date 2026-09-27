@@ -118,6 +118,13 @@ export const metadata: Metadata = {
     description: site.description,
     type: "website",
   },
+  /* The image itself comes from app/opengraph-image.tsx; this asks X to show
+     it large rather than as a thumbnail. */
+  twitter: {
+    card: "summary_large_image",
+    title: site.title,
+    description: site.description,
+  },
 };
 
 export const viewport: Viewport = {

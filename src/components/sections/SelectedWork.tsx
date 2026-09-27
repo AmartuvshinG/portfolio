@@ -11,7 +11,7 @@ import {
   type MotionValue,
 } from "framer-motion";
 import { ArrowLeft, ArrowRight, ArrowUpRight } from "lucide-react";
-import { accentColor, projects as baseProjects, sectionIndex, type Project } from "@/lib/content";
+import { accentColor, projects as baseProjects, readable, sectionIndex, type Project } from "@/lib/content";
 import { useI18n } from "@/lib/i18n";
 import { openCase } from "@/lib/caseFile";
 import { isInteractive, modalOpen } from "@/lib/keys";
@@ -411,7 +411,7 @@ function Story({ project, active, ...layer }: Layer & { project: Project; active
 
       <motion.div className="relative" style={{ y, willChange: promote(layer.live, "transform") }}>
         <div className="flex items-center gap-3">
-          <span className="font-mono text-sm tabular" style={{ color }}>
+          <span className="font-mono text-sm tabular" style={{ color: readable(color) }}>
             {project.index}
           </span>
           <span className="h-px w-8 bg-current opacity-25" />
@@ -615,7 +615,7 @@ function Stack({ reduced }: { reduced: boolean }) {
                 </button>
                 <div className="p-5 md:p-6">
                   <div className="flex items-center gap-3">
-                    <span className="font-mono text-sm tabular" style={{ color: accentColor[p.accent] }}>
+                    <span className="font-mono text-sm tabular" style={{ color: readable(accentColor[p.accent]) }}>
                       {p.index}
                     </span>
                     <span className="micro">
