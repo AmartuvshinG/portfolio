@@ -1,22 +1,46 @@
 "use client";
 
-import { sectionIndex } from "@/lib/content";
+import { useEffect, useRef, useState } from "react";
+import { ArrowUpRight, Check, Copy, FileText, Mail } from "lucide-react";
+import { RESUME_EN, RESUME_MN, sectionIndex } from "@/lib/content";
 import { useI18n } from "@/lib/i18n";
-import { ContactForm } from "@/components/ui/ContactForm";
 import { Reveal } from "@/components/motion/Reveal";
 import { ChapterSeam } from "@/components/chrome/ChapterSeam";
+import { LinkedInMark } from "@/components/ui/BrandMarks";
 
 /**
- * The closing block: the base void, with the ramp rising off the bottom edge.
+ * The closing block: the address, large, and the three ways in.
  *
- * The page opened on the void and lifted through its middle, so dropping back
- * to it here closes the loop the work world opened rather than introducing a
- * third idea. This bloom is the one place the ramp is allowed real estate — it
- * is a wash behind everything, never a colour anything is set in.
+ * There used to be a contact form here. With no backend it could only hand a
+ * draft to the visitor's mail app, which on webmail-only or managed machines —
+ * most recruiters — does nothing at all, and even when it worked it asked them
+ * to write in a box on this page rather than in their own inbox. What a
+ * recruiter actually does is copy the address or open LinkedIn, so those are
+ * the whole block now: the email set as the headline act with a copy button,
+ * then mail, LinkedIn and the résumé as buttons, and when to expect a reply.
  */
 export function Contact() {
-  const { c, t } = useI18n();
-  const { contact, profile } = c;
+  const { c, t, locale } = useI18n();
+  const { contact, profile, socials } = c;
+  const linkedin = socials.find((s) => s.mark === "linkedin");
+  const resume = locale === "mn" ? RESUME_MN : RESUME_EN;
+  const [copied, setCopied] = useState(false);
+  const timer = useRef<number | undefined>(undefined);
+
+  useEffect(() => () => window.clearTimeout(timer.current), []);
+
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(contact.email);
+      setCopied(true);
+      window.clearTimeout(timer.current);
+      timer.current = window.setTimeout(() => setCopied(false), 2200);
+    } catch {
+      /* Clipboard refused (insecure context, permissions): the address is
+         right there as text and as a mailto link, so there is nothing to add. */
+    }
+  };
+
   return (
     <section
       id="contact"
@@ -35,29 +59,87 @@ export function Contact() {
           <h2 className="display-caps text-[clamp(1.9rem,6vw,6rem)] text-fg">
             {t.contact.title}
           </h2>
-          <p className="max-w-lg font-tech text-2xl leading-snug text-fg md:text-3xl">
+          <p className="max-w-2xl font-tech text-2xl leading-snug text-fg md:text-3xl">
             {contact.lead}
           </p>
         </Reveal>
 
-        <div className="mt-16 grid gap-14 border-t border-line pt-14 md:grid-cols-12">
-          <Reveal className="md:col-span-5">
-            <dl className="space-y-8">
-              <div>
-                <dt className="micro">{t.contact.email}</dt>
-                <dd className="mt-2">
-                  <a
-                    href={`mailto:${contact.email}`}
-                    className="spectrum-underline font-tech text-xl font-semibold text-fg md:text-2xl"
-                  >
-                    {contact.email}
-                  </a>
-                </dd>
-              </div>
+        <div className="mt-16 grid gap-14 border-t border-line pt-14 lg:grid-cols-12">
+          <Reveal className="min-w-0 lg:col-span-8">
+            <p className="micro">{t.contact.email}</p>
+
+            {/* The address is the headline. It breaks anywhere rather than
+                overflowing a phone, and the copy button sits on its baseline. */}
+            <div className="mt-3 flex flex-wrap items-end gap-x-5 gap-y-3">
+              <a
+                href={`mailto:${contact.email}`}
+                className="spectrum-underline min-w-0 break-all font-tech text-[clamp(1.75rem,4.6vw,4rem)] font-semibold leading-[1.05] text-fg"
+              >
+                {contact.email}
+              </a>
+              <button
+                type="button"
+                onClick={copy}
+                className="liquid-glass mb-1 flex h-11 shrink-0 items-center gap-2 rounded-full px-4 font-mono text-xs uppercase tracking-[0.16em] text-fg transition-transform duration-200 hover:scale-[1.03]"
+              >
+                {copied ? <Check size={15} aria-hidden /> : <Copy size={15} aria-hidden />}
+                {copied ? t.contact.copied : t.contact.copy}
+              </button>
+              <span aria-live="polite" className="sr-only">
+                {copied ? t.contact.copiedLive(contact.email) : ""}
+              </span>
+            </div>
+
+            <div className="mt-10 flex flex-wrap gap-3">
+              <a
+                href={`mailto:${contact.email}`}
+                style={{ backgroundImage: "var(--gradient-spectrum)" }}
+                /* The ramp carries the colour and the label stays dark on it:
+                   bone on magenta is only ~3:1. */
+                className="chamfer-sm flex items-center gap-3 px-7 py-3.5 font-mono text-[0.8125rem] uppercase tracking-[0.2em] text-void transition-transform duration-300 hover:scale-[1.03]"
+              >
+                <Mail size={15} aria-hidden />
+                {t.contact.emailMe}
+              </a>
+              {linkedin && (
+                <a
+                  href={linkedin.href}
+                  target="_blank"
+                  rel="noreferrer noopener"
+                  className="liquid-glass group flex items-center gap-3 rounded-full px-6 py-3.5 font-mono text-[0.8125rem] uppercase tracking-[0.2em] text-fg transition-transform duration-300 hover:scale-[1.03]"
+                >
+                  <LinkedInMark className="h-4 w-auto" />
+                  LinkedIn
+                  <ArrowUpRight size={14} aria-hidden className="text-muted group-hover:text-fg" />
+                  <span className="sr-only">{t.common.newTab}</span>
+                </a>
+              )}
+              <a
+                href={resume}
+                target="_blank"
+                rel="noreferrer noopener"
+                className="liquid-glass group flex items-center gap-3 rounded-full px-6 py-3.5 font-mono text-[0.8125rem] uppercase tracking-[0.2em] text-fg transition-transform duration-300 hover:scale-[1.03]"
+              >
+                <FileText size={15} aria-hidden />
+                {t.contact.resume}
+                <ArrowUpRight size={14} aria-hidden className="text-muted group-hover:text-fg" />
+                <span className="sr-only">{t.common.newTab}</span>
+              </a>
+            </div>
+          </Reveal>
+
+          <Reveal className="lg:col-span-4" delay={0.1}>
+            <dl className="grid gap-8 sm:grid-cols-3 lg:grid-cols-1">
               <div>
                 <dt className="micro">{t.contact.availability}</dt>
                 <dd className="mt-2 font-tech text-xl font-semibold uppercase text-fg">
                   {contact.availability}
+                </dd>
+              </div>
+              <div>
+                <dt className="micro">{t.contact.response}</dt>
+                <dd className="mt-2 font-tech text-xl font-semibold uppercase text-fg">
+                  {t.contact.responseTime}
                 </dd>
               </div>
               <div>
@@ -67,10 +149,6 @@ export function Contact() {
                 </dd>
               </div>
             </dl>
-          </Reveal>
-
-          <Reveal className="md:col-span-7" delay={0.1}>
-            <ContactForm />
           </Reveal>
         </div>
       </div>

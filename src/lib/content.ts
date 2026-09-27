@@ -454,7 +454,7 @@ export const timeline: TimelineEntry[] = [
 
 export const contact = {
   heading: "INITIALIZE CONTACT",
-  lead: "Hiring for a software engineering role? Send me a message and I'll reply within 48 hours.",
+  lead: "Hiring for a software engineering role? Email me and I'll reply within 48 hours.",
   email: "amaraajunior@gmail.com",
   availability: "OPEN · AVAILABLE NOW",
 };
