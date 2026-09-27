@@ -2,48 +2,51 @@
 
 import { useLayoutEffect, useRef, useState } from "react";
 import {
-  AnimatePresence,
   motion,
+  useInView,
   useMotionValueEvent,
   useScroll,
-  useSpring,
   useTransform,
+  type Transition,
 } from "framer-motion";
 import { BriefcaseBusiness, GraduationCap } from "lucide-react";
-import { sectionIndex, type TimelineEntry } from "@/lib/content";
+import { sectionIndex, type Stamp, type TimelineEntry } from "@/lib/content";
 import { useI18n } from "@/lib/i18n";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
 import { AnimatedCounter } from "@/components/motion/AnimatedCounter";
 import { Reveal } from "@/components/motion/Reveal";
 import { SectionHeader } from "@/components/ui/SectionHeader";
 import { ChapterSeam } from "@/components/chrome/ChapterSeam";
+import { EASE_EXPO } from "@/lib/motion";
 import { cn } from "@/lib/utils";
 
 /** The line on screen the rail's head rides, as a fraction of the viewport. */
 const READ_LINE = 0.6;
 
+/** The month line's size. The rail node is centred on it, so both read it. */
+const MONTH_SIZE = "clamp(1.5rem, 2.4vw, 2.25rem)";
+
+type PathWords = ReturnType<typeof useI18n>["t"]["path"];
+
 /**
  * Path: the numbers, then the record.
  *
- * **Three lanes: year, rail, role.** The rail runs *between* the years and the
- * roles, so the years are a column of their own on the left, set larger than
- * the titles, and each row's node sits on the rail level with its year.
+ * **Three lanes: date, rail, role.** The rail runs between the dates and the
+ * roles; each row's node sits on it, level with that row's month.
  *
- * **The head says where you are.** The beam fills to a fixed reading line, and
- * the head riding its tip is a glass chip that reads the span of the row it has
- * reached ("2025–2026"). Which row that is comes from the head's own position
- * against the measured row tops — not from a separate observer band — so the
- * chip, the lit node and the highlighted year always agree.
+ * **Each date is said once.** A row shows its start as a stamp — the month
+ * over a large year — and its end beside an arrow, leaving out whatever the end
+ * shares with the start ("JUN 2026 → SEP", never "2026 … 2026"). The phrase a
+ * screen reader hears is the row's `period`; the stamp itself is decoration.
  *
- * **Each year pops as its row arrives**, scrubbed by that row's own scroll
- * progress (so it reverses on the way back up), through a spring so a quick
- * flick overshoots a little. The role follows a beat behind.
+ * **The stamp is invisible until its row arrives**, then prints: the month is
+ * wiped in behind a spectrum scan bar, and the year rolls in like an odometer,
+ * each digit spinning a full turn before it lands, a beat after the one before
+ * it. It resets when the row leaves the screen, so it plays again on the way
+ * back. Under reduced motion it is simply there.
  *
  * **The beam** is `scaleY` on a full-height line, not an animated `height`:
  * height is layout, and it was being recomputed on every scroll frame.
- *
- * **Phones** fold to two lanes: the rail on the left, and the year sitting
- * over its role.
  */
 export function Timeline() {
   const { c, t } = useI18n();
@@ -60,7 +63,7 @@ export function Timeline() {
   const headOpacity = useTransform(scrollYProgress, [0, 0.02, 0.98, 1], [0, 1, 1, 0]);
 
   /* Each row's node centre, relative to the list. Measured from the nodes
-     themselves, which never move: the pop transforms live on other cells. */
+     themselves, which never move: the animations live on other cells. */
   useLayoutEffect(() => {
     const list = listRef.current;
     if (!list) return;
@@ -87,8 +90,6 @@ export function Timeline() {
     });
     if (i !== active) setActive(i);
   });
-
-  const current = c.timeline[active] ?? c.timeline[0];
 
   return (
     <section
@@ -127,7 +128,7 @@ export function Timeline() {
 
         {/* The lane widths are variables so the rail's x can be derived from
             the same numbers the grid uses — it can never drift off the nodes. */}
-        <div className="relative mt-10 [--lane:2.25rem] [--yc:0rem] md:[--lane:6.5rem] md:[--yc:13rem] lg:[--lane:8.5rem] lg:[--yc:19rem]">
+        <div className="relative mt-10 [--lane:2.25rem] [--yc:0rem] md:[--lane:5rem] md:[--yc:14rem] lg:[--lane:7rem] lg:[--yc:19rem]">
           <div
             aria-hidden
             className="absolute bottom-0 top-0 w-px bg-line"
@@ -149,32 +150,12 @@ export function Timeline() {
                     rail without animating `top`. */}
                 <motion.div className="absolute inset-0" style={{ y: headY, opacity: headOpacity }}>
                   <span
-                    className="absolute -left-[5px] -top-[5px] h-[11px] w-[11px] rounded-full md:hidden"
+                    className="absolute -left-[5px] -top-[5px] h-[11px] w-[11px] rounded-full"
                     style={{
                       background: "var(--spectrum-3)",
                       boxShadow: "0 0 12px 3px color-mix(in srgb, var(--spectrum-3) 55%, transparent)",
                     }}
                   />
-                  <span
-                    className="liquid-glass absolute left-0 top-0 hidden -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-full px-3 py-1.5 md:block"
-                    style={{
-                      boxShadow:
-                        "0 0 18px 2px color-mix(in srgb, var(--spectrum-2) 45%, transparent), inset 0 0 0 1px rgba(236,238,251,0.16)",
-                    }}
-                  >
-                    <AnimatePresence mode="popLayout" initial={false}>
-                      <motion.span
-                        key={current.span}
-                        initial={{ y: 12, opacity: 0 }}
-                        animate={{ y: 0, opacity: 1 }}
-                        exit={{ y: -12, opacity: 0 }}
-                        transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
-                        className="block whitespace-nowrap font-mono text-xs font-semibold tabular text-fg"
-                      >
-                        {current.span}
-                      </motion.span>
-                    </AnimatePresence>
-                  </span>
                 </motion.div>
               </>
             )}
@@ -188,8 +169,7 @@ export function Timeline() {
                 on={i === active}
                 past={i < active}
                 reduced={reduced}
-                kindLabel={entry.kind === "education" ? t.path.education : t.path.work}
-                nowLabel={t.path.now}
+                words={t.path}
               />
             ))}
           </ol>
@@ -204,72 +184,48 @@ function Row({
   on,
   past,
   reduced,
-  kindLabel,
-  nowLabel,
+  words,
 }: {
   entry: TimelineEntry;
   on: boolean;
   past: boolean;
   reduced: boolean;
-  kindLabel: string;
-  nowLabel: string;
+  words: PathWords;
 }) {
   const ref = useRef<HTMLLIElement>(null);
+  /* Not `once`: leaving the screen resets the stamp, so it prints again when
+     the row comes back. */
+  const inView = useInView(ref, { margin: "0px 0px -18% 0px", amount: 0.25 });
+  const play = reduced || inView;
+
   const { scrollYProgress } = useScroll({ target: ref, offset: ["start 96%", `start ${READ_LINE * 100}%`] });
-  const pop = useSpring(scrollYProgress, { stiffness: 260, damping: 20, mass: 0.6 });
-  const yearY = useTransform(pop, [0, 1], [56, 0]);
-  const yearScale = useTransform(pop, [0, 1], [0.7, 1]);
-  const yearOpacity = useTransform(scrollYProgress, [0, 0.45], [0, 1]);
   const bodyY = useTransform(scrollYProgress, [0.2, 1], [36, 0]);
   const bodyOpacity = useTransform(scrollYProgress, [0.2, 0.7], [0, 1]);
 
   const Kind = entry.kind === "education" ? GraduationCap : BriefcaseBusiness;
-  const [from, to] = entry.span.split("–");
 
   return (
     <li
       ref={ref}
       className="relative grid grid-cols-[var(--lane)_minmax(0,1fr)] border-b border-line py-10 [grid-template-areas:'lane_year'_'lane_body'] first:pt-2 md:grid-cols-[var(--yc)_var(--lane)_minmax(0,1fr)] md:py-14 md:[grid-template-areas:'year_lane_body']"
     >
-      {/* Year. Transform-origin left so the pop grows out of the column's edge
-          rather than out of its middle. */}
-      <motion.div
-        className="relative origin-left [grid-area:year]"
-        style={reduced ? undefined : { y: yearY, scale: yearScale, opacity: yearOpacity }}
-      >
-        <div
-          className={cn(
-            "spectrum-text tabular inline-block pr-1 font-tech font-bold leading-[0.95] transition-[filter,opacity] duration-300",
-            past && "opacity-55",
-            on && "drop-shadow-[0_0_22px_rgba(123,92,255,0.45)]"
-          )}
-          style={{ fontSize: "clamp(2.75rem, 5vw, 4.75rem)" }}
-        >
-          <span className="block">{from}</span>
-          {to && <span className="block">–{to}</span>}
-        </div>
-        <p className="mt-3 font-mono text-base text-muted">{entry.period}</p>
-        <p
-          className={cn(
-            "micro mt-2 !text-fg transition-opacity duration-300",
-            on ? "opacity-100" : "opacity-0"
-          )}
-          aria-hidden={!on}
-        >
-          ● {nowLabel}
-        </p>
-      </motion.div>
+      <div className="relative [grid-area:year]">
+        <DateStamp entry={entry} play={play} instant={reduced} on={on} words={words} />
+      </div>
 
-      {/* Node on the rail, level with the year's first line. */}
+      {/* Node on the rail, level with the month. */}
       <div aria-hidden className="relative flex justify-center [grid-area:lane]">
         <span
           data-node
           className={cn(
-            "mt-[calc(clamp(2.75rem,5vw,4.75rem)*0.45-7px)] h-3.5 w-3.5 rotate-45 border transition-all duration-200",
+            "h-3.5 w-3.5 rotate-45 border transition-all duration-200",
             on || past ? "border-transparent" : "border-line-strong bg-bg",
             on && "scale-125"
           )}
-          style={on || past ? { backgroundImage: "var(--gradient-spectrum)" } : undefined}
+          style={{
+            marginTop: `calc(${MONTH_SIZE} * 0.5 - 7px)`,
+            ...(on || past ? { backgroundImage: "var(--gradient-spectrum)" } : {}),
+          }}
         />
       </div>
 
@@ -279,7 +235,7 @@ function Row({
       >
         <span className="liquid-glass inline-flex items-center gap-1.5 rounded-full px-3 py-1 font-mono text-sm uppercase tracking-wider text-muted">
           <Kind size={14} aria-hidden />
-          {kindLabel}
+          {entry.kind === "education" ? words.education : words.work}
         </span>
         <h3
           className={cn(
@@ -293,5 +249,225 @@ function Row({
         <p className="mt-5 max-w-3xl text-lg leading-relaxed text-fg/80">{entry.description}</p>
       </motion.div>
     </li>
+  );
+}
+
+function stampLabel(s: Stamp, words: PathWords): string | null {
+  if (s.season === "summer") return words.summer;
+  if (s.month) return words.months[s.month - 1];
+  return null;
+}
+
+/**
+ * The start as month-over-year, the end beside an arrow. The end drops
+ * whatever it shares with the start: the year when it is the same year
+ * ("JUN 2026 → SEP"), the season when it is the same season ("SUMMER 2022 →
+ * 2023").
+ */
+function DateStamp({
+  entry,
+  play,
+  instant,
+  on,
+  words,
+}: {
+  entry: TimelineEntry;
+  play: boolean;
+  instant: boolean;
+  on: boolean;
+  words: PathWords;
+}) {
+  const { start, end, note } = entry;
+  const startLabel = stampLabel(start, words);
+  const endLabel = end ? stampLabel(end, words) : null;
+  const endShowsLabel = !!end && !!endLabel && (endLabel !== startLabel || end.year === start.year);
+  const endShowsYear = !!end && end.year !== start.year;
+
+  return (
+    <>
+      {/* What assistive tech reads. The stamp below is split into digit
+          columns and clipped words, none of which would read as a date. */}
+      <span className="sr-only">{entry.period}</span>
+
+      <div
+        aria-hidden
+        className={cn("transition-[filter] duration-300", on && "drop-shadow-[0_0_22px_rgba(123,92,255,0.45)]")}
+        /* Invisible until the row arrives; the pieces then print themselves. */
+        style={{ opacity: play ? 1 : 0, transition: instant || !play ? "none" : "opacity 120ms linear" }}
+      >
+        {startLabel && (
+          <Wipe play={play} instant={instant} delay={0}>
+            <span
+              className="block font-tech font-bold uppercase leading-none tracking-wide text-fg"
+              style={{ fontSize: MONTH_SIZE }}
+            >
+              {startLabel}
+            </span>
+          </Wipe>
+        )}
+
+        <Odometer
+          value={start.year}
+          play={play}
+          instant={instant}
+          delay={0.12}
+          className="mt-2 font-tech font-bold"
+          style={{ fontSize: "clamp(3rem, 5.4vw, 5rem)" }}
+        />
+
+        {end && (endShowsLabel || endShowsYear) && (
+          <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-1">
+            <Arrow play={play} instant={instant} delay={0.55} />
+            {endShowsLabel && (
+              <Wipe play={play} instant={instant} delay={0.7}>
+                <span className="block font-tech text-2xl font-bold uppercase leading-none text-fg md:text-[1.75rem]">
+                  {endLabel}
+                </span>
+              </Wipe>
+            )}
+            {endShowsYear && (
+              <Odometer
+                value={end.year}
+                play={play}
+                instant={instant}
+                delay={0.8}
+                className="font-tech text-2xl font-bold md:text-[1.75rem]"
+              />
+            )}
+          </div>
+        )}
+
+        {note === "graduated" && (
+          <Wipe play={play} instant={instant} delay={0.55} className="mt-4">
+            <span className="liquid-glass inline-flex rounded-full px-3 py-1 font-mono text-sm font-semibold uppercase tracking-[0.16em] text-fg">
+              {words.graduated}
+            </span>
+          </Wipe>
+        )}
+      </div>
+    </>
+  );
+}
+
+/**
+ * A word printed left to right: a clip opens behind a thin spectrum scan bar
+ * that runs across it and fades out at the far edge.
+ */
+function Wipe({
+  play,
+  instant,
+  delay,
+  className,
+  children,
+}: {
+  play: boolean;
+  instant: boolean;
+  delay: number;
+  className?: string;
+  children: React.ReactNode;
+}) {
+  const t: Transition = instant || !play ? { duration: 0 } : { duration: 0.55, ease: EASE_EXPO, delay };
+  return (
+    <div className={cn("relative w-fit", className)}>
+      <motion.div
+        initial={false}
+        animate={{ clipPath: play ? "inset(0 0% 0 0)" : "inset(0 100% 0 0)" }}
+        transition={t}
+      >
+        {children}
+      </motion.div>
+      {!instant && (
+        <motion.span
+          className="spectrum-rule pointer-events-none absolute -bottom-1 -top-1 w-[3px] rounded-full"
+          initial={false}
+          animate={play ? { left: ["0%", "100%"], opacity: [1, 1, 0] } : { left: "0%", opacity: 0 }}
+          transition={play ? { duration: 0.55, ease: EASE_EXPO, delay, times: [0, 0.85, 1] } : { duration: 0 }}
+          style={{ boxShadow: "0 0 12px 2px color-mix(in srgb, var(--spectrum-2) 70%, transparent)" }}
+        />
+      )}
+    </div>
+  );
+}
+
+/**
+ * A year as an odometer. Each digit is a column of 0–9 twice over, clipped to
+ * one digit's height; printing it rolls the column a full turn plus the digit,
+ * on a spring that overshoots and settles. Columns start a beat apart, so the
+ * number resolves left to right. The ramp runs across the whole number: each
+ * column carries its own slice of one gradient.
+ */
+function Odometer({
+  value,
+  play,
+  instant,
+  delay,
+  className,
+  style,
+}: {
+  value: number;
+  play: boolean;
+  instant: boolean;
+  delay: number;
+  className?: string;
+  style?: React.CSSProperties;
+}) {
+  const digits = String(value).split("");
+  const n = digits.length;
+  return (
+    <div className={cn("flex leading-none tabular", className)} style={style}>
+      {digits.map((ch, i) => {
+        const d = Number(ch);
+        const t: Transition =
+          instant || !play
+            ? { duration: 0 }
+            : { type: "spring", stiffness: 70, damping: 13, mass: 1, delay: delay + i * 0.08 };
+        return (
+          <span key={i} className="relative inline-block h-[1em] overflow-hidden">
+            <motion.span
+              className="flex flex-col"
+              initial={false}
+              animate={{ y: play ? `-${10 + d}em` : "0em" }}
+              transition={t}
+            >
+              {Array.from({ length: 20 }, (_, k) => (
+                <span
+                  key={k}
+                  className="block h-[1em] leading-none"
+                  style={{
+                    backgroundImage: "var(--gradient-spectrum)",
+                    backgroundSize: `${n * 100}% 100%`,
+                    backgroundPosition: `${n > 1 ? (i / (n - 1)) * 100 : 0}% 0`,
+                    WebkitBackgroundClip: "text",
+                    backgroundClip: "text",
+                    color: "transparent",
+                  }}
+                >
+                  {k % 10}
+                </span>
+              ))}
+            </motion.span>
+          </span>
+        );
+      })}
+    </div>
+  );
+}
+
+/** A short arrow that draws itself from the start date toward the end. */
+function Arrow({ play, instant, delay }: { play: boolean; instant: boolean; delay: number }) {
+  const t: Transition = instant || !play ? { duration: 0 } : { duration: 0.4, ease: EASE_EXPO, delay };
+  return (
+    <svg width="34" height="14" viewBox="0 0 34 14" fill="none" className="shrink-0 text-muted">
+      <motion.path
+        d="M1 7 H31 M25 1.5 L31 7 L25 12.5"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        initial={false}
+        animate={{ pathLength: play ? 1 : 0 }}
+        transition={t}
+      />
+    </svg>
   );
 }

@@ -88,7 +88,9 @@ const en = {
     record: "Track record",
     work: "Work",
     education: "Education",
-    now: "You are here",
+    months: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
+    summer: "Summer",
+    graduated: "Graduated",
   },
   caseFile: {
     label: "Case file",
@@ -241,7 +243,11 @@ const mn: UiStrings = {
     record: "Туршлага",
     work: "Ажил",
     education: "Боловсрол",
-    now: "Одоо энд",
+    /* Mongolian months are ordinal ("6-р сар", "the 6th month"); the ordinal
+       suffix is the same for all twelve. */
+    months: Array.from({ length: 12 }, (_, i) => `${i + 1}-р сар`),
+    summer: "Зун",
+    graduated: "Төгссөн",
   },
   caseFile: {
     label: "Төслийн дэлгэрэнгүй",

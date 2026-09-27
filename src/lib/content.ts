@@ -69,11 +69,22 @@ export interface Project {
   self?: boolean;
 }
 
+/** A point on the timeline: a year, and the month (1–12) or season within it. */
+export interface Stamp {
+  year: number;
+  month?: number;
+  season?: "summer";
+}
+
 export interface TimelineEntry {
-  year: string;
-  /** The years the role covers, set large: "2025–2026", or one year. */
-  span: string;
-  /** Human dates, shown beside the entry — "Jun – Sep 2026". */
+  /** When it began — or, for a single moment (a graduation), when it was. */
+  start: Stamp;
+  /** When it ended, if it was a span. */
+  end?: Stamp;
+  /** A word that qualifies the date, set beside it: "Graduated". */
+  note?: "graduated";
+  /** The dates as a phrase — what a screen reader announces in place of the
+      animated stamp: "May 2025 – Apr 2026". */
   period: string;
   kind: "work" | "education";
   title: string;
@@ -404,8 +415,8 @@ export const stats: Stat[] = [
 
 export const timeline: TimelineEntry[] = [
   {
-    year: "2026",
-    span: "2026",
+    start: { year: 2026, month: 6 },
+    end: { year: 2026, month: 9 },
     period: "Jun – Sep 2026",
     kind: "work",
     title: "Corporate Logistics Coordinator (Contractor, Khanbogd Khurd)",
@@ -414,8 +425,8 @@ export const timeline: TimelineEntry[] = [
       "Coordinated freight and transportation between the Ulaanbaatar headquarters and the mine site, and monitored logistics data to find routing inefficiencies.",
   },
   {
-    year: "2026",
-    span: "2026",
+    start: { year: 2026, month: 5 },
+    note: "graduated",
     period: "Graduated May 2026",
     kind: "education",
     title: "B.S. Software Engineering",
@@ -424,8 +435,8 @@ export const timeline: TimelineEntry[] = [
       "Erie, Pennsylvania, USA. Dean's List, College of Engineering and Business (Fall 2024, Spring 2025). Capstone: Spotfixes.",
   },
   {
-    year: "2025",
-    span: "2025–2026",
+    start: { year: 2025, month: 5 },
+    end: { year: 2026, month: 4 },
     period: "May 2025 – Apr 2026",
     kind: "work",
     title: "Foodservice Student Worker",
@@ -433,8 +444,8 @@ export const timeline: TimelineEntry[] = [
     description: "High-volume food preparation and inventory during peak campus hours.",
   },
   {
-    year: "2023",
-    span: "2023–2024",
+    start: { year: 2023, month: 8 },
+    end: { year: 2024, month: 5 },
     period: "Aug 2023 – May 2024",
     kind: "work",
     title: "Front Desk Student Attendant",
@@ -442,8 +453,8 @@ export const timeline: TimelineEntry[] = [
     description: "Maintained student housing records in StarRez and resolved resident inquiries.",
   },
   {
-    year: "2022",
-    span: "2022–2023",
+    start: { year: 2022, season: "summer" },
+    end: { year: 2023, season: "summer" },
     period: "Summers 2022 & 2023",
     kind: "work",
     title: "Summer Student Conference Assistant",
