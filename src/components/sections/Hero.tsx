@@ -169,7 +169,7 @@ export function Hero() {
             the crown, which is the one relationship the reference clips share
             and the thing that makes this a frame rather than two stacked bands. */}
         <motion.div
-          className="pointer-events-none absolute inset-x-0 top-[24vh] z-10 flex justify-center md:top-[38vh]"
+          className="pointer-events-none absolute inset-x-0 top-[33vh] z-10 flex justify-center md:top-[46vh]"
           style={
             reduced
               ? undefined
@@ -183,7 +183,14 @@ export function Hero() {
               other at 60Hz. */}
           <div ref={drift}>
             <Focus delay={0.45} amount={26} duration={0.95} play={play}>
-              <h1 className="display-caps flex overflow-hidden text-[16vw] leading-[0.95] text-fg md:text-[13vw]">
+              {/* 8vw at every width. Michroma sets AMARTUVSHIN at ~11.07× its
+                  font size, so 8vw fills ~89% of the frame — one line from a
+                  390px phone up, with a gutter either side. The old 13–16vw
+                  was sized for a five-letter wordmark and ran 1.8 viewports
+                  wide with this one. The `top` above is lowered by the height
+                  the smaller type gave back, so the baseline still sits an
+                  inch into the horizon's crown. */}
+              <h1 className="display-caps flex overflow-hidden text-[8vw] leading-[0.95] text-fg">
                 <motion.span
                   initial={reduced ? false : { y: "110%" }}
                   animate={{ y: play || reduced ? "0%" : "110%" }}

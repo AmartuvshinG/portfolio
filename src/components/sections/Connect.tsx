@@ -109,8 +109,8 @@ export function Connect() {
             </h2>
           </div>
           <p className="max-w-md text-base leading-relaxed text-muted md:pb-3 md:text-right">
-            Four channels, one inbox. The work goes up first on the ones that
-            move fastest.
+            The code, the career history, and the résumé in English and
+            Mongolian.
           </p>
         </div>
 
@@ -264,7 +264,10 @@ function ChannelPanel({
               <span className="mt-1 block font-mono text-xs lowercase tracking-wider text-muted md:text-sm">
                 {social.handle}
               </span>
-              <span className="micro mt-4 hidden md:block">Open channel</span>
+              <span className="micro mt-4 hidden md:block">
+                {social.href.endsWith(".pdf") ? "Open PDF" : "Open profile"}
+              </span>
+              <span className="sr-only">(opens in a new tab)</span>
             </div>
           </div>
         </div>

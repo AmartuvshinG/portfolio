@@ -171,7 +171,7 @@ export function ContactForm() {
           id="message"
           name="message"
           rows={4}
-          placeholder="Describe the system you want to build…"
+          placeholder="The role, the team, or anything you'd like to ask…"
           className={cn(FIELD, "resize-none", errors.message && "border-hazard")}
           aria-invalid={Boolean(errors.message)}
           aria-describedby={errors.message ? "message-error" : undefined}

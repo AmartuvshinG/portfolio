@@ -13,10 +13,9 @@ import { HoverBorderGradient } from "@/components/motion/HoverBorderGradient";
  * here. They cost one clip-path and they are the difference between "cards" and
  * a card *system*, which is why it's a shared utility rather than local styling.
  *
- * The proficiency number is real information, so it stays — but as a hairline
- * rule rather than a bar, because a chunky progress bar reads as a dashboard
- * widget. It is one of the few places the ramp appears at this scale, and it
- * earns it by being the only thing on the card that varies per item.
+ * There is no proficiency number or bar. A self-rated 0–100 score is not
+ * information a reader can trust, and to a recruiter it reads as padding — the
+ * description and tags carry what the card actually claims.
  */
 export function CapabilityCard({ item }: { item: Capability }) {
   return (
@@ -29,12 +28,7 @@ export function CapabilityCard({ item }: { item: Capability }) {
         tilt={8}
         className="notch-card flex h-full flex-col bg-surface p-6 ring-1 ring-inset ring-line"
       >
-      <div className="flex items-center justify-between">
-        <span className="micro tabular">{item.code}</span>
-        <span className="tabular font-mono text-[0.65rem] text-faint">
-          {item.level}
-        </span>
-      </div>
+      <span className="micro tabular">{item.code}</span>
 
       <h3 className="mt-8 font-tech text-2xl font-bold uppercase leading-tight text-fg">
         {item.title}
@@ -44,20 +38,7 @@ export function CapabilityCard({ item }: { item: Capability }) {
         {item.description}
       </p>
 
-      {/* Proficiency, as a rule rather than a bar. The ramp is a fill here,
-          never text. */}
-      <div className="mt-8 h-px w-full bg-line">
-        <motion.div
-          className="h-full"
-          style={{ backgroundImage: "var(--gradient-spectrum)" }}
-          initial={{ width: 0 }}
-          whileInView={{ width: `${item.level}%` }}
-          viewport={{ once: true }}
-          transition={{ duration: 1.1, ease: [0.16, 1, 0.3, 1] }}
-        />
-      </div>
-
-      <div className="mt-5 flex flex-wrap items-center gap-x-4 gap-y-1">
+      <div className="mt-8 flex border-t border-line pt-5 flex-wrap items-center gap-x-4 gap-y-1">
         {item.tags.map((tag) => (
           <span
             key={tag}

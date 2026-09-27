@@ -26,8 +26,12 @@ const WorkWorld = dynamic(() => import("@/components/work/WorkWorld"), {
   ssr: false,
 });
 
-/** Viewport heights of scroll the pinned world consumes. */
-const SCROLL_VH = 420;
+/**
+ * Viewport heights of scroll the pinned world consumes — a fixed share per
+ * case file. It was a flat 420 tuned for six; with fewer cards that left long
+ * stretches of flying through empty fog between them.
+ */
+const SCROLL_VH = 75 * projects.length;
 
 /**
  * A WebGL context failure surfaces as a render throw from inside the Canvas.
@@ -161,8 +165,7 @@ export function SelectedWork() {
             a sticky child that owns the whole viewport and no ChapterSeam at
             all, so a shutter here would appear for some visitors and not
             others — a boundary treatment that fires inconsistently is worse
-            than one that never fires. The third shutter lives on Archive
-            instead. */}
+            than one that never fires. */}
         <ChapterSeam />
         <Header />
         <div className="mt-14">
@@ -212,11 +215,11 @@ export function SelectedWork() {
             {/* The roster. This slot used to hold five inert capability titles
                 under "What are you looking for?" — a list-shaped answer that
                 wasn't the answer, in the one place in the composition already
-                shaped like a list of links. It is now the eight real case
-                files, and the section's only keyboard surface. */}
+                shaped like a list of links. It is now the real case files,
+                and the section's only keyboard surface. */}
             {/* `shrink-0`. As a shrinkable flex item next to the hover
                 readout this collapsed to min-content and every row wrapped
-                onto two lines — "HELIX / OS". The readout beside it is the one
+                onto two lines — "WEB / DESIGN / LAB". The readout beside it is the one
                 that should give way; it already caps itself at `max-w-xs`. */}
             <div className="hidden shrink-0 md:block">
               <WorkIndexList

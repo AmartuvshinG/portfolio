@@ -16,6 +16,9 @@ interface AnimatedCounterProps {
  * Counts up from 0 to `value` once it scrolls into view, using an ease-out
  * curve and tabular figures so width never shifts. Reduced-motion users see
  * the final value immediately.
+ *
+ * Counts at the value's own precision, so a GPA of 3.68 ticks through
+ * hundredths and lands on 3.68 rather than rounding to 4.
  */
 export function AnimatedCounter({
   value,
@@ -28,6 +31,7 @@ export function AnimatedCounter({
   const ref = useRef<HTMLSpanElement>(null);
   const [display, setDisplay] = useState(0);
   const done = useRef(false);
+  const decimals = (String(value).split(".")[1] ?? "").length;
 
   useEffect(() => {
     if (reduced) return;
@@ -44,7 +48,7 @@ export function AnimatedCounter({
         const tick = (now: number) => {
           const t = Math.min(1, (now - start) / duration);
           const eased = 1 - Math.pow(1 - t, 3);
-          setDisplay(Math.round(value * eased));
+          setDisplay(value * eased);
           if (t < 1) requestAnimationFrame(tick);
         };
         requestAnimationFrame(tick);
@@ -57,7 +61,7 @@ export function AnimatedCounter({
 
   return (
     <span ref={ref} className={cn("tabular", className)}>
-      {reduced ? value : display}
+      {(reduced ? value : display).toFixed(decimals)}
       {suffix}
       {/* Sized in `em`, so the unit stays subordinate at whatever scale the
           number is set — at the ledger's 8vw it would otherwise run "98/100"

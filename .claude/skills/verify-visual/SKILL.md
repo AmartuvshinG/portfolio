@@ -58,12 +58,12 @@ of the site.
 
 Sections by act (check `data-act` on the section if unsure):
 - **void** — `#hero`, `#work`, `#contact`, `footer`
-- **deck** — `#connect`, `#capabilities`, `#lab`, `#gallery`, `#testimonials`, `#timeline`
+- **deck** — `#connect`, `#capabilities`, `#timeline`
 - **bloom** — `#about`
 
 Reduced motion is a genuinely different render, not a subtle one: `SelectedWork`
-swaps the WebGL world for `WorkCardGrid`, `Testimonials` becomes a static list,
-`ZoomParallax` and `ScatterGallery` become grids, and `Timeline` drops its beam.
+swaps the WebGL world for `WorkCardGrid`, the hero drops its sticky runway, and
+`Timeline` drops its beam and sticky years.
 Verifying only the default branch leaves half the components untested.
 
 With Playwright MCP, force it through `browser_run_code_unsafe`:
@@ -107,13 +107,13 @@ document.documentElement.scrollWidth === window.innerWidth
 ```
 
 Measure element rectangles instead, and remember that several elements overhang
-*by design* inside an `overflow-hidden` parent (the Lab plane runs off all four
-corners; the archive has decorative `-inset` spans). So the question is never
-"does anything exceed the viewport" but "does anything **that should be
-readable** exceed it":
+*by design* inside an `overflow-hidden` parent (the hero's horizon is bled 70%
+past both edges on phones; About's bloom has decorative `-inset` spans). So the
+question is never "does anything exceed the viewport" but "does anything **that
+should be readable** exceed it":
 
 ```js
-[...document.querySelectorAll('#lab button, #gallery figure')].map(el => {
+[...document.querySelectorAll('#hero h1, #connect li, #work a')].map(el => {
   const r = el.getBoundingClientRect();
   return { left: Math.round(r.left), right: Math.round(r.right) };
 });
@@ -127,7 +127,7 @@ and a scroll issued while an overlay holds the lock does nothing at all
 the page is broken.
 
 `scrollIntoView()` puts a section's **top** at the viewport top. For a tall
-pinned section (`#work` is 420vh, `#lab`'s plane is 62–78vh below its header)
+pinned section (`#work` is 75vh per case file)
 that leaves the thing you wanted to see off screen, and an "is it visible" test
 returns 0. Scroll to the child, `{ block: 'center' }`.
 

@@ -28,17 +28,11 @@ import AxeBuilder from "@axe-core/playwright";
 const BASE = process.env.AXE_BASE ?? "http://localhost:3000";
 
 /**
- * One section per act, plus the lookbook.
- *
- * The lookbook is a second `void` entry rather than a replacement for `#work`,
- * because it is the one section that does not inherit the page's ground: it
- * paints its own, graded to a different accent on every step, and every piece of
- * type on it sits over a photograph. Contrast there is a property of the section,
- * not of the act, so the act sweep does not cover it.
+ * One section per act. Every remaining section inherits the page's single
+ * ground, so contrast is a property of the act and one sample per act covers it.
  */
 const ACTS = [
   ["void", "#work"],
-  ["void", "#lookbook"],
   ["deck", "#capabilities"],
   ["bloom", "#about"],
 ];

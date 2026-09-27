@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
-import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, ArrowRight } from "lucide-react";
+import { ArrowLeft, ArrowRight, ArrowUpRight } from "lucide-react";
 import { projects, getProject } from "@/lib/content";
 import { Reveal } from "@/components/motion/Reveal";
+import { ShotImage } from "@/components/work/ShotImage";
 
 export function generateStaticParams() {
   return projects.map((p) => ({ slug: p.slug }));
@@ -78,7 +78,7 @@ export default async function WorkDetail({
               { k: "Role", v: project.role },
               { k: "Year", v: project.year },
               { k: "Category", v: project.category },
-              { k: "Status", v: "Shipped" },
+              { k: "Status", v: project.status },
             ].map((row) => (
               <div key={row.k}>
                 <dt className="micro">{row.k}</dt>
@@ -88,6 +88,29 @@ export default async function WorkDetail({
               </div>
             ))}
           </dl>
+
+          {project.links?.length ? (
+            <ul className="mt-10 flex flex-wrap gap-3">
+              {project.links.map((l) => (
+                <li key={l.href}>
+                  <a
+                    href={l.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="chamfer-sm group inline-flex items-center gap-2 border border-line-strong px-5 py-3 font-mono text-[0.6875rem] uppercase tracking-[0.2em] text-fg transition-colors hover:border-fg"
+                  >
+                    {l.label}
+                    <ArrowUpRight
+                      size={14}
+                      aria-hidden
+                      className="transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5"
+                    />
+                    <span className="sr-only">(opens in a new tab)</span>
+                  </a>
+                </li>
+              ))}
+            </ul>
+          ) : null}
         </header>
 
         <Reveal className="mt-12">
@@ -95,11 +118,10 @@ export default async function WorkDetail({
             className="notch-card relative aspect-[16/9] w-full overflow-hidden bg-surface"
             style={{ viewTransitionName: `vt-shot-${slug}` }}
           >
-            <Image
-              src={project.image}
-              alt={`${project.title} — project visual`}
-              fill
-              priority
+            {/* The generated visual stands in until a real screenshot is
+                dropped into public/work/ — see ShotImage. */}
+            <ShotImage
+              project={project}
               sizes="(max-width: 1400px) 100vw, 1400px"
               className="object-cover"
             />
@@ -145,16 +167,18 @@ export default async function WorkDetail({
                 ))}
               </div>
 
-              <div className="mt-10 grid grid-cols-3 gap-4 border-t border-line pt-7">
-                {project.metrics.map((m) => (
-                  <div key={m.label}>
-                    <span className="micro">{m.label}</span>
-                    <p className="tabular mt-2 font-display text-xl text-fg">
-                      {m.value}
-                    </p>
-                  </div>
-                ))}
-              </div>
+              {project.metrics.length > 0 && (
+                <div className="mt-10 grid grid-cols-3 gap-4 border-t border-line pt-7">
+                  {project.metrics.map((m) => (
+                    <div key={m.label}>
+                      <span className="micro">{m.label}</span>
+                      <p className="tabular mt-2 font-display text-xl text-fg">
+                        {m.value}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              )}
             </Reveal>
           </aside>
         </div>

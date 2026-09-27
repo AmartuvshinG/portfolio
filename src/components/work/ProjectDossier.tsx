@@ -261,25 +261,51 @@ export function ProjectDossier({
                       ))}
                     </div>
 
-                    <h3 className="micro mb-3 mt-8">Metrics</h3>
-                    <div className="grid grid-cols-3 gap-4 border-t border-line pt-4">
-                      {project.metrics.map((m) => (
-                        <div key={m.label}>
-                          <span className="micro">{m.label}</span>
-                          <p
-                            className="tabular mt-1 font-display text-xl text-fg"
-                          >
-                            {m.value}
-                          </p>
+                    {project.metrics.length > 0 && (
+                      <>
+                        <h3 className="micro mb-3 mt-8">Metrics</h3>
+                        <div className="grid grid-cols-3 gap-4 border-t border-line pt-4">
+                          {project.metrics.map((m) => (
+                            <div key={m.label}>
+                              <span className="micro">{m.label}</span>
+                              <p
+                                className="tabular mt-1 font-display text-xl text-fg"
+                              >
+                                {m.value}
+                              </p>
+                            </div>
+                          ))}
                         </div>
-                      ))}
-                    </div>
+                      </>
+                    )}
+
+                    {project.links?.length ? (
+                      <>
+                        <h3 className="micro mb-3 mt-8">Links</h3>
+                        <ul className="flex flex-wrap gap-x-5 gap-y-2">
+                          {project.links.map((l) => (
+                            <li key={l.href}>
+                              <a
+                                href={l.href}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="spectrum-underline inline-flex items-center gap-1 font-mono text-xs uppercase tracking-wider text-fg"
+                              >
+                                {l.label}
+                                <ArrowUpRight size={12} aria-hidden />
+                                <span className="sr-only">(opens in a new tab)</span>
+                              </a>
+                            </li>
+                          ))}
+                        </ul>
+                      </>
+                    ) : null}
 
                     <dl className="mt-8 space-y-3 border-t border-line pt-4">
                       {[
                         ["Role", project.role],
                         ["Category", project.category],
-                        ["Status", "Shipped"],
+                        ["Status", project.status],
                       ].map(([k, v]) => (
                         <div key={k} className="flex justify-between gap-4">
                           <dt className="micro">{k}</dt>
