@@ -189,10 +189,12 @@ export function Hero() {
                   font size, so 8vw fills ~89% of the frame — one line from a
                   390px phone up, with a gutter either side. The old 13–16vw
                   was sized for a five-letter wordmark and ran 1.8 viewports
-                  wide with this one. The `top` above is lowered by the height
+                  wide with this one. АМАРТҮВШИН in Montserrat 600 is ten
+                  glyphs at ~8.4× its size, so Mongolian takes 10.6vw for the
+                  same fill. The `top` above is lowered by the height
                   the smaller type gave back, so the baseline still sits an
                   inch into the horizon's crown. */}
-              <h1 className="display-caps flex overflow-hidden text-[8vw] leading-[0.95] text-fg">
+              <h1 className="display-caps flex overflow-hidden text-[8vw] leading-[0.95] text-fg [:root:lang(mn)_&]:text-[10.6vw]">
                 <motion.span
                   initial={reduced ? false : { y: "110%" }}
                   animate={{ y: play || reduced ? "0%" : "110%" }}

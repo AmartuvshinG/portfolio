@@ -74,8 +74,10 @@ const TARGETS = [
   {
     name: "portfolio",
     url: BASE,
-    // The HUD cursor draws wherever the wheel pointer last sat.
-    hide: ['[class~="z-[130]"]'],
+    // The HUD cursor draws wherever the wheel pointer last sat; the gutter
+    // chapter sign is driven by scroll events a scripted jump can outrun, and
+    // was caught reading "Profile" over the work section.
+    hide: ['[class~="z-[130]"]', '[class~="z-[70]"]'],
     shots: [
       { file: "portfolio.webp", at: 0, settle: 6500 },
       { file: "portfolio-work.webp", at: "#work", offset: 0.12, settle: 3500 },

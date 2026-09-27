@@ -98,9 +98,12 @@ export function CapabilityCard({ item }: { item: Capability }) {
           }}
           className="group mt-6 flex items-center justify-between gap-4 border-t border-line pt-5"
         >
-          <span className="flex min-w-0 items-baseline gap-3">
-            <span className="micro shrink-0">{t.craft.proven}</span>
-            <span className="truncate font-tech text-base font-semibold uppercase text-fg">
+          {/* Stacked, not side by side: on the compact cards the label and a
+              long title together overran the row and the title truncated —
+              in Mongolian, where the label is longer, on every card. */}
+          <span className="flex min-w-0 flex-col gap-1.5">
+            <span className="micro">{t.craft.proven}</span>
+            <span className="font-tech text-base font-semibold uppercase leading-snug text-fg">
               {proof.title}
             </span>
           </span>

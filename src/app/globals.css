@@ -196,6 +196,30 @@
 }
 
 /* ---------------------------------------------------------------------------
+   Mongolian faces
+   ---------------------------------------------------------------------------
+   The three Latin faces have no Cyrillic, so `<html lang="mn">` (set by the
+   locale provider) swaps each voice for its Cyrillic counterpart — see the font
+   declarations in layout.tsx. Unlayered for the same reason the act blocks are:
+   it has to outrank the `@theme` values in Tailwind's theme layer. Every
+   `font-*` utility and `.display-caps` reads these variables, so nothing else
+   needs to know which language is showing. */
+:root:lang(mn) {
+  --font-display: var(--font-montserrat), "Arial Black", sans-serif;
+  --font-tech: var(--font-exo), ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-onest), ui-sans-serif, system-ui, sans-serif;
+}
+
+/* Michroma has one weight and it reads heavy; Montserrat at the same nominal
+   400 is a hairline beside it. 600 with a little air gives the display voice
+   the same presence in Mongolian. */
+:root:lang(mn) .display-caps,
+:root:lang(mn) .font-display {
+  font-weight: 600;
+  letter-spacing: 0.03em;
+}
+
+/* ---------------------------------------------------------------------------
    Base
    ------------------------------------------------------------------------- */
 

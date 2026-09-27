@@ -9,7 +9,8 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { content, type Locale, type SiteContent } from "@/lib/content";
+import { en, type Locale, type SiteContent } from "@/lib/content";
+import { mn } from "@/lib/content.mn";
 import { ui, type UiStrings } from "@/lib/ui";
 
 /**
@@ -32,6 +33,8 @@ import { ui, type UiStrings } from "@/lib/ui";
 
 const STORAGE_KEY = "locale";
 
+const content: Record<Locale, SiteContent | undefined> = { en, mn };
+
 interface I18n {
   locale: Locale;
   setLocale: (next: Locale) => void;
@@ -47,7 +50,7 @@ const I18nContext = createContext<I18n>({
   locale: "en",
   setLocale: () => {},
   available,
-  c: content.en,
+  c: en,
   t: ui.en,
 });
 
@@ -106,7 +109,7 @@ export function LocaleProvider({ children }: { children: ReactNode }) {
       locale,
       setLocale,
       available,
-      c: content[locale] ?? content.en,
+      c: content[locale] ?? en,
       t: ui[locale] ?? ui.en,
     }),
     [locale, setLocale]

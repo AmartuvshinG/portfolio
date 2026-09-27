@@ -76,6 +76,12 @@ export function Navbar() {
   const { c, t, locale } = useI18n();
   const { navLinks, profile, contact } = c;
   const resume = locale === "mn" ? RESUME_MN : RESUME_EN;
+  /* Where the full link row takes over from the menu sheet. Mongolian labels
+     run ~40% longer, and at 1080px the row overran the console by ~170px and
+     pushed the résumé button off it — so Mongolian keeps the sheet until 1280.
+     Written out in full because Tailwind only sees literal class names. */
+  const mn = locale === "mn";
+  const deskQuery = mn ? "(min-width: 1280px)" : "(min-width: 1080px)";
   const { scrollTo } = useSmoothScroll();
   const pathname = usePathname();
   const isHome = pathname === "/";
@@ -256,18 +262,19 @@ export function Navbar() {
   }, [reduced]);
 
   /* Close the sheet the moment the viewport reaches the desktop breakpoint.
-     The sheet and its toggle are both `min-[1080px]:hidden`, so widening the
+     The sheet and its toggle are both `min-[1080px]:hidden` (1280 in
+     Mongolian — see `deskQuery`), so widening the
      window with it open hid the whole thing in CSS while `open` stayed true —
      leaving a scroll lock held by a dialog that no longer exists on screen and
      no control left to close it. The query must match the one in the class. */
   useEffect(() => {
     if (!open) return;
-    const mq = window.matchMedia("(min-width: 1080px)");
+    const mq = window.matchMedia(deskQuery);
     const check = () => mq.matches && setOpen(false);
     check();
     mq.addEventListener("change", check);
     return () => mq.removeEventListener("change", check);
-  }, [open]);
+  }, [open, deskQuery]);
 
   const go = (href: string) => {
     scrollTo(href);
@@ -362,7 +369,10 @@ export function Navbar() {
                 overlap into a visible overflow that the ladder below can be
                 measured against. */}
             <ul
-              className="hidden shrink-0 flex-nowrap items-center gap-0.5 min-[1080px]:flex"
+              className={cn(
+                "hidden shrink-0 flex-nowrap items-center gap-0.5",
+                mn ? "min-[1280px]:flex" : "min-[1080px]:flex"
+              )}
               onMouseMove={(e) => dockable && mouseX.set(e.clientX)}
               onMouseLeave={() => mouseX.set(Infinity)}
             >
@@ -427,7 +437,10 @@ export function Navbar() {
                 aria-label={open ? t.nav.closeMenu : t.nav.openMenu}
                 aria-expanded={open}
                 aria-controls="mobile-nav"
-                className="flex h-11 w-11 items-center justify-center border border-line text-fg min-[1080px]:hidden"
+                className={cn(
+                  "flex h-11 w-11 items-center justify-center border border-line text-fg",
+                  mn ? "min-[1280px]:hidden" : "min-[1080px]:hidden"
+                )}
               >
                 {open ? <X size={18} /> : <Menu size={18} />}
               </button>
@@ -467,7 +480,10 @@ export function Navbar() {
             animate={{ opacity: 1, clipPath: "inset(0 0 0% 0)" }}
             exit={{ opacity: 0, clipPath: "inset(0 0 100% 0)" }}
             transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-            className="fixed inset-0 z-[80] flex flex-col bg-bg/95 px-8 backdrop-blur-xl min-[1080px]:hidden"
+            className={cn(
+              "fixed inset-0 z-[80] flex flex-col bg-bg/95 px-8 backdrop-blur-xl",
+              mn ? "min-[1280px]:hidden" : "min-[1080px]:hidden"
+            )}
             style={{
               paddingTop: "env(safe-area-inset-top)",
               paddingBottom: "env(safe-area-inset-bottom)",
@@ -652,7 +668,10 @@ function DockLink({
              site. The subordination is now carried by `--color-faint`, which
              is a real 5:1 step below muted rather than a half-erased one. */
           "text-[0.75rem] text-faint",
-          contracted ? "hidden" : "hidden @[84rem]:inline"
+          contracted ? "hidden" : "hidden @[84rem]:inline",
+          /* Mongolian labels run ~40% longer than the English ones; the
+             numbering is the decoration that makes room for them. */
+          "[:root:lang(mn)_&]:hidden"
         )}
       >
         {link.code}
@@ -663,6 +682,9 @@ function DockLink({
 
   const linkClass = cn(
     "relative flex items-center gap-2 whitespace-nowrap px-2.5 py-2 font-mono text-xs uppercase tracking-[0.16em] transition-colors @[76rem]:px-3.5",
+    /* Cyrillic caps are wider than Latin in this mono face; half the tracking
+       keeps the Mongolian row inside the console at 1280px. */
+    "[:root:lang(mn)_&]:tracking-[0.07em]",
     isActive ? "text-fg" : "text-muted hover:text-fg"
   );
 

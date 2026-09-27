@@ -527,7 +527,7 @@ export interface SiteContent {
   navLinks: NavLink[];
 }
 
-const en: SiteContent = {
+export const en: SiteContent = {
   profile,
   about,
   capabilities,
@@ -539,8 +539,9 @@ const en: SiteContent = {
   navLinks,
 };
 
-/** A locale is offered only once both its content and its UI table exist. */
-export const content: { en: SiteContent; mn?: SiteContent } = { en };
+/* The per-locale table is assembled in lib/i18n.tsx rather than here: the
+   Mongolian content is built from the English (same hrefs, images, numbers),
+   so it imports this file — and this file importing it back would be a cycle. */
 
 /**
  * Per-project tint — the three stops of the spectrum ramp, used individually.

@@ -18,8 +18,12 @@
  * to land and r3f has to draw. That takes real elapsed time.
  *
  * Reduced motion is swept too: it is not a variation, it is a different render —
- * the WebGL world becomes a card grid, the carousel becomes a list, two sections
- * become plain grids. Half the components only exist on that branch.
+ * the pinned work theatre becomes a card list and the timeline drops its beam.
+ * Half the components only exist on that branch.
+ *
+ * **And both languages.** Mongolian swaps every face and runs every label
+ * longer; a sweep of the English page says nothing about it. `?lang=` forces
+ * the locale for the load.
  */
 
 import { chromium } from "playwright-core";
@@ -48,12 +52,15 @@ const SETTLE = 2600;
  */
 const EXCLUDE = ["canvas"];
 
-async function sweep(page, label, reducedMotion) {
+const LOCALES = ["en", "mn"];
+
+async function sweep(page, label, reducedMotion, locale) {
   await page.emulateMedia({ reducedMotion });
   const found = [];
+  label = `${label}${locale}`;
 
   for (const [act, hash] of ACTS) {
-    await page.goto(BASE + "/" + hash);
+    await page.goto(`${BASE}/?lang=${locale}${hash}`);
     await page.waitForTimeout(SETTLE);
 
     let builder = new AxeBuilder({ page }).withTags(TAGS);
@@ -88,15 +95,16 @@ try {
      against the implicit one. */
   const context = await browser.newContext({ viewport: { width: 1440, height: 900 } });
   const page = await context.newPage();
-  const failures = [
-    ...(await sweep(page, "motion  ", "no-preference")),
-    ...(await sweep(page, "reduced ", "reduce")),
-  ];
+  const failures = [];
+  for (const locale of LOCALES) {
+    failures.push(...(await sweep(page, "motion  ", "no-preference", locale)));
+    failures.push(...(await sweep(page, "reduced ", "reduce", locale)));
+  }
 
   console.log(
     failures.length
       ? `\n${failures.length} violation type(s) across the sweep.`
-      : "\nNo WCAG 2.1 A/AA violations in any act, either motion mode."
+      : "\nNo WCAG 2.1 A/AA violations in any act, either motion mode, either language."
   );
   process.exitCode = failures.length ? 1 : 0;
 } finally {

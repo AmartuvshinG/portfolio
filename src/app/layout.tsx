@@ -1,5 +1,13 @@
 import type { Metadata, Viewport } from "next";
-import { Michroma, Chakra_Petch, Archivo, JetBrains_Mono } from "next/font/google";
+import {
+  Michroma,
+  Chakra_Petch,
+  Archivo,
+  JetBrains_Mono,
+  Montserrat,
+  Exo_2,
+  Onest,
+} from "next/font/google";
 import "./globals.css";
 import { site } from "@/lib/content";
 import { SmoothScroll } from "@/components/chrome/SmoothScroll";
@@ -47,11 +55,58 @@ const archivo = Archivo({
   display: "swap",
 });
 
-/** The only survivor of the HUD vocabulary: micro-labels and numbering. */
+/** The only survivor of the HUD vocabulary: micro-labels and numbering.
+    `cyrillic` too: in Mongolian the labels keep this face, which has it. */
 const monoHud = JetBrains_Mono({
-  subsets: ["latin"],
+  subsets: ["latin", "cyrillic"],
   variable: "--font-mono-hud",
   display: "swap",
+});
+
+/* --- The Mongolian faces.
+   Michroma, Chakra Petch and Archivo have no Cyrillic at all, so in Mongolian
+   every heading and paragraph would fall back to a system font. Each voice gets
+   a Cyrillic counterpart chosen for the same job, swapped in by
+   `:root:lang(mn)` in globals.css:
+
+     display  Michroma      → Montserrat  wide geometric caps (Unbounded was
+                                          tried first and has no Ө or Ү at all
+                                          — those two fell back to Arial,
+                                          mid-word)
+     tech     Chakra Petch  → Exo 2       squared, technical, standard Cyrillic
+                                          forms (Tektur was tried first: its д
+                                          is the g-shaped Bulgarian form, and
+                                          "дохиог" read as "gохиог")
+     sans     Archivo       → Onest       a Cyrillic-first grotesque for body
+
+   `cyrillic-ext` is not optional: Ө and Ү, which Mongolian uses constantly,
+   live there, not in the basic Cyrillic block. And a face *advertising*
+   cyrillic-ext is not proof it draws them — check with
+   `CSS.getPlatformFontsForNode`, not `document.fonts.check`, which only
+   confirms that a face covering the range has loaded. `preload: false` so English
+   visitors never download them; the browser fetches them only once `lang`
+   flips and the faces are actually used. */
+const montserrat = Montserrat({
+  subsets: ["latin", "cyrillic", "cyrillic-ext"],
+  variable: "--font-montserrat",
+  display: "swap",
+  preload: false,
+});
+
+/* No `weight` list: Exo 2 is variable, one file covers every weight — and an
+   explicit list made Turbopack's font resolver fail outright. */
+const exo = Exo_2({
+  subsets: ["latin", "cyrillic", "cyrillic-ext"],
+  variable: "--font-exo",
+  display: "swap",
+  preload: false,
+});
+
+const onest = Onest({
+  subsets: ["latin", "cyrillic", "cyrillic-ext"],
+  variable: "--font-onest",
+  display: "swap",
+  preload: false,
 });
 
 export const metadata: Metadata = {
@@ -82,7 +137,7 @@ export default function RootLayout({
       /* Seeded to the opening act so first paint is already the base void — waiting for
          ActTheme to mount would flash the wrong surface. */
       data-act="void"
-      className={`${michroma.variable} ${chakra.variable} ${archivo.variable} ${monoHud.variable} h-full`}
+      className={`${michroma.variable} ${chakra.variable} ${archivo.variable} ${monoHud.variable} ${montserrat.variable} ${exo.variable} ${onest.variable} h-full`}
     >
       <body className="min-h-full antialiased">
         <a
