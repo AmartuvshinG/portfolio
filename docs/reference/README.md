@@ -2,7 +2,8 @@
 
 Source material the site was built from. **Nothing here is imported by the
 app** — these are notes, kept for provenance. The briefs that drove each rebuild
-live in `docs/briefs/`.
+live in `docs/briefs/` — including `list-of-changes.txt` and
+`hero-and-dock-notes.txt`, the two most recent rounds of requests.
 
 ## `video/`
 
@@ -33,14 +34,15 @@ project's own design language, palette and dependencies.
 
 | Reference | Became | Notes |
 | --- | --- | --- |
-| `background-shader.txt` | `components/backdrop/NeuralNoise.tsx` | The single site-wide background. Rewritten in strict TS with a cancellable frame loop, a visibility gate and a resolution budget; `highp` with a wrapped time uniform (the reference's raw `performance.now()` in milliseconds breaks wherever `mediump` is honoured as fp16). Extended with scroll, act and burst uniforms. |
-| `enter-animation.txt` | `components/ui/GlowHorizon.tsx` | The site's entrance vocabulary, reused at four scales — preloader hand-off, hero, every section seam (`chrome/ChapterSeam.tsx`), and the route wipe in `app/template.tsx`. Recoloured to the spectrum ramp. |
-| `parallax.txt` | `components/sections/ZoomParallax.tsx` | The Work → Archive transition. Placement rewritten from the reference's single unreadable `!`-flagged class string into a data table, which lifts the seven-panel cap. |
-| `3d-marquee.txt` | `components/sections/Lab.tsx` | The isometric drifting plane. Grid lines recoloured to `--color-line`; tiles draw real project data rather than remote images. |
-| `aurora.txt` | `components/backdrop/AuroraVeil.tsx` | Recoloured to the ramp and demoted to a thin veil over the shader rather than a background in its own right. |
+| `aurora-background.txt` | `components/backdrop/Aurora.tsx` | The single site-wide background since 2026-09-27. Rebuilt CSS-only: soft radial blobs with no blur filter, box-shadow stars, transform/opacity keyframes, all paused while Lenis reports a scroll (`lib/scrollPause.ts`). |
+| `enter-animation.txt` | `components/ui/GlowHorizon.tsx` | The entrance vocabulary, at three scales: the preloader hand-off, every section seam (`chrome/ChapterSeam.tsx`, scrubbed by scroll), and the route wipe in `app/template.tsx`. Recoloured to the spectrum ramp. |
+| `liquid-glass-carousel.txt` | *retired* — `components/craft/CraftTrack.tsx` replaced it | Built as a WebGL carousel for Craft, then dropped: text painted into a texture and bent through a lens is never sharp, and arrow-clicking was the wrong interaction. Craft is now a real-DOM track driven by page scroll. The cheap/refracting glass split it prompted survives as the `liquid-glass` and `liquid-glass-live` utilities. |
+| `dock-tabs.txt` | `components/chrome/Navbar.tsx`, `chrome/NavGlyphs.tsx` | The capsule nav: sliding droplet indicator and a glyph per section beside its label. |
 | `hover-gradient.txt` | `components/motion/HoverBorderGradient.tsx` | Recoloured; pill silhouette replaced with the site's chamfer. |
-| `hero-carousel.txt` | `components/ui/HeroCarousel.tsx`, mounted as `components/sections/Lookbook.tsx` | The filmstrip lookbook. Geometry is verbatim — the ratio constants, the single `ResizeObserver`, the wheel accumulator and its end-of-strip chaining, the drag-release landing, the per-line wipe. Four adaptations: framer's `useReducedMotion` swapped for the project hook (which defaults to motion-*off* during SSR, not on); `image` made optional over an always-rendered `visual` node so the strip is network-free until real screenshots land in `public/work/`; the demo's arbitrary accents replaced with `accentColor` off the spectrum ramp; and `data-lenis-prevent-wheel` on the stage, without which Lenis and the strip both act on the same wheel gesture. It is the one section permitted to paint its own ground — see its header. |
-| `hero.txt` | *not yet built* | The dot-matrix depth scan. WebGPU/TSL only as written, and it needs a portrait plus a depth map. Two bugs to fix on the way in: `PostProcessing` snapshots `uScanProgress.value` at graph-build time so the scan overlay never moves, and the fade-in lerp has no epsilon so opacity never reaches 1. |
+| `background-shader.txt`, `aurora.txt` | *retired* | Drove the WebGL `NeuralNoise` backdrop and the `AuroraVeil` over it; both deleted when the background became one CSS aurora. |
+| `parallax.txt`, `3d-marquee.txt`, `hero-carousel.txt` | *retired* | Drove `ZoomParallax`, `Lab` and `Lookbook`, cut when the template content was replaced — they had no real material to show. |
+| `scroll-locked-video-hero.txt`, `stack-interactor.txt` | *not used* | Hero-entrance candidates; the hero stayed type-led. |
+| `hero.txt` | *not built* | The dot-matrix depth scan. WebGPU/TSL only as written, and it needs a portrait plus a depth map. Two bugs to fix on the way in: `PostProcessing` snapshots `uScanProgress.value` at graph-build time so the scan overlay never moves, and the fade-in lerp has no epsilon so opacity never reaches 1. |
 | `portrait.txt` | *not usable* | A `<video>` hotlinking a baked ASCII clip from `assets.21st.dev`. Same category as the Aceternity assets below — the technique is free, the CDN file is not ours to ship. |
 
 ## Aceternity components
@@ -52,7 +54,7 @@ project's own design language, palette and dependencies.
 | Reference | Became |
 | --- | --- |
 | `resizable-navbar.txt` | `components/chrome/Navbar.tsx` |
-| `card.txt` | `components/work/ProjectDossier.tsx` |
+| `card.txt` | `components/work/CaseFile.tsx` (via the retired `ProjectDossier`) |
 | `timeline.txt` | `components/sections/Timeline.tsx` |
 | `tracingbeam.txt` | the travelling beam inside `Timeline.tsx` |
 | `poster.txt`, `dock.txt`, `fey-card.txt`, `layout.txt` | *retired* — these drove `PosterReveal`, `ConsoleDock`, `CapabilityDeck` and `HeadlineFlip`, all of which were deleted in the SPECTRUM rebuild |

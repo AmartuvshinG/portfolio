@@ -1,0 +1,11 @@
+list of changes:
+-Remove background portrait
+-I want the background to be consistent whenever scrolling thru different sections, such as Index has a planet behind whilst the other tabs have a plain tab behind it, make it consistent one tab whenever scrolling or handle the transitions seamlessly and better optimized whenever the user scrolls down.
+-Remove the laggy/glitchy thing on the background that is animated whilst both idle and scrolling, or just keep it while idle only and remove animation whenever scrolling to preserve site performance and user experience polishness.
+-Add some background image to the Signal tab logos behind, it currently is static
+-On work tab, remove Java and Android tab only no need for it
+-Craft tab, refer to liquid glass carousel code and replace the current static text for an animated one using that reference code
+-As for the navbar, make it liquid glass and replace the rectangular shape outside the each word, and replace it with a more polished, unique looking navbar icon and overall, make it more interesting and unique
+-either replace the background with an animated gradient one or take reference background.txt at root
+-Path tab: the years don't pop up as fast or snappy whenever the user scrolls down the years, make it polished and separate to each role in each year. Also, highlight the years in bold, big typography same as the role texts to highlight the most important parts
+-Overall, I want a liquid glass feel to the website and make it fluid, snappy, and fast reactive whilst keeping the cyberpunk-neo Tokyo vibe to it.
