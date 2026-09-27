@@ -23,6 +23,12 @@ export interface Capability {
   title: string;
   description: string;
   tags: string[];
+  /** Which lucide glyph the card carries. Locale-free. */
+  icon: "layers" | "brain" | "braces" | "pen" | "checks" | "shield";
+  /** The case file that shows this in practice — opened from the card. */
+  proof?: string;
+  /** Wide card in the bento. */
+  feature?: boolean;
 }
 
 export interface Project {
@@ -61,10 +67,12 @@ export interface Project {
 
 export interface TimelineEntry {
   year: string;
+  /** Human dates, shown beside the entry — "Jun – Sep 2026". */
+  period: string;
+  kind: "work" | "education";
   title: string;
   org: string;
   description: string;
-  status: "ONLINE" | "ARCHIVED" | "ACTIVE";
 }
 
 export interface Stat {
@@ -191,6 +199,9 @@ export const capabilities: Capability[] = [
     description:
       "React frontends on FastAPI backends with PostgreSQL (Supabase), REST APIs, and multi-tenant data isolation.",
     tags: ["React", "FastAPI", "PostgreSQL"],
+    icon: "layers",
+    proof: "spotfixes",
+    feature: true,
   },
   {
     code: "SYS/02",
@@ -198,6 +209,9 @@ export const capabilities: Capability[] = [
     description:
       "Text classification with scikit-learn (TF-IDF + Random Forest) and retrieval-augmented similarity search with ChromaDB.",
     tags: ["scikit-learn", "RAG", "ChromaDB"],
+    icon: "brain",
+    proof: "spotfixes",
+    feature: true,
   },
   {
     code: "SYS/03",
@@ -205,6 +219,8 @@ export const capabilities: Capability[] = [
     description:
       "Java as my strongest language, plus Python, JavaScript, SQL and C++; Android apps in Android Studio.",
     tags: ["Java", "Python", "C++"],
+    icon: "braces",
+    proof: "coursework",
   },
   {
     code: "SYS/04",
@@ -212,6 +228,8 @@ export const capabilities: Capability[] = [
     description:
       "Led UI/UX for Spotfixes; planned and ran usability tests, logged findings, and turned them into fixes.",
     tags: ["UI/UX", "Usability testing", "Accessibility"],
+    icon: "pen",
+    proof: "spotfixes",
   },
   {
     code: "SYS/05",
@@ -219,6 +237,8 @@ export const capabilities: Capability[] = [
     description:
       "Test case design, defect tracking and QA reporting across the software development lifecycle.",
     tags: ["QA", "Test cases", "SDLC"],
+    icon: "checks",
+    proof: "coursework",
   },
   {
     code: "SYS/06",
@@ -226,6 +246,8 @@ export const capabilities: Capability[] = [
     description:
       "Docker on Ubuntu, GitHub Actions CI/CD, and authentication with OAuth2, JWT, MFA and row-level security.",
     tags: ["Docker", "CI/CD", "OAuth2"],
+    icon: "shield",
+    proof: "spotfixes",
   },
 ];
 
@@ -395,43 +417,45 @@ export const stats: Stat[] = [
 export const timeline: TimelineEntry[] = [
   {
     year: "2026",
+    period: "Jun – Sep 2026",
+    kind: "work",
     title: "Corporate Logistics Coordinator (Contractor, Khanbogd Khurd)",
-    org: "OYU TOLGOI LLC",
+    org: "Oyu Tolgoi LLC",
     description:
-      "Coordinated freight and transportation between the Ulaanbaatar headquarters and the mine site, and monitored logistics data to find routing inefficiencies. Jun – Sep 2026.",
-    status: "ARCHIVED",
+      "Coordinated freight and transportation between the Ulaanbaatar headquarters and the mine site, and monitored logistics data to find routing inefficiencies.",
   },
   {
     year: "2026",
+    period: "Graduated May 2026",
+    kind: "education",
     title: "B.S. Software Engineering",
-    org: "GANNON UNIVERSITY",
+    org: "Gannon University",
     description:
-      "Erie, Pennsylvania, USA. Graduated May 2026. Dean's List, College of Engineering and Business (Fall 2024, Spring 2025). Capstone: Spotfixes.",
-    status: "ONLINE",
+      "Erie, Pennsylvania, USA. Dean's List, College of Engineering and Business (Fall 2024, Spring 2025). Capstone: Spotfixes.",
   },
   {
     year: "2025",
+    period: "May 2025 – Apr 2026",
+    kind: "work",
     title: "Foodservice Student Worker",
-    org: "METZ CULINARY · CHICK-FIL-A",
-    description:
-      "High-volume food preparation and inventory during peak campus hours. May 2025 – Apr 2026.",
-    status: "ARCHIVED",
+    org: "Metz Culinary · Chick-fil-A",
+    description: "High-volume food preparation and inventory during peak campus hours.",
   },
   {
     year: "2023",
+    period: "Aug 2023 – May 2024",
+    kind: "work",
     title: "Front Desk Student Attendant",
-    org: "GANNON RESIDENCE LIFE",
-    description:
-      "Maintained student housing records in StarRez and resolved resident inquiries. Aug 2023 – May 2024.",
-    status: "ARCHIVED",
+    org: "Gannon Residence Life",
+    description: "Maintained student housing records in StarRez and resolved resident inquiries.",
   },
   {
     year: "2022",
+    period: "Summers 2022 & 2023",
+    kind: "work",
     title: "Summer Student Conference Assistant",
-    org: "GANNON AUXILIARY SERVICES",
-    description:
-      "Prepared residence halls and supported conference guests. Summers 2022 and 2023.",
-    status: "ARCHIVED",
+    org: "Gannon Auxiliary Services",
+    description: "Prepared residence halls and supported conference guests.",
   },
 ];
 

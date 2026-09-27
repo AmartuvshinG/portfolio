@@ -60,6 +60,22 @@ const en = {
     noSite: "Coursework · no public build",
     preview: (title: string) => `${title} — open case file`,
   },
+  craft: {
+    aria: "Capabilities",
+    eyebrow: "What I do",
+    title: "Craft",
+    lead: "What I reach for, and where each one has been put to work.",
+    proven: "Proven in",
+  },
+  path: {
+    aria: "Experience and numbers",
+    eyebrow: "Where I've been",
+    title: "Path",
+    numbers: "By the numbers",
+    record: "Track record",
+    work: "Work",
+    education: "Education",
+  },
   caseFile: {
     label: "Case file",
     close: "Close case file",
