@@ -18,7 +18,7 @@ import { scaleIn } from "@/lib/motion";
 import { GlareCard } from "@/components/motion/GlareCard";
 import { cn } from "@/lib/utils";
 
-const ICONS: Record<Capability["icon"], LucideIcon> = {
+export const ICONS: Record<Capability["icon"], LucideIcon> = {
   layers: Layers,
   brain: BrainCircuit,
   braces: Braces,
