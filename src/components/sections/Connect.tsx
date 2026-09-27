@@ -8,7 +8,7 @@ import { sectionIndex, type SocialLink } from "@/lib/content";
 import { useI18n } from "@/lib/i18n";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
 import { ChapterSeam } from "@/components/chrome/ChapterSeam";
-import { srand } from "@/lib/utils";
+import { ChannelField } from "@/components/ui/ChannelField";
 import { GitHubMark, LinkedInMark } from "@/components/ui/BrandMarks";
 
 /**
@@ -193,19 +193,23 @@ function ChannelPanel({
         href={social.href}
         target="_blank"
         rel="noreferrer noopener"
-        className="notch-card group/panel relative block h-[30vh] w-full overflow-hidden bg-surface ring-1 ring-inset ring-line transition-[box-shadow,--tw-ring-color] duration-500 hover:ring-line-strong md:h-full"
+        className="liquid-glass group/panel relative block h-[30vh] w-full overflow-hidden rounded-3xl md:h-full"
       >
-        <ChannelPlate seed={index} lit={expanded} />
+        <ChannelField
+          kind={social.mark ?? "resume"}
+          seed={index}
+          lit={expanded}
+        />
 
         {/* Ramp wash. Only under the open panel — at rest the row stays
             achromatic so four channels don't compete with the backdrop. */}
         <div
           aria-hidden
-          className="absolute inset-0 transition-opacity duration-500"
+          className="absolute inset-0 transition-opacity duration-300"
           style={{
             backgroundImage: "var(--gradient-spectrum)",
             mixBlendMode: "overlay",
-            opacity: expanded ? 0.85 : 0,
+            opacity: expanded ? 0.6 : 0,
           }}
         />
 
@@ -311,7 +315,7 @@ function ChannelArt({
         className="pointer-events-none absolute inset-x-0 bottom-[46%] top-[16%] flex items-center justify-center md:bottom-[40%] md:top-[20%]"
       >
         <div
-          className="flex h-full max-w-[64%] items-center justify-center transition-transform duration-500 ease-out"
+          className="flex h-full max-w-[64%] items-center justify-center transition-transform duration-300 ease-out"
           style={{ transform: `scale(${lit ? 1 : 0.86})` }}
         >
           <Mark className="h-full max-h-full w-auto max-w-full object-contain" />
@@ -333,7 +337,7 @@ function ChannelArt({
           width={1191}
           height={1684}
           loading="lazy"
-          className="h-full w-auto max-w-[78%] rounded-[2px] object-contain shadow-[0_24px_60px_-12px_rgba(0,0,0,0.7)] transition-[transform,opacity] duration-500 ease-out"
+          className="h-full w-auto max-w-[78%] rounded-[2px] object-contain shadow-[0_24px_60px_-12px_rgba(0,0,0,0.7)] transition-[transform,opacity] duration-300 ease-out"
           style={{
             opacity: lit ? 1 : 0.62,
             transform: `rotate(${lit ? -2 : -5}deg) scale(${lit ? 1 : 0.92})`,
@@ -344,49 +348,4 @@ function ChannelArt({
   }
 
   return null;
-}
-
-/**
- * Card art, generated. The row used to pull four picsum thumbnails — four
- * network requests for four pictures of nothing. This is drawn from the ramp
- * instead, so the panels are on-palette by construction and there is nothing
- * to 404. It is the ground now, not the subject: `ChannelArt` above it says
- * which channel this is.
- *
- * `lit` brightens the signal arcs on the open panel, so the art is part of the
- * expansion rather than a static backing plate behind it.
- */
-function ChannelPlate({ seed, lit }: { seed: number; lit: boolean }) {
-  const hue = seed % 3;
-  const stop = ["var(--spectrum-1)", "var(--spectrum-2)", "var(--spectrum-3)"][hue];
-
-  return (
-    <svg
-      aria-hidden
-      viewBox="0 0 300 700"
-      preserveAspectRatio="xMidYMid slice"
-      className="absolute inset-0 h-full w-full transition-opacity duration-500"
-      style={{ opacity: lit ? 1 : 0.62 }}
-    >
-      <rect width="300" height="700" fill="#0b0d1a" />
-      <ellipse cx="150" cy="580" rx="230" ry="300" fill={stop} opacity="0.28" />
-      {/* Concentric arcs — a signal radiating out of the bottom edge. */}
-      <g fill="none" stroke={stop} strokeOpacity={lit ? 0.6 : 0.36}>
-        {Array.from({ length: 9 }).map((_, i) => (
-          <circle key={i} cx="150" cy="700" r={50 + i * 62} />
-        ))}
-      </g>
-      <g fill="#eceefb">
-        {Array.from({ length: 34 }).map((_, i) => (
-          <circle
-            key={i}
-            cx={(srand(seed * 31 + i * 3) * 300).toFixed(2)}
-            cy={(srand(seed * 31 + i * 7 + 1) * 700).toFixed(2)}
-            r={(0.6 + srand(seed * 31 + i * 11 + 2) * 1.8).toFixed(2)}
-            opacity={(0.15 + srand(seed * 31 + i * 13 + 5) * 0.5).toFixed(3)}
-          />
-        ))}
-      </g>
-    </svg>
-  );
 }
