@@ -39,14 +39,13 @@ type PathWords = ReturnType<typeof useI18n>["t"]["path"];
  * shares with the start ("JUN 2026 → SEP", never "2026 … 2026"). The phrase a
  * screen reader hears is the row's `period`; the stamp itself is decoration.
  *
- * **The year is a neon sign**, each year in its own colour so they read apart
- * at a glance. The numerals are a bespoke angular face drawn in SVG as
- * separate tubes (see "Neon-tube numerals"), with the unlit tubes left faintly
- * visible. A plain seven-segment face read as an alarm clock.
+ * **The year is set in the display face** — the wordmark's, and the stats'
+ * just above — lit in a neon of its own per year so years read apart at a
+ * glance.
  *
  * **The stamp is dark until its row arrives**, then strikes on like a neon
- * sign: the month flashes, stutters and holds; then each lit segment of the
- * year does the same, top to bottom, digit after digit. It resets when the
+ * sign: the month flashes, stutters and holds; then each digit of the year
+ * does the same, left to right. It resets when the
  * row leaves the screen, so it plays again on the way back. It replaced an
  * odometer roll that read as a lottery machine. Under reduced motion it is
  * simply there.
@@ -326,13 +325,13 @@ function DateStamp({
           </Ignite>
         )}
 
-        <SegmentNumber
+        <NeonYear
           value={start.year}
           color={neon}
           play={play}
           instant={instant}
           delay={0.18}
-          className="mt-3 h-[clamp(2.75rem,4.6vw,4.25rem)]"
+          className="mt-3 text-[clamp(2.25rem,4vw,3.75rem)]"
         />
 
         {end && (endShowsLabel || endShowsYear) && (
@@ -346,13 +345,13 @@ function DateStamp({
               </Ignite>
             )}
             {endShowsYear && (
-              <SegmentNumber
+              <NeonYear
                 value={end.year}
                 color={yearNeon(end.year)}
                 play={play}
                 instant={instant}
                 delay={0.9}
-                className="h-[1.6rem] md:h-[1.85rem]"
+                className="text-xl md:text-2xl"
               />
             )}
           </div>
@@ -409,56 +408,17 @@ function Ignite({
   );
 }
 
-/* --- Neon-tube numerals ------------------------------------------------------
-   A bespoke numeral face, built the way an LED sign is: each digit is a few
-   straight tubes with gaps between them, and each tube strikes on by itself.
-   What keeps it from reading as an alarm clock is the drawing, not the
-   lighting — corners are clipped at 45° the way cyberpunk UI cuts its panels,
-   the 2 and the 7 are single long slashes, the 4 leans on a diagonal, and
-   everything is slanted forward. Drawn in SVG, so there is no font file.
-
-   Coordinates are a 56 × 100 cell, y down. */
-const W = 56;
-const H = 100;
-const M = 50; // mid line
-const C = 15; // corner clip
-const TUBE = 10; // tube thickness
-const GAP = 3.2; // dark gap left at each end of a tube
-const ADV = 74; // advance per digit
-const SLANT = -10; // degrees
-
-type Tube = [number, number, number, number];
-
-const GLYPHS: Tube[][] = [
-  /* 0 */ [[0, 0, W - C, 0], [W - C, 0, W, C], [W, C, W, H], [W, H, C, H], [C, H, 0, H - C], [0, H - C, 0, 0]],
-  /* 1 */ [[W * 0.18, C + 4, W * 0.62, 0], [W * 0.62, 0, W * 0.62, H]],
-  /* 2 */ [[0, 0, W - C, 0], [W - C, 0, W, C], [W, C, W, M - 8], [W, M - 8, 0, H - 6], [0, H, W, H]],
-  /* 3 */ [[0, 0, W - C, 0], [W - C, 0, W, C], [W, C, W, H - C], [W, H - C, W - C, H], [W - C, H, 0, H], [C, M, W, M]],
-  /* 4 */ [[W * 0.62, 0, 0, M + 12], [0, M + 12, W, M + 12], [W, 14, W, H]],
-  /* 5 */ [[W, 0, 0, 0], [0, 0, 0, M], [0, M, W - C, M], [W - C, M, W, M + C], [W, M + C, W, H], [W, H, 0, H]],
-  /* 6 */ [[W, 0, C, 0], [C, 0, 0, C], [0, C, 0, H], [0, H, W, H], [W, H, W, M], [W, M, 0, M]],
-  /* 7 */ [[0, 0, W, 0], [W, 0, W * 0.22, H]],
-  /* 8 */ [[C, 0, W - C, 0], [W - C, 0, W, C], [W, C, W, H - C], [W - C, H, C, H], [C, H, 0, H - C], [0, H - C, 0, C], [0, C, C, 0], [0, M, W, M], [W, H - C, W - C, H]],
-  /* 9 */ [[W, 0, 0, 0], [0, 0, 0, M], [0, M, W, M], [W, 0, W, H - C], [W, H - C, W - C, H], [W - C, H, 0, H]],
-];
-
-/** The faint backplate behind every digit — the full "8" — so the unlit
-    tubes are there in the dark, as on a real sign. */
-const PLATE = GLYPHS[8];
-
-/** A tube shortened by GAP at both ends, so neighbours never touch. */
-function tube([x1, y1, x2, y2]: Tube): Tube {
-  const len = Math.hypot(x2 - x1, y2 - y1);
-  const k = Math.min(GAP, len / 3) / len;
-  const dx = (x2 - x1) * k;
-  const dy = (y2 - y1) * k;
-  return [x1 + dx, y1 + dy, x2 - dx, y2 - dy];
-}
-
-/** The slant pushes the top of each digit right by this much. */
-const LEAN = Math.tan((-SLANT * Math.PI) / 180) * H;
-
-function SegmentNumber({
+/**
+ * A year in the display face — the same one as the wordmark in the navbar and
+ * the figures under "By the numbers" — lit in its year's neon. Each digit
+ * strikes on by itself, left to right. The glow is a static text-shadow: one
+ * paint when the digit appears, nothing per frame.
+ *
+ * It replaced two hand-drawn SVG numeral faces (seven-segment, then angular
+ * tubes). Both read as a device rather than as this site; the display face is
+ * already the voice of every other number on the page.
+ */
+function NeonYear({
   value,
   color,
   play,
@@ -473,38 +433,22 @@ function SegmentNumber({
   delay: number;
   className?: string;
 }) {
-  const digits = String(value).split("").map(Number);
-  const width = (digits.length - 1) * ADV + W + LEAN + 14;
   return (
-    <svg
-      viewBox={`-7 -7 ${width} ${H + 14}`}
-      className={cn("block w-auto overflow-visible", className)}
-      fill="none"
-      strokeLinecap="butt"
+    <span
+      className={cn("display-caps tabular flex leading-none", className)}
+      style={{
+        color,
+        textShadow: `0 0 18px color-mix(in srgb, ${color} 55%, transparent), 0 0 2px color-mix(in srgb, ${color} 80%, white)`,
+      }}
     >
-      <g transform={`translate(${LEAN}, 0) skewX(${SLANT})`}>
-        {digits.map((d, i) => (
-          <g key={i} transform={`translate(${i * ADV}, 0)`}>
-            {PLATE.map((t, k) => {
-              const [x1, y1, x2, y2] = tube(t);
-              return <line key={`p${k}`} x1={x1} y1={y1} x2={x2} y2={y2} stroke={color} strokeOpacity={0.05} strokeWidth={TUBE} />;
-            })}
-            {GLYPHS[d].map((t, k) => {
-              const [x1, y1, x2, y2] = tube(t);
-              return (
-                <motion.g key={k} initial={false} {...strike(play, instant, delay + i * 0.11 + k * 0.04, 0.5)}>
-                  {/* Halo, tube, hot core — the glow is a wide faint stroke,
-                      so there is no filter to pay for per tube. */}
-                  <line x1={x1} y1={y1} x2={x2} y2={y2} stroke={color} strokeOpacity={0.28} strokeWidth={TUBE + 9} />
-                  <line x1={x1} y1={y1} x2={x2} y2={y2} stroke={color} strokeWidth={TUBE} />
-                  <line x1={x1} y1={y1} x2={x2} y2={y2} stroke="#ffffff" strokeOpacity={0.55} strokeWidth={TUBE * 0.3} />
-                </motion.g>
-              );
-            })}
-          </g>
+      {String(value)
+        .split("")
+        .map((ch, i) => (
+          <motion.span key={i} className="inline-block" initial={false} {...strike(play, instant, delay + i * 0.12, 0.5)}>
+            {ch}
+          </motion.span>
         ))}
-      </g>
-    </svg>
+    </span>
   );
 }
 
