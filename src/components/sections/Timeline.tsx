@@ -39,11 +39,17 @@ type PathWords = ReturnType<typeof useI18n>["t"]["path"];
  * shares with the start ("JUN 2026 → SEP", never "2026 … 2026"). The phrase a
  * screen reader hears is the row's `period`; the stamp itself is decoration.
  *
- * **The stamp is invisible until its row arrives**, then prints: the month is
- * wiped in behind a spectrum scan bar, and the year rolls in like an odometer,
- * each digit spinning a full turn before it lands, a beat after the one before
- * it. It resets when the row leaves the screen, so it plays again on the way
- * back. Under reduced motion it is simply there.
+ * **The year is a neon segment display**, each year in its own colour so they
+ * read apart at a glance. It is drawn in SVG (no font file): slanted,
+ * chamfered segments, with the unlit ones left faintly visible like real
+ * hardware.
+ *
+ * **The stamp is dark until its row arrives**, then strikes on like a neon
+ * sign: the month flashes, stutters and holds; then each lit segment of the
+ * year does the same, top to bottom, digit after digit. It resets when the
+ * row leaves the screen, so it plays again on the way back. It replaced an
+ * odometer roll that read as a lottery machine. Under reduced motion it is
+ * simply there.
  *
  * **The beam** is `scaleY` on a full-height line, not an animated `height`:
  * height is layout, and it was being recomputed on every scroll frame.
@@ -210,7 +216,7 @@ function Row({
       className="relative grid grid-cols-[var(--lane)_minmax(0,1fr)] border-b border-line py-10 [grid-template-areas:'lane_year'_'lane_body'] first:pt-2 md:grid-cols-[var(--yc)_var(--lane)_minmax(0,1fr)] md:py-14 md:[grid-template-areas:'year_lane_body']"
     >
       <div className="relative [grid-area:year]">
-        <DateStamp entry={entry} play={play} instant={reduced} on={on} words={words} />
+        <DateStamp entry={entry} play={play} instant={reduced} words={words} />
       </div>
 
       {/* Node on the rail, level with the month. */}
@@ -224,7 +230,8 @@ function Row({
           )}
           style={{
             marginTop: `calc(${MONTH_SIZE} * 0.5 - 7px)`,
-            ...(on || past ? { backgroundImage: "var(--gradient-spectrum)" } : {}),
+            ...(on || past ? { background: yearNeon(entry.start.year) } : {}),
+            ...(on ? { boxShadow: `0 0 14px 2px ${yearNeon(entry.start.year)}` } : {}),
           }}
         />
       </div>
@@ -259,6 +266,25 @@ function stampLabel(s: Stamp, words: PathWords): string | null {
 }
 
 /**
+ * Each year has its own neon, so years read apart at a glance: the start year,
+ * an end year that differs, and the row's node all carry it. Three are the
+ * site's spectrum stops (violet lifted for contrast), plus the hazard amber and
+ * a coral. Lime is deliberately absent — it is the colour of the reference
+ * this site must not resemble.
+ */
+const YEAR_NEON: Record<number, string> = {
+  2026: "#22e0ff",
+  2025: "#ff2d8f",
+  2024: "#ffa02b",
+  2023: "#a48bff",
+  2022: "#ff6a5c",
+};
+const FALLBACK_NEON = ["#22e0ff", "#ff2d8f", "#ffa02b", "#a48bff", "#ff6a5c"];
+function yearNeon(year: number): string {
+  return YEAR_NEON[year] ?? FALLBACK_NEON[year % FALLBACK_NEON.length];
+}
+
+/**
  * The start as month-over-year, the end beside an arrow. The end drops
  * whatever it shares with the start: the year when it is the same year
  * ("JUN 2026 → SEP"), the season when it is the same season ("SUMMER 2022 →
@@ -268,13 +294,11 @@ function DateStamp({
   entry,
   play,
   instant,
-  on,
   words,
 }: {
   entry: TimelineEntry;
   play: boolean;
   instant: boolean;
-  on: boolean;
   words: PathWords;
 }) {
   const { start, end, note } = entry;
@@ -282,67 +306,67 @@ function DateStamp({
   const endLabel = end ? stampLabel(end, words) : null;
   const endShowsLabel = !!end && !!endLabel && (endLabel !== startLabel || end.year === start.year);
   const endShowsYear = !!end && end.year !== start.year;
+  const neon = yearNeon(start.year);
 
   return (
     <>
-      {/* What assistive tech reads. The stamp below is split into digit
-          columns and clipped words, none of which would read as a date. */}
+      {/* What assistive tech reads. The stamp below is drawn segments and
+          flickering words, none of which would read as a date. */}
       <span className="sr-only">{entry.period}</span>
 
-      <div
-        aria-hidden
-        className={cn("transition-[filter] duration-300", on && "drop-shadow-[0_0_22px_rgba(123,92,255,0.45)]")}
-        /* Invisible until the row arrives; the pieces then print themselves. */
-        style={{ opacity: play ? 1 : 0, transition: instant || !play ? "none" : "opacity 120ms linear" }}
-      >
+      <div aria-hidden>
         {startLabel && (
-          <Wipe play={play} instant={instant} delay={0}>
+          <Ignite play={play} instant={instant} delay={0}>
             <span
               className="block font-tech font-bold uppercase leading-none tracking-wide text-fg"
               style={{ fontSize: MONTH_SIZE }}
             >
               {startLabel}
             </span>
-          </Wipe>
+          </Ignite>
         )}
 
-        <Odometer
+        <SegmentNumber
           value={start.year}
+          color={neon}
           play={play}
           instant={instant}
-          delay={0.12}
-          className="mt-2 font-tech font-bold"
-          style={{ fontSize: "clamp(3rem, 5.4vw, 5rem)" }}
+          delay={0.18}
+          className="mt-3 h-[clamp(2.75rem,4.6vw,4.25rem)]"
         />
 
         {end && (endShowsLabel || endShowsYear) && (
           <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-1">
-            <Arrow play={play} instant={instant} delay={0.55} />
+            <Arrow play={play} instant={instant} delay={0.7} />
             {endShowsLabel && (
-              <Wipe play={play} instant={instant} delay={0.7}>
+              <Ignite play={play} instant={instant} delay={0.8}>
                 <span className="block font-tech text-2xl font-bold uppercase leading-none text-fg md:text-[1.75rem]">
                   {endLabel}
                 </span>
-              </Wipe>
+              </Ignite>
             )}
             {endShowsYear && (
-              <Odometer
+              <SegmentNumber
                 value={end.year}
+                color={yearNeon(end.year)}
                 play={play}
                 instant={instant}
-                delay={0.8}
-                className="font-tech text-2xl font-bold md:text-[1.75rem]"
+                delay={0.9}
+                className="h-[1.6rem] md:h-[1.85rem]"
               />
             )}
           </div>
         )}
 
         {note === "graduated" && (
-          <Wipe play={play} instant={instant} delay={0.55} className="mt-4">
-            <span className="liquid-glass inline-flex rounded-full px-3 py-1 font-mono text-sm font-semibold uppercase tracking-[0.16em] text-fg">
+          <Ignite play={play} instant={instant} delay={0.7} className="mt-4">
+            <span
+              className="inline-flex rounded-full border px-3 py-1 font-mono text-sm font-semibold uppercase tracking-[0.16em] text-fg"
+              style={{ borderColor: `color-mix(in srgb, ${neon} 60%, transparent)` }}
+            >
               {words.graduated}
             </span>
-          </Wipe>
+          </Ignite>
         )}
       </div>
     </>
@@ -350,10 +374,22 @@ function DateStamp({
 }
 
 /**
- * A word printed left to right: a clip opens behind a thin spectrum scan bar
- * that runs across it and fades out at the far edge.
+ * A neon tube striking: dark, a hard flash, a stutter, then steady. Opacity
+ * only, one short burst, no loop — it reads as the sign coming on, not as a
+ * fault, because it happens once and settles.
  */
-function Wipe({
+const STRIKE = { opacity: [0, 1, 0.15, 0.85, 0.35, 1], times: [0, 0.12, 0.26, 0.44, 0.6, 1] };
+
+function strike(play: boolean, instant: boolean, delay: number, duration: number) {
+  if (instant) return { animate: { opacity: 1 }, transition: { duration: 0 } };
+  if (!play) return { animate: { opacity: 0 }, transition: { duration: 0 } };
+  return {
+    animate: { opacity: STRIKE.opacity },
+    transition: { duration, times: STRIKE.times, delay, ease: "linear" as const },
+  };
+}
+
+function Ignite({
   play,
   instant,
   delay,
@@ -366,90 +402,89 @@ function Wipe({
   className?: string;
   children: React.ReactNode;
 }) {
-  const t: Transition = instant || !play ? { duration: 0 } : { duration: 0.55, ease: EASE_EXPO, delay };
   return (
-    <div className={cn("relative w-fit", className)}>
-      <motion.div
-        initial={false}
-        animate={{ clipPath: play ? "inset(0 0% 0 0)" : "inset(0 100% 0 0)" }}
-        transition={t}
-      >
-        {children}
-      </motion.div>
-      {!instant && (
-        <motion.span
-          className="spectrum-rule pointer-events-none absolute -bottom-1 -top-1 w-[3px] rounded-full"
-          initial={false}
-          animate={play ? { left: ["0%", "100%"], opacity: [1, 1, 0] } : { left: "0%", opacity: 0 }}
-          transition={play ? { duration: 0.55, ease: EASE_EXPO, delay, times: [0, 0.85, 1] } : { duration: 0 }}
-          style={{ boxShadow: "0 0 12px 2px color-mix(in srgb, var(--spectrum-2) 70%, transparent)" }}
-        />
-      )}
-    </div>
+    <motion.div className={cn("w-fit", className)} initial={false} {...strike(play, instant, delay, 0.6)}>
+      {children}
+    </motion.div>
   );
 }
 
-/**
- * A year as an odometer. Each digit is a column of 0–9 twice over, clipped to
- * one digit's height; printing it rolls the column a full turn plus the digit,
- * on a spring that overshoots and settles. Columns start a beat apart, so the
- * number resolves left to right. The ramp runs across the whole number: each
- * column carries its own slice of one gradient.
- */
-function Odometer({
+/* --- Segment display -------------------------------------------------------
+   A slanted seven-segment face with chamfered (hexagonal) segments, drawn in
+   SVG so it needs no font file and every segment can strike on by itself. */
+const DW = 60; // digit cell width
+const DH = 100; // digit cell height
+const T = 11; // segment thickness
+const G = 2.4; // gap between segments
+const ADV = 76; // advance per digit
+const SLANT = -9; // degrees
+const HT = T / 2;
+
+function hseg(cy: number): string {
+  const x1 = HT + G;
+  const x2 = DW - HT - G;
+  return `${x1},${cy} ${x1 + HT},${cy - HT} ${x2 - HT},${cy - HT} ${x2},${cy} ${x2 - HT},${cy + HT} ${x1 + HT},${cy + HT}`;
+}
+function vseg(cx: number, y1: number, y2: number): string {
+  return `${cx},${y1} ${cx + HT},${y1 + HT} ${cx + HT},${y2 - HT} ${cx},${y2} ${cx - HT},${y2 - HT} ${cx - HT},${y1 + HT}`;
+}
+const SEGMENTS: Record<string, string> = {
+  a: hseg(HT),
+  g: hseg(DH / 2),
+  d: hseg(DH - HT),
+  f: vseg(HT, HT + G, DH / 2 - G),
+  b: vseg(DW - HT, HT + G, DH / 2 - G),
+  e: vseg(HT, DH / 2 + G, DH - HT - G),
+  c: vseg(DW - HT, DH / 2 + G, DH - HT - G),
+};
+const DIGIT_SEGMENTS = ["abcdef", "bc", "abged", "abgcd", "fgbc", "afgcd", "afgedc", "abc", "abcdefg", "abcdfg"];
+/** Strike order within a digit: top down, like a tube warming along its length. */
+const ORDER = "afbgecd";
+/** The slant pushes the top of each digit right by this much. */
+const LEAN = Math.tan((-SLANT * Math.PI) / 180) * DH;
+
+function SegmentNumber({
   value,
+  color,
   play,
   instant,
   delay,
   className,
-  style,
 }: {
   value: number;
+  color: string;
   play: boolean;
   instant: boolean;
   delay: number;
   className?: string;
-  style?: React.CSSProperties;
 }) {
-  const digits = String(value).split("");
-  const n = digits.length;
+  const digits = String(value).split("").map(Number);
+  const width = (digits.length - 1) * ADV + DW + LEAN + 8;
   return (
-    <div className={cn("flex leading-none tabular", className)} style={style}>
-      {digits.map((ch, i) => {
-        const d = Number(ch);
-        const t: Transition =
-          instant || !play
-            ? { duration: 0 }
-            : { type: "spring", stiffness: 70, damping: 13, mass: 1, delay: delay + i * 0.08 };
-        return (
-          <span key={i} className="relative inline-block h-[1em] overflow-hidden">
-            <motion.span
-              className="flex flex-col"
-              initial={false}
-              animate={{ y: play ? `-${10 + d}em` : "0em" }}
-              transition={t}
-            >
-              {Array.from({ length: 20 }, (_, k) => (
-                <span
-                  key={k}
-                  className="block h-[1em] leading-none"
-                  style={{
-                    backgroundImage: "var(--gradient-spectrum)",
-                    backgroundSize: `${n * 100}% 100%`,
-                    backgroundPosition: `${n > 1 ? (i / (n - 1)) * 100 : 0}% 0`,
-                    WebkitBackgroundClip: "text",
-                    backgroundClip: "text",
-                    color: "transparent",
-                  }}
-                >
-                  {k % 10}
-                </span>
-              ))}
-            </motion.span>
-          </span>
-        );
-      })}
-    </div>
+    <svg viewBox={`-4 -6 ${width} ${DH + 12}`} className={cn("block w-auto overflow-visible", className)}>
+      <g transform={`translate(${LEAN}, 0) skewX(${SLANT})`}>
+        {digits.map((d, i) => (
+          <g key={i} transform={`translate(${i * ADV}, 0)`}>
+            {ORDER.split("").map((seg, k) => {
+              if (!DIGIT_SEGMENTS[d].includes(seg)) {
+                /* Unlit segments stay faintly visible, as on a real display —
+                   it is what makes this read as hardware rather than type. */
+                return <polygon key={seg} points={SEGMENTS[seg]} fill={color} fillOpacity={0.09} />;
+              }
+              return (
+                <motion.g key={seg} initial={false} {...strike(play, instant, delay + i * 0.11 + k * 0.035, 0.5)}>
+                  {/* Halo, core, hot centre. A wide faint stroke is the glow,
+                      so there is no filter to pay for per segment. */}
+                  <polygon points={SEGMENTS[seg]} fill={color} stroke={color} strokeOpacity={0.3} strokeWidth={8} strokeLinejoin="round" />
+                  <polygon points={SEGMENTS[seg]} fill={color} />
+                  <polygon points={SEGMENTS[seg]} fill="#ffffff" fillOpacity={0.28} />
+                </motion.g>
+              );
+            })}
+          </g>
+        ))}
+      </g>
+    </svg>
   );
 }
 
