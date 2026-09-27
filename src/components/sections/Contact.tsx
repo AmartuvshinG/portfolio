@@ -3,7 +3,6 @@
 import { sectionIndex } from "@/lib/content";
 import { useI18n } from "@/lib/i18n";
 import { ContactForm } from "@/components/ui/ContactForm";
-import { GlowHorizon } from "@/components/ui/GlowHorizon";
 import { Reveal } from "@/components/motion/Reveal";
 import { ChapterSeam } from "@/components/chrome/ChapterSeam";
 
@@ -23,12 +22,10 @@ export function Contact() {
       id="contact"
       data-act="void"
       data-chapter="CONTACT"
-      className="relative overflow-hidden pt-24 md:pt-36"
+      className="relative overflow-hidden pb-24 pt-24 md:pb-36 md:pt-36"
       aria-label={t.contact.aria}
     >
-      {/* Shuttered: the close. The last thing the page does before it asks for
-          something is change gear visibly. */}
-      <ChapterSeam wipe />
+      <ChapterSeam />
 
       <div className="relative mx-auto max-w-[1800px] px-5 md:px-8 lg:px-16">
         <Reveal className="flex flex-col gap-4">
@@ -76,21 +73,6 @@ export function Contact() {
             <ContactForm />
           </Reveal>
         </div>
-      </div>
-
-      {/* --- The close.
-              The social fan used to live here, splayed under a spectrum wash.
-              It has moved up to its own chapter beside the profile, where it is
-              three times the size and where somebody might actually still be
-              reading — a "find me elsewhere" placed below the contact form is
-              addressed to people who have already decided to leave.
-
-              What closes the page instead is the horizon rising off the bottom
-              edge: the same arc the site opened on, so the descent ends where it
-              began. This is the largest chromatic area on the site and the one
-              place the ramp is allowed to read as a field. --- */}
-      <div className="relative mt-24 h-[46vh] md:mt-32">
-        <GlowHorizon lite variant="bottom" intensity={0.75} />
       </div>
     </section>
   );

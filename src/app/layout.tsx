@@ -14,7 +14,6 @@ import { SmoothScroll } from "@/components/chrome/SmoothScroll";
 import { LocaleProvider } from "@/lib/i18n";
 import { ActTheme } from "@/components/chrome/ActTheme";
 import { SiteBackdrop } from "@/components/backdrop/SiteBackdrop";
-import { Anamorphic } from "@/components/backdrop/Anamorphic";
 import { Preloader } from "@/components/chrome/Preloader";
 import { ChapterFrame } from "@/components/chrome/ChapterFrame";
 import { HudCursor } from "@/components/chrome/HudCursor";
@@ -22,6 +21,7 @@ import { Navbar } from "@/components/chrome/Navbar";
 import { CommandPalette } from "@/components/chrome/CommandPalette";
 import { ChapterKeys } from "@/components/chrome/ChapterKeys";
 import { Footer } from "@/components/chrome/Footer";
+import { LiquidGlassFilter } from "@/components/ui/LiquidGlassFilter";
 
 /**
  * The display face: wide, square, one weight. Wordmark and section titles only.
@@ -158,6 +158,7 @@ export default function RootLayout({
                 than per-section on purpose — see SiteBackdrop's header. Sections
                 are transparent and sit at z-10 over it. */}
             <SiteBackdrop />
+            <LiquidGlassFilter />
 
             <Preloader />
             <HudCursor />
@@ -173,11 +174,6 @@ export default function RootLayout({
               {children}
             </main>
             <Footer />
-
-            {/* The taking lens. Last in the tree and above the nav, because a
-                vignette that the header sits on top of is not a lens — it is a
-                decorative border. Below the preloader and the cursor. */}
-            <Anamorphic />
           </LocaleProvider>
         </SmoothScroll>
       </body>

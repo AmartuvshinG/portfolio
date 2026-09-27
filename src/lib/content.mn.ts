@@ -122,20 +122,6 @@ const projects: Record<string, ProjectWords> = {
       },
     ],
   },
-  coursework: {
-    title: "JAVA БА ANDROID",
-    category: "Java QA · Android",
-    role: "Оюутан хөгжүүлэгч",
-    status: "Дууссан",
-    summary:
-      "Java тооцоолуур аппын тест кейс боловсруулалт, төхөөрөмжийн бодит цагийн симуляци, API холболттой Android апп.",
-    description:
-      "Програм хангамжийн тест ба чанарын баталгаа (2024 намар): Java тооцоолуур аппликейшнд тест кейс боловсруулж ажиллуулан, алдааг илрүүлж засварлаж, GitHub-аар багаар хамтран ажилласан. Мобайл аппликейшн хөгжүүлэлт II (2024 хавар): Android Studio-д Android апп бүтээж, төхөөрөмж дээр бодит цагийн симуляци ажиллуулж, гадны API нэгтгэсэн.",
-    highlights: [
-      "Тест кейс боловсруулалт, алдааны засвар",
-      "Гадны API холболттой Android апп",
-    ],
-  },
 };
 
 const capabilities: Record<string, Pick<Capability, "title" | "description" | "tags">> = {

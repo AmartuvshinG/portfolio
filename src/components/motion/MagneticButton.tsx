@@ -50,7 +50,7 @@ export function MagneticButton({
       ref={ref}
       onMouseMove={handleMove}
       onMouseLeave={reset}
-      className={cn("inline-block transition-transform duration-500 ease-out", className)}
+      className={cn("inline-block transition-transform duration-300 ease-out", className)}
       style={{ willChange: "transform", ...style }}
     >
       {children}

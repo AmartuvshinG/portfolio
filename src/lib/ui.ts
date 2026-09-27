@@ -36,7 +36,6 @@ const en = {
   },
   about: {
     aria: "Profile",
-    portrait: (name: string) => `Portrait of ${name}`,
   },
   connect: {
     aria: "Find me elsewhere",
@@ -57,7 +56,7 @@ const en = {
     rail: "Case files",
     hint: "Scroll, or use ← →",
     count: (i: number, n: number) => `${String(i).padStart(2, "0")} / ${String(n).padStart(2, "0")}`,
-    noSite: "Coursework · no public build",
+    noSite: "No public build",
     preview: (title: string) => `${title} — open case file`,
   },
   craft: {
@@ -192,7 +191,6 @@ const mn: UiStrings = {
   },
   about: {
     aria: "Танилцуулга",
-    portrait: (name: string) => `${name}-ийн хөрөг`,
   },
   connect: {
     aria: "Бусад сувгууд",
@@ -213,7 +211,7 @@ const mn: UiStrings = {
     rail: "Төслүүд",
     hint: "Гүйлгэх, эсвэл ← →",
     count: (i: number, n: number) => `${String(i).padStart(2, "0")} / ${String(n).padStart(2, "0")}`,
-    noSite: "Хичээлийн ажил · нээлттэй хувилбаргүй",
+    noSite: "Нээлттэй хувилбаргүй",
     preview: (title: string) => `${title} — дэлгэрэнгүй нээх`,
   },
   craft: {

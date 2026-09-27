@@ -148,7 +148,6 @@
    boundary can never be a step change in the ground — which is what made the
    page read as several sites bolted together. What an act now sets is:
 
-     --veil          a low-alpha wash the backdrop paints over its own field
      --color-surface the fill for cards *on* that depth
      text / line     the foreground scale
 
@@ -159,7 +158,6 @@
 :root,
 [data-act="void"] {
   --color-bg: var(--color-void);
-  --veil: transparent;
   --color-surface: var(--color-deck);
   --color-fg: var(--color-bone);
   --color-muted: var(--color-bone-soft);
@@ -171,7 +169,6 @@
 
 [data-act="deck"] {
   --color-bg: var(--color-deck);
-  --veil: rgba(11, 13, 26, 0.5);
   --color-surface: var(--color-deck-2);
   --color-fg: var(--color-bone);
   --color-muted: #9297b0;
@@ -181,11 +178,10 @@
   color-scheme: dark;
 }
 
-/* The charged depth. Still dark — the veil is a violet-black wash, not a colour
-   field; the chroma comes from the shader gaining up underneath it. */
+/* The charged depth. Still dark: it retints the chrome and surfaces, never
+   the ground — the backdrop is one field for the whole document. */
 [data-act="bloom"] {
   --color-bg: var(--color-bloom);
-  --veil: rgba(20, 16, 51, 0.42);
   --color-surface: #1c1745;
   --color-fg: #f4f2ff;
   --color-muted: #a99ede;
@@ -448,6 +444,40 @@ html.hud-cursor * {
   border: 1px solid var(--color-line);
 }
 
+/* Liquid glass, the cheap kind. A tinted fill with a lit top edge, a cool rim
+   along the bottom and a soft drop, all of it background and inset shadows.
+   There is deliberately no backdrop-filter here: this goes on cards that
+   appear dozens of times, and a backdrop blur is a per-instance, per-frame
+   re-sample of everything behind it. The real refracting glass (the `#lg` SVG
+   filter, see LiquidGlassFilter) is reserved for single-instance chrome.
+   Corner radius comes from the call site. */
+@utility liquid-glass {
+  background:
+    linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.09) 0%,
+      rgba(255, 255, 255, 0.025) 42%,
+      rgba(123, 92, 255, 0.07) 100%
+    ),
+    color-mix(in srgb, var(--color-surface) 58%, transparent);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.2),
+    inset 0 0 0 1px rgba(236, 238, 251, 0.09),
+    inset 0 -1px 0 rgba(34, 224, 255, 0.14),
+    0 18px 40px -22px rgba(0, 0, 0, 0.7);
+}
+
+/* The refracting glass for fixed chrome and overlays. Chromium honours an SVG
+   filter inside backdrop-filter; everything else gets the blur alone. Only
+   `.lg-live` elements pay for it — callers drop the class while scrolling. */
+@utility liquid-glass-live {
+  backdrop-filter: blur(14px) saturate(1.5);
+  -webkit-backdrop-filter: blur(14px) saturate(1.5);
+}
+:root[data-lg="svg"] .liquid-glass-live {
+  backdrop-filter: url(#lg) blur(5px) saturate(1.6) brightness(1.06);
+}
+
 /* Restored from NEXUS for the mobile nav sheet. */
 @utility holo-grid {
   background-image:
@@ -481,39 +511,7 @@ html.hud-cursor * {
   0%, 100% { transform: translate3d(0, 0, 0) scale(1.04); opacity: 0.9; }
   50% { transform: translate3d(-1.5%, 1.5%, 0) scale(1.1); opacity: 1; }
 }
-@keyframes breathe {
-  0%, 100% { transform: scaleY(1) scaleX(1); opacity: 0.86; }
-  50% { transform: scaleY(1.03) scaleX(1.015); opacity: 1; }
-}
 
-/* Aurora ribbons. Two repeating gradients at different scales sliding past one
-   another — the chromatic one supplies the colour, the black comb cuts it into
-   curtains. Both travel on the same keyframe so the interference pattern
-   between them is what actually moves, which is why it never reads as a loop. */
-@keyframes aurora {
-  0% { transform: translate3d(-14%, 0, 0) rotate(0.001deg); }
-  50% { transform: translate3d(6%, -4%, 0) rotate(0.001deg); }
-  100% { transform: translate3d(-14%, 0, 0) rotate(0.001deg); }
-}
-
-/* ---------------------------------------------------------------------------
-   Hero atmosphere
-   ---------------------------------------------------------------------------
-   Every keyframe below animates `transform` or `opacity` and nothing else. Rain
-   in particular is the one that would be tempting to do with background-position
-   — that is a paint property, and animating it on a full-bleed layer is what put
-   the aurora veil on the perf pass's list.
-   ------------------------------------------------------------------------- */
-
-/* Aviation lamps on the skyline masts. */
-/* The lens' rolling shutter — a soft band travelling down the frame, one tile
-   height per cycle so the loop point is invisible. Named `hero-rain` while the
-   hero had rain to drive; the hero has no weather now and this is the only
-   surviving caller, so it is named for what it actually does. */
-@keyframes lens-roll {
-  from { transform: translate3d(0, -50%, 0); }
-  to { transform: translate3d(0, 0%, 0); }
-}
 
 /* Neon signage that has not been serviced in a while. Mostly lit, with a short
    arrhythmic stutter — an even blink reads as a cursor, not as a failing tube. */
@@ -526,6 +524,23 @@ html.hud-cursor * {
 }
 
 .neon-sign { animation: neon-flicker 9s steps(1, end) infinite; }
+
+/* The nav monogram's spark: one short dash runs the hexagon's perimeter, then
+   the mark rests for most of the cycle. Paint on a 28px SVG, so it is free. */
+@keyframes monogram-spark {
+  0% { stroke-dashoffset: 100; opacity: 0; }
+  2% { opacity: 1; }
+  20% { stroke-dashoffset: 0; opacity: 1; }
+  23%, 100% { stroke-dashoffset: 0; opacity: 0; }
+}
+.monogram-spark {
+  stroke-dasharray: 7 93;
+  opacity: 0;
+  animation: monogram-spark 8s linear infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .monogram-spark { animation: none; }
+}
 
 /* Lab tiles turning to face the camera.
    The transform lives in CSS rather than in a framer `whileHover` because the
@@ -549,7 +564,6 @@ html.hud-cursor * {
 @utility animate-marquee { animation: marquee 32s linear infinite; }
 @utility animate-blink { animation: soft-blink 1.8s ease-in-out infinite; }
 @utility animate-drift { animation: spectrum-drift 34s ease-in-out infinite; }
-@utility animate-breathe { animation: breathe 9s ease-in-out infinite; }
 
 /* Everything in the hero atmosphere stops dead for reduced motion. The plates
    still layer and still occlude — the composition survives; only the loops go. */
@@ -626,46 +640,105 @@ html.hud-cursor * {
   mix-blend-mode: screen;
 }
 
-/* The aurora veil's paint. Lives here rather than in the component because a
-   keyframe animation can't be expressed inline, and splitting the two halves of
-   one effect across a style attribute and a stylesheet is worse than either. */
-.aurora-veil {
-  --aurora: repeating-linear-gradient(
-    100deg,
-    var(--spectrum-1) 10%,
-    var(--spectrum-2) 16%,
-    var(--spectrum-3) 22%,
-    var(--spectrum-2) 28%,
-    var(--spectrum-1) 34%
-  );
-  --comb: repeating-linear-gradient(
-    100deg,
-    #000 0%,
-    #000 7%,
-    transparent 10%,
-    transparent 12%,
-    #000 16%
-  );
-  background-image: var(--comb), var(--aurora);
-  background-size: 300%, 200%;
-  background-position: 50% 50%, 50% 50%;
-  filter: blur(34px);
-  opacity: 0.3;
-  mix-blend-mode: screen;
-  /* Driven by `transform`, not `background-position`.
-     Animating background-position is a paint property: it repainted a
-     viewport-sized layer *and re-ran its 34px gaussian* on every single frame,
-     forever, for the entire session. Transform is compositor-only — the layer
-     is rasterised and blurred once and then just moved. The element is
-     oversized and offset below so there is room to travel without exposing an
-     edge. */
+/* ---------------------------------------------------------------------------
+   Aurora — the site-wide backdrop (components/backdrop/Aurora.tsx)
+   ---------------------------------------------------------------------------
+   Every keyframe here animates transform or opacity only. Blobs are soft
+   radials, not blurred discs: the gradient *is* the softness, so there is no
+   filter to re-run when they scale. `[data-scrolling]` freezes the lot in place
+   (lib/scrollPause.ts). */
+@keyframes aurora-drift-a {
+  from { transform: translate3d(-6%, -3%, 0) scale(1); }
+  to { transform: translate3d(7%, 4%, 0) scale(1.18); }
+}
+@keyframes aurora-drift-b {
+  from { transform: translate3d(5%, 3%, 0) scale(1.05); }
+  to { transform: translate3d(-8%, -5%, 0) scale(1.28); }
+}
+@keyframes aurora-drift-c {
+  from { transform: translate3d(3%, -4%, 0) rotate(0deg) scale(1); }
+  to { transform: translate3d(-4%, 5%, 0) rotate(40deg) scale(1.12); }
+}
+@keyframes aurora-drift-d {
+  from { transform: translate3d(-4%, 4%, 0) scale(1.1); }
+  to { transform: translate3d(6%, -2%, 0) scale(0.94); }
+}
+@keyframes aurora-pulse {
+  from { opacity: 0.5; }
+  to { opacity: 0.85; }
+}
+@keyframes aurora-twinkle {
+  0%, 100% { opacity: 0.15; }
+  50% { opacity: 1; }
+}
+
+.aurora-pulse {
+  background-image:
+    radial-gradient(55% 45% at 30% 35%, rgba(123, 92, 255, 0.16), transparent 80%),
+    radial-gradient(50% 40% at 72% 64%, rgba(255, 45, 143, 0.1), transparent 80%);
+  animation: aurora-pulse 10s ease-in-out infinite alternate;
+}
+
+.aurora-blob {
+  position: absolute;
+  border-radius: 9999px;
   will-change: transform;
-  animation: aurora 64s linear infinite;
-  /* Anchored off one corner. Unmasked it closes over the whole viewport and
-     stops being weather — it becomes a second background competing with the
-     field it is supposed to be sitting on. */
-  mask-image: radial-gradient(ellipse at 78% 4%, #000 6%, transparent 66%);
-  -webkit-mask-image: radial-gradient(ellipse at 78% 4%, #000 6%, transparent 66%);
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
+  animation-direction: alternate;
+}
+.aurora-blob--a {
+  left: -22%;
+  top: -24%;
+  width: 70vmax;
+  height: 70vmax;
+  background: radial-gradient(closest-side, rgba(255, 45, 143, 0.26), rgba(255, 45, 143, 0.08) 55%, transparent);
+  animation-name: aurora-drift-a;
+  animation-duration: 30s;
+}
+.aurora-blob--b {
+  right: -24%;
+  bottom: -28%;
+  width: 76vmax;
+  height: 76vmax;
+  background: radial-gradient(closest-side, rgba(34, 224, 255, 0.2), rgba(34, 224, 255, 0.06) 55%, transparent);
+  animation-name: aurora-drift-b;
+  animation-duration: 40s;
+}
+.aurora-blob--c {
+  left: 28%;
+  top: 22%;
+  width: 52vmax;
+  height: 40vmax;
+  background: radial-gradient(closest-side, rgba(123, 92, 255, 0.26), rgba(123, 92, 255, 0.07) 60%, transparent);
+  animation-name: aurora-drift-c;
+  animation-duration: 50s;
+}
+.aurora-blob--d {
+  right: 4%;
+  top: -12%;
+  width: 44vmax;
+  height: 44vmax;
+  background: radial-gradient(closest-side, rgba(58, 36, 170, 0.3), transparent);
+  animation-name: aurora-drift-d;
+  animation-duration: 36s;
+}
+
+.aurora-stars {
+  position: absolute;
+  left: 0;
+  top: 0;
+  border-radius: 9999px;
+  background: transparent;
+  animation: aurora-twinkle ease-in-out infinite;
+}
+.aurora-stars--0 { animation-duration: 3.4s; }
+.aurora-stars--1 { animation-duration: 4.6s; animation-delay: -1.6s; }
+.aurora-stars--2 { animation-duration: 5.8s; animation-delay: -3.1s; }
+
+.aurora[data-scrolling] *,
+.aurora[data-scrolling] {
+  animation-play-state: paused !important;
 }
 
 /* ---------------------------------------------------------------------------
@@ -674,7 +747,7 @@ html.hud-cursor * {
 .reveal {
   opacity: 0;
   transform: translateY(24px);
-  transition: opacity 0.8s var(--ease-expo), transform 0.8s var(--ease-expo);
+  transition: opacity 0.5s var(--ease-expo), transform 0.5s var(--ease-expo);
   will-change: opacity, transform;
 }
 .reveal.is-in {

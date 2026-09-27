@@ -13,7 +13,7 @@ import Lenis from "lenis";
 import { MotionConfig } from "framer-motion";
 import { gsap, ScrollTrigger } from "@/lib/gsap";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
-import { setScrollVelocity } from "@/lib/backdrop";
+import { noteScroll } from "@/lib/scrollPause";
 
 interface LenisContextValue {
   /** `immediate` jumps without the 1.2s glide — for restoring a position, not
@@ -72,13 +72,10 @@ export function SmoothScroll({ children }: { children: ReactNode }) {
     // must still apply to the instance we just created.
     if (locks.current > 0) lenis.stop();
 
-    /* Lenis already computes a velocity every frame; publishing it costs one
-       property write and saves everything downstream from running its own
-       scroll listener and doing the differencing again. Decay is handled by
-       Lenis itself — it eases to zero, and it emits a final scroll event when
-       it does, so the bus lands back at rest without a timer. */
-    lenis.on("scroll", (e: { velocity: number }) => {
-      setScrollVelocity(e.velocity);
+    /* `noteScroll` freezes the aurora for the length of the scroll — see
+       lib/scrollPause.ts. It writes an attribute on start and on stop only. */
+    lenis.on("scroll", () => {
+      noteScroll();
       ScrollTrigger.update();
     });
 

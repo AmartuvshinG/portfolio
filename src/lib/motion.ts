@@ -11,18 +11,18 @@ export const EASE_POWER: Transition["ease"] = [0.7, 0, 0.3, 1];
 
 /** Fade + rise, used for most block-level reveals. */
 export const fadeUp: Variants = {
-  hidden: { opacity: 0, y: 28 },
+  hidden: { opacity: 0, y: 22 },
   show: {
     opacity: 1,
     y: 0,
-    transition: { duration: 0.7, ease: EASE_EXPO },
+    transition: { duration: 0.45, ease: EASE_EXPO },
   },
 };
 
 /** Fade only. */
 export const fade: Variants = {
   hidden: { opacity: 0 },
-  show: { opacity: 1, transition: { duration: 0.6, ease: EASE_EXPO } },
+  show: { opacity: 1, transition: { duration: 0.4, ease: EASE_EXPO } },
 };
 
 /** Scale-in for cards / stat tiles. */
@@ -32,7 +32,7 @@ export const scaleIn: Variants = {
     opacity: 1,
     scale: 1,
     y: 0,
-    transition: { duration: 0.6, ease: EASE_EXPO },
+    transition: { duration: 0.42, ease: EASE_EXPO },
   },
 };
 
@@ -49,9 +49,9 @@ export const clipReveal: Variants = {
   hidden: { clipPath: "inset(0 100% 0 0)" },
   show: {
     clipPath: "inset(0 0% 0 0)",
-    transition: { duration: 0.8, ease: EASE_EXPO },
+    transition: { duration: 0.55, ease: EASE_EXPO },
   },
 };
 
 /** Default viewport config for whileInView usage. */
-export const inView = { once: true, margin: "0px 0px -12% 0px" } as const;
+export const inView = { once: true, margin: "0px 0px -6% 0px" } as const;

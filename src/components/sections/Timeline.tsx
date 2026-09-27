@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { AnimatePresence, motion, useScroll, useTransform } from "framer-motion";
+import { motion, useScroll, useTransform } from "framer-motion";
 import { BriefcaseBusiness, GraduationCap } from "lucide-react";
 import { sectionIndex } from "@/lib/content";
 import { useI18n } from "@/lib/i18n";
@@ -10,25 +10,24 @@ import { AnimatedCounter } from "@/components/motion/AnimatedCounter";
 import { Reveal } from "@/components/motion/Reveal";
 import { SectionHeader } from "@/components/ui/SectionHeader";
 import { ChapterSeam } from "@/components/chrome/ChapterSeam";
+import { EASE_EXPO } from "@/lib/motion";
 import { cn } from "@/lib/utils";
 
 /**
  * Path: the numbers, then the record.
  *
- * **The year column.** It used to carry five sticky years, one per entry,
- * each parked at 40% of the viewport — so while scrolling, two or three of them
- * overlapped each other and slid under the navbar, and each was a gradient
- * scaled 1.06× inside a box it did not fit (183px of Michroma in 176px), which
- * is what clipped the last digit. Now there is **one** sticky panel that
- * crossfades to the year of whichever entry is on the reading line, set at a
- * size four digits always fit, with inline padding so the gradient has room
- * for the glyphs' overhang.
+ * **Every role carries its own year.** There used to be one sticky year panel
+ * that crossfaded to whichever entry was on the reading line. Its exit and
+ * enter ran one after the other (~0.7s a change), and it only switched once an
+ * entry crossed a narrow band mid-screen, so the year always lagged the scroll.
+ * Now each row is `[year | role]`: two 2026 roles show 2026 twice, and nothing
+ * waits on shared state. The year is set as loud as the role title, in the ramp.
+ *
+ * **Each row reveals itself** as it enters, in 0.35s, with the year leading
+ * the title by a beat.
  *
  * **The beam** is `scaleY` on a full-height line, not an animated `height`:
  * height is layout, and it was being recomputed on every scroll frame.
- *
- * **Phones** get no panel — the year and dates sit with each entry — and the
- * rail node lives in the gutter instead of on top of the year.
  */
 export function Timeline() {
   const { c, t } = useI18n();
@@ -66,8 +65,6 @@ export function Timeline() {
     return () => io.disconnect();
   }, []);
 
-  const current = c.timeline[active] ?? c.timeline[0];
-
   return (
     <section
       id="timeline"
@@ -103,31 +100,7 @@ export function Timeline() {
           <span className="micro">{t.path.record}</span>
         </Reveal>
 
-        <div className="mt-10 grid gap-10 md:grid-cols-[minmax(0,15rem)_minmax(0,1fr)] md:gap-14 lg:grid-cols-[minmax(0,20rem)_minmax(0,1fr)]">
-          {/* The one sticky year. */}
-          <div className="hidden md:block">
-            <div className={cn(!reduced && "sticky top-[32vh]")}>
-              <AnimatePresence mode="wait" initial={false}>
-                <motion.div
-                  key={active}
-                  initial={reduced ? false : { opacity: 0, y: 14 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={reduced ? { opacity: 0 } : { opacity: 0, y: -14 }}
-                  transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-                >
-                  <span
-                    className="spectrum-text tabular inline-block px-1 font-display leading-none"
-                    style={{ fontSize: "clamp(2.5rem, 4.4vw, 4.25rem)" }}
-                  >
-                    {current.year}
-                  </span>
-                  <p className="micro mt-4 !text-fg">{current.org}</p>
-                  <p className="mt-1.5 font-mono text-sm text-muted">{current.period}</p>
-                </motion.div>
-              </AnimatePresence>
-            </div>
-          </div>
-
+        <div className="mt-10">
           {/* Entries on a rail. */}
           <div className="relative pl-9 md:pl-12">
             <div aria-hidden className="absolute bottom-0 left-[5px] top-0 w-px bg-line md:left-[7px]">
@@ -172,41 +145,61 @@ export function Timeline() {
                     ref={(el) => {
                       entryRefs.current[i] = el;
                     }}
-                    className="relative border-b border-line py-9 first:pt-2 md:py-11"
+                    className="relative grid gap-x-10 gap-y-3 border-b border-line py-9 first:pt-2 md:grid-cols-[minmax(0,13rem)_minmax(0,1fr)] md:py-11 lg:grid-cols-[minmax(0,17rem)_minmax(0,1fr)]"
                   >
-                    <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-                      <span className="font-mono text-sm tabular text-fg md:hidden">{entry.year}</span>
-                      <span className="font-mono text-sm text-muted">{entry.period}</span>
-                      <span className="inline-flex items-center gap-1.5 rounded-full border border-line px-2.5 py-0.5 font-mono text-xs uppercase tracking-wider text-muted">
-                        <Kind size={13} aria-hidden />
-                        {entry.kind === "education" ? t.path.education : t.path.work}
-                      </span>
-                    </div>
-
-                    <h3
-                      className={cn(
-                        "relative mt-4 font-tech text-2xl font-bold uppercase leading-tight text-balance transition-colors duration-500 md:text-3xl",
-                        on ? "text-fg" : "text-fg/80"
-                      )}
+                    <motion.div
+                      className="relative"
+                      initial={reduced ? false : { opacity: 0, y: 18 }}
+                      whileInView={{ opacity: 1, y: 0 }}
+                      viewport={{ once: true, margin: "0px 0px -15% 0px" }}
+                      transition={{ duration: 0.35, ease: EASE_EXPO }}
                     >
-                      {/* Node, anchored to the title so it is always level
-                          with the first line, and out in the gutter on the
-                          rail — never on top of the year or the text. The
-                          offsets are the rail's x minus the list's padding. */}
+                      {/* Node, level with the year's centre and out in the
+                          gutter on the rail. The x offsets are the rail's x
+                          minus the list's padding. */}
                       <span
                         aria-hidden
                         className={cn(
-                          "absolute -left-[36.5px] top-[0.45em] h-3 w-3 rotate-45 border transition-all duration-500 md:-left-[46.5px]",
+                          "absolute -left-[36.5px] h-3 w-3 rotate-45 border transition-all duration-200 md:-left-[46.5px]",
                           on ? "border-transparent" : "border-line-strong bg-bg"
                         )}
-                        style={on ? { backgroundImage: "var(--gradient-spectrum)" } : undefined}
+                        style={{
+                          top: "calc(clamp(2rem, 3.6vw, 3.5rem) / 2 - 6px)",
+                          ...(on && { backgroundImage: "var(--gradient-spectrum)" }),
+                        }}
                       />
-                      {entry.title}
-                    </h3>
-                    <p className="micro mt-3">{entry.org}</p>
-                    <p className="mt-4 max-w-2xl text-base leading-relaxed text-muted">
-                      {entry.description}
-                    </p>
+                      <span
+                        className="spectrum-text tabular inline-block pr-1 font-tech font-bold uppercase leading-none"
+                        style={{ fontSize: "clamp(2rem, 3.6vw, 3.5rem)" }}
+                      >
+                        {entry.year}
+                      </span>
+                      <p className="mt-2 font-mono text-sm text-muted">{entry.period}</p>
+                    </motion.div>
+
+                    <motion.div
+                      initial={reduced ? false : { opacity: 0, y: 18 }}
+                      whileInView={{ opacity: 1, y: 0 }}
+                      viewport={{ once: true, margin: "0px 0px -15% 0px" }}
+                      transition={{ duration: 0.35, ease: EASE_EXPO, delay: reduced ? 0 : 0.06 }}
+                    >
+                      <span className="liquid-glass inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 font-mono text-xs uppercase tracking-wider text-muted">
+                        <Kind size={13} aria-hidden />
+                        {entry.kind === "education" ? t.path.education : t.path.work}
+                      </span>
+                      <h3
+                        className={cn(
+                          "mt-3 font-tech text-2xl font-bold uppercase leading-tight text-balance transition-colors duration-200 md:text-3xl",
+                          on ? "text-fg" : "text-fg/80"
+                        )}
+                      >
+                        {entry.title}
+                      </h3>
+                      <p className="micro mt-3">{entry.org}</p>
+                      <p className="mt-4 max-w-2xl text-base leading-relaxed text-muted">
+                        {entry.description}
+                      </p>
+                    </motion.div>
                   </li>
                 );
               })}

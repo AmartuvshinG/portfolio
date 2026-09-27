@@ -17,7 +17,6 @@ import { openCase } from "@/lib/caseFile";
 import { isInteractive, modalOpen } from "@/lib/keys";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
 import { useSmoothScroll } from "@/components/chrome/SmoothScroll";
-import { setBackdropIntensity } from "@/lib/backdrop";
 import { ShotImage } from "@/components/work/ShotImage";
 import { ChapterSeam } from "@/components/chrome/ChapterSeam";
 import { cn } from "@/lib/utils";
@@ -129,23 +128,14 @@ function Theatre({ sectionRef: ref }: { sectionRef: React.RefObject<HTMLElement 
      session for a section that is on screen for a fraction of it. */
   const [live, setLive] = useState(false);
 
-  /* The site backdrop steps back while the stage owns the viewport, so the
-     screenshots are the brightest thing in frame. */
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
-    const io = new IntersectionObserver(
-      ([entry]) => {
-        setLive(entry.isIntersecting);
-        setBackdropIntensity(entry.intersectionRatio > 0.6 ? 0.45 : 1);
-      },
-      { threshold: [0, 0.6, 1], rootMargin: "50% 0px" }
-    );
+    const io = new IntersectionObserver(([entry]) => setLive(entry.isIntersecting), {
+      rootMargin: "50% 0px",
+    });
     io.observe(el);
-    return () => {
-      io.disconnect();
-      setBackdropIntensity(1);
-    };
+    return () => io.disconnect();
   }, [ref]);
 
   /** Scroll to case file `k`'s plateau. */
@@ -223,7 +213,7 @@ function Theatre({ sectionRef: ref }: { sectionRef: React.RefObject<HTMLElement 
                   aria-label={t.work.preview(current.title)}
                   className="group relative block w-full text-left"
                 >
-                  <div className="notch-card relative overflow-hidden bg-surface ring-1 ring-inset ring-line-strong shadow-[0_40px_120px_-20px_rgba(0,0,0,0.85)] transition-transform duration-500 ease-out group-hover:-translate-y-1">
+                  <div className="notch-card relative overflow-hidden bg-surface ring-1 ring-inset ring-line-strong shadow-[0_40px_120px_-20px_rgba(0,0,0,0.85)] transition-transform duration-300 ease-out group-hover:-translate-y-1">
                     {/* Browser bar */}
                     <div className="relative flex h-9 items-center gap-3 border-b border-line bg-deck px-4">
                       <span className="flex gap-1.5" aria-hidden>
@@ -292,7 +282,7 @@ function Theatre({ sectionRef: ref }: { sectionRef: React.RefObject<HTMLElement 
                       )}
                     >
                       <span
-                        className="block h-px transition-all duration-500"
+                        className="block h-px transition-all duration-250"
                         style={{
                           width: i === active ? 28 : 12,
                           background: i === active ? accentColor[p.accent] : "currentColor",

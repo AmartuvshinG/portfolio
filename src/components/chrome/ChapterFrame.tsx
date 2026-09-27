@@ -48,8 +48,8 @@ export function ChapterFrame() {
         /* Nothing but the signage reads this. There used to be a
            `chapter-change` event dispatched here for the lens overlay to
            stutter on; it was the source of the horizontal cyan/magenta bars
-           reported on every scroll. See the header of `Anamorphic.tsx` for why
-           it is gone rather than tuned. */
+           reported on every scroll, and it is gone rather than tuned: an effect
+           that looks like a rendering fault cannot fire at every boundary. */
         onToggle: (self) => {
           if (!self.isActive) return;
           setActive(i);

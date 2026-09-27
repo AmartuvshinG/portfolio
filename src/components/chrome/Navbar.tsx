@@ -11,7 +11,7 @@ import {
   useTransform,
   type MotionValue,
 } from "framer-motion";
-import { Menu, X } from "lucide-react";
+import { X } from "lucide-react";
 import {
   navLinks as sectionLinks,
   RESUME_EN,
@@ -26,6 +26,7 @@ import { useOverlay } from "@/hooks/useOverlay";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
 import { MagneticButton } from "@/components/motion/MagneticButton";
 import { cn } from "@/lib/utils";
+import { DROPLET_LAND, DROPLET_STYLE, Monogram, NAV_ICONS } from "@/components/chrome/NavGlyphs";
 
 const BAR_SPRING = { type: "spring", stiffness: 200, damping: 50 } as const;
 
@@ -51,19 +52,21 @@ const GLASS_DELAY = 150;
 const GLASS_FADE = 220;
 
 /**
- * HUD command bar — the NEXUS header, restored and recoloured.
+ * The command bar.
  *
- * Sits flush across the viewport at rest; past the fold it contracts into a
- * chamfered floating console. The active section drives a `layoutId` pill that
- * slides between links, which doubles as a position indicator.
+ * Sits flush across the viewport at rest. Past the fold it contracts into a
+ * floating liquid-glass capsule: a lit rim, a highlight that follows the
+ * pointer, and while the page is still, real refraction through the `#lg`
+ * filter. The active section is a glass droplet that slides between links on a
+ * `layoutId` and lands with a squash, which doubles as a position indicator.
  *
  * Three things here are less obvious than they look, and each is a fix for a
  * real defect rather than a preference:
  *
  * 1. **The console is a container query context, not a viewport one.** Its
- *    contents are `flex-nowrap`, and `chamfer-lg` is a `clip-path` — so when
- *    ten links plus a clock plus a CTA overflow, the excess is *silently cut
- *    off* at the panel edge with no scrollbar and no warning. Sizing the drop
+ *    contents are `flex-nowrap` inside an `overflow-hidden` row — so when
+ *    the links plus the CTA overflow, the excess is *silently cut off* at the
+ *    capsule's edge with no scrollbar and no warning. Sizing the drop
  *    ladder off the viewport could never be right, because the thing
  *    overflowing is the console, whose width is a `min()` of two other things.
  *
@@ -100,6 +103,7 @@ export function Navbar() {
   const [scrolling, setScrolling] = useState(false);
   const [glassLive, setGlassLive] = useState(false);
   const toggleRef = useRef<HTMLButtonElement>(null);
+  const barRef = useRef<HTMLDivElement>(null);
   const sheetRef = useRef<HTMLDivElement>(null);
 
   const closeSheet = useCallback(() => setOpen(false), []);
@@ -276,6 +280,13 @@ export function Navbar() {
     return () => mq.removeEventListener("change", check);
   }, [open, deskQuery]);
 
+  /* With the full link row showing, a bar narrower than 72rem cannot hold the
+     wordmark as well; the monogram carries the brand alone there. Phones never
+     show the row, so they always keep the name. */
+  const wordmarkFit = mn
+    ? "@max-[72rem]:min-[1280px]:hidden"
+    : "@max-[72rem]:min-[1080px]:hidden";
+
   const go = (href: string) => {
     scrollTo(href);
     setOpen(false);
@@ -285,40 +296,50 @@ export function Navbar() {
     <>
       <header className="fixed inset-x-0 top-0 z-[60]">
         <motion.div
+          ref={barRef}
+          /* The glint: one custom property on the bar itself, written only
+             while the pointer is over it. */
+          onPointerMove={(e) => {
+            const el = barRef.current;
+            if (!el || !contracted) return;
+            const box = el.getBoundingClientRect();
+            el.style.setProperty("--gx", `${(((e.clientX - box.left) / box.width) * 100).toFixed(1)}%`);
+          }}
           animate={{
             /* 84rem, not 72: ten links, a status lamp, a clock and a CTA do not
-               fit in 1152px, and the chamfer's clip-path hides the evidence. */
+               fit in 1152px, and the capsule's overflow hides the evidence. */
             width: contracted ? "min(96%, 84rem)" : "100%",
             y: contracted ? 14 : 0,
           }}
           transition={BAR_SPRING}
           className={cn(
             "@container relative mx-auto",
-            contracted &&
-              "chamfer-lg border border-line shadow-[0_18px_60px_rgba(0,0,0,0.6)]"
+            contracted && "rounded-full shadow-[0_18px_60px_rgba(0,0,0,0.6)]"
           )}
         >
-          {/* Opaque fill — what you actually see while scrolling. */}
+          {/* Tinted fill — what you actually see while scrolling. */}
           {contracted && (
             <span
               aria-hidden
-              className="chamfer-lg absolute inset-0 bg-bg transition-opacity duration-[220ms]"
-              style={{ opacity: glassOn ? 0.55 : 0.95 }}
+              className="absolute inset-0 rounded-full bg-bg transition-opacity duration-[220ms]"
+              style={{ opacity: glassOn ? 0.42 : 0.92 }}
             />
           )}
-          {/* Glass — live only when the page is still. */}
+          {/* Glass — live only when the page is still. `liquid-glass-live`
+              carries the backdrop-filter (refraction on Chromium, blur
+              elsewhere), and it is on the element only while `glassLive`. */}
           {contracted && glassSupported && (
             <span
               aria-hidden
-              className="chamfer-lg absolute inset-0 transition-opacity duration-[220ms]"
+              className={cn(
+                "absolute inset-0 rounded-full transition-opacity duration-[220ms]",
+                glassLive && "liquid-glass-live"
+              )}
               style={{
                 opacity: glassOn ? 1 : 0,
-                backdropFilter: glassLive ? "blur(18px) saturate(1.3)" : "none",
-                WebkitBackdropFilter: glassLive
-                  ? "blur(18px) saturate(1.3)"
-                  : "none",
                 background:
-                  "linear-gradient(180deg, rgba(236,238,251,0.05), transparent 42%)",
+                  "radial-gradient(40% 140% at var(--gx, 30%) 0%, rgba(255,255,255,0.12), transparent 70%)," +
+                  "linear-gradient(180deg, rgba(236,238,251,0.07), transparent 46%)",
               }}
             />
           )}
@@ -326,7 +347,7 @@ export function Navbar() {
           <nav
             className={cn(
               "relative mx-auto flex h-16 flex-nowrap items-center justify-between gap-4 overflow-hidden transition-[padding] duration-300",
-              contracted ? "px-5" : "max-w-[1600px] px-5 md:px-8"
+              contracted ? "px-3 md:px-4" : "max-w-[1600px] px-5 md:px-8"
             )}
           >
             {/* Wordmark. A real link off-route so it navigates home rather than
@@ -338,22 +359,22 @@ export function Navbar() {
                   e.preventDefault();
                   go("#hero");
                 }}
-                className="flex shrink-0 items-center gap-3"
+                className="flex shrink-0 items-center gap-2.5 rounded-full"
                 aria-label={`${profile.wordmark} — ${t.nav.backToTop}`}
               >
-                <Lamp />
-                <span className="font-display text-xl text-fg">
+                <Monogram className="shrink-0" />
+                <span className={cn("font-display text-xl text-fg", wordmarkFit)}>
                   {profile.wordmark}
                 </span>
               </a>
             ) : (
               <Link
                 href="/"
-                className="flex shrink-0 items-center gap-3"
+                className="flex shrink-0 items-center gap-2.5 rounded-full"
                 aria-label={`${profile.wordmark} — ${t.nav.home}`}
               >
-                <Lamp />
-                <span className="font-display text-xl text-fg">
+                <Monogram className="shrink-0" />
+                <span className={cn("font-display text-xl text-fg", wordmarkFit)}>
                   {profile.wordmark}
                 </span>
               </Link>
@@ -382,7 +403,6 @@ export function Navbar() {
                   link={link}
                   isActive={active === link.href}
                   isHome={isHome}
-                  contracted={contracted}
                   dockable={dockable}
                   mouseX={mouseX}
                   go={go}
@@ -401,7 +421,8 @@ export function Navbar() {
               <span
                 className={cn(
                   "hud-label shrink-0 items-center gap-2 whitespace-nowrap !text-fg",
-                  contracted ? "hidden @[84rem]:flex" : "hidden @[80rem]:flex"
+                  /* The capsule has no room for it once the glyphs are in. */
+                  contracted ? "hidden" : "hidden @[80rem]:flex"
                 )}
               >
                 <span
@@ -424,7 +445,7 @@ export function Navbar() {
                 target="_blank"
                 rel="noopener"
                 aria-label={t.nav.resumeAria}
-                className="chamfer-sm hidden px-4 py-2 font-mono text-[0.8125rem] uppercase tracking-[0.18em] text-void transition-transform duration-300 hover:scale-[1.04] sm:block"
+                className="hidden rounded-full px-4 py-2 font-mono text-[0.8125rem] uppercase tracking-[0.18em] text-void shadow-[inset_0_1px_0_rgba(255,255,255,0.45),0_6px_20px_-6px_rgba(255,45,143,0.55)] transition-transform duration-200 hover:scale-[1.05] sm:block"
                 style={{ backgroundImage: "var(--gradient-spectrum)" }}
               >
                 {t.nav.resume}
@@ -438,19 +459,49 @@ export function Navbar() {
                 aria-expanded={open}
                 aria-controls="mobile-nav"
                 className={cn(
-                  "flex h-11 w-11 items-center justify-center border border-line text-fg",
+                  "liquid-glass flex h-11 w-11 items-center justify-center rounded-full text-fg",
                   mn ? "min-[1280px]:hidden" : "min-[1080px]:hidden"
                 )}
               >
-                {open ? <X size={18} /> : <Menu size={18} />}
+                {/* Two strokes that cross into an X. */}
+                <span aria-hidden className="relative block h-4 w-4">
+                  {[-1, 1].map((d) => (
+                    <span
+                      key={d}
+                      className="absolute left-0 top-1/2 h-[1.5px] w-full rounded-full bg-current transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]"
+                      style={{
+                        transform: open
+                          ? `translateY(-50%) rotate(${d * 45}deg)`
+                          : `translateY(calc(-50% + ${d * 4}px))`,
+                      }}
+                    />
+                  ))}
+                </span>
               </button>
             </div>
           </nav>
 
-          {/* Read-progress hairline along the bar's base */}
+          {/* The capsule's rim: a lit upper lip and a cool lower edge, drawn
+              over the content so it reads as the edge of the glass. */}
+          {contracted && (
+            <span
+              aria-hidden
+              className="pointer-events-none absolute inset-0 rounded-full"
+              style={{
+                boxShadow:
+                  "inset 0 1px 0 rgba(255,255,255,0.22), inset 0 0 0 1px rgba(236,238,251,0.1), inset 0 -1px 0 rgba(34,224,255,0.18)",
+              }}
+            />
+          )}
+
+          {/* Read-progress hairline along the bar's base. Pulled in from the
+              ends when contracted so it stays inside the capsule's curve. */}
           <span
             aria-hidden
-            className="absolute inset-x-0 bottom-0 h-px origin-left"
+            className={cn(
+              "absolute bottom-0 h-px origin-left",
+              contracted ? "inset-x-10" : "inset-x-0"
+            )}
             style={{
               backgroundImage: "var(--gradient-spectrum)",
               transform: `scaleX(${progress})`,
@@ -481,7 +532,7 @@ export function Navbar() {
             exit={{ opacity: 0, clipPath: "inset(0 0 100% 0)" }}
             transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
             className={cn(
-              "fixed inset-0 z-[80] flex flex-col bg-bg/95 px-8 backdrop-blur-xl",
+              "liquid-glass-live fixed inset-0 z-[80] flex flex-col bg-bg/80 px-8",
               mn ? "min-[1280px]:hidden" : "min-[1080px]:hidden"
             )}
             style={{
@@ -497,7 +548,7 @@ export function Navbar() {
                 headers swapping. */}
             <div className="relative flex h-16 shrink-0 items-center justify-between">
               <span className="flex items-center gap-3">
-                <Lamp />
+                <Monogram className="shrink-0" />
                 <span className="font-display text-xl text-fg">
                   {profile.wordmark}
                 </span>
@@ -507,7 +558,7 @@ export function Navbar() {
                 data-autofocus
                 onClick={closeSheet}
                 aria-label={t.nav.closeMenu}
-                className="-mr-2 flex h-11 w-11 items-center justify-center border border-line text-fg"
+                className="liquid-glass -mr-2 flex h-11 w-11 items-center justify-center rounded-full text-fg"
               >
                 <X size={18} />
               </button>
@@ -533,11 +584,9 @@ export function Navbar() {
                         e.preventDefault();
                         go(link.href);
                       }}
-                      className="flex items-baseline gap-4 py-3"
+                      className="flex items-center gap-4 py-3"
                     >
-                      <span className="spectrum-text font-mono text-xs">
-                        {link.code}
-                      </span>
+                      <SheetGlyph href={link.href} code={link.code} />
                       <span className="font-display text-2xl uppercase text-fg">
                         {link.label}
                       </span>
@@ -546,11 +595,9 @@ export function Navbar() {
                     <Link
                       href={`/${link.href}`}
                       onClick={() => setOpen(false)}
-                      className="flex items-baseline gap-4 py-3"
+                      className="flex items-center gap-4 py-3"
                     >
-                      <span className="spectrum-text font-mono text-xs">
-                        {link.code}
-                      </span>
+                      <SheetGlyph href={link.href} code={link.code} />
                       <span className="font-display text-2xl uppercase text-fg">
                         {link.label}
                       </span>
@@ -573,7 +620,7 @@ export function Navbar() {
                   target="_blank"
                   rel="noopener"
                   aria-label={t.nav.resumeAria}
-                  className="chamfer-sm flex h-9 items-center px-4 font-mono text-[0.8125rem] uppercase tracking-[0.18em] text-void"
+                  className="flex h-9 items-center rounded-full px-4 font-mono text-[0.8125rem] uppercase tracking-[0.18em] text-void"
                   style={{ backgroundImage: "var(--gradient-spectrum)" }}
                 >
                   {t.nav.resume}
@@ -592,9 +639,9 @@ export function Navbar() {
  *
  * Three things here are deliberate and each one is a fix rather than a taste:
  *
- * 1. **Scale, never width.** The console is a `clip-path` (`chamfer-lg`) with
+ * 1. **Scale, never width.** The capsule's row is `overflow-hidden` with
  *    `flex-nowrap` contents, so it clips overflow silently — no scrollbar, no
- *    warning, the tail links simply vanish behind the chamfer. Animating the
+ *    warning, the tail links simply vanish past the curve. Animating the
  *    *width* of a magnified link would push the last two links out of the panel
  *    on any narrow-ish viewport. `scale` changes what you see and not what the
  *    row measures, so the layout is identical at rest and at full deflection.
@@ -614,7 +661,6 @@ function DockLink({
   link,
   isActive,
   isHome,
-  contracted,
   dockable,
   mouseX,
   go,
@@ -622,7 +668,6 @@ function DockLink({
   link: NavLink;
   isActive: boolean;
   isHome: boolean;
-  contracted: boolean;
   dockable: boolean;
   mouseX: MotionValue<number>;
   go: (href: string) => void;
@@ -654,34 +699,31 @@ function DockLink({
     DOCK_SPRING
   );
 
+  const Icon = NAV_ICONS[link.href];
   const label = (
     <>
-      {/* The numbering is HUD decoration, and it is the first thing to go —
-          measured, it costs ~260px across ten links, which is more than a
-          compact console has spare at any viewport width. So it belongs to the
-          full-width bar at the top of the page and not to the floating console;
-          the mobile sheet keeps it too. */}
-      <span
-        className={cn(
-          /* Was `text-[0.6rem] opacity-50` — 9.6px, and the opacity composited
-             muted down to 2.34:1, which is worse than any raw token on the
-             site. The subordination is now carried by `--color-faint`, which
-             is a real 5:1 step below muted rather than a half-erased one. */
-          "text-[0.75rem] text-faint",
-          contracted ? "hidden" : "hidden @[84rem]:inline",
-          /* Mongolian labels run ~40% longer than the English ones; the
-             numbering is the decoration that makes room for them. */
-          "[:root:lang(mn)_&]:hidden"
-        )}
-      >
-        {link.code}
-      </span>
+      {/* The glyph is wayfinding beside the word, never instead of it. It is
+          the first thing to go when the capsule runs short: measured, seven of
+          them cost ~150px, so they need a console of 82rem (84rem for the
+          longer Mongolian labels). */}
+      {Icon && (
+        <Icon
+          aria-hidden
+          size={14}
+          strokeWidth={1.75}
+          className={cn(
+            "hidden shrink-0 transition-colors @[82rem]:block",
+            "[:root:lang(mn)_&]:hidden [:root:lang(mn)_&]:@[84rem]:block",
+            isActive ? "text-fg" : "text-faint"
+          )}
+        />
+      )}
       <span>{link.label}</span>
     </>
   );
 
   const linkClass = cn(
-    "relative flex items-center gap-2 whitespace-nowrap px-2.5 py-2 font-mono text-xs uppercase tracking-[0.16em] transition-colors @[76rem]:px-3.5",
+    "relative flex items-center gap-2 whitespace-nowrap rounded-full px-2.5 py-2 font-mono text-xs uppercase tracking-[0.16em] transition-colors @[76rem]:px-3.5",
     /* Cyrillic caps are wider than Latin in this mono face; half the tracking
        keeps the Mongolian row inside the console at 1280px. */
     "[:root:lang(mn)_&]:tracking-[0.07em]",
@@ -702,12 +744,11 @@ function DockLink({
         <motion.span
           layoutId="nav-active"
           aria-hidden
-          className="chamfer-sm absolute inset-0 border border-line-strong"
-          style={{
-            background:
-              "linear-gradient(100deg, rgba(255,45,143,0.16), rgba(123,92,255,0.16), rgba(34,224,255,0.16))",
-          }}
-          transition={BAR_SPRING}
+          className="absolute inset-0 rounded-full"
+          style={DROPLET_STYLE}
+          initial={DROPLET_LAND.initial}
+          animate={DROPLET_LAND.animate}
+          transition={DROPLET_LAND.transition}
         />
       )}
 
@@ -750,11 +791,13 @@ function DockLink({
   );
 }
 
-function Lamp() {
+/** The sheet's row marker: the section glyph over its number. */
+function SheetGlyph({ href, code }: { href: string; code: string }) {
+  const Icon = NAV_ICONS[href];
   return (
-    <span className="relative flex h-2 w-2">
-      <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-signal opacity-60" />
-      <span className="relative inline-flex h-2 w-2 rounded-full bg-signal" />
+    <span className="liquid-glass flex h-10 w-10 shrink-0 flex-col items-center justify-center rounded-full">
+      {Icon && <Icon aria-hidden size={15} strokeWidth={1.75} className="text-fg" />}
+      <span className="spectrum-text font-mono text-[0.625rem] leading-none">{code}</span>
     </span>
   );
 }

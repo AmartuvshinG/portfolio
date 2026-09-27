@@ -112,7 +112,7 @@ export function HoverBorderGradient({
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       className={cn(
-        "chamfer-sm relative flex w-fit items-center justify-center overflow-visible p-px transition-colors duration-500",
+        "chamfer-sm relative flex w-fit items-center justify-center overflow-visible p-px transition-colors duration-250",
         containerClassName
       )}
       {...props}

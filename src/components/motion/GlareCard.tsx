@@ -209,19 +209,19 @@ export function GlareCard({
               out whatever the card is actually showing. */}
           <motion.span
             aria-hidden
-            className="pointer-events-none absolute inset-0 z-20 opacity-0 transition-opacity duration-500 group-hover:opacity-100 group-focus-visible:opacity-100"
+            className="pointer-events-none absolute inset-0 z-20 opacity-0 transition-opacity duration-250 group-hover:opacity-100 group-focus-visible:opacity-100"
             style={{ background: glare, mixBlendMode: "soft-light" }}
           />
           {/* The ramp catching the edge the light is coming from. */}
           <motion.span
             aria-hidden
-            className="pointer-events-none absolute inset-0 z-10 opacity-0 transition-opacity duration-500 group-hover:opacity-40 group-focus-visible:opacity-40"
+            className="pointer-events-none absolute inset-0 z-10 opacity-0 transition-opacity duration-250 group-hover:opacity-40 group-focus-visible:opacity-40"
             style={{ background: edge }}
           />
           {/* A single specular streak, sliding against the tilt. */}
           <motion.span
             aria-hidden
-            className="pointer-events-none absolute -inset-y-1/2 inset-x-[-40%] z-0 rotate-[18deg] opacity-0 transition-opacity duration-700 group-hover:opacity-[0.07] group-focus-visible:opacity-[0.07]"
+            className="pointer-events-none absolute -inset-y-1/2 inset-x-[-40%] z-0 rotate-[18deg] opacity-0 transition-opacity duration-300 group-hover:opacity-[0.07] group-focus-visible:opacity-[0.07]"
             style={{
               x: sheenX,
               background:

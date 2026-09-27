@@ -6,7 +6,6 @@ import { useReducedMotion } from "@/hooks/useReducedMotion";
 import { useLockScroll } from "@/hooks/useLockScroll";
 import { markBooted } from "@/hooks/useBootReady";
 import { useI18n } from "@/lib/i18n";
-import { Nebula } from "@/components/backdrop/Nebula";
 import { GlowHorizon } from "@/components/ui/GlowHorizon";
 
 /**
@@ -94,18 +93,10 @@ export function Preloader() {
           exit={{ y: "-100%" }}
           transition={{ duration: 0.9, ease: [0.76, 0, 0.24, 1] }}
         >
-          <Nebula
-            className="pointer-events-none absolute inset-0 h-full w-full"
-            opacity={0.5}
-          />
-
-          {/* The hand-off. The curtain lifts *over* a horizon already rising
-              behind it, so the first gesture the visitor sees is the same arc
-              the hero, every section seam and every route change will use —
-              one entrance language, stated before anything else loads.
-              Without this the curtain reveals a static frame and the hero's own
-              arcs start from nothing a beat later, which reads as two separate
-              animations rather than one continuous arrival.
+          {/* The curtain's own horizon. This is the only arc left on the site:
+              the hero and the section seams dropped theirs so the page behind
+              has one consistent ground, but a loading curtain is a separate
+              frame that lifts away within three seconds.
 
               Confined to the bottom two-fifths and run at low intensity. At full
               height the arc stack's white specular layer is wider than the

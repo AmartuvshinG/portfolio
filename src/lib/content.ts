@@ -47,8 +47,8 @@ export interface Project {
   accent: AccentKey;
   /**
    * Real screenshot (2000×1250 webp in `public/work/`), shown on the work
-   * monitor and at the top of the case file. Optional: a project without one —
-   * coursework, today — renders its generated `ProjectVisual` instead and never
+   * monitor and at the top of the case file. Optional: a project without one
+   * renders its generated `ProjectVisual` instead and never
    * requests a file that isn't there.
    */
   shot?: string;
@@ -115,14 +115,6 @@ export const site = {
     "Portfolio of Amartuvshin Ganzorig, a software engineering graduate (B.S., Gannon University, 2026) building full-stack and machine learning applications. Based in Ulaanbaatar, Mongolia.",
   url: siteUrl,
 };
-
-/**
- * Portrait cutout for the hero. Wants a **background-removed** PNG, ≥1400px
- * tall: the whole effect is the wordmark passing behind the shoulders, which a
- * rectangular photo cannot do. Until the file exists the hero renders the
- * generated silhouette treatment instead.
- */
-export const PORTRAIT = "/portrait.png";
 
 export const profile = {
   wordmark: "AMARTUVSHIN",
@@ -220,7 +212,6 @@ export const capabilities: Capability[] = [
       "Java as my strongest language, plus Python, JavaScript, SQL and C++; Android apps in Android Studio.",
     tags: ["Java", "Python", "C++"],
     icon: "braces",
-    proof: "coursework",
   },
   {
     code: "SYS/04",
@@ -238,7 +229,7 @@ export const capabilities: Capability[] = [
       "Test case design, defect tracking and QA reporting across the software development lifecycle.",
     tags: ["QA", "Test cases", "SDLC"],
     icon: "checks",
-    proof: "coursework",
+    proof: "spotfixes",
   },
   {
     code: "SYS/06",
@@ -383,26 +374,6 @@ export const projects: Project[] = [
         caption: "The ledger",
       },
     ],
-  },
-  {
-    slug: "coursework",
-    index: "04",
-    title: "JAVA & ANDROID",
-    category: "Java QA · Android",
-    year: "2024",
-    role: "Student Developer",
-    status: "Completed",
-    summary:
-      "Test-case design for a Java calculator app, and Android apps with real-time device simulation and API integration.",
-    description:
-      "Software Testing & Quality Assurance (Fall 2024): designed and ran test cases for a Java calculator application, found and resolved defects, and collaborated through GitHub. Mobile Application Development II (Spring 2024): built Android apps in Android Studio, ran real-time simulations on devices, and integrated external APIs.",
-    stack: ["Java", "Android Studio", "GitHub"],
-    highlights: [
-      "Test case design and defect resolution",
-      "Android apps with external API integration",
-    ],
-    accent: "accent",
-    metrics: [],
   },
 ];
 
