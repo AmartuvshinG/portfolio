@@ -16,6 +16,7 @@ import { useI18n } from "@/lib/i18n";
 import { caseHash, openCase } from "@/lib/caseFile";
 import { scaleIn } from "@/lib/motion";
 import { GlareCard } from "@/components/motion/GlareCard";
+import { TechStrip } from "@/components/ui/TechMarks";
 import { cn } from "@/lib/utils";
 
 export const ICONS: Record<Capability["icon"], LucideIcon> = {
@@ -37,7 +38,7 @@ export const ICONS: Record<Capability["icon"], LucideIcon> = {
  * - The title wraps. It used to be one uppercase line that longer titles
  *   ("Java & core programming") ran right to the edge of; it is the one thing
  *   on the card nobody should have to squint at.
- * - Tags are pills, not a run of spaced-out mono words that read as one string.
+ * - The tools are marks with their names (TechStrip), not bare text pills.
  * - The "01" chip that repeated the card's own SYS/01 code is gone; in its place
  *   is the link a recruiter actually wants — the case file where this skill was
  *   used. It opens over the page, like every case file.
@@ -78,16 +79,7 @@ export function CapabilityCard({ item }: { item: Capability }) {
         {item.description}
       </p>
 
-      <ul className="mt-6 flex flex-wrap gap-2">
-        {item.tags.map((tag) => (
-          <li
-            key={tag}
-            className="rounded-full border border-line px-3 py-1 font-mono text-[0.8125rem] tracking-wide text-fg/85"
-          >
-            {tag}
-          </li>
-        ))}
-      </ul>
+      <TechStrip stack={item.stack} labels={t.craft.tools} className="mt-6" />
 
       {proof && (
         <a

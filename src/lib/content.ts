@@ -10,6 +10,8 @@
  * ============================================================================
  */
 
+import type { TechKey } from "@/components/ui/TechMarks";
+
 export type AccentKey = "accent" | "accent-2" | "alert";
 
 export interface NavLink {
@@ -29,6 +31,8 @@ export interface Capability {
   proof?: string;
   /** Wide card in the bento. */
   feature?: boolean;
+  /** Tools named in the description or tags, shown as marks. Locale-free. */
+  stack: TechKey[];
 }
 
 export interface Project {
@@ -67,6 +71,8 @@ export interface Project {
 
 export interface TimelineEntry {
   year: string;
+  /** The years the role covers, set large: "2025–2026", or one year. */
+  span: string;
   /** Human dates, shown beside the entry — "Jun – Sep 2026". */
   period: string;
   kind: "work" | "education";
@@ -191,6 +197,7 @@ export const capabilities: Capability[] = [
     description:
       "React frontends on FastAPI backends with PostgreSQL (Supabase), REST APIs, and multi-tenant data isolation.",
     tags: ["React", "FastAPI", "PostgreSQL"],
+    stack: ["react", "fastapi", "postgresql", "supabase"],
     icon: "layers",
     proof: "spotfixes",
     feature: true,
@@ -201,6 +208,7 @@ export const capabilities: Capability[] = [
     description:
       "Text classification with scikit-learn (TF-IDF + Random Forest) and retrieval-augmented similarity search with ChromaDB.",
     tags: ["scikit-learn", "RAG", "ChromaDB"],
+    stack: ["scikitlearn", "python", "chromadb"],
     icon: "brain",
     proof: "spotfixes",
     feature: true,
@@ -211,6 +219,7 @@ export const capabilities: Capability[] = [
     description:
       "Java as my strongest language, plus Python, JavaScript, SQL and C++; Android apps in Android Studio.",
     tags: ["Java", "Python", "C++"],
+    stack: ["java", "python", "javascript", "cpp", "androidstudio"],
     icon: "braces",
   },
   {
@@ -219,6 +228,7 @@ export const capabilities: Capability[] = [
     description:
       "Led UI/UX for Spotfixes; planned and ran usability tests, logged findings, and turned them into fixes.",
     tags: ["UI/UX", "Usability testing", "Accessibility"],
+    stack: ["usability", "accessibility"],
     icon: "pen",
     proof: "spotfixes",
   },
@@ -228,6 +238,7 @@ export const capabilities: Capability[] = [
     description:
       "Test case design, defect tracking and QA reporting across the software development lifecycle.",
     tags: ["QA", "Test cases", "SDLC"],
+    stack: ["testcases", "defects", "sdlc"],
     icon: "checks",
     proof: "spotfixes",
   },
@@ -237,6 +248,7 @@ export const capabilities: Capability[] = [
     description:
       "Docker on Ubuntu, GitHub Actions CI/CD, and authentication with OAuth2, JWT, MFA and row-level security.",
     tags: ["Docker", "CI/CD", "OAuth2"],
+    stack: ["docker", "ubuntu", "githubactions", "jwt"],
     icon: "shield",
     proof: "spotfixes",
   },
@@ -388,6 +400,7 @@ export const stats: Stat[] = [
 export const timeline: TimelineEntry[] = [
   {
     year: "2026",
+    span: "2026",
     period: "Jun – Sep 2026",
     kind: "work",
     title: "Corporate Logistics Coordinator (Contractor, Khanbogd Khurd)",
@@ -397,6 +410,7 @@ export const timeline: TimelineEntry[] = [
   },
   {
     year: "2026",
+    span: "2026",
     period: "Graduated May 2026",
     kind: "education",
     title: "B.S. Software Engineering",
@@ -406,6 +420,7 @@ export const timeline: TimelineEntry[] = [
   },
   {
     year: "2025",
+    span: "2025–2026",
     period: "May 2025 – Apr 2026",
     kind: "work",
     title: "Foodservice Student Worker",
@@ -414,6 +429,7 @@ export const timeline: TimelineEntry[] = [
   },
   {
     year: "2023",
+    span: "2023–2024",
     period: "Aug 2023 – May 2024",
     kind: "work",
     title: "Front Desk Student Attendant",
@@ -422,6 +438,7 @@ export const timeline: TimelineEntry[] = [
   },
   {
     year: "2022",
+    span: "2022–2023",
     period: "Summers 2022 & 2023",
     kind: "work",
     title: "Summer Student Conference Assistant",

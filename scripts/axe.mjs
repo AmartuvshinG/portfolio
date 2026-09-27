@@ -43,16 +43,14 @@ const ACTS = [
 
 const TAGS = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"];
 
-/** Long enough for the preloader, the entrances and the first WebGL draw. */
+/** Long enough for the preloader and the entrances. */
 const SETTLE = 2600;
 
 /**
- * The only canvas left is the Craft carousel's WebGL surface. It is
- * `aria-hidden`: its content is duplicated in a visually hidden list and every
- * control is a real button, so axe flagging the canvas itself would be a false
- * positive. Nothing else is excluded.
+ * Nothing is excluded. The Craft section used to be a WebGL canvas that had to
+ * be; it is real DOM now, so axe sees exactly what a reader sees.
  */
-const EXCLUDE = ["canvas"];
+const EXCLUDE = [];
 
 const LOCALES = ["en", "mn"];
 

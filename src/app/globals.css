@@ -478,6 +478,52 @@ html.hud-cursor * {
   backdrop-filter: url(#lg) blur(5px) saturate(1.6) brightness(1.06);
 }
 
+/* A tool chip. At rest a faint glass pill; inside a card whose `--live` is 1
+   (the Craft card in focus) its rim fills with the ramp. The rim is a masked
+   pseudo-element so the pill can stay round — border-image cannot. */
+@utility tech-chip {
+  position: relative;
+  background: rgba(255, 255, 255, 0.05);
+  box-shadow: inset 0 0 0 1px rgba(236, 238, 251, 0.12);
+  &::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    padding: 1px;
+    border-radius: inherit;
+    background: var(--gradient-spectrum);
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    opacity: var(--live, 0);
+    pointer-events: none;
+  }
+}
+
+/* The same ramp rim, for a whole card. */
+@utility live-rim {
+  &::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    padding: 1px;
+    border-radius: inherit;
+    background: var(--gradient-spectrum);
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    opacity: var(--live, 0);
+    pointer-events: none;
+  }
+}
+
+/* Type drawn as a hairline outline — for the giant ghost words and numbers
+   that sit behind content as depth, never as something to read. */
+@utility outline-text {
+  color: transparent;
+  -webkit-text-stroke: 1px color-mix(in srgb, var(--color-fg) 16%, transparent);
+}
+
 /* Restored from NEXUS for the mobile nav sheet. */
 @utility holo-grid {
   background-image:
