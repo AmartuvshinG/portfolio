@@ -11,7 +11,8 @@
  * gradient-only rule. Never scale them non-uniformly, crop them, add effects to
  * the glyph itself, or place anything inside their clear space.
  *
- * Credited in the footer's bottom bar. If either mark is ever replaced, re-take
+ * Credited in the footer's bottom bar (`ui.footer.credit`, in both languages).
+ * If either mark is ever replaced, re-take
  * it from the source below rather than redrawing it.
  *
  * - GitHub Invertocat — `mark-github` from GitHub's own Octicons
@@ -48,7 +49,3 @@ export function LinkedInMark({ className }: { className?: string }) {
     />
   );
 }
-
-/** The credit line both marks are shown under. Rendered in the footer. */
-export const BRAND_CREDIT =
-  "GitHub and the Invertocat logo are trademarks of GitHub, Inc. LinkedIn and the IN logo are registered trademarks of LinkedIn Corporation.";

@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { motion, useScroll, useTransform } from "framer-motion";
-import { profile, contact } from "@/lib/content";
+import { useI18n } from "@/lib/i18n";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
 import { usePointerDrift } from "@/hooks/usePointerDrift";
 import { useBootReady } from "@/hooks/useBootReady";
@@ -64,6 +64,8 @@ const GLITCH_AT = 1100;
 const GLITCH_FOR = 900;
 
 export function Hero() {
+  const { c, t } = useI18n();
+  const { profile, contact } = c;
   const ref = useRef<HTMLElement>(null);
   const reduced = useReducedMotion();
   const [active, setActive] = useState(false);
@@ -149,7 +151,7 @@ export function Hero() {
       data-act="void"
       data-chapter="INDEX"
       className={reduced ? "relative" : `relative ${RUN}`}
-      aria-label="Introduction"
+      aria-label={t.hero.aria}
     >
       <div
         className={
@@ -296,7 +298,7 @@ export function Hero() {
               transition={{ delay: 2.7, duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
               className="notch-card-sm w-fit border border-line bg-deck/80 px-5 py-4 backdrop-blur-md"
             >
-              <span className="micro">Currently</span>
+              <span className="micro">{t.hero.currently}</span>
               <p className="mt-2 max-w-[15rem] font-tech text-sm font-semibold uppercase leading-tight text-fg">
                 {profile.status}
               </p>
@@ -341,7 +343,7 @@ export function Hero() {
                 className="h-1.5 w-1.5 animate-blink rounded-full"
                 style={{ background: "var(--color-hazard)" }}
               />
-              Scroll
+              {t.hero.scroll}
             </span>
           </motion.div>
         </motion.div>

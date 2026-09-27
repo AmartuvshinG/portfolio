@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { gsap, ScrollTrigger } from "@/lib/gsap";
-import { pad } from "@/lib/utils";
+import { sectionIndex } from "@/lib/content";
+import { useI18n } from "@/lib/i18n";
 
 /**
  * The entire surviving HUD budget: a corner crosshair, two hairline gutter
@@ -16,8 +17,16 @@ import { pad } from "@/lib/utils";
  *
  * Colours come entirely from `--color-fg` / `--color-line`, so the whole frame
  * inverts for free when ActTheme switches `<html data-act>`.
+ *
+ * **Names and numbers come from the nav, not from counting sections.** It used
+ * to number chapters 1-based by DOM order and print each section's
+ * `data-chapter` codename, so the gutter said "LEDGER 06" and "CONTACT 07"
+ * while the navbar called the same sections "Path 05" and "Contact 06". One
+ * source for both, and it translates with everything else.
  */
 export function ChapterFrame() {
+  const { c } = useI18n();
+  /** Section ids, in page order. */
   const [chapters, setChapters] = useState<string[]>([]);
   const [active, setActive] = useState(0);
 
@@ -29,7 +38,7 @@ export function ChapterFrame() {
     // are the source of truth for the chapter list, so there is nothing to
     // derive this from during render. Runs once on mount and never cascades.
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    setChapters(sections.map((el) => el.dataset.chapter ?? ""));
+    setChapters(sections.map((el) => el.id));
 
     const triggers = sections.map((el, i) =>
       ScrollTrigger.create({
@@ -52,6 +61,12 @@ export function ChapterFrame() {
   }, []);
 
   if (!chapters.length) return null;
+
+  const id = chapters[active];
+  const name =
+    c.navLinks.find((l) => l.href === `#${id}`)?.label ?? id;
+  const code = sectionIndex(`#${id}`);
+  const last = c.navLinks[c.navLinks.length - 1]?.code ?? "--";
 
   return (
     <div
@@ -83,7 +98,7 @@ export function ChapterFrame() {
       <div className="absolute right-5 top-1/2 -translate-y-1/2 translate-x-[0.55rem]">
         <AnimatePresence mode="wait">
           <motion.div
-            key={chapters[active]}
+            key={id}
             initial={{ opacity: 0, y: 14 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -14 }}
@@ -105,10 +120,8 @@ export function ChapterFrame() {
               className="chamfer-sm neon-sign flex items-center gap-3 border border-line-strong bg-void/80 px-2 py-4 font-mono text-[0.75rem] uppercase tracking-[0.34em] text-fg"
               style={{ writingMode: "vertical-rl" }}
             >
-              <span className="spectrum-text font-semibold">
-                {chapters[active]}
-              </span>
-              <span className="tabular opacity-45">{pad(active + 1, 2)}</span>
+              <span className="spectrum-text font-semibold">{name}</span>
+              <span className="tabular opacity-45">{code}</span>
             </span>
           </motion.div>
         </AnimatePresence>
@@ -124,12 +137,10 @@ export function ChapterFrame() {
         style={{ writingMode: "vertical-rl", rotate: "180deg" }}
       >
         <span className="micro tabular !text-current opacity-70">
-          {pad(active + 1, 3)} / {pad(chapters.length, 3)}
+          {code} / {last}
         </span>
         <span className="h-6 w-px bg-current opacity-30" />
-        <span className="micro !text-current opacity-70">
-          {chapters[active]}
-        </span>
+        <span className="micro !text-current opacity-70">{name}</span>
       </div>
     </div>
   );

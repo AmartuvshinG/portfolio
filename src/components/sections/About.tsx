@@ -1,4 +1,7 @@
-import { about, profile, sectionIndex } from "@/lib/content";
+"use client";
+
+import { sectionIndex } from "@/lib/content";
+import { useI18n } from "@/lib/i18n";
 import { PortraitPlate } from "@/components/ui/PortraitPlate";
 import { Reveal, RevealStagger } from "@/components/motion/Reveal";
 import { fadeUp } from "@/lib/motion";
@@ -19,13 +22,15 @@ import { ChapterSeam } from "@/components/chrome/ChapterSeam";
  * one section and then never again.
  */
 export function About() {
+  const { c, t } = useI18n();
+  const { about, profile } = c;
   return (
     <section
       id="about"
       data-act="bloom"
       data-chapter="PROFILE"
       className="relative overflow-hidden py-24 text-fg md:py-36"
-      aria-label="Profile"
+      aria-label={t.about.aria}
     >
       <ChapterSeam />
 
@@ -74,7 +79,7 @@ export function About() {
         <div className="mt-20 grid gap-10 md:mt-28 md:grid-cols-12 md:items-end">
           <Reveal className="md:col-span-5" variants={fadeUp}>
             <div className="notch-card relative aspect-[5/6] w-full overflow-hidden bg-void/40">
-              <PortraitPlate alt={`Portrait of ${profile.fullName}`} />
+              <PortraitPlate alt={t.about.portrait(profile.fullName)} />
             </div>
             <div className="mt-4 flex items-baseline justify-between">
               <span className="font-tech text-lg font-bold uppercase">

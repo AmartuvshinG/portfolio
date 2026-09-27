@@ -1,9 +1,8 @@
 "use client";
 
 import { ArrowUp } from "lucide-react";
-import { navLinks, socials, profile, contact } from "@/lib/content";
+import { useI18n } from "@/lib/i18n";
 import { useSmoothScroll } from "@/components/chrome/SmoothScroll";
-import { BRAND_CREDIT } from "@/components/ui/BrandMarks";
 
 /**
  * Footer, continuing the dark closing act — it carries `data-act="void"` so the
@@ -11,6 +10,8 @@ import { BRAND_CREDIT } from "@/components/ui/BrandMarks";
  * instead of snapping a step lighter over a black background.
  */
 export function Footer() {
+  const { c, t } = useI18n();
+  const { navLinks, socials, profile, contact } = c;
   const { scrollTo } = useSmoothScroll();
   const year = new Date().getFullYear();
 
@@ -18,7 +19,7 @@ export function Footer() {
     <footer
       data-act="void"
       className="relative z-10 text-fg"
-      aria-label="Footer"
+      aria-label={t.footer.aria}
     >
       {/* Marquee wordmark. Set in the outline weight rather than solid: at 8rem
           a filled wordmark is heavier than the closing headline above it and
@@ -59,7 +60,7 @@ export function Footer() {
           </a>
         </div>
 
-        <FooterCol title="Index">
+        <FooterCol title={t.footer.index}>
           {navLinks.map((l) => (
             <li key={l.href}>
               <a
@@ -76,7 +77,7 @@ export function Footer() {
           ))}
         </FooterCol>
 
-        <FooterCol title="Elsewhere">
+        <FooterCol title={t.footer.elsewhere}>
           {socials.map((s) => (
             <li key={s.label}>
               <a
@@ -104,7 +105,7 @@ export function Footer() {
               case and normal tracking: it is a sentence someone may actually
               need to read, not a HUD label. */}
           <span className="max-w-2xl font-sans text-[0.8125rem] normal-case leading-relaxed tracking-normal">
-            {BRAND_CREDIT}
+            {t.footer.credit}
           </span>
         </div>
         <button
@@ -115,7 +116,7 @@ export function Footer() {
              padding stays where it was. */
           className="flex h-11 items-center gap-2 rounded-full border border-line px-4 transition-colors hover:border-current hover:text-fg"
         >
-          <ArrowUp size={12} /> Top
+          <ArrowUp size={12} /> {t.footer.top}
         </button>
       </div>
     </footer>

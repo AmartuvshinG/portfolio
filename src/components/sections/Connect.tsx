@@ -4,7 +4,8 @@ import { useEffect, useRef, useState } from "react";
 import { motion, useScroll, useTransform } from "framer-motion";
 import { ArrowUpRight } from "lucide-react";
 import { GlareCard } from "@/components/motion/GlareCard";
-import { socials, sectionIndex } from "@/lib/content";
+import { sectionIndex, type SocialLink } from "@/lib/content";
+import { useI18n } from "@/lib/i18n";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
 import { ChapterSeam } from "@/components/chrome/ChapterSeam";
 import { srand } from "@/lib/utils";
@@ -56,6 +57,8 @@ const REST = 1;
 const PANEL_SPRING = { type: "spring", stiffness: 210, damping: 30 } as const;
 
 export function Connect() {
+  const { c, t } = useI18n();
+  const { socials } = c;
   const ref = useRef<HTMLElement>(null);
   const reduced = useReducedMotion();
   const [hovered, setHovered] = useState<number | null>(null);
@@ -90,7 +93,7 @@ export function Connect() {
       data-chapter="SIGNAL"
       ref={ref}
       className="relative flex min-h-[92vh] flex-col justify-center overflow-hidden py-24 md:py-32"
-      aria-label="Find me elsewhere"
+      aria-label={t.connect.aria}
     >
       <ChapterSeam />
 
@@ -100,18 +103,17 @@ export function Connect() {
             <div className="flex items-center gap-4">
               <span className="micro tabular">{sectionIndex("#connect")}</span>
               <span className="h-px w-10 bg-current opacity-25" />
-              <span className="micro">Find me elsewhere</span>
+              <span className="micro">{t.connect.eyebrow}</span>
             </div>
             <h2
               className="display-caps text-fg"
               style={{ fontSize: "clamp(1.6rem, 4.4vw, 4.25rem)" }}
             >
-              Signal
+              {t.connect.title}
             </h2>
           </div>
           <p className="max-w-md text-base leading-relaxed text-muted md:pb-3 md:text-right">
-            The code, the career history, and the résumé in English and
-            Mongolian.
+            {t.connect.lead}
           </p>
         </div>
 
@@ -155,7 +157,7 @@ function ChannelPanel({
   reduced,
   onEnter,
 }: {
-  social: (typeof socials)[number];
+  social: SocialLink;
   index: number;
   count: number;
   grow: number;
@@ -165,6 +167,7 @@ function ChannelPanel({
   reduced: boolean;
   onEnter: () => void;
 }) {
+  const { t } = useI18n();
   /* The arrival: the panels rise and settle in sequence as the section enters,
      so the row has already performed once before the pointer ever reaches it.
      Later panels start lower and land later — the same stagger the fan had,
@@ -268,9 +271,9 @@ function ChannelPanel({
                 {social.handle}
               </span>
               <span className="micro mt-4 hidden md:block">
-                {social.href.endsWith(".pdf") ? "Open PDF" : "Open profile"}
+                {social.href.endsWith(".pdf") ? t.connect.openPdf : t.connect.openProfile}
               </span>
-              <span className="sr-only">(opens in a new tab)</span>
+              <span className="sr-only">{t.common.newTab}</span>
             </div>
           </div>
         </div>
@@ -297,7 +300,7 @@ function ChannelArt({
   social,
   lit,
 }: {
-  social: (typeof socials)[number];
+  social: SocialLink;
   lit: boolean;
 }) {
   if (social.mark) {

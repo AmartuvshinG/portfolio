@@ -496,6 +496,44 @@ export function getProject(slug: string): Project | undefined {
   return projects.find((p) => p.slug === slug);
 }
 
+/* -------------------------------------------------------------------------- */
+/* Locales                                                                     */
+/* -------------------------------------------------------------------------- */
+
+export type Locale = "en" | "mn";
+
+/**
+ * Everything a visitor reads, as one object per language. Components take it
+ * from `useI18n().c` rather than importing the named exports above, which stay
+ * as the English source (and for the few server-side readers, like metadata).
+ */
+export interface SiteContent {
+  profile: typeof profile;
+  about: typeof about;
+  capabilities: Capability[];
+  projects: Project[];
+  stats: Stat[];
+  timeline: TimelineEntry[];
+  contact: typeof contact;
+  socials: SocialLink[];
+  navLinks: NavLink[];
+}
+
+const en: SiteContent = {
+  profile,
+  about,
+  capabilities,
+  projects,
+  stats,
+  timeline,
+  contact,
+  socials,
+  navLinks,
+};
+
+/** A locale is offered only once both its content and its UI table exist. */
+export const content: { en: SiteContent; mn?: SiteContent } = { en };
+
 /**
  * Per-project tint — the three stops of the spectrum ramp, used individually.
  *

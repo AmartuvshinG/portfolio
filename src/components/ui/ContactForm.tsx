@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Loader2, Send, Check, Copy } from "lucide-react";
-import { contact } from "@/lib/content";
+import { useI18n } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 
 type Status = "idle" | "sending" | "sent" | "error";
@@ -41,6 +41,8 @@ const HANDOFF_TIMEOUT = 2000;
  * over the address itself.
  */
 export function ContactForm() {
+  const { c, t } = useI18n();
+  const { contact } = c;
   const [status, setStatus] = useState<Status>("idle");
   const [errors, setErrors] = useState<Errors>({});
   const [copied, setCopied] = useState(false);
@@ -64,11 +66,11 @@ export function ContactForm() {
     const name = String(data.get("name") || "").trim();
     const email = String(data.get("email") || "").trim();
     const message = String(data.get("message") || "").trim();
-    if (!name) next.name = "Callsign required.";
-    if (!email) next.email = "Address required.";
+    if (!name) next.name = t.form.nameRequired;
+    if (!email) next.email = t.form.emailRequired;
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
-      next.email = "Address format invalid.";
-    if (message.length < 10) next.message = "Message too short (min 10 chars).";
+      next.email = t.form.emailInvalid;
+    if (message.length < 10) next.message = t.form.messageShort;
     return next;
   };
 
@@ -91,7 +93,7 @@ export function ContactForm() {
 
     const name = String(data.get("name"));
     const email = String(data.get("email"));
-    const subject = encodeURIComponent(`Transmission from ${name}`);
+    const subject = encodeURIComponent(t.form.subject(name));
     /* The address was validated and then thrown away, so every message arrived
        with no way to reply to it. It goes in the body rather than a `reply-to=`
        parameter: mail clients ignore that field on a mailto: URL, and the
@@ -140,38 +142,38 @@ export function ContactForm() {
       noValidate
       className="flex flex-col gap-5"
     >
-      <Field label="CALLSIGN / NAME" name="name" error={errors.name}>
+      <Field label={t.form.name} name="name" error={errors.name}>
         <input
           id="name"
           name="name"
           type="text"
           autoComplete="name"
-          placeholder="Your name"
+          placeholder={t.form.namePlaceholder}
           className={cn(FIELD, errors.name && "border-hazard")}
           aria-invalid={Boolean(errors.name)}
           aria-describedby={errors.name ? "name-error" : undefined}
         />
       </Field>
 
-      <Field label="RETURN ADDRESS / EMAIL" name="email" error={errors.email}>
+      <Field label={t.form.email} name="email" error={errors.email}>
         <input
           id="email"
           name="email"
           type="email"
           autoComplete="email"
-          placeholder="you@domain.com"
+          placeholder={t.form.emailPlaceholder}
           className={cn(FIELD, errors.email && "border-hazard")}
           aria-invalid={Boolean(errors.email)}
           aria-describedby={errors.email ? "email-error" : undefined}
         />
       </Field>
 
-      <Field label="MESSAGE / PAYLOAD" name="message" error={errors.message}>
+      <Field label={t.form.message} name="message" error={errors.message}>
         <textarea
           id="message"
           name="message"
           rows={4}
-          placeholder="The role, the team, or anything you'd like to ask…"
+          placeholder={t.form.messagePlaceholder}
           className={cn(FIELD, "resize-none", errors.message && "border-hazard")}
           aria-invalid={Boolean(errors.message)}
           aria-describedby={errors.message ? "message-error" : undefined}
@@ -195,22 +197,22 @@ export function ContactForm() {
         >
           {status === "idle" && (
             <>
-              Send message <Send size={14} />
+              {t.form.send} <Send size={14} />
             </>
           )}
           {status === "sending" && (
             <>
-              Sending <Loader2 size={14} className="animate-spin" />
+              {t.form.sending} <Loader2 size={14} className="animate-spin" />
             </>
           )}
           {status === "sent" && (
             <>
-              Message sent <Check size={14} />
+              {t.form.sent} <Check size={14} />
             </>
           )}
           {status === "error" && (
             <>
-              Try again <Send size={14} />
+              {t.form.retry} <Send size={14} />
             </>
           )}
         </button>
@@ -221,7 +223,7 @@ export function ContactForm() {
             onClick={reset}
             className="micro underline-offset-4 transition-colors hover:text-fg hover:underline"
           >
-            Send another
+            {t.form.another}
           </button>
         )}
       </div>
@@ -229,7 +231,7 @@ export function ContactForm() {
       {status === "error" && (
         <div className="flex flex-wrap items-center gap-3 border-l-2 border-hazard pl-4">
           <p className="text-sm text-muted">
-            No mail client answered. Write to
+            {t.form.noClient}
           </p>
           <button
             type="button"
@@ -242,7 +244,7 @@ export function ContactForm() {
             {contact.email}
             {copied ? <Check size={13} /> : <Copy size={13} />}
             <span className="sr-only">
-              {copied ? "Address copied" : "Copy address"}
+              {copied ? t.form.copied : t.form.copy}
             </span>
           </button>
         </div>
@@ -254,11 +256,11 @@ export function ContactForm() {
           landed on the field. */}
       <p aria-live="polite" className="sr-only">
         {status === "sent"
-          ? "Your mail client has been opened."
+          ? t.form.liveSent
           : status === "error"
-            ? `No mail client answered. Write to ${contact.email} instead.`
+            ? t.form.liveNoClient(contact.email)
             : errorCount > 0
-              ? `${errorCount} ${errorCount === 1 ? "field needs" : "fields need"} attention.`
+              ? t.form.liveErrors(errorCount)
               : ""}
       </p>
     </form>

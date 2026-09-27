@@ -12,7 +12,15 @@ import {
   type MotionValue,
 } from "framer-motion";
 import { Menu, X } from "lucide-react";
-import { navLinks, routeSections, profile, contact } from "@/lib/content";
+import {
+  navLinks as sectionLinks,
+  routeSections,
+  RESUME_EN,
+  RESUME_MN,
+  type NavLink,
+} from "@/lib/content";
+import { useI18n } from "@/lib/i18n";
+import { LangToggle } from "@/components/chrome/LangToggle";
 import { useSmoothScroll } from "@/components/chrome/SmoothScroll";
 import { useOverlay } from "@/hooks/useOverlay";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
@@ -65,6 +73,9 @@ const GLASS_FADE = 220;
  *    home route; everywhere else the active item comes from the pathname.
  */
 export function Navbar() {
+  const { c, t, locale } = useI18n();
+  const { navLinks, profile, contact } = c;
+  const resume = locale === "mn" ? RESUME_MN : RESUME_EN;
   const { scrollTo } = useSmoothScroll();
   const pathname = usePathname();
   const isHome = pathname === "/";
@@ -197,7 +208,10 @@ export function Navbar() {
        derivable is how you get a render cascade. */
     if (!isHome) return;
 
-    const sections = navLinks
+    /* The static list, not the translated one: only the hrefs are read, and
+       they are the same in every language — depending on the translated
+       array would tear the observer down on every language switch. */
+    const sections = sectionLinks
       .map((l) => document.querySelector<HTMLElement>(l.href))
       .filter((el): el is HTMLElement => Boolean(el));
     if (!sections.length) return;
@@ -317,7 +331,7 @@ export function Navbar() {
                   go("#hero");
                 }}
                 className="flex shrink-0 items-center gap-3"
-                aria-label={`${profile.wordmark} — back to top`}
+                aria-label={`${profile.wordmark} — ${t.nav.backToTop}`}
               >
                 <Lamp />
                 <span className="font-display text-xl text-fg">
@@ -328,7 +342,7 @@ export function Navbar() {
               <Link
                 href="/"
                 className="flex shrink-0 items-center gap-3"
-                aria-label={`${profile.wordmark} — home`}
+                aria-label={`${profile.wordmark} — ${t.nav.home}`}
               >
                 <Lamp />
                 <span className="font-display text-xl text-fg">
@@ -383,37 +397,33 @@ export function Navbar() {
                   className="h-1.5 w-1.5 animate-blink rounded-full"
                   style={{ background: "var(--color-hazard)" }}
                 />
-                ONLINE
+                {t.nav.online}
               </span>
 
-              {/* The one gradient-filled element in the chrome. */}
-              {isHome ? (
-                <a
-                  href="#contact"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    go("#contact");
-                  }}
-                  className="chamfer-sm hidden px-4 py-2 font-mono text-[0.8125rem] uppercase tracking-[0.18em] text-void transition-transform duration-300 hover:scale-[1.04] sm:block"
-                  style={{ backgroundImage: "var(--gradient-spectrum)" }}
-                >
-                  Available
-                </a>
-              ) : (
-                <Link
-                  href="/#contact"
-                  className="chamfer-sm hidden px-4 py-2 font-mono text-[0.8125rem] uppercase tracking-[0.18em] text-void transition-transform duration-300 hover:scale-[1.04] sm:block"
-                  style={{ backgroundImage: "var(--gradient-spectrum)" }}
-                >
-                  Available
-                </Link>
-              )}
+              <LangToggle className="hidden sm:flex" />
+
+              {/* The one gradient-filled element in the chrome — and the one
+                  thing a recruiter most wants from the header. It used to read
+                  "Available" and scroll to the contact form, which the nav
+                  already does; the résumé had no way in from the chrome at all.
+                  Follows the language: the Mongolian site hands over the
+                  Mongolian PDF. */}
+              <a
+                href={resume}
+                target="_blank"
+                rel="noopener"
+                aria-label={t.nav.resumeAria}
+                className="chamfer-sm hidden px-4 py-2 font-mono text-[0.8125rem] uppercase tracking-[0.18em] text-void transition-transform duration-300 hover:scale-[1.04] sm:block"
+                style={{ backgroundImage: "var(--gradient-spectrum)" }}
+              >
+                {t.nav.resume}
+              </a>
 
               <button
                 ref={toggleRef}
                 type="button"
                 onClick={() => setOpen((v) => !v)}
-                aria-label={open ? "Close menu" : "Open menu"}
+                aria-label={open ? t.nav.closeMenu : t.nav.openMenu}
                 aria-expanded={open}
                 aria-controls="mobile-nav"
                 className="flex h-11 w-11 items-center justify-center border border-line text-fg min-[1080px]:hidden"
@@ -451,7 +461,7 @@ export function Navbar() {
             id="mobile-nav"
             role="dialog"
             aria-modal="true"
-            aria-label="Site menu"
+            aria-label={t.nav.siteMenu}
             initial={{ opacity: 0, clipPath: "inset(0 0 100% 0)" }}
             animate={{ opacity: 1, clipPath: "inset(0 0 0% 0)" }}
             exit={{ opacity: 0, clipPath: "inset(0 0 100% 0)" }}
@@ -479,7 +489,7 @@ export function Navbar() {
                 type="button"
                 data-autofocus
                 onClick={closeSheet}
-                aria-label="Close menu"
+                aria-label={t.nav.closeMenu}
                 className="-mr-2 flex h-11 w-11 items-center justify-center border border-line text-fg"
               >
                 <X size={18} />
@@ -532,12 +542,27 @@ export function Navbar() {
                 </motion.li>
               ))}
             </ul>
-            <a
-              href={`mailto:${contact.email}`}
-              className="hud-label relative mb-6 flex h-11 shrink-0 items-center"
-            >
-              {contact.email}
-            </a>
+            <div className="relative mb-6 flex shrink-0 flex-wrap items-center justify-between gap-4">
+              <a
+                href={`mailto:${contact.email}`}
+                className="hud-label flex h-11 items-center"
+              >
+                {contact.email}
+              </a>
+              <div className="flex items-center gap-3">
+                <LangToggle />
+                <a
+                  href={resume}
+                  target="_blank"
+                  rel="noopener"
+                  aria-label={t.nav.resumeAria}
+                  className="chamfer-sm flex h-9 items-center px-4 font-mono text-[0.8125rem] uppercase tracking-[0.18em] text-void"
+                  style={{ backgroundImage: "var(--gradient-spectrum)" }}
+                >
+                  {t.nav.resume}
+                </a>
+              </div>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
@@ -577,7 +602,7 @@ function DockLink({
   mouseX,
   go,
 }: {
-  link: (typeof navLinks)[number];
+  link: NavLink;
   isActive: boolean;
   isHome: boolean;
   contracted: boolean;

@@ -1,4 +1,7 @@
-import { contact, profile, sectionIndex } from "@/lib/content";
+"use client";
+
+import { sectionIndex } from "@/lib/content";
+import { useI18n } from "@/lib/i18n";
 import { ContactForm } from "@/components/ui/ContactForm";
 import { GlowHorizon } from "@/components/ui/GlowHorizon";
 import { Reveal } from "@/components/motion/Reveal";
@@ -13,13 +16,15 @@ import { ChapterSeam } from "@/components/chrome/ChapterSeam";
  * is a wash behind everything, never a colour anything is set in.
  */
 export function Contact() {
+  const { c, t } = useI18n();
+  const { contact, profile } = c;
   return (
     <section
       id="contact"
       data-act="void"
       data-chapter="CONTACT"
       className="relative overflow-hidden pt-24 md:pt-36"
-      aria-label="Contact"
+      aria-label={t.contact.aria}
     >
       {/* Shuttered: the close. The last thing the page does before it asks for
           something is change gear visibly. */}
@@ -31,7 +36,7 @@ export function Contact() {
             {sectionIndex("#contact")} — {contact.heading}
           </span>
           <h2 className="display-caps text-[clamp(1.9rem,6vw,6rem)] text-fg">
-            Let&apos;s build
+            {t.contact.title}
           </h2>
           <p className="max-w-lg font-tech text-2xl leading-snug text-fg md:text-3xl">
             {contact.lead}
@@ -42,7 +47,7 @@ export function Contact() {
           <Reveal className="md:col-span-5">
             <dl className="space-y-8">
               <div>
-                <dt className="micro">Email</dt>
+                <dt className="micro">{t.contact.email}</dt>
                 <dd className="mt-2">
                   <a
                     href={`mailto:${contact.email}`}
@@ -53,13 +58,13 @@ export function Contact() {
                 </dd>
               </div>
               <div>
-                <dt className="micro">Availability</dt>
+                <dt className="micro">{t.contact.availability}</dt>
                 <dd className="mt-2 font-tech text-xl font-semibold uppercase text-fg">
                   {contact.availability}
                 </dd>
               </div>
               <div>
-                <dt className="micro">Based</dt>
+                <dt className="micro">{t.contact.based}</dt>
                 <dd className="mt-2 font-tech text-xl font-semibold uppercase text-fg">
                   {profile.location}
                 </dd>

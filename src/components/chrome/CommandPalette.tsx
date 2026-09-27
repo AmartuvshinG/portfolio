@@ -3,8 +3,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
-import { Check, Copy, Search, Zap } from "lucide-react";
-import { navLinks, projects, contact } from "@/lib/content";
+import { Check, Copy, Languages, Search, Zap } from "lucide-react";
+import { useI18n } from "@/lib/i18n";
 import { useSmoothScroll } from "@/components/chrome/SmoothScroll";
 import { useOverlay } from "@/hooks/useOverlay";
 import { isTextEntry, modalOpen } from "@/lib/keys";
@@ -32,13 +32,15 @@ interface Command {
   id: string;
   label: string;
   hint?: string;
-  group: "Sections" | "Case files" | "Actions";
+  group: string;
   run: () => void;
   /** Rendered instead of the hint when present — for the toggle's state. */
   state?: string;
 }
 
 export function CommandPalette() {
+  const { c, t, locale, setLocale, available } = useI18n();
+  const { navLinks, projects, contact } = c;
   const router = useRouter();
   const pathname = usePathname();
   const { scrollTo } = useSmoothScroll();
@@ -66,7 +68,7 @@ export function CommandPalette() {
       id: `s-${l.href}`,
       label: l.label,
       hint: l.code,
-      group: "Sections",
+      group: t.palette.sections,
       run: () => go(l.href),
     }));
 
@@ -74,16 +76,16 @@ export function CommandPalette() {
       id: `p-${p.slug}`,
       label: p.title,
       hint: p.category,
-      group: "Case files",
+      group: t.palette.caseFiles,
       run: () => router.push(`/work/${p.slug}`),
     }));
 
     const actions: Command[] = [
       {
         id: "a-copy",
-        label: "Copy email address",
+        label: t.palette.copyEmail,
         hint: contact.email,
-        group: "Actions",
+        group: t.palette.actions,
         run: () => {
           navigator.clipboard?.writeText(contact.email);
           setCopied(true);
@@ -91,9 +93,9 @@ export function CommandPalette() {
       },
       {
         id: "a-power",
-        label: "Low-power mode",
-        state: lowPower ? "ON" : "OFF",
-        group: "Actions",
+        label: t.palette.lowPower,
+        state: lowPower ? t.palette.on : t.palette.off,
+        group: t.palette.actions,
         /* Writes the attribute the whole site reads (useQuality watches it),
            rather than threading a value through a provider nothing else needs. */
         run: () => {
@@ -104,14 +106,29 @@ export function CommandPalette() {
       },
     ];
 
+    /* Offered in the *other* language's own words — someone who needs the
+       switch may not read the language the site is currently in. */
+    if (available.length > 1) {
+      const other = available.find((l) => l !== locale);
+      if (other) {
+        actions.push({
+          id: "a-lang",
+          label: t.palette.language,
+          hint: t.lang[other],
+          group: t.palette.actions,
+          run: () => setLocale(other),
+        });
+      }
+    }
+
     return [...sections, ...files, ...actions];
-  }, [go, router, lowPower]);
+  }, [go, router, lowPower, navLinks, projects, contact, t, locale, setLocale, available]);
 
   const results = useMemo(() => {
     const q = query.trim().toLowerCase();
     if (!q) return commands;
-    return commands.filter((c) =>
-      `${c.label} ${c.hint ?? ""} ${c.group}`.toLowerCase().includes(q)
+    return commands.filter((cmd) =>
+      `${cmd.label} ${cmd.hint ?? ""} ${cmd.group}`.toLowerCase().includes(q)
     );
   }, [commands, query]);
 
@@ -206,7 +223,7 @@ export function CommandPalette() {
             ref={panelRef}
             role="dialog"
             aria-modal="true"
-            aria-label="Command palette"
+            aria-label={t.palette.aria}
             initial={{ opacity: 0, y: -12, scale: 0.985 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -8, scale: 0.99 }}
@@ -230,8 +247,8 @@ export function CommandPalette() {
                   setCursor(0);
                 }}
                 onKeyDown={onKeyDown}
-                placeholder="Jump to a section, a case file, or an action…"
-                aria-label="Search commands"
+                placeholder={t.palette.placeholder}
+                aria-label={t.palette.search}
                 /* Combobox + listbox rather than aria-selected on a button:
                    the roles have to describe the list, and `button` does not
                    support aria-selected. */
@@ -258,17 +275,17 @@ export function CommandPalette() {
               </kbd>
             </div>
 
-            <ul id="palette-results" role="listbox" aria-label="Commands" className="max-h-[46vh] overflow-y-auto py-2">
+            <ul id="palette-results" role="listbox" aria-label={t.palette.results} className="max-h-[46vh] overflow-y-auto py-2">
               {results.length === 0 && (
                 <li className="px-5 py-6 text-sm text-muted">
-                  Nothing matches “{query}”.
+                  {t.palette.none(query)}
                 </li>
               )}
-              {results.map((c, i) => {
-                const header = c.group !== lastGroup ? c.group : null;
-                lastGroup = c.group;
+              {results.map((cmd, i) => {
+                const header = cmd.group !== lastGroup ? cmd.group : null;
+                lastGroup = cmd.group;
                 return (
-                  <li key={c.id} id={c.id} role="option" aria-selected={i === cursor}>
+                  <li key={cmd.id} id={cmd.id} role="option" aria-selected={i === cursor}>
                     {header && (
                       <p className="micro px-5 pb-1 pt-3">{header}</p>
                     )}
@@ -276,8 +293,8 @@ export function CommandPalette() {
                       type="button"
                       onMouseEnter={() => setCursor(i)}
                       onClick={() => {
-                        c.run();
-                        if (c.id !== "a-power" && c.id !== "a-copy") close();
+                        cmd.run();
+                        if (cmd.id !== "a-power" && cmd.id !== "a-copy") close();
                       }}
                       tabIndex={-1}
                       className={cn(
@@ -286,22 +303,23 @@ export function CommandPalette() {
                       )}
                     >
                       <span className="flex items-center gap-3">
-                        {c.id === "a-power" && <Zap size={14} />}
-                        {c.id === "a-copy" &&
+                        {cmd.id === "a-power" && <Zap size={14} />}
+                        {cmd.id === "a-lang" && <Languages size={14} />}
+                        {cmd.id === "a-copy" &&
                           (copied ? <Check size={14} /> : <Copy size={14} />)}
                         <span className="font-tech text-sm font-semibold uppercase">
-                          {c.id === "a-copy" && copied ? "Copied" : c.label}
+                          {cmd.id === "a-copy" && copied ? t.palette.copiedEmail : cmd.label}
                         </span>
                       </span>
                       <span
                         className="micro tabular shrink-0"
                         style={
-                          c.state === "ON"
+                          cmd.state === t.palette.on
                             ? { color: "var(--color-hazard)" }
                             : undefined
                         }
                       >
-                        {c.state ?? c.hint}
+                        {cmd.state ?? cmd.hint}
                       </span>
                     </button>
                   </li>
@@ -310,8 +328,8 @@ export function CommandPalette() {
             </ul>
 
             <div className="flex items-center justify-between border-t border-line px-5 py-2.5">
-              <span className="micro">↑↓ move · ↵ select · esc close</span>
-              <span className="micro tabular">{results.length} results</span>
+              <span className="micro">{t.palette.keys}</span>
+              <span className="micro tabular">{t.palette.count(results.length)}</span>
             </div>
           </motion.div>
         </motion.div>

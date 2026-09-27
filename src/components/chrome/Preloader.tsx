@@ -5,7 +5,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
 import { useLockScroll } from "@/hooks/useLockScroll";
 import { markBooted } from "@/hooks/useBootReady";
-import { profile } from "@/lib/content";
+import { useI18n } from "@/lib/i18n";
 import { Nebula } from "@/components/backdrop/Nebula";
 import { GlowHorizon } from "@/components/ui/GlowHorizon";
 
@@ -26,6 +26,8 @@ import { GlowHorizon } from "@/components/ui/GlowHorizon";
 const RUN_MS = 1700;
 
 export function Preloader() {
+  const { c } = useI18n();
+  const { profile } = c;
   const reduced = useReducedMotion();
   const [done, setDone] = useState(false);
   const [count, setCount] = useState(0);
@@ -115,9 +117,14 @@ export function Preloader() {
 
           <span className="micro relative">{profile.kicker}</span>
 
-          {/* The wordmark, letters rising out of a mask */}
-          <div className="relative flex items-end justify-between gap-6">
-            <h1 className="display-caps flex overflow-hidden text-[11vw] leading-[0.95] md:text-[8vw]">
+          {/* The wordmark, letters rising out of a mask.
+              Sized for eleven glyphs: Michroma sets AMARTUVSHIN at ~11× its
+              font size, so the 8–11vw this had for a five-letter name ran it
+              well past the frame, with the counter pushed off after it. On a
+              phone the counter takes its own row rather than squeezing the
+              name further. */}
+          <div className="relative flex flex-col items-start gap-3 md:flex-row md:items-end md:justify-between md:gap-6">
+            <h1 className="display-caps flex overflow-hidden text-[7.6vw] leading-[0.95] md:text-[6vw]">
               {profile.wordmark.split("").map((ch, i) => (
                 <motion.span
                   key={`${ch}-${i}`}
@@ -135,7 +142,7 @@ export function Preloader() {
               ))}
             </h1>
 
-            <span className="tabular font-display text-[7vw] leading-none md:text-[3vw]">
+            <span className="tabular font-display text-[9vw] leading-none md:text-[3vw]">
               {count}
             </span>
           </div>

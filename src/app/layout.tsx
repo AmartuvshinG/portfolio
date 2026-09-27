@@ -3,6 +3,7 @@ import { Michroma, Chakra_Petch, Archivo, JetBrains_Mono } from "next/font/googl
 import "./globals.css";
 import { site } from "@/lib/content";
 import { SmoothScroll } from "@/components/chrome/SmoothScroll";
+import { LocaleProvider } from "@/lib/i18n";
 import { ActTheme } from "@/components/chrome/ActTheme";
 import { SiteBackdrop } from "@/components/backdrop/SiteBackdrop";
 import { Anamorphic } from "@/components/backdrop/Anamorphic";
@@ -95,32 +96,34 @@ export default function RootLayout({
             (preloader, project dossier) need the Lenis-aware scroll lock from
             its context, which a sibling can't reach. */}
         <SmoothScroll>
-          <ActTheme />
+          <LocaleProvider>
+            <ActTheme />
 
-          {/* The single background for the whole document. Mounted here rather
-              than per-section on purpose — see SiteBackdrop's header. Sections
-              are transparent and sit at z-10 over it. */}
-          <SiteBackdrop />
+            {/* The single background for the whole document. Mounted here rather
+                than per-section on purpose — see SiteBackdrop's header. Sections
+                are transparent and sit at z-10 over it. */}
+            <SiteBackdrop />
 
-          <Preloader />
-          <HudCursor />
+            <Preloader />
+            <HudCursor />
 
-          <Navbar />
-          <ChapterFrame />
+            <Navbar />
+            <ChapterFrame />
 
-          {/* Keyboard surfaces. Both headless, both stand down while a field
-              has focus or an overlay is open. */}
-          <CommandPalette />
-          <ChapterKeys />
-          <main id="main" className="relative z-10">
-            {children}
-          </main>
-          <Footer />
+            {/* Keyboard surfaces. Both headless, both stand down while a field
+                has focus or an overlay is open. */}
+            <CommandPalette />
+            <ChapterKeys />
+            <main id="main" className="relative z-10">
+              {children}
+            </main>
+            <Footer />
 
-          {/* The taking lens. Last in the tree and above the nav, because a
-              vignette that the header sits on top of is not a lens — it is a
-              decorative border. Below the preloader and the cursor. */}
-          <Anamorphic />
+            {/* The taking lens. Last in the tree and above the nav, because a
+                vignette that the header sits on top of is not a lens — it is a
+                decorative border. Below the preloader and the cursor. */}
+            <Anamorphic />
+          </LocaleProvider>
         </SmoothScroll>
       </body>
     </html>
