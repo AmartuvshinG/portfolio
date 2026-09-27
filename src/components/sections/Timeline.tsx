@@ -39,10 +39,10 @@ type PathWords = ReturnType<typeof useI18n>["t"]["path"];
  * shares with the start ("JUN 2026 → SEP", never "2026 … 2026"). The phrase a
  * screen reader hears is the row's `period`; the stamp itself is decoration.
  *
- * **The year is a neon segment display**, each year in its own colour so they
- * read apart at a glance. It is drawn in SVG (no font file): slanted,
- * chamfered segments, with the unlit ones left faintly visible like real
- * hardware.
+ * **The year is a neon sign**, each year in its own colour so they read apart
+ * at a glance. The numerals are a bespoke angular face drawn in SVG as
+ * separate tubes (see "Neon-tube numerals"), with the unlit tubes left faintly
+ * visible. A plain seven-segment face read as an alarm clock.
  *
  * **The stamp is dark until its row arrives**, then strikes on like a neon
  * sign: the month flashes, stutters and holds; then each lit segment of the
@@ -409,39 +409,54 @@ function Ignite({
   );
 }
 
-/* --- Segment display -------------------------------------------------------
-   A slanted seven-segment face with chamfered (hexagonal) segments, drawn in
-   SVG so it needs no font file and every segment can strike on by itself. */
-const DW = 60; // digit cell width
-const DH = 100; // digit cell height
-const T = 11; // segment thickness
-const G = 2.4; // gap between segments
-const ADV = 76; // advance per digit
-const SLANT = -9; // degrees
-const HT = T / 2;
+/* --- Neon-tube numerals ------------------------------------------------------
+   A bespoke numeral face, built the way an LED sign is: each digit is a few
+   straight tubes with gaps between them, and each tube strikes on by itself.
+   What keeps it from reading as an alarm clock is the drawing, not the
+   lighting — corners are clipped at 45° the way cyberpunk UI cuts its panels,
+   the 2 and the 7 are single long slashes, the 4 leans on a diagonal, and
+   everything is slanted forward. Drawn in SVG, so there is no font file.
 
-function hseg(cy: number): string {
-  const x1 = HT + G;
-  const x2 = DW - HT - G;
-  return `${x1},${cy} ${x1 + HT},${cy - HT} ${x2 - HT},${cy - HT} ${x2},${cy} ${x2 - HT},${cy + HT} ${x1 + HT},${cy + HT}`;
+   Coordinates are a 56 × 100 cell, y down. */
+const W = 56;
+const H = 100;
+const M = 50; // mid line
+const C = 15; // corner clip
+const TUBE = 10; // tube thickness
+const GAP = 3.2; // dark gap left at each end of a tube
+const ADV = 74; // advance per digit
+const SLANT = -10; // degrees
+
+type Tube = [number, number, number, number];
+
+const GLYPHS: Tube[][] = [
+  /* 0 */ [[0, 0, W - C, 0], [W - C, 0, W, C], [W, C, W, H], [W, H, C, H], [C, H, 0, H - C], [0, H - C, 0, 0]],
+  /* 1 */ [[W * 0.18, C + 4, W * 0.62, 0], [W * 0.62, 0, W * 0.62, H]],
+  /* 2 */ [[0, 0, W - C, 0], [W - C, 0, W, C], [W, C, W, M - 8], [W, M - 8, 0, H - 6], [0, H, W, H]],
+  /* 3 */ [[0, 0, W - C, 0], [W - C, 0, W, C], [W, C, W, H - C], [W, H - C, W - C, H], [W - C, H, 0, H], [C, M, W, M]],
+  /* 4 */ [[W * 0.62, 0, 0, M + 12], [0, M + 12, W, M + 12], [W, 14, W, H]],
+  /* 5 */ [[W, 0, 0, 0], [0, 0, 0, M], [0, M, W - C, M], [W - C, M, W, M + C], [W, M + C, W, H], [W, H, 0, H]],
+  /* 6 */ [[W, 0, C, 0], [C, 0, 0, C], [0, C, 0, H], [0, H, W, H], [W, H, W, M], [W, M, 0, M]],
+  /* 7 */ [[0, 0, W, 0], [W, 0, W * 0.22, H]],
+  /* 8 */ [[C, 0, W - C, 0], [W - C, 0, W, C], [W, C, W, H - C], [W - C, H, C, H], [C, H, 0, H - C], [0, H - C, 0, C], [0, C, C, 0], [0, M, W, M], [W, H - C, W - C, H]],
+  /* 9 */ [[W, 0, 0, 0], [0, 0, 0, M], [0, M, W, M], [W, 0, W, H - C], [W, H - C, W - C, H], [W - C, H, 0, H]],
+];
+
+/** The faint backplate behind every digit — the full "8" — so the unlit
+    tubes are there in the dark, as on a real sign. */
+const PLATE = GLYPHS[8];
+
+/** A tube shortened by GAP at both ends, so neighbours never touch. */
+function tube([x1, y1, x2, y2]: Tube): Tube {
+  const len = Math.hypot(x2 - x1, y2 - y1);
+  const k = Math.min(GAP, len / 3) / len;
+  const dx = (x2 - x1) * k;
+  const dy = (y2 - y1) * k;
+  return [x1 + dx, y1 + dy, x2 - dx, y2 - dy];
 }
-function vseg(cx: number, y1: number, y2: number): string {
-  return `${cx},${y1} ${cx + HT},${y1 + HT} ${cx + HT},${y2 - HT} ${cx},${y2} ${cx - HT},${y2 - HT} ${cx - HT},${y1 + HT}`;
-}
-const SEGMENTS: Record<string, string> = {
-  a: hseg(HT),
-  g: hseg(DH / 2),
-  d: hseg(DH - HT),
-  f: vseg(HT, HT + G, DH / 2 - G),
-  b: vseg(DW - HT, HT + G, DH / 2 - G),
-  e: vseg(HT, DH / 2 + G, DH - HT - G),
-  c: vseg(DW - HT, DH / 2 + G, DH - HT - G),
-};
-const DIGIT_SEGMENTS = ["abcdef", "bc", "abged", "abgcd", "fgbc", "afgcd", "afgedc", "abc", "abcdefg", "abcdfg"];
-/** Strike order within a digit: top down, like a tube warming along its length. */
-const ORDER = "afbgecd";
+
 /** The slant pushes the top of each digit right by this much. */
-const LEAN = Math.tan((-SLANT * Math.PI) / 180) * DH;
+const LEAN = Math.tan((-SLANT * Math.PI) / 180) * H;
 
 function SegmentNumber({
   value,
@@ -459,25 +474,30 @@ function SegmentNumber({
   className?: string;
 }) {
   const digits = String(value).split("").map(Number);
-  const width = (digits.length - 1) * ADV + DW + LEAN + 8;
+  const width = (digits.length - 1) * ADV + W + LEAN + 14;
   return (
-    <svg viewBox={`-4 -6 ${width} ${DH + 12}`} className={cn("block w-auto overflow-visible", className)}>
+    <svg
+      viewBox={`-7 -7 ${width} ${H + 14}`}
+      className={cn("block w-auto overflow-visible", className)}
+      fill="none"
+      strokeLinecap="butt"
+    >
       <g transform={`translate(${LEAN}, 0) skewX(${SLANT})`}>
         {digits.map((d, i) => (
           <g key={i} transform={`translate(${i * ADV}, 0)`}>
-            {ORDER.split("").map((seg, k) => {
-              if (!DIGIT_SEGMENTS[d].includes(seg)) {
-                /* Unlit segments stay faintly visible, as on a real display —
-                   it is what makes this read as hardware rather than type. */
-                return <polygon key={seg} points={SEGMENTS[seg]} fill={color} fillOpacity={0.09} />;
-              }
+            {PLATE.map((t, k) => {
+              const [x1, y1, x2, y2] = tube(t);
+              return <line key={`p${k}`} x1={x1} y1={y1} x2={x2} y2={y2} stroke={color} strokeOpacity={0.05} strokeWidth={TUBE} />;
+            })}
+            {GLYPHS[d].map((t, k) => {
+              const [x1, y1, x2, y2] = tube(t);
               return (
-                <motion.g key={seg} initial={false} {...strike(play, instant, delay + i * 0.11 + k * 0.035, 0.5)}>
-                  {/* Halo, core, hot centre. A wide faint stroke is the glow,
-                      so there is no filter to pay for per segment. */}
-                  <polygon points={SEGMENTS[seg]} fill={color} stroke={color} strokeOpacity={0.3} strokeWidth={8} strokeLinejoin="round" />
-                  <polygon points={SEGMENTS[seg]} fill={color} />
-                  <polygon points={SEGMENTS[seg]} fill="#ffffff" fillOpacity={0.28} />
+                <motion.g key={k} initial={false} {...strike(play, instant, delay + i * 0.11 + k * 0.04, 0.5)}>
+                  {/* Halo, tube, hot core — the glow is a wide faint stroke,
+                      so there is no filter to pay for per tube. */}
+                  <line x1={x1} y1={y1} x2={x2} y2={y2} stroke={color} strokeOpacity={0.28} strokeWidth={TUBE + 9} />
+                  <line x1={x1} y1={y1} x2={x2} y2={y2} stroke={color} strokeWidth={TUBE} />
+                  <line x1={x1} y1={y1} x2={x2} y2={y2} stroke="#ffffff" strokeOpacity={0.55} strokeWidth={TUBE * 0.3} />
                 </motion.g>
               );
             })}
