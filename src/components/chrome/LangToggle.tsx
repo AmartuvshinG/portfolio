@@ -3,12 +3,11 @@
 import { useId } from "react";
 import { motion } from "framer-motion";
 import { useI18n } from "@/lib/i18n";
-import { DROPLET_LAND, DROPLET_STYLE } from "@/components/chrome/NavGlyphs";
 import type { Locale } from "@/lib/content";
 import { cn } from "@/lib/utils";
 
 /**
- * EN / МН, as a two-segment switch.
+ * EN / МН, as a slim text switch.
  *
  * Both labels are always shown in their own script — a Mongolian reader looking
  * for their language scans for "МН", not "MN" — and the pair is a group of two
@@ -18,48 +17,51 @@ import { cn } from "@/lib/utils";
  * Renders nothing until a second locale actually exists, so the chrome never
  * advertises a translation that isn't there.
  *
- * A glass capsule whose active segment is the nav's droplet, sliding across on
- * its own `layoutId` (scoped per instance: the header and the mobile sheet
- * each render one).
+ * No pill: two words and a hairline of the ramp under the active one, sliding
+ * across on its own `layoutId` (scoped per instance: the header and the mobile
+ * sheet each render one). The padding keeps a full-height hit area.
  */
 export function LangToggle({ className }: { className?: string }) {
   const { locale, setLocale, available, t } = useI18n();
-  const drop = `lang-drop-${useId()}`;
+  const rule = `lang-rule-${useId()}`;
   if (available.length < 2) return null;
 
   return (
     <div
       role="group"
       aria-label={t.lang.switchTo}
-      className={cn("liquid-glass flex items-center rounded-full p-0.5", className)}
+      className={cn("flex items-center", className)}
     >
-      {available.map((l: Locale) => {
+      {available.map((l: Locale, i) => {
         const on = l === locale;
         return (
-          <button
-            key={l}
-            type="button"
-            lang={l}
-            aria-pressed={on}
-            onClick={() => setLocale(l)}
-            className={cn(
-              "relative h-8 min-w-10 rounded-full px-2.5 font-mono text-[0.8125rem] tracking-[0.12em] transition-colors duration-200",
-              on ? "text-fg" : "text-muted hover:text-fg"
+          <span key={l} className="flex items-center">
+            {i > 0 && (
+              <span aria-hidden className="px-0.5 font-mono text-xs text-faint">
+                /
+              </span>
             )}
-          >
-            {on && (
-              <motion.span
-                layoutId={drop}
-                aria-hidden
-                className="absolute inset-0 rounded-full"
-                style={DROPLET_STYLE}
-                initial={DROPLET_LAND.initial}
-                animate={DROPLET_LAND.animate}
-                transition={DROPLET_LAND.transition}
-              />
-            )}
-            <span className="relative">{t.lang[l]}</span>
-          </button>
+            <button
+              type="button"
+              lang={l}
+              aria-pressed={on}
+              onClick={() => setLocale(l)}
+              className={cn(
+                "relative px-1.5 py-3 font-mono text-xs tracking-[0.18em] transition-colors duration-200",
+                on ? "text-fg" : "text-faint hover:text-fg"
+              )}
+            >
+              {t.lang[l]}
+              {on && (
+                <motion.span
+                  layoutId={rule}
+                  aria-hidden
+                  className="spectrum-rule absolute inset-x-1.5 bottom-2 h-px"
+                  transition={{ type: "spring", stiffness: 380, damping: 32 }}
+                />
+              )}
+            </button>
+          </span>
         );
       })}
     </div>

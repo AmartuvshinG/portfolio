@@ -115,7 +115,7 @@ export function Hero() {
       >
         {/* ---- THE NAME ---------------------------------------------- */}
         <motion.div
-          className="pointer-events-none absolute inset-x-0 top-[33vh] z-10 flex justify-center md:top-[46vh]"
+          className="pointer-events-none absolute inset-x-0 top-[27vh] z-10 flex justify-center md:top-[36vh]"
           style={
             reduced
               ? undefined
@@ -135,8 +135,10 @@ export function Hero() {
                   was sized for a five-letter wordmark and ran 1.8 viewports
                   wide with this one. АМАРТҮВШИН in Montserrat 600 is ten
                   glyphs at ~8.4× its size, so Mongolian takes 10.6vw for the
-                  same fill. */}
-              <h1 className="display-caps flex overflow-hidden text-[8vw] leading-[0.95] text-fg [:root:lang(mn)_&]:text-[10.6vw]">
+                  same fill. Both are also capped by height: on a wide, short
+                  screen (1280×800) a width-only size ran the name down into
+                  the lead. */}
+              <h1 className="display-caps flex overflow-hidden text-[min(8vw,15vh)] leading-[0.95] text-fg [:root:lang(mn)_&]:text-[min(10.6vw,16vh)]">
                 <motion.span
                   initial={reduced ? false : { y: "110%" }}
                   animate={{ y: play || reduced ? "0%" : "110%" }}
@@ -168,7 +170,10 @@ export function Hero() {
               initial={reduced ? false : { opacity: 0, y: 20 }}
               animate={play || reduced ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
               transition={{ delay: 1.7, duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-              className="liquid-glass w-fit rounded-2xl px-5 py-4"
+              /* Desktop only. On a phone the copy stacks, and with this card
+                 on top the stack climbed over the name. Availability and the
+                 address are both in Contact and the menu sheet. */
+              className="liquid-glass hidden w-fit rounded-2xl px-5 py-4 md:block"
             >
               <span className="micro">{t.hero.currently}</span>
               <p className="mt-2 max-w-[15rem] font-tech text-sm font-semibold uppercase leading-tight text-fg">
@@ -182,14 +187,17 @@ export function Hero() {
               </a>
             </motion.div>
 
-            <div className="max-w-xl md:text-right lg:max-w-2xl">
+            {/* Wider in Mongolian: the same two lines run ~20% longer in Exo 2,
+                and at `max-w-2xl` each wrapped, so four lines climbed up
+                into the name. */}
+            <div className="max-w-xl md:text-right lg:max-w-2xl [:root:lang(mn)_&]:lg:max-w-3xl">
               {/* The lead, arriving a word at a time. Chakra Petch rather than
                   the display face: Michroma is unreadable at this size. */}
               <WordRevealLines
                 lines={profile.heroLeadLines}
                 delay={1.15}
                 play={play}
-                className="font-tech text-3xl font-medium leading-[1.1] text-fg md:text-4xl lg:text-5xl"
+                className="font-tech text-3xl font-medium leading-[1.1] text-fg max-md:[:root:lang(mn)_&]:text-2xl md:text-4xl lg:text-5xl"
               />
               <motion.p
                 initial={reduced ? false : { opacity: 0, y: 12 }}

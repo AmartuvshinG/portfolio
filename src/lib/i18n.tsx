@@ -16,8 +16,8 @@ import { ui, type UiStrings } from "@/lib/ui";
 /**
  * Language, as one client context.
  *
- * **Resolution order** — an explicit `?lang=` wins (so the Mongolian resume can
- * link straight to the Mongolian site), then the visitor's own earlier choice,
+ * **Resolution order** — an explicit `?lang=` wins (so a shared link can go
+ * straight to the Mongolian site), then the visitor's own earlier choice,
  * then the browser's language, then English.
  *
  * **Why the server always renders English.** The page is static; there is no

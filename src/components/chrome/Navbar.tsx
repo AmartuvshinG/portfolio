@@ -12,12 +12,7 @@ import {
   type MotionValue,
 } from "framer-motion";
 import { X } from "lucide-react";
-import {
-  navLinks as sectionLinks,
-  RESUME_EN,
-  RESUME_MN,
-  type NavLink,
-} from "@/lib/content";
+import { navLinks as sectionLinks, type NavLink } from "@/lib/content";
 import { useI18n } from "@/lib/i18n";
 import { LangToggle } from "@/components/chrome/LangToggle";
 import { isCaseHash } from "@/lib/caseFile";
@@ -65,7 +60,7 @@ const GLASS_FADE = 220;
  *
  * 1. **The console is a container query context, not a viewport one.** Its
  *    contents are `flex-nowrap` inside an `overflow-hidden` row — so when
- *    the links plus the CTA overflow, the excess is *silently cut off* at the
+ *    the links plus the controls overflow, the excess is *silently cut off* at the
  *    capsule's edge with no scrollbar and no warning. Sizing the drop
  *    ladder off the viewport could never be right, because the thing
  *    overflowing is the console, whose width is a `min()` of two other things.
@@ -78,10 +73,9 @@ const GLASS_FADE = 220;
 export function Navbar() {
   const { c, t, locale } = useI18n();
   const { navLinks, profile, contact } = c;
-  const resume = locale === "mn" ? RESUME_MN : RESUME_EN;
   /* Where the full link row takes over from the menu sheet. Mongolian labels
-     run ~40% longer, and at 1080px the row overran the console by ~170px and
-     pushed the résumé button off it — so Mongolian keeps the sheet until 1280.
+     run ~40% longer, and at 1080px the row overran the console by ~170px — so
+     Mongolian keeps the sheet until 1280.
      Written out in full because Tailwind only sees literal class names. */
   const mn = locale === "mn";
   const deskQuery = mn ? "(min-width: 1280px)" : "(min-width: 1080px)";
@@ -306,7 +300,7 @@ export function Navbar() {
             el.style.setProperty("--gx", `${(((e.clientX - box.left) / box.width) * 100).toFixed(1)}%`);
           }}
           animate={{
-            /* 84rem, not 72: ten links, a status lamp, a clock and a CTA do not
+            /* 84rem, not 72: ten links, a status lamp and the controls do not
                fit in 1152px, and the capsule's overflow hides the evidence. */
             width: contracted ? "min(96%, 84rem)" : "100%",
             y: contracted ? 14 : 0,
@@ -399,7 +393,7 @@ export function Navbar() {
             >
               {/* No INDEX here: the wordmark beside this row already goes to
                   the top, and seven links plus the language switch and the
-                  CTA crowded the capsule. The sheet, palette and footer keep
+                  rest crowded the capsule. The sheet, palette and footer keep
                   it. */}
               {navLinks.filter((l) => l.href !== "#hero").map((link) => (
                 <DockLink
@@ -414,46 +408,15 @@ export function Navbar() {
               ))}
             </ul>
 
-            {/* Right: status, CTA, menu button.
+            {/* Right: language, menu button.
                 The ladder here is the fix for the clipping — each item declares
                 the console width below which it is not worth its space. There
                 used to be a live UTC clock here too: it re-rendered the navbar
                 every second to show a timezone nobody visiting needs, and after
-                the type scale went up it was the item pushing the CTA off the
+                the type scale went up it was the item pushing the controls off the
                 edge at 1440px. */}
             <div className="flex shrink-0 items-center gap-4">
-              <span
-                className={cn(
-                  "hud-label shrink-0 items-center gap-2 whitespace-nowrap !text-fg",
-                  /* The capsule has no room for it once the glyphs are in. */
-                  contracted ? "hidden" : "hidden @[80rem]:flex"
-                )}
-              >
-                <span
-                  className="h-1.5 w-1.5 animate-blink rounded-full"
-                  style={{ background: "var(--color-hazard)" }}
-                />
-                {t.nav.online}
-              </span>
-
               <LangToggle className="hidden sm:flex" />
-
-              {/* The one gradient-filled element in the chrome — and the one
-                  thing a recruiter most wants from the header. It used to read
-                  "Available" and scroll to the contact form, which the nav
-                  already does; the résumé had no way in from the chrome at all.
-                  Follows the language: the Mongolian site hands over the
-                  Mongolian PDF. */}
-              <a
-                href={resume}
-                target="_blank"
-                rel="noopener"
-                aria-label={t.nav.resumeAria}
-                className="hidden rounded-full px-4 py-2 font-mono text-[0.8125rem] uppercase tracking-[0.18em] text-void shadow-[inset_0_1px_0_rgba(255,255,255,0.45),0_6px_20px_-6px_rgba(255,45,143,0.55)] transition-transform duration-200 hover:scale-[1.05] sm:block"
-                style={{ backgroundImage: "var(--gradient-spectrum)" }}
-              >
-                {t.nav.resume}
-              </a>
 
               <button
                 ref={toggleRef}
@@ -591,7 +554,7 @@ export function Navbar() {
                       className="flex items-center gap-4 py-3"
                     >
                       <SheetGlyph href={link.href} code={link.code} />
-                      <span className="font-display text-2xl uppercase text-fg">
+                      <span className="font-nav text-3xl font-semibold uppercase tracking-[0.14em] text-fg [:root:lang(mn)_&]:normal-case [:root:lang(mn)_&]:tracking-normal">
                         {link.label}
                       </span>
                     </a>
@@ -602,7 +565,7 @@ export function Navbar() {
                       className="flex items-center gap-4 py-3"
                     >
                       <SheetGlyph href={link.href} code={link.code} />
-                      <span className="font-display text-2xl uppercase text-fg">
+                      <span className="font-nav text-3xl font-semibold uppercase tracking-[0.14em] text-fg [:root:lang(mn)_&]:normal-case [:root:lang(mn)_&]:tracking-normal">
                         {link.label}
                       </span>
                     </Link>
@@ -617,19 +580,7 @@ export function Navbar() {
               >
                 {contact.email}
               </a>
-              <div className="flex items-center gap-3">
-                <LangToggle />
-                <a
-                  href={resume}
-                  target="_blank"
-                  rel="noopener"
-                  aria-label={t.nav.resumeAria}
-                  className="flex h-9 items-center rounded-full px-4 font-mono text-[0.8125rem] uppercase tracking-[0.18em] text-void"
-                  style={{ backgroundImage: "var(--gradient-spectrum)" }}
-                >
-                  {t.nav.resume}
-                </a>
-              </div>
+              <LangToggle />
             </div>
           </motion.div>
         )}
@@ -727,10 +678,10 @@ function DockLink({
   );
 
   const linkClass = cn(
-    "relative flex items-center gap-2 whitespace-nowrap rounded-full px-2.5 py-2 font-mono text-xs uppercase tracking-[0.16em] transition-colors @[76rem]:px-3.5",
-    /* Cyrillic caps are wider than Latin in this mono face; half the tracking
-       keeps the Mongolian row inside the console at 1280px. */
-    "[:root:lang(mn)_&]:tracking-[0.07em]",
+    "relative flex items-center gap-2 whitespace-nowrap rounded-full px-2.5 py-2 font-nav text-[1.0625rem] font-semibold uppercase tracking-[0.2em] transition-colors @[76rem]:px-3.5",
+    /* Exo 2 caps in Cyrillic run long; mixed case keeps the Mongolian row
+       inside the console. */
+    "[:root:lang(mn)_&]:normal-case [:root:lang(mn)_&]:tracking-[0.02em]",
     isActive ? "text-fg" : "text-muted hover:text-fg"
   );
 

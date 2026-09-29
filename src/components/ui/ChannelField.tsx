@@ -5,12 +5,11 @@ import { srand } from "@/lib/utils";
  *
  *   github    a contribution grid; a diagonal wave runs through it when lit
  *   linkedin  a small network whose connections draw themselves in when lit
- *   resume    ruled paper with a scan bar passing down it when lit
  *   live      stacked heartbeat traces that draw themselves in when lit — the
  *             service is up
  *
  * It replaced a static plate of concentric arcs that was identical in kind on
- * all four panels. Nothing here is data: the grid levels and node positions
+ * every panel. Nothing here is data: the grid levels and node positions
  * are seeded (`srand`), so they are stable across renders and hydration, and
  * they never claim to be anyone's real activity.
  *
@@ -22,7 +21,7 @@ import { srand } from "@/lib/utils";
  * This is always *under* the channel's mark. The marks are never tinted.
  */
 
-export type ChannelKind = "github" | "linkedin" | "resume" | "live";
+export type ChannelKind = "github" | "linkedin" | "live";
 
 const W = 300;
 const H = 700;
@@ -50,7 +49,6 @@ export function ChannelField({
       <ellipse cx={W / 2} cy={H * 0.86} rx={W * 0.8} ry={H * 0.42} fill={hue} opacity="0.22" />
       {kind === "github" && <Grid seed={seed} />}
       {kind === "linkedin" && <Network seed={seed} />}
-      {kind === "resume" && <Ruled seed={seed} />}
       {kind === "live" && <Pulse seed={seed} />}
     </svg>
   );
@@ -145,29 +143,6 @@ function Network({ seed }: { seed: number }) {
           style={{ animationDelay: `${((i * 0.23) % 2.4).toFixed(2)}s` }}
         />
       ))}
-    </g>
-  );
-}
-
-/* --- Résumé: ruled paper and a scan bar. The bar is one gradient rect
-   translated down the panel, so it is a single transform per frame. */
-function Ruled({ seed }: { seed: number }) {
-  const id = `cf-scan-${seed}`;
-  return (
-    <g>
-      <defs>
-        <linearGradient id={id} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stopColor="var(--spectrum-3)" stopOpacity="0" />
-          <stop offset="0.85" stopColor="var(--spectrum-3)" stopOpacity="0.28" />
-          <stop offset="1" stopColor="#ffffff" stopOpacity="0.7" />
-        </linearGradient>
-      </defs>
-      <g stroke="#eceefb" strokeOpacity="0.07">
-        {Array.from({ length: 24 }, (_, i) => (
-          <line key={i} x1="24" x2={W - 24} y1={24 + i * 28} y2={24 + i * 28} />
-        ))}
-      </g>
-      <rect className="cf-scan" x="0" y="-120" width={W} height="120" fill={`url(#${id})`} />
     </g>
   );
 }

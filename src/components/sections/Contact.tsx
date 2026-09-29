@@ -1,15 +1,15 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { ArrowUpRight, Check, Copy, FileText, Mail } from "lucide-react";
-import { RESUME_EN, RESUME_MN, sectionIndex } from "@/lib/content";
+import { ArrowUpRight, Check, Copy, Mail } from "lucide-react";
+import { sectionIndex } from "@/lib/content";
 import { useI18n } from "@/lib/i18n";
 import { Reveal } from "@/components/motion/Reveal";
 import { ChapterSeam } from "@/components/chrome/ChapterSeam";
 import { LinkedInMark } from "@/components/ui/BrandMarks";
 
 /**
- * The closing block: the address, large, and the three ways in.
+ * The closing block: the address, large, and the two ways in.
  *
  * There used to be a contact form here. With no backend it could only hand a
  * draft to the visitor's mail app, which on webmail-only or managed machines —
@@ -17,13 +17,12 @@ import { LinkedInMark } from "@/components/ui/BrandMarks";
  * to write in a box on this page rather than in their own inbox. What a
  * recruiter actually does is copy the address or open LinkedIn, so those are
  * the whole block now: the email set as the headline act with a copy button,
- * then mail, LinkedIn and the résumé as buttons, and when to expect a reply.
+ * then mail and LinkedIn as buttons, and when to expect a reply.
  */
 export function Contact() {
-  const { c, t, locale } = useI18n();
+  const { c, t } = useI18n();
   const { contact, profile, socials } = c;
   const linkedin = socials.find((s) => s.mark === "linkedin");
-  const resume = locale === "mn" ? RESUME_MN : RESUME_EN;
   const [copied, setCopied] = useState(false);
   const timer = useRef<number | undefined>(undefined);
 
@@ -114,17 +113,6 @@ export function Contact() {
                   <span className="sr-only">{t.common.newTab}</span>
                 </a>
               )}
-              <a
-                href={resume}
-                target="_blank"
-                rel="noreferrer noopener"
-                className="liquid-glass group flex items-center gap-3 rounded-full px-6 py-3.5 font-mono text-[0.8125rem] uppercase tracking-[0.2em] text-fg transition-transform duration-300 hover:scale-[1.03]"
-              >
-                <FileText size={15} aria-hidden />
-                {t.contact.resume}
-                <ArrowUpRight size={14} aria-hidden className="text-muted group-hover:text-fg" />
-                <span className="sr-only">{t.common.newTab}</span>
-              </a>
             </div>
           </Reveal>
 

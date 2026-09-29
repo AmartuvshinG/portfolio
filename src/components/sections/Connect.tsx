@@ -11,7 +11,6 @@ import { ChapterSeam } from "@/components/chrome/ChapterSeam";
 import { ChannelField } from "@/components/ui/ChannelField";
 import { GitHubMark, LinkedInMark } from "@/components/ui/BrandMarks";
 import type { GitHubSummary } from "@/lib/github";
-import { cn } from "@/lib/utils";
 
 /**
  * "Find me elsewhere", at the scale it should always have been.
@@ -22,9 +21,9 @@ import { cn } from "@/lib/utils";
  * playing cards is a gesture that wants to be either small and incidental or
  * not used at all.
  *
- * It is now four full-height panels filling the frame edge to edge, and the
+ * It is now three full-height panels filling the frame edge to edge, and the
  * interaction is the size: the panel under the pointer takes two and a half
- * times its share of the row and the other three give way, so the row is always
+ * times its share of the row and the other two give way, so the row is always
  * exactly full and something is always moving. At rest each panel is a lit slab
  * with its name set vertically up the side; expanded it turns horizontal and
  * the handle, the code and the call to action rise out of the base.
@@ -40,14 +39,14 @@ import { cn } from "@/lib/utils";
  * accordion stable, and it is the reason this is not four `motion.div`s with
  * animated widths.
  *
- * It does cost layout on four elements per frame of the tween, which is why the
+ * It does cost layout on three elements per frame of the tween, which is why the
  * accordion is gated to pointer devices and to a 0.55s spring rather than being
  * driven by scroll. A layout tween you trigger deliberately is nothing like one
  * that runs on every scroll frame.
  * ---------------------------------------------------------------------------
  *
  * On a phone the row becomes a column and the accordion is switched off
- * entirely: four channels sharing 390px of width is 24px each, and there is no
+ * entirely: three channels sharing 390px of width is ~120px each, and there is no
  * hover to open them with. Every panel renders in its expanded state instead.
  */
 
@@ -173,12 +172,8 @@ function ChannelPanel({
   github: GitHubSummary | null;
 }) {
   const { t, locale } = useI18n();
-  const kind = social.mark ?? (social.shot ? "live" : "resume");
-  const openLabel = social.href.endsWith(".pdf")
-    ? t.connect.openPdf
-    : social.shot
-      ? t.connect.openSite
-      : t.connect.openProfile;
+  const kind = social.mark ?? "live";
+  const openLabel = social.shot ? t.connect.openSite : t.connect.openProfile;
   /* The arrival: the panels rise and settle in sequence as the section enters,
      so the row has already performed once before the pointer ever reaches it.
      Later panels start lower and land later — the same stagger the fan had,
@@ -213,7 +208,7 @@ function ChannelPanel({
         />
 
         {/* Ramp wash. Only under the open panel — at rest the row stays
-            achromatic so four channels don't compete with the backdrop. */}
+            achromatic so three channels don't compete with the backdrop. */}
         <div
           aria-hidden
           className="absolute inset-0 transition-opacity duration-300"
@@ -308,45 +303,18 @@ function ChannelPanel({
         </div>
       </GlareCard>
 
-      {/* The other language of the same document. A sibling of the panel's
-          link, not a child: links cannot nest. */}
-      {social.alternates && (
-        <div
-          role="group"
-          aria-label={t.connect.resumeIn}
-          className="liquid-glass absolute right-4 top-14 z-10 flex gap-1 rounded-full p-1 transition-opacity duration-300 md:right-6 md:top-16"
-          style={{ opacity: expanded ? 1 : 0, pointerEvents: expanded ? "auto" : "none" }}
-        >
-          {social.alternates.map((alt) => (
-            <a
-              key={alt.href}
-              href={alt.href}
-              target="_blank"
-              rel="noreferrer noopener"
-              tabIndex={expanded ? 0 : -1}
-              className={cn(
-                "rounded-full px-3 py-1.5 font-mono text-xs font-semibold tracking-wider transition-colors",
-                alt.href === social.href ? "bg-fg/15 text-fg" : "text-muted hover:text-fg"
-              )}
-            >
-              {alt.label} · PDF
-            </a>
-          ))}
-        </div>
-      )}
     </motion.li>
   );
 }
 
 /**
  * What the channel *is*, drawn large enough to read across the room: the
- * service's own mark for a profile, the document itself for a resume.
+ * service's own mark for a profile, a browser window for the live product.
  *
  * It sits above the ramp wash and the floor gradient in the stack, never under
  * them. The wash is an `overlay` blend, and running it across a trademark would
  * recolour it — which both brands' guidelines rule out. So the marks stay at
  * full, untinted white in every state; only their scale answers the accordion.
- * The resume sheet is the site's own material and is allowed to dim at rest.
  *
  * Sized off the panel's *height*, not its width: the same box has to hold a
  * mark in a closed desktop column (tall and narrow), an open one, and a phone
@@ -400,29 +368,6 @@ function ChannelArt({
           {/* eslint-disable-next-line @next/next/no-img-element -- decorative, fixed asset */}
           <img src={social.shot} alt="" loading="lazy" className="block aspect-[16/10] w-full object-cover object-top" />
         </div>
-      </div>
-    );
-  }
-
-  if (social.preview) {
-    return (
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-x-0 bottom-[42%] top-[12%] flex items-center justify-center md:bottom-[34%] md:top-[14%]"
-      >
-        {/* eslint-disable-next-line @next/next/no-img-element -- decorative, fixed asset */}
-        <img
-          src={social.preview}
-          alt=""
-          width={1191}
-          height={1684}
-          loading="lazy"
-          className="h-full w-auto max-w-[78%] rounded-[2px] object-contain shadow-[0_24px_60px_-12px_rgba(0,0,0,0.7)] transition-[transform,opacity] duration-300 ease-out"
-          style={{
-            opacity: lit ? 1 : 0.62,
-            transform: `rotate(${lit ? -2 : -5}deg) scale(${lit ? 1 : 0.92})`,
-          }}
-        />
       </div>
     );
   }

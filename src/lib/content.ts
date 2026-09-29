@@ -107,13 +107,8 @@ export interface SocialLink {
   code: string;
   /** The service's own mark, drawn large on its Signal panel. */
   mark?: "github" | "linkedin";
-  /** A rendered page, shown as a sheet on its Signal panel (resumes). */
-  preview?: string;
   /** A screenshot, shown in a browser frame on its Signal panel (live sites). */
   shot?: string;
-  /** Other versions of the same thing, offered as a switch on the panel — the
-      résumé in each language. The panel itself opens `href`. */
-  alternates?: { label: string; href: string }[];
 }
 
 /* -------------------------------------------------------------------------- */
@@ -146,7 +141,7 @@ export const profile = {
   location: "Ulaanbaatar, Mongolia · GMT+8",
   status: "OPEN TO ENTRY-LEVEL SOFTWARE ENGINEERING ROLES",
   /** Set in the editorial serif under the name. */
-  heroLead: "Software that sorts the signal from the noise.",
+  heroLead: "Hi, I'm Amartuvshin. Welcome to my portfolio.",
   /**
    * The same line, broken for the hero's word-by-word arrival.
    *
@@ -154,7 +149,7 @@ export const profile = {
    * two — the second starting a beat behind the first. `heroLead` stays as the
    * flat string for anywhere that needs one (metadata, reduced motion).
    */
-  heroLeadLines: ["Software that sorts", "the signal from the noise."],
+  heroLeadLines: ["Hi, I'm Amartuvshin.", "Welcome to my portfolio."],
   heroSub:
     "Software engineering graduate. I build full-stack web apps and machine learning tools, most recently an AI bug triage platform trained on 222,000+ Mozilla Firefox bug reports.",
   kicker: "PORTFOLIO — 2026",
@@ -192,8 +187,8 @@ export function sectionIndex(href: string): string {
 }
 
 export const about = {
-  heading: "OPERATOR PROFILE",
-  lead: "I'm a software engineer who likes turning messy, real-world data into tools people actually use.",
+  heading: "ABOUT ME",
+  lead: "Gannon University graduate, now back home in Ulaanbaatar.",
   paragraphs: [
     "I graduated from Gannon University (Erie, Pennsylvania) in May 2026 with a B.S. in Software Engineering. My capstone, Spotfixes, is a live web platform that predicts how serious a software bug is and finds duplicate reports, built on real Mozilla Firefox data with feedback from Firefox developers. I led its UI/UX and usability testing.",
     "I work mainly in Java, Python and React, and I care about the parts of software people notice: clear interfaces, reliable behaviour, and testing that catches problems before users do. I'm back in Ulaanbaatar, fluent in Mongolian and English, and looking for my first full-time software engineering role.",
@@ -464,14 +459,11 @@ export const timeline: TimelineEntry[] = [
 ];
 
 export const contact = {
-  heading: "INITIALIZE CONTACT",
-  lead: "Hiring for a software engineering role? Email me and I'll reply within 48 hours.",
+  heading: "CONTACT",
+  lead: "Want to talk about a role or a project? Email me and I'll reply within 48 hours.",
   email: "amaraajunior@gmail.com",
   availability: "OPEN · AVAILABLE NOW",
 };
-
-export const RESUME_EN = "/resume/Amartuvshin-Ganzorig-Resume.pdf";
-export const RESUME_MN = "/resume/Amartuvshin-Ganzorig-Resume-MN.pdf";
 
 export const socials: SocialLink[] = [
   {
@@ -494,17 +486,6 @@ export const socials: SocialLink[] = [
     href: "https://spotfixes.com",
     code: "LV",
     shot: "/work/spotfixes.webp",
-  },
-  {
-    label: "RESUME",
-    handle: "PDF · English / Монгол",
-    href: RESUME_EN,
-    code: "CV",
-    preview: "/resume/Amartuvshin-Ganzorig-Resume-preview.webp",
-    alternates: [
-      { label: "EN", href: RESUME_EN },
-      { label: "МН", href: RESUME_MN },
-    ],
   },
 ];
 

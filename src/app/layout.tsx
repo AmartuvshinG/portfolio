@@ -7,6 +7,7 @@ import {
   Montserrat,
   Exo_2,
   Onest,
+  Rajdhani,
 } from "next/font/google";
 import "./globals.css";
 import { site } from "@/lib/content";
@@ -52,6 +53,18 @@ const chakra = Chakra_Petch({
 const archivo = Archivo({
   subsets: ["latin"],
   variable: "--font-archivo",
+  display: "swap",
+});
+
+/**
+ * The navbar's link face. Narrow, squared sci-fi letterforms — the cyberpunk
+ * voice, set in wide-tracked caps so it stays quiet rather than loud. Latin
+ * only; Mongolian falls back to the tech face (Exo 2) through `--font-nav`.
+ */
+const rajdhani = Rajdhani({
+  subsets: ["latin"],
+  weight: ["500", "600"],
+  variable: "--font-rajdhani",
   display: "swap",
 });
 
@@ -144,7 +157,7 @@ export default function RootLayout({
       /* Seeded to the opening act so first paint is already the base void — waiting for
          ActTheme to mount would flash the wrong surface. */
       data-act="void"
-      className={`${michroma.variable} ${chakra.variable} ${archivo.variable} ${monoHud.variable} ${montserrat.variable} ${exo.variable} ${onest.variable} h-full`}
+      className={`${michroma.variable} ${chakra.variable} ${archivo.variable} ${monoHud.variable} ${montserrat.variable} ${exo.variable} ${onest.variable} ${rajdhani.variable} h-full`}
     >
       <body className="min-h-full antialiased">
         <a

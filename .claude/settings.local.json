@@ -4,6 +4,9 @@
       "Edit",
       "Write",
       "Bash",
+      "PowerShell",
+      "mcp__playwright",
+      "mcp__chrome-devtools",
       "Bash(npx tsc *)",
       "Bash(node \"C:/Users/Amara/AppData/Local/Temp/claude/c--Users-Amara-Downloads-portfolio/b59446e3-ab7b-4c91-a277-ece480cfcd67/scratchpad/rename-tokens.mjs\")",
       "Bash(npm run *)",
@@ -11,7 +14,14 @@
       "Bash(node /c/Users/Amara/AppData/Local/Temp/claude/c--Users-Amara-Downloads-portfolio/e49256a0-cdf5-4def-929b-621668983b7d/scratchpad/ab.mjs)",
       "mcp__playwright__browser_evaluate",
       "mcp__playwright__browser_take_screenshot",
-      "mcp__playwright__browser_run_code_unsafe"
+      "mcp__playwright__browser_run_code_unsafe",
+      "Bash(python -)",
+      "Bash(git rm *)",
+      "Bash(sed -i 's/duration-700 group-hover/duration-300 group-hover/; s/duration-500 group-hover/duration-250 group-hover/g' src/components/motion/GlareCard.tsx)",
+      "Bash(sed -i 's/transition-colors duration-500/transition-colors duration-250/' src/components/motion/HoverBorderGradient.tsx)",
+      "Bash(sed -i 's/transition-transform duration-500 ease-out/transition-transform duration-300 ease-out/' src/components/motion/MagneticButton.tsx src/components/sections/SelectedWork.tsx)",
+      "Bash(sed -i 's/block h-px transition-all duration-500/block h-px transition-all duration-250/' src/components/sections/SelectedWork.tsx)",
+      "Bash(python \"C:/Users/Amara/AppData/Local/Temp/claude/c--Users-Amara-Downloads-portfolio/8d024309-c293-43c6-b0aa-36e5b638af0b/scratchpad/nav1.py\")"
     ],
     "defaultMode": "acceptEdits"
   }

@@ -38,7 +38,6 @@ Mongolian overrides are in **`src/lib/content.mn.ts`**. Interface strings are
 in `src/lib/ui.ts`. Everything there is sourced — résumé, the Spotfixes report,
 transcript, LinkedIn — and nothing should be added that isn't.
 
-- Résumés and their preview images: `public/resume/`
 - Project screenshots: `public/work/`
 - The Signal panel's GitHub numbers are fetched live (`src/lib/github.ts`,
   refreshed daily) and fall back to the handle if GitHub is unreachable.
@@ -62,8 +61,8 @@ src/
     motion/         reveals, counters, text effects, glare and magnetic interactions
   hooks/            reduced motion, overlays, scroll lock, quality, pointer drift
   lib/              content (EN/MN), i18n, ui strings, motion presets, GitHub fetch, utils
-public/             resume PDFs, project screenshots, brand marks
-scripts/            axe sweep, screenshot capture, résumé preview rendering, dev launcher
+public/             project screenshots, brand marks
+scripts/            axe sweep, screenshot capture, dev launcher
 docs/
   HANDOFF.md        how to use the verification harness (browser checks, axe, CI)
   briefs/           the requests that drove each rebuild, newest in list-of-changes.txt

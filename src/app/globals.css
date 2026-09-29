@@ -87,11 +87,13 @@
          tech    — Chakra Petch. Chamfered terminals, the same cut as the notch
                    cards. Headings, leads, subheads.
          sans    — Archivo. Body copy, where neither of the above is readable.
-         mono    — JetBrains Mono. Micro-labels and numbering. */
+         mono    — JetBrains Mono. Micro-labels and numbering.
+         nav     — Rajdhani. Navbar links only: narrow sci-fi caps. */
   --font-display: var(--font-michroma), "Arial Black", sans-serif;
   --font-tech: var(--font-chakra), ui-sans-serif, system-ui, sans-serif;
   --font-sans: var(--font-archivo), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-mono-hud), ui-monospace, "Courier New", monospace;
+  --font-nav: var(--font-rajdhani), var(--font-tech);
 
   /* --- Text scale, one step up from Tailwind's defaults.
          The stock scale set body copy at 14–16px and every label at 10–11px,
@@ -204,6 +206,7 @@
   --font-display: var(--font-montserrat), "Arial Black", sans-serif;
   --font-tech: var(--font-exo), ui-sans-serif, system-ui, sans-serif;
   --font-sans: var(--font-onest), ui-sans-serif, system-ui, sans-serif;
+  --font-nav: var(--font-exo), ui-sans-serif, system-ui, sans-serif;
 }
 
 /* Michroma has one weight and it reads heavy; Montserrat at the same nominal
@@ -319,6 +322,9 @@ html.hud-cursor * {
    ------------------------------------------------------------------------- */
 @utility font-tech {
   font-family: var(--font-tech);
+}
+@utility font-nav {
+  font-family: var(--font-nav);
 }
 @utility font-display {
   font-family: var(--font-display);
@@ -581,10 +587,6 @@ html.hud-cursor * {
   0%, 100% { transform: scale(1); opacity: 0.75; }
   50% { transform: scale(1.55); opacity: 1; }
 }
-@keyframes cf-scan {
-  from { transform: translateY(0); }
-  to { transform: translateY(840px); }
-}
 .cf-lit .cf-cell { animation: cf-wave 2.6s ease-in-out infinite; }
 .cf-edge {
   stroke-dasharray: 1;
@@ -594,7 +596,6 @@ html.hud-cursor * {
 .cf-lit .cf-edge { stroke-dashoffset: 0; }
 .cf-node { transform-box: fill-box; transform-origin: center; }
 .cf-lit .cf-node { animation: cf-pulse 2.4s ease-in-out infinite; }
-.cf-lit .cf-scan { animation: cf-scan 3.2s linear infinite; }
 
 /* The nav monogram's spark: one short dash runs the hexagon's perimeter, then
    the mark rests for most of the cycle. Paint on a 28px SVG, so it is free. */
