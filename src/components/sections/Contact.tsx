@@ -95,7 +95,7 @@ export function Contact() {
                 style={{ backgroundImage: "var(--gradient-spectrum)" }}
                 /* The ramp carries the colour and the label stays dark on it:
                    bone on magenta is only ~3:1. */
-                className="chamfer-sm flex items-center gap-3 px-7 py-3.5 font-mono text-[0.8125rem] uppercase tracking-[0.2em] text-void transition-transform duration-300 hover:scale-[1.03]"
+                className="chamfer-sm flex items-center gap-3 px-7 py-3.5 font-mono text-xs uppercase tracking-[0.2em] text-void transition-transform duration-300 hover:scale-[1.03]"
               >
                 <Mail size={15} aria-hidden />
                 {t.contact.emailMe}
@@ -105,7 +105,7 @@ export function Contact() {
                   href={linkedin.href}
                   target="_blank"
                   rel="noreferrer noopener"
-                  className="liquid-glass group flex items-center gap-3 rounded-full px-6 py-3.5 font-mono text-[0.8125rem] uppercase tracking-[0.2em] text-fg transition-transform duration-300 hover:scale-[1.03]"
+                  className="liquid-glass group flex items-center gap-3 rounded-full px-6 py-3.5 font-mono text-xs uppercase tracking-[0.2em] text-fg transition-transform duration-300 hover:scale-[1.03]"
                 >
                   <LinkedInMark className="h-4 w-auto" />
                   LinkedIn

@@ -102,9 +102,9 @@ export function Connect({ github }: { github: GitHubSummary | null }) {
         <div className="flex flex-col justify-between gap-6 md:flex-row md:items-end">
           <div className="flex flex-col gap-5">
             <div className="flex items-center gap-4">
-              <span className="micro tabular">{sectionIndex("#connect")}</span>
-              <span className="h-px w-10 bg-current opacity-25" />
-              <span className="micro">{t.connect.eyebrow}</span>
+              <span className="eyebrow tabular">{sectionIndex("#connect")}</span>
+              <span className="h-px w-12 bg-current opacity-25" />
+              <span className="eyebrow">{t.connect.eyebrow}</span>
             </div>
             <h2
               className="display-caps text-fg"
@@ -233,7 +233,7 @@ function ChannelPanel({
 
         <div className="absolute inset-0 flex flex-col justify-between p-4 md:p-6">
           <div className="flex items-start justify-between gap-3">
-            <span className="font-mono text-[0.8125rem] tracking-[0.24em] text-fg md:text-xs">
+            <span className="font-mono text-xs tracking-[0.24em] text-fg">
               {social.code}
             </span>
             <ArrowUpRight

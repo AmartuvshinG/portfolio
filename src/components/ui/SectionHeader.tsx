@@ -42,9 +42,9 @@ export function SectionHeader({
       )}
     >
       <div className="flex items-center gap-4">
-        <span className="micro tabular">{index}</span>
-        <span className="h-px w-10 bg-current opacity-25" />
-        <span className="micro">{label}</span>
+        <span className="eyebrow tabular">{index}</span>
+        <span className="h-px w-12 bg-current opacity-25" />
+        <span className="eyebrow">{label}</span>
       </div>
 
       {voice === "caps" ? (

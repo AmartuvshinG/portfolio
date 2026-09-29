@@ -181,7 +181,7 @@ function Theatre({ sectionRef: ref }: { sectionRef: React.RefObject<HTMLElement 
           {/* Masthead */}
           <div className="flex items-end justify-between gap-6">
             <div>
-              <span className="micro">
+              <span className="eyebrow">
                 {sectionIndex("#work")} — {t.work.eyebrow}
               </span>
               <h2 className="display-caps mt-3 text-[clamp(1.6rem,3.4vw,3.25rem)] text-fg">
@@ -277,7 +277,7 @@ function Theatre({ sectionRef: ref }: { sectionRef: React.RefObject<HTMLElement 
                       onClick={() => goTo(i)}
                       aria-current={i === active ? "step" : undefined}
                       className={cn(
-                        "group flex h-11 items-center gap-2 px-2.5 font-mono text-[0.8125rem] uppercase tracking-[0.14em] transition-colors",
+                        "group flex h-11 items-center gap-2 px-2.5 font-mono text-xs uppercase tracking-[0.14em] transition-colors",
                         i === active ? "text-fg" : "text-faint hover:text-muted"
                       )}
                     >
@@ -415,7 +415,7 @@ function Story({ project, active, ...layer }: Layer & { project: Project; active
             {project.index}
           </span>
           <span className="h-px w-8 bg-current opacity-25" />
-          <span className="micro">
+          <span className="micro text-fg/75">
             {project.category} · {project.year}
           </span>
         </div>
@@ -447,7 +447,7 @@ function Story({ project, active, ...layer }: Layer & { project: Project; active
           <button
             type="button"
             onClick={() => openCase(project.slug)}
-            className="chamfer-sm inline-flex h-11 items-center gap-2 px-5 font-mono text-[0.8125rem] uppercase tracking-[0.18em] text-void transition-transform duration-300 hover:scale-[1.03]"
+            className="chamfer-sm inline-flex h-11 items-center gap-2 px-5 font-mono text-xs uppercase tracking-[0.18em] text-void transition-transform duration-300 hover:scale-[1.03]"
             style={{ backgroundImage: "var(--gradient-spectrum)" }}
           >
             {t.work.open}
@@ -458,7 +458,7 @@ function Story({ project, active, ...layer }: Layer & { project: Project; active
               href={live.href}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex h-11 items-center gap-2 border border-line-strong px-5 font-mono text-[0.8125rem] uppercase tracking-[0.18em] text-fg transition-colors hover:border-fg"
+              className="inline-flex h-11 items-center gap-2 border border-line-strong px-5 font-mono text-xs uppercase tracking-[0.18em] text-fg transition-colors hover:border-fg"
             >
               {live.label}
               <ArrowUpRight size={15} aria-hidden />
@@ -588,7 +588,7 @@ function Stack({ reduced }: { reduced: boolean }) {
     <>
       <ChapterSeam />
       <div className="mx-auto max-w-[1800px] px-5 md:px-8 lg:px-16">
-        <span className="micro">
+        <span className="eyebrow">
           {sectionIndex("#work")} — {t.work.eyebrow}
         </span>
         <h2 className="display-caps mt-3 text-[clamp(1.6rem,4vw,3.75rem)] text-fg">{t.work.title}</h2>
@@ -618,7 +618,7 @@ function Stack({ reduced }: { reduced: boolean }) {
                     <span className="font-mono text-sm tabular" style={{ color: readable(accentColor[p.accent]) }}>
                       {p.index}
                     </span>
-                    <span className="micro">
+                    <span className="micro text-fg/75">
                       {p.category} · {p.year}
                     </span>
                   </div>
@@ -628,7 +628,7 @@ function Stack({ reduced }: { reduced: boolean }) {
                     <button
                       type="button"
                       onClick={() => openCase(p.slug)}
-                      className="chamfer-sm inline-flex h-11 items-center gap-2 px-5 font-mono text-[0.8125rem] uppercase tracking-[0.16em] text-void"
+                      className="chamfer-sm inline-flex h-11 items-center gap-2 px-5 font-mono text-xs uppercase tracking-[0.16em] text-void"
                       style={{ backgroundImage: "var(--gradient-spectrum)" }}
                     >
                       {t.work.open} <ArrowRight size={15} aria-hidden />
@@ -638,7 +638,7 @@ function Stack({ reduced }: { reduced: boolean }) {
                         href={live.href}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex h-11 items-center gap-2 border border-line-strong px-4 font-mono text-[0.8125rem] uppercase tracking-[0.16em] text-fg"
+                        className="inline-flex h-11 items-center gap-2 border border-line-strong px-4 font-mono text-xs uppercase tracking-[0.16em] text-fg"
                       >
                         {live.label} <ArrowUpRight size={15} aria-hidden />
                         <span className="sr-only">{t.common.newTab}</span>

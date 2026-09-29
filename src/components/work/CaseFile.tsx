@@ -207,7 +207,7 @@ function CaseFile({
                             href={l.href}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="chamfer-sm group inline-flex h-11 items-center gap-2 px-5 font-mono text-[0.8125rem] uppercase tracking-[0.18em] transition-transform duration-300 hover:scale-[1.03]"
+                            className="chamfer-sm group inline-flex h-11 items-center gap-2 px-5 font-mono text-xs uppercase tracking-[0.18em] transition-transform duration-300 hover:scale-[1.03]"
                             style={
                               n === 0
                                 ? { backgroundImage: "var(--gradient-spectrum)", color: "var(--color-void)" }
@@ -255,7 +255,7 @@ function CaseFile({
                       <h3 className="micro mb-4">{t.caseFile.stack}</h3>
                       <div className="flex flex-wrap gap-2">
                         {project.stack.map((s) => (
-                          <span key={s} className="rounded-full border border-line px-3 py-1.5 font-mono text-[0.8125rem] uppercase tracking-wider text-fg">
+                          <span key={s} className="rounded-full border border-line px-3 py-1.5 font-mono text-xs uppercase tracking-wider text-fg">
                             {s}
                           </span>
                         ))}
