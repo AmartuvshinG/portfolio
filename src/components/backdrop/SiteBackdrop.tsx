@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { FilmBackdrop } from "./FilmBackdrop";
 import { Grain } from "./Grain";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
@@ -24,8 +25,20 @@ import { useReducedMotion } from "@/hooks/useReducedMotion";
  *
  * Everything here is `pointer-events-none` and sits at z-0; content is z-10.
  */
+interface NavigatorWithConnection extends Navigator {
+  connection?: { saveData?: boolean };
+}
+
 export function SiteBackdrop() {
   const reduced = useReducedMotion();
+  /* A reader who has asked the browser to save data gets the base ground, not
+     7–21 MB of film. Read after mount so SSR and hydration agree. */
+  const [saveData, setSaveData] = useState(false);
+  useEffect(() => {
+    // One read of a browser setting; there is nothing to subscribe to.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setSaveData(!!(navigator as NavigatorWithConnection).connection?.saveData);
+  }, []);
 
   return (
     <div
@@ -45,7 +58,7 @@ export function SiteBackdrop() {
         }}
       />
 
-      {!reduced && <FilmBackdrop />}
+      {!reduced && !saveData && <FilmBackdrop />}
 
       <Grain />
     </div>

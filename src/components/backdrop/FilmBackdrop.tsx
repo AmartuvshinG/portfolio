@@ -109,8 +109,29 @@ export function FilmBackdrop() {
     const set = window.matchMedia("(max-width: 768px)").matches ? FILM.phone : FILM.desktop;
     const ac = new AbortController();
     const urls: string[] = [];
+
+    /* The station reel is first seen at the airlock, after Work — thousands
+       of pixels down. Fetch it once the reader is within three screens of
+       Work, not at load: on a phone that is 3 MB a visitor who bounces from
+       the hero never pays for. Checked on mount too, so a deep link past Work
+       fetches it at once. The city reel is still first either way. */
+    let wantIss: () => void = () => {};
+    const issWanted = new Promise<void>((resolve) => (wantIss = resolve));
+    const near = () => {
+      const work = document.querySelector<HTMLElement>("#work");
+      const top = work ? work.getBoundingClientRect().top + window.scrollY : 0;
+      if (window.scrollY + window.innerHeight * 3 >= top) {
+        window.removeEventListener("scroll", near);
+        wantIss();
+      }
+    };
+    window.addEventListener("scroll", near, { passive: true });
+    near();
+
     (async () => {
       urls.push(await loadWhole(city, set.city, ac.signal));
+      await issWanted;
+      if (ac.signal.aborted) return;
       urls.push(await loadWhole(iss, set.iss, ac.signal));
     })().catch((err) => {
       if (ac.signal.aborted) return;
@@ -121,6 +142,7 @@ export function FilmBackdrop() {
     });
     return () => {
       ac.abort();
+      window.removeEventListener("scroll", near);
       for (const u of urls) URL.revokeObjectURL(u);
     };
   }, []);
