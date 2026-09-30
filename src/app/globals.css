@@ -56,7 +56,10 @@
 
          Rationed, and the ration is the point. Permitted: the AVAILABLE call to
          action, the ONLINE lamp, form error states, the low-power indicator,
-         aviation lamps and window glow in the hero skyline. Forbidden: type at
+         aviation lamps and window glow in the hero skyline — and, since the
+         Blade Runner pass, the film's sodium grade, the glow (never the fill)
+         of a neon sign, the Mongol-script sign's frame, the active nav
+         bracket and index, and the UB clock's lamp. Forbidden: type at
          any size above a micro-label, flat fills, and --gradient-spectrum. The
          moment it appears in a third place it stops meaning anything. */
   --color-hazard: #ffa02b;
@@ -628,6 +631,29 @@ html.hud-cursor * {
 }
 .script-sign::before { top: -3px; left: -3px; border-width: 2px 0 0 2px; }
 .script-sign::after { bottom: -3px; right: -3px; border-width: 0 2px 2px 0; }
+
+/* HUD corner brackets: four L-shaped corners from eight gradient strokes on
+   one element, so a targeting frame costs no extra nodes. `--hud-c` is the
+   stroke colour; the live variant is the active nav link, in sodium with a
+   faint under-glow. */
+.hud-brackets {
+  --hud-c: color-mix(in srgb, var(--color-fg) 55%, transparent);
+  --hud-l: 7px;
+  --hud-w: 1.5px;
+  background:
+    linear-gradient(var(--hud-c), var(--hud-c)) top left / var(--hud-l) var(--hud-w) no-repeat,
+    linear-gradient(var(--hud-c), var(--hud-c)) top left / var(--hud-w) var(--hud-l) no-repeat,
+    linear-gradient(var(--hud-c), var(--hud-c)) top right / var(--hud-l) var(--hud-w) no-repeat,
+    linear-gradient(var(--hud-c), var(--hud-c)) top right / var(--hud-w) var(--hud-l) no-repeat,
+    linear-gradient(var(--hud-c), var(--hud-c)) bottom left / var(--hud-l) var(--hud-w) no-repeat,
+    linear-gradient(var(--hud-c), var(--hud-c)) bottom left / var(--hud-w) var(--hud-l) no-repeat,
+    linear-gradient(var(--hud-c), var(--hud-c)) bottom right / var(--hud-l) var(--hud-w) no-repeat,
+    linear-gradient(var(--hud-c), var(--hud-c)) bottom right / var(--hud-w) var(--hud-l) no-repeat;
+}
+.hud-brackets-live {
+  --hud-c: var(--color-hazard);
+  box-shadow: inset 0 -10px 16px -12px color-mix(in srgb, var(--color-hazard) 55%, transparent);
+}
 
 /* Restored from NEXUS for the mobile nav sheet. */
 @utility holo-grid {

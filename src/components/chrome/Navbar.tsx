@@ -21,7 +21,7 @@ import { useOverlay } from "@/hooks/useOverlay";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
 import { MagneticButton } from "@/components/motion/MagneticButton";
 import { cn } from "@/lib/utils";
-import { DROPLET_LAND, DROPLET_STYLE, Monogram, NAV_ICONS } from "@/components/chrome/NavGlyphs";
+import { Monogram, NAV_ICONS } from "@/components/chrome/NavGlyphs";
 
 const BAR_SPRING = { type: "spring", stiffness: 200, damping: 50 } as const;
 
@@ -465,6 +465,7 @@ export function Navbar() {
                 the type scale went up it was the item pushing the controls off the
                 edge at 1440px. */}
             <div className="flex shrink-0 items-center gap-4">
+              <UbClock />
               <LangToggle className="hidden sm:flex" />
 
               <button
@@ -703,26 +704,26 @@ function DockLink({
     DOCK_SPRING
   );
 
-  const Icon = NAV_ICONS[link.href];
+  const { ref: scrambleRef, run: runScramble } = useScramble(link.label);
   const label = (
     <>
-      {/* The glyph is wayfinding beside the word, never instead of it. It is
-          the first thing to go when the capsule runs short: measured, seven of
-          them cost ~150px, so they need a console of 82rem (84rem for the
-          longer Mongolian labels). */}
-      {Icon && (
-        <Icon
-          aria-hidden
-          size={14}
-          strokeWidth={1.75}
-          className={cn(
-            "hidden shrink-0 transition-colors @[82rem]:block",
-            "[:root:lang(mn)_&]:hidden [:root:lang(mn)_&]:@[84rem]:block",
-            isActive ? "text-fg" : "text-faint"
-          )}
-        />
-      )}
-      <span>{link.label}</span>
+      {/* The section's index, where the lucide glyph used to be: the HUD's
+          own wayfinding, and two mono digits are narrower than an icon. Still
+          the first thing to go when the capsule runs short. */}
+      <span
+        aria-hidden
+        className={cn(
+          "hidden font-mono text-[0.6875rem] tabular tracking-normal transition-colors @[78rem]:inline",
+          "[:root:lang(mn)_&]:hidden [:root:lang(mn)_&]:@[84rem]:inline",
+          isActive ? "text-[var(--color-hazard)]" : "text-faint"
+        )}
+      >
+        {link.code}
+      </span>
+      <span className="sr-only">{link.label}</span>
+      <span ref={scrambleRef} aria-hidden className="inline-block whitespace-nowrap">
+        {link.label}
+      </span>
     </>
   );
 
@@ -744,15 +745,15 @@ function DockLink({
           : undefined
       }
     >
+      {/* The active section: sodium corner brackets and a faint amber
+          under-glow, sliding between links on one layoutId. It replaced the
+          glass droplet: a HUD targets things, it does not puddle under them. */}
       {isActive && (
         <motion.span
           layoutId="nav-active"
           aria-hidden
-          className="absolute inset-0 rounded-full"
-          style={DROPLET_STYLE}
-          initial={DROPLET_LAND.initial}
-          animate={DROPLET_LAND.animate}
-          transition={DROPLET_LAND.transition}
+          className="hud-brackets hud-brackets-live absolute inset-0"
+          transition={{ layout: { type: "spring", stiffness: 420, damping: 36 } }}
         />
       )}
 
@@ -765,6 +766,8 @@ function DockLink({
               go(link.href);
             }}
             aria-current={isActive ? "location" : undefined}
+            onMouseEnter={runScramble}
+            onFocus={runScramble}
             className={linkClass}
           >
             {label}
@@ -773,12 +776,21 @@ function DockLink({
           <Link
             href={`/${link.href}`}
             aria-current={isActive ? "page" : undefined}
+            onMouseEnter={runScramble}
+            onFocus={runScramble}
             className={linkClass}
           >
             {label}
           </Link>
         )}
       </MagneticButton>
+
+      {!isActive && (
+        <span
+          aria-hidden
+          className="hud-brackets pointer-events-none absolute inset-0 scale-110 opacity-0 transition-[opacity,transform] duration-200 [li:hover>&]:scale-100 [li:hover>&]:opacity-100 [li:focus-within>&]:scale-100 [li:focus-within>&]:opacity-100"
+        />
+      )}
 
       {/* The dock's indicator. A ramp hairline drawing itself under the nearest
           link — the one piece of colour the row gets, and it replaces the
@@ -802,6 +814,102 @@ function SheetGlyph({ href, code }: { href: string; code: string }) {
     <span className="liquid-glass flex h-10 w-10 shrink-0 flex-col items-center justify-center rounded-full">
       {Icon && <Icon aria-hidden size={15} strokeWidth={1.75} className="text-fg" />}
       <span className="spectrum-text font-mono text-[0.625rem] leading-none">{code}</span>
+    </span>
+  );
+}
+
+/** The split-flap alphabets the nav labels resolve through. Each glyph flips
+ *  through its own script and case, so a Mongolian label never shows Latin
+ *  mid-flip and a lowercase one never jumps to capitals. */
+const FLAP = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+const FLAP_CYR = "АБВГДЕЖЗИЙКЛМНОӨПРСТУҮФХЦЧШЭЮЯ";
+const FLAP_CYR_LOWER = FLAP_CYR.toLowerCase();
+
+function flapFor(ch: string) {
+  if (/[а-яөү]/.test(ch)) return FLAP_CYR_LOWER;
+  if (/[А-ЯӨҮ]/.test(ch)) return FLAP_CYR;
+  return FLAP;
+}
+
+/**
+ * A label that decodes itself on hover: every glyph flips through the
+ * alphabet and they lock left to right, in ~260ms.
+ *
+ * Written straight to the node — no re-render per frame — and the span's
+ * width is pinned for the run, so the proportional face swapping glyphs can
+ * never jostle the row. The accessible name is a separate sr-only copy, so
+ * nothing ever hears the scramble.
+ */
+function useScramble(text: string) {
+  const ref = useRef<HTMLSpanElement>(null);
+  const raf = useRef(0);
+
+  const run = useCallback(() => {
+    const el = ref.current;
+    if (!el || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    cancelAnimationFrame(raf.current);
+    const chars = Array.from(text);
+    el.style.width = `${el.getBoundingClientRect().width}px`;
+    const t0 = performance.now();
+    const DUR = 260;
+    const step = (now: number) => {
+      const p = Math.min(1, (now - t0) / DUR);
+      const flip = Math.floor(now / 40);
+      el.textContent = chars
+        .map((ch, i) =>
+          ch === " " || p >= (i + 1) / chars.length
+            ? ch
+            : flapFor(ch)[(flip * 7 + i * 13) % flapFor(ch).length]
+        )
+        .join("");
+      if (p < 1) raf.current = requestAnimationFrame(step);
+      else {
+        el.textContent = text;
+        el.style.width = "";
+      }
+    };
+    raf.current = requestAnimationFrame(step);
+  }, [text]);
+
+  useEffect(() => () => cancelAnimationFrame(raf.current), []);
+  return { ref, run };
+}
+
+/**
+ * Local time in Ulaanbaatar, HH:MM:SS. It used to be a UTC clock that
+ * re-rendered the whole navbar every second; this one writes one text node
+ * once a second and never re-renders. The server renders a placeholder, so
+ * hydration always agrees. Shown only when the capsule has the room.
+ */
+function UbClock() {
+  const ref = useRef<HTMLSpanElement>(null);
+
+  useEffect(() => {
+    const fmt = new Intl.DateTimeFormat("en-GB", {
+      timeZone: "Asia/Ulaanbaatar",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      hour12: false,
+    });
+    const tick = () => {
+      if (ref.current) ref.current.textContent = fmt.format(new Date());
+    };
+    tick();
+    const id = window.setInterval(tick, 1000);
+    return () => window.clearInterval(id);
+  }, []);
+
+  return (
+    <span
+      aria-hidden
+      className="hidden items-center gap-2 font-mono text-xs tabular tracking-[0.18em] text-faint @[80rem]:flex"
+    >
+      <span className="h-1 w-1 rounded-full bg-[var(--color-hazard)]" />
+      UB
+      <span ref={ref} className="text-muted">
+        --:--:--
+      </span>
     </span>
   );
 }
