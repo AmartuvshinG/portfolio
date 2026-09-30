@@ -5,6 +5,7 @@ import { Capabilities } from "@/components/sections/Capabilities";
 import { SelectedWork } from "@/components/sections/SelectedWork";
 import { Timeline } from "@/components/sections/Timeline";
 import { Contact } from "@/components/sections/Contact";
+import { FilmInterlude } from "@/components/sections/FilmInterlude";
 import { CaseFileHost } from "@/components/work/CaseFile";
 import { getGitHubSummary } from "@/lib/github";
 
@@ -31,9 +32,14 @@ export default async function Home() {
   return (
     <>
       <Hero />
+      {/* The film behind the page (FilmBackdrop) moves at the joins; these
+          two give its biggest moments — the doors, the porthole — empty
+          screen to land on. */}
+      <FilmInterlude variant="doors" />
       <About />
       <Connect github={github} />
       <SelectedWork />
+      <FilmInterlude variant="airlock" />
       <Capabilities />
       <Timeline />
       <Contact />

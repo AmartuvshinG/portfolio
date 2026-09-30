@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState } from "react";
 import { motion, useScroll, useTransform } from "framer-motion";
-import { GlowHorizon } from "@/components/ui/GlowHorizon";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
 import { cn, srand } from "@/lib/utils";
 
@@ -43,12 +42,9 @@ import { cn, srand } from "@/lib/utils";
  * ---------------------------------------------------------------------------
  */
 export function ChapterSeam({
-  intensity = 0.42,
   wipe = false,
   className,
 }: {
-  /** 0–1. Seams run well under the hero so they punctuate rather than compete. */
-  intensity?: number;
   /**
    * Add the shutter blind — a row of vertical bars that stagger open as you
    * cross. **Only three sections pass this.** Nine shuttering boundaries is a
@@ -108,14 +104,15 @@ export function ChapterSeam({
         <>
           {near && wipe && <Shutter progress={scrollYProgress} />}
 
-          {near && (
-            <GlowHorizon
-              lite
-              variant="top"
-              intensity={intensity}
-              progress={scrollYProgress}
-            />
-          )}
+          {/* No glow arc while the film is the ground. The arc is a crest of
+              light against a *painted* void core — the ground colour — which
+              vanishes over a flat ground and is an opaque dark disc over a
+              picture: it drew a hard-edged band under every seam. Cut out
+              with a mask instead, its container edges showed as a boxed band.
+              The film's own scene change now marks the join. To bring the arc
+              back (e.g. if the aurora returns): `<GlowHorizon lite
+              variant="top" intensity={0.42} progress={scrollYProgress}
+              />` here, gated on `near`. */}
 
           {/* The hairline. Draws from the centre outward so the join reads as
               something opening rather than something sliding in from one side.

@@ -243,7 +243,56 @@ export function Navbar() {
     const target = document.getElementById(decodeURIComponent(hash.slice(1)));
     if (!target) return;
     const id = requestAnimationFrame(() => scrollTo(window.location.hash));
-    return () => cancelAnimationFrame(id);
+
+    /* The page is not its final height yet. `useReducedMotion` reports true
+       for the first render, so the hero starts without its runway and the film
+       interludes start collapsed; ScrollTrigger then inserts pin spacers. Each
+       of those grows the page *above* the target after the jump was aimed, and
+       a deep link to #about landed a screen and a half short. So for a moment
+       after arrival, every change in the page's height re-lands on the target —
+       until the visitor takes over, or it has had time to settle.
+
+       The position is computed here and handed over as a number. Given a
+       selector, Lenis adds the element's rect to its *own* scroll value, which
+       never saw the browser's native anchor jump — and the glide above is
+       ignored anyway while the preloader holds the lock — so a selector
+       re-land aimed from the wrong origin. */
+    let done = false;
+    let t = 0;
+    const land = () => {
+      if (done) return;
+      const y = target.getBoundingClientRect().top + window.scrollY;
+      scrollTo(y, 0, true);
+    };
+    const settle = () => {
+      if (done) return;
+      clearTimeout(t);
+      t = window.setTimeout(land, 120);
+    };
+    const finish = () => {
+      done = true;
+      clearTimeout(t);
+      ro.disconnect();
+    };
+    const ro = new ResizeObserver(settle);
+    ro.observe(document.body);
+    /* One last landing after the curtain has lifted, then hands off. */
+    const giveUp = window.setTimeout(() => {
+      land();
+      finish();
+    }, 3000);
+    const opts = { once: true, passive: true } as const;
+    window.addEventListener("wheel", finish, opts);
+    window.addEventListener("touchstart", finish, opts);
+    window.addEventListener("keydown", finish, { once: true });
+    return () => {
+      cancelAnimationFrame(id);
+      clearTimeout(giveUp);
+      finish();
+      window.removeEventListener("wheel", finish);
+      window.removeEventListener("touchstart", finish);
+      window.removeEventListener("keydown", finish);
+    };
   }, [isHome, scrollTo]);
 
   /* The dock only exists where there is a pointer to drive it. On touch the

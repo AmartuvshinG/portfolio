@@ -1,6 +1,6 @@
 "use client";
 
-import { Aurora } from "./Aurora";
+import { FilmBackdrop } from "./FilmBackdrop";
 import { Grain } from "./Grain";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
 
@@ -17,7 +17,9 @@ import { useReducedMotion } from "@/hooks/useReducedMotion";
  * Layer order, back to front:
  *
  *   1  base gradient  — the floor; the whole backdrop under reduced motion
- *   2  aurora         — drifting blobs + stars, frozen while scrolling
+ *   2  film           — the city and the station, scrubbed by scroll
+ *                       (FilmBackdrop). It replaced the aurora as the ground;
+ *                       Aurora.tsx is kept, unmounted.
  *   3  grain + vignette
  *
  * Everything here is `pointer-events-none` and sits at z-0; content is z-10.
@@ -43,7 +45,7 @@ export function SiteBackdrop() {
         }}
       />
 
-      {!reduced && <Aurora />}
+      {!reduced && <FilmBackdrop />}
 
       <Grain />
     </div>
