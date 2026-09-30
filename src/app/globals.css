@@ -604,6 +604,16 @@ html.hud-cursor * {
   50% { transform: scale(1.55); opacity: 1; }
 }
 .cf-lit .cf-cell { animation: cf-wave 2.6s ease-in-out infinite; }
+
+/* SoundToggle's equaliser. Four 2px bars, transform only, and only while on. */
+@keyframes sound-bounce {
+  0%, 100% { transform: scaleY(0.3); }
+  50% { transform: scaleY(1); }
+}
+.sound-live .sound-bar { animation: sound-bounce 0.9s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .sound-live .sound-bar { animation: none; }
+}
 .cf-edge {
   stroke-dasharray: 1;
   stroke-dashoffset: 0.62;
