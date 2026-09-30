@@ -50,7 +50,12 @@ export function FilmInterlude({ variant }: { variant: "doors" | "airlock" }) {
       ref={ref}
       id="interlude-airlock"
       data-act="void"
-      className={reduced ? "relative py-24" : "relative h-[150vh]"}
+      /* `overflow-x-clip`: the scrim below bleeds 12% past the line on both
+         sides, and at phone width that is past the screen. Mobile browsers
+         widen the layout viewport to fit it (body's overflow-x doesn't stop
+         them), zooming the whole page out by 8px. `clip`, not `hidden`, so the
+         sticky child keeps its scroll container. */
+      className={reduced ? "relative overflow-x-clip py-24" : "relative h-[150vh] overflow-x-clip"}
     >
       <div className={reduced ? "flex justify-center px-[8%]" : "sticky top-0 flex h-dvh items-center justify-center px-[8%]"}>
         <motion.p
