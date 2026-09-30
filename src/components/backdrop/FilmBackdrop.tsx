@@ -3,6 +3,8 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { ScrollTrigger } from "@/lib/gsap";
 import { FILM, clamp, easeInOut, loadWhole, seeker } from "@/lib/film";
+import { createFilmRenderer } from "@/lib/filmShader";
+import { droneFollow } from "@/lib/sound";
 
 /**
  * The film as the site's one ground.
@@ -26,6 +28,13 @@ import { FILM, clamp, easeInOut, loadWhole, seeker } from "@/lib/film";
  *   8 … 9     the iris: the city climbs into its sky, a porthole opens on the
  *             station hatch (a match cut — both are centred circles)
  *   9 … 19    station seconds
+ *
+ * **The signal grade.** Where WebGL is available the reels are not shown as
+ * videos at all: they are texture sources for one shader pass (lib/filmShader)
+ * that does the crop, the iris, the ramp grade, scanlines, and — only while
+ * the film is actually moving — a chromatic split and a few sheared bands.
+ * Without WebGL, or if the context is lost, the videos show directly with the
+ * CSS transforms and SVG ring below, exactly as before.
  *
  * Replaces the aurora (SiteBackdrop). Mounted only with motion allowed.
  */
@@ -84,8 +93,12 @@ export function FilmBackdrop() {
   const tintRef = useRef<HTMLDivElement>(null);
   const veilRef = useRef<HTMLDivElement>(null);
   const earthRef = useRef<HTMLDivElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const hudRef = useRef<HTMLSpanElement>(null);
   const [cityReady, setCityReady] = useState(false);
   const [issReady, setIssReady] = useState(false);
+  /* Whether the shader is drawing. The videos then stay invisible sources. */
+  const [glOn, setGlOn] = useState(false);
 
   /* --- Loading: the city first (it is on screen), then the station. ------ */
   useEffect(() => {
@@ -119,6 +132,26 @@ export function FilmBackdrop() {
 
     const citySeek = seeker(city);
     const issSeek = seeker(iss);
+
+    const canvas = canvasRef.current;
+    let renderer = canvas ? createFilmRenderer(canvas, city, iss) : null;
+    setGlOn(!!renderer);
+    const onLost = (e: Event) => {
+      e.preventDefault();
+      renderer = null;
+      setGlOn(false);
+      dirty = true;
+    };
+    canvas?.addEventListener("webglcontextlost", onLost);
+    /* Bumped whenever a reel has a new frame, so the shader re-uploads only
+       then; and when each reel first had one, for its fade-in. */
+    let cityVersion = 0;
+    let issVersion = 0;
+    let cityAt = 0;
+    let issAt = 0;
+    let fPrev = -1;
+    let speed = 0;
+    let hudText = "";
     let cityDur = 0;
     let issDur = 0;
     let ys: number[] = [];
@@ -170,6 +203,14 @@ export function FilmBackdrop() {
 
     function paint() {
       const { f, veil } = sample(window.scrollY);
+      /* How fast the film is moving, not the page: |df| per frame, smoothed.
+         Zero while a section is read (the beat map holds there), and it
+         decays to exactly zero at rest, so a still frame is always clean. */
+      const df = fPrev < 0 ? 0 : Math.abs(f - fPrev);
+      fPrev = f;
+      speed = speed * 0.8 + Math.min(1, df * 7) * 0.2;
+      if (speed < 0.003) speed = 0;
+      else dirty = true;
       const cityT = Math.min(f, CITY_LEN);
       const iris = easeInOut(clamp(f - CITY_LEN));
       const issT = Math.max(0, f - IRIS_END);
@@ -178,9 +219,47 @@ export function FilmBackdrop() {
       if (cityDur > 0 && iris < 1) citySeek.to(Math.min(cityT, cityDur - 0.04));
       if (issDur > 0 && f > CITY_LEN) issSeek.to(Math.min(issT, issDur - 0.04));
 
+      droneFollow(speed, iris);
+      writeHud(f);
+      if (veilRef.current) veilRef.current.style.opacity = String(veil);
+      /* The daylit Earth fills the left half of the last shots, exactly where
+         Contact and the footer set their small type. A uniform veil dark
+         enough for that would bury the astronaut; this darkens only the
+         bright side, and only once Earth is in frame. */
+      if (earthRef.current) earthRef.current.style.opacity = String(clamp((issT - 5) / 2.5));
+
+      const cityScale = 1 + (cityT / CITY_LEN) * 0.06 + iris * 0.22;
+      const issScale = 1.25 - iris * 0.25 + (issT / 10) * 0.05;
+      /* On a portrait screen the astronaut, right of centre in the landscape
+         master, would fall out of frame; the crop drifts after him. */
+      const issPosX = h > w ? 0.5 + clamp((issT - 6) / 4) * 0.16 : 0.5;
+
+      if (renderer) {
+        const now = performance.now();
+        const cityOn = cityAt ? clamp((now - cityAt) / 800) : 0;
+        const issOn = issAt ? clamp((now - issAt) / 600) : 0;
+        if ((cityAt && cityOn < 1) || (issAt && issOn < 1)) dirty = true;
+        renderer.draw(
+          {
+            cityScale,
+            cityShift: iris * 0.07,
+            issScale,
+            issPosX,
+            iris,
+            tint: 0.42 - iris * 0.28,
+            speed,
+            cityOn,
+            issOn,
+          },
+          cityVersion,
+          issVersion
+        );
+        return;
+      }
+
       /* City: a slow push as it plays, then the climb into the sky as the
          porthole opens. Hidden outright once the iris covers it. */
-      city!.style.transform = `translate3d(0, ${iris * 7}%, 0) scale(${1 + (cityT / CITY_LEN) * 0.06 + iris * 0.22})`;
+      city!.style.transform = `translate3d(0, ${iris * 7}%, 0) scale(${cityScale})`;
       city!.style.visibility = iris >= 1 ? "hidden" : "visible";
 
       const layer = issLayerRef.current;
@@ -188,10 +267,8 @@ export function FilmBackdrop() {
         layer.style.visibility = iris <= 0 ? "hidden" : "visible";
         layer.style.clipPath = iris >= 1 ? "none" : `circle(${iris * rMax}px at 50% 50%)`;
       }
-      iss!.style.transform = `scale(${1.25 - iris * 0.25 + (issT / 10) * 0.05})`;
-      /* On a portrait screen the astronaut, right of centre in the landscape
-         master, would fall out of frame; the crop drifts after him. */
-      iss!.style.objectPosition = h > w ? `${50 + clamp((issT - 6) / 4) * 16}% 50%` : "50% 50%";
+      iss!.style.transform = `scale(${issScale})`;
+      iss!.style.objectPosition = `${issPosX * 100}% 50%`;
 
       const ring = ringRef.current;
       if (ring) {
@@ -203,12 +280,21 @@ export function FilmBackdrop() {
       /* The grade: neo-Tokyo magenta/cyan over the city, barely there over the
          station, whose white interior would otherwise go pink. */
       if (tintRef.current) tintRef.current.style.opacity = String(0.42 - iris * 0.28);
-      if (veilRef.current) veilRef.current.style.opacity = String(veil);
-      /* The daylit Earth fills the left half of the last shots, exactly where
-         Contact and the footer set their small type. A uniform veil dark
-         enough for that would bury the astronaut; this darkens only the
-         bright side, and only once Earth is in frame. */
-      if (earthRef.current) earthRef.current.style.opacity = String(clamp((issT - 5) / 2.5));
+    }
+
+    /** The reel readout: reel, mm:ss:ff at 24fps, and the frame number. */
+    function writeHud(f: number) {
+      const el = hudRef.current;
+      if (!el) return;
+      const reel = f < IRIS_END ? 1 : 2;
+      const t = reel === 1 ? Math.min(f, CITY_LEN) : f - IRIS_END;
+      const frames = Math.round(t * 24);
+      const two = (n: number) => String(n).padStart(2, "0");
+      const text = `REEL ${two(reel)} · ${two(Math.floor(frames / 1440))}:${two(Math.floor(frames / 24) % 60)}:${two(frames % 24)} · F ${String(Math.round(f * 24)).padStart(4, "0")}`;
+      if (text !== hudText) {
+        hudText = text;
+        el.textContent = text;
+      }
     }
 
     /* Duration is known at metadata; each picture is shown on its first frame
@@ -222,8 +308,18 @@ export function FilmBackdrop() {
       issDur = iss.duration || 0;
       dirty = true;
     };
-    const onCityFrame = () => setCityReady(true);
-    const onIssFrame = () => setIssReady(true);
+    const onCityFrame = () => {
+      cityVersion++;
+      if (!cityAt) cityAt = performance.now();
+      dirty = true;
+      setCityReady(true);
+    };
+    const onIssFrame = () => {
+      issVersion++;
+      if (!issAt) issAt = performance.now();
+      dirty = true;
+      setIssReady(true);
+    };
     const FRAME_EVENTS = ["loadeddata", "canplay", "seeked"] as const;
     if (city.readyState >= 1) onCityMeta();
     if (iss.readyState >= 1) onIssMeta();
@@ -241,6 +337,8 @@ export function FilmBackdrop() {
        heights after first paint. Debounced like ActTheme's observer. */
     let debounce = 0;
     const remeasure = () => {
+      renderer?.resize();
+      dirty = true;
       clearTimeout(debounce);
       debounce = window.setTimeout(measure, 250);
     };
@@ -278,6 +376,8 @@ export function FilmBackdrop() {
       }
       citySeek.dispose();
       issSeek.dispose();
+      canvas?.removeEventListener("webglcontextlost", onLost);
+      renderer?.dispose();
     };
   }, []);
 
@@ -291,7 +391,7 @@ export function FilmBackdrop() {
         preload="auto"
         className="absolute inset-0 h-full w-full object-cover"
         style={{
-          opacity: cityReady ? 1 : 0,
+          opacity: cityReady && !glOn ? 1 : 0,
           transition: "opacity 0.8s ease",
           transformOrigin: "50% 20%",
           willChange: "transform",
@@ -307,16 +407,23 @@ export function FilmBackdrop() {
           preload="auto"
           className="absolute inset-0 h-full w-full object-cover"
           style={{
-            opacity: issReady ? 1 : 0,
+            opacity: issReady && !glOn ? 1 : 0,
             transition: "opacity 0.6s ease",
             willChange: "transform",
           }}
         />
       </div>
 
+      {/* The shader's picture, CSS-upscaled from a capped buffer. */}
+      <canvas
+        ref={canvasRef}
+        className="absolute inset-0 h-full w-full"
+        style={{ visibility: glOn ? "visible" : "hidden" }}
+      />
+
       {/* The porthole's rim: a ramp ring at the iris edge. SVG so the stroke
           stays 3px at every radius — a scaled div would thin it to nothing. */}
-      <svg className="absolute inset-0 h-full w-full">
+      <svg className="absolute inset-0 h-full w-full" style={{ display: glOn ? "none" : undefined }}>
         <defs>
           <linearGradient id={rampId} x1="0" y1="0" x2="1" y2="1">
             <stop offset="0" stopColor="var(--spectrum-1)" />
@@ -340,6 +447,7 @@ export function FilmBackdrop() {
             "linear-gradient(160deg, var(--spectrum-1), var(--spectrum-2) 50%, var(--spectrum-3))",
           mixBlendMode: "soft-light",
           opacity: 0.42,
+          display: glOn ? "none" : undefined,
         }}
       />
       {/* The veil: how far the film steps back behind the copy at this point. */}
@@ -360,6 +468,14 @@ export function FilmBackdrop() {
           background:
             "linear-gradient(180deg, rgba(5,6,13,0.5), rgba(5,6,13,0) 22%, rgba(5,6,13,0) 70%, rgba(5,6,13,0.6))",
         }}
+      />
+      {/* The reel readout: which reel, where in it. Set vertically in the
+          right gutter, where no copy runs. Written straight to textContent
+          from the paint loop, never re-rendered. */}
+      <span
+        ref={hudRef}
+        data-film-hud
+        className="absolute bottom-8 right-3 hidden rotate-180 font-mono text-[11px] tabular tracking-[0.2em] text-fg/55 [writing-mode:vertical-rl] md:block"
       />
     </div>
   );
