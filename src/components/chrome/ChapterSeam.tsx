@@ -126,7 +126,7 @@ export function ChapterSeam({
               something opening rather than something sliding in from one side.
               Cheap enough to leave mounted always — it is one 1px element. */}
           <motion.div
-            className="spectrum-rule absolute inset-x-0 top-1/3 h-px origin-center"
+            className="spectrum-rule absolute inset-x-0 top-[4.25rem] h-px origin-center md:top-1/3"
             style={{ scaleX: rule, opacity: ruleOpacity }}
           />
         </>
@@ -283,7 +283,10 @@ function ChapterCard({
         backgroundImage:
           "linear-gradient(100deg, var(--color-hazard), var(--spectrum-1) 42%, var(--spectrum-3))",
       }}
-      className="pointer-events-none absolute bottom-[calc(67%-0.12em)] left-0 block whitespace-nowrap bg-clip-text font-display text-[clamp(3rem,8.5vw,9.5rem)] uppercase leading-none tracking-tight text-transparent [-webkit-text-stroke:1px_rgba(255,255,255,0.18)]"
+      /* Below `md` the card and its hairline sit higher. At `top-1/3` of 42vh
+         the join lands ~118px down a phone, where sections start their kicker
+         at `pt-24`, so the card was drawn straight over "04 — WHAT I DO". */
+      className="pointer-events-none absolute bottom-[calc(100%-4.25rem-0.12em)] md:bottom-[calc(67%-0.12em)] left-0 block whitespace-nowrap bg-clip-text font-display text-[clamp(2.5rem,8.5vw,9.5rem)] uppercase leading-none tracking-tight text-transparent [-webkit-text-stroke:1px_rgba(255,255,255,0.18)]"
     >
       <span ref={textRef} />
     </motion.span>
