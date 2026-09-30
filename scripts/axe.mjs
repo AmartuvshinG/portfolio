@@ -41,7 +41,17 @@ const ACTS = [
   ["bloom", "#about"],
 ];
 
-const TAGS = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"];
+const TAGS = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"];
+
+/**
+ * Desktop and a real phone. The phone is not a narrow desktop: Connect stacks
+ * its panels open, Work swaps the theatre for sticky cards, and the nav
+ * collapses to a menu — and target size (2.5.8) only means anything on touch.
+ */
+const DEVICES = [
+  ["1440", { viewport: { width: 1440, height: 900 } }],
+  ["390 ", { viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true }],
+];
 
 /** Long enough for the preloader and the entrances. */
 const SETTLE = 2600;
@@ -93,18 +103,21 @@ try {
   /* An explicit context, not `browser.newPage()`. AxeBuilder walks up to the
      context to enumerate frames and throws "Please use browser.newContext()"
      against the implicit one. */
-  const context = await browser.newContext({ viewport: { width: 1440, height: 900 } });
-  const page = await context.newPage();
   const failures = [];
-  for (const locale of LOCALES) {
-    failures.push(...(await sweep(page, "motion  ", "no-preference", locale)));
-    failures.push(...(await sweep(page, "reduced ", "reduce", locale)));
+  for (const [device, options] of DEVICES) {
+    const context = await browser.newContext(options);
+    const page = await context.newPage();
+    for (const locale of LOCALES) {
+      failures.push(...(await sweep(page, `${device} motion  `, "no-preference", locale)));
+      failures.push(...(await sweep(page, `${device} reduced `, "reduce", locale)));
+    }
+    await context.close();
   }
 
   console.log(
     failures.length
       ? `\n${failures.length} violation type(s) across the sweep.`
-      : "\nNo WCAG 2.1 A/AA violations in any act, either motion mode, either language."
+      : "\nNo WCAG 2.2 A/AA violations in any act, either motion mode, either language, desktop or phone."
   );
   process.exitCode = failures.length ? 1 : 0;
 } finally {
