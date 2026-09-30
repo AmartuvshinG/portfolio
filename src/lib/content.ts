@@ -158,12 +158,18 @@ export const profile = {
   kicker: "PORTFOLIO — 2026",
   /**
    * The name in classical Mongolian script (Mongol bichig), set vertically as
-   * the hero's neon sign. DRAFT: ᠠᠮᠤᠷ (amur, "peace") + ᠲᠦᠪᠰᠢᠨ (tübshin,
-   * "level/calm") — Amartuvshin must confirm the spelling before this ships.
+   * the hero's neon sign. Spelling confirmed by Amartuvshin (2026-09-30):
+   * ᠠᠮᠠᠷ (amar) + ᠲᠦᠪᠰᠢᠨ (tübshin), and the ü must show its extra stroke
+   * under the loop — it must not read as a plain u.
+   *
+   * In a joined word Noto Sans Mongolian draws a non-first-syllable ü as a
+   * bare loop, identical to u. The `᠋` after ᠦ is Mongolian Free
+   * Variation Selector 1, which selects the form with the extra stroke —
+   * verified against the standalone ᠲᠦᠪᠰᠢᠨ. It is invisible: don't delete it.
    * Decorative only (aria-hidden). app/layout.tsx subsets the font to exactly
    * these glyphs, from this string.
    */
-  nameScript: "ᠠᠮᠤᠷᠲᠦᠪᠰᠢᠨ",
+  nameScript: "ᠠᠮᠠᠷᠲᠦ\u180Bᠪᠰᠢᠨ",
 };
 
 /**
