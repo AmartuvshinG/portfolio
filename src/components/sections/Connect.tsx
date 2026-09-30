@@ -171,7 +171,7 @@ function ChannelPanel({
   onEnter: () => void;
   github: GitHubSummary | null;
 }) {
-  const { t, locale } = useI18n();
+  const { t } = useI18n();
   const kind = social.mark ?? "live";
   const openLabel = social.shot ? t.connect.openSite : t.connect.openProfile;
   /* The arrival: the panels rise and settle in sequence as the section enters,
@@ -231,15 +231,25 @@ function ChannelPanel({
 
         <ChannelArt social={social} lit={expanded} />
 
+        {/* Sodium targeting brackets, drawn in on hover — the nav's and Craft's
+            language for "this is the thing in focus". */}
+        <span
+          aria-hidden
+          className="hud-brackets pointer-events-none absolute inset-2 z-10 scale-[1.03] opacity-0 transition-[opacity,transform] duration-300 [--hud-c:var(--color-hazard)] [--hud-l:16px] [--hud-w:2px] group-hover/panel:scale-100 group-hover/panel:opacity-100 group-focus-visible/panel:scale-100 group-focus-visible/panel:opacity-100"
+        />
+
         <div className="absolute inset-0 flex flex-col justify-between p-4 md:p-6">
-          <div className="flex items-start justify-between gap-3">
-            <span className="font-mono text-xs tracking-[0.24em] text-fg">
-              {social.code}
-            </span>
-            <ArrowUpRight
-              size={20}
-              className="shrink-0 text-muted transition-transform duration-300 group-hover/panel:-translate-y-1 group-hover/panel:translate-x-1 group-hover/panel:text-fg"
-            />
+          <div className="flex flex-col gap-4">
+            <div className="flex items-start justify-between gap-3">
+              <span className="font-mono text-xs tracking-[0.24em] text-fg">
+                {social.code}
+              </span>
+              <ArrowUpRight
+                size={20}
+                className="shrink-0 text-muted transition-transform duration-300 group-hover/panel:-translate-y-1 group-hover/panel:translate-x-1 group-hover/panel:text-fg"
+              />
+            </div>
+            <Readout kind={kind} github={github} expanded={expanded} />
           </div>
 
           {/* Two labels, crossfaded rather than one label re-flowed. A single
@@ -280,22 +290,6 @@ function ChannelPanel({
               <span className="mt-1 block font-mono text-xs lowercase tracking-wider text-muted md:text-sm">
                 {social.handle}
               </span>
-              {github && (
-                <span className="mt-3 block font-mono text-xs tracking-wider text-fg/80 md:text-sm">
-                  {t.connect.repos(github.repos)}
-                  {github.lastPush && (
-                    <>
-                      {" · "}
-                      {t.connect.lastPush} {formatMonth(github.lastPush, locale)}
-                    </>
-                  )}
-                </span>
-              )}
-              {github && github.recent.length > 0 && (
-                <span className="mt-1.5 hidden whitespace-normal font-mono text-xs lowercase tracking-wider text-muted md:block">
-                  {github.recent.map((r) => r.name).join(" · ")}
-                </span>
-              )}
               <span className="micro mt-4 hidden md:block">{openLabel}</span>
               <span className="sr-only">{t.common.newTab}</span>
             </div>
@@ -317,8 +311,11 @@ function ChannelPanel({
  * full, untinted white in every state; only their scale answers the accordion.
  *
  * Sized off the panel's *height*, not its width: the same box has to hold a
- * mark in a closed desktop column (tall and narrow), an open one, and a phone
- * row (wide and short), and height is the one dimension all three share.
+ * mark in a closed desktop column (tall and narrow) and an open one.
+ *
+ * Desktop only. A phone row is 30vh tall, and with the terminal readout at
+ * its head the mark and the browser window collided with the data; there the
+ * row's own label names the channel and the readout is the content.
  */
 function ChannelArt({
   social,
@@ -332,10 +329,12 @@ function ChannelArt({
     return (
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-x-0 bottom-[46%] top-[16%] flex items-center justify-center md:bottom-[40%] md:top-[20%]"
+        /* A third smaller than it was: at full height the mark was a white slab
+           that out-shouted the data; now the readout above leads. */
+        className="pointer-events-none absolute inset-x-0 bottom-[46%] top-[24%] hidden items-center justify-center md:bottom-[42%] md:top-[34%] md:flex"
       >
         <div
-          className="flex h-full max-w-[64%] items-center justify-center transition-transform duration-300 ease-out"
+          className="flex h-full max-w-[44%] items-center justify-center transition-transform duration-300 ease-out"
           style={{ transform: `scale(${lit ? 1 : 0.86})` }}
         >
           <Mark className="h-full max-h-full w-auto max-w-full object-contain" />
@@ -350,10 +349,11 @@ function ChannelArt({
     return (
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-x-0 bottom-[42%] top-[14%] flex items-center justify-center md:bottom-[36%] md:top-[16%]"
+        /* Clear of the readout above it (four lines on the live panel). */
+        className="pointer-events-none absolute inset-x-0 bottom-[42%] top-[24%] hidden items-center justify-center md:bottom-[26%] md:top-[38%] md:flex"
       >
         <div
-          className="w-[88%] max-w-[34rem] overflow-hidden rounded-lg shadow-[0_24px_60px_-12px_rgba(0,0,0,0.75)] ring-1 ring-white/10 transition-[transform,opacity] duration-300 ease-out"
+          className="w-[88%] max-w-[26rem] overflow-hidden rounded-lg shadow-[0_24px_60px_-12px_rgba(0,0,0,0.75)] ring-1 ring-white/10 transition-[transform,opacity] duration-300 ease-out"
           style={{
             opacity: lit ? 1 : 0.7,
             transform: `perspective(900px) rotateY(${lit ? -4 : -12}deg) scale(${lit ? 1 : 0.9})`,
@@ -373,6 +373,69 @@ function ChannelArt({
   }
 
   return null;
+}
+
+/**
+ * The panel's terminal readout: a few lines of real data under the channel
+ * code, each behind a sodium prompt. GitHub shows the numbers the page
+ * already fetches daily (repos, last push, recent work); LinkedIn the role
+ * and base; the live product its lamp and the three measured results.
+ * Dimmer while the panel is shut, full when it opens.
+ */
+function Readout({
+  kind,
+  github,
+  expanded,
+}: {
+  kind: "github" | "linkedin" | "live";
+  github: GitHubSummary | null;
+  expanded: boolean;
+}) {
+  const { c, t, locale } = useI18n();
+  let lines: { k: string; v: string }[] = [];
+  if (kind === "github" && github) {
+    lines = [
+      { k: ">", v: t.connect.repos(github.repos) },
+      ...(github.lastPush ? [{ k: ">", v: `${t.connect.lastPush} ${formatMonth(github.lastPush, locale)}` }] : []),
+      ...(github.recent.length
+        ? [{ k: ">", v: github.recent.map((r) => (r.language ? `${r.name} [${r.language}]` : r.name)).join(" · ") }]
+        : []),
+    ];
+  } else if (kind === "linkedin") {
+    lines = [
+      { k: ">", v: c.profile.role },
+      { k: ">", v: c.profile.location },
+    ];
+  } else if (kind === "live") {
+    const metrics = c.projects[0]?.metrics ?? [];
+    lines = metrics.map((m) => ({ k: ">", v: `${m.label} ${m.value}` }));
+  }
+  if (!lines.length && kind !== "live") return null;
+  /* A shut panel is a narrow column: the recent-repos line wrapped into a tall
+     stack that ran into the mark. Shut shows two lines; open shows them all. */
+  if (!expanded) lines = lines.slice(0, 2);
+
+  return (
+    <div
+      className="flex max-w-[34rem] flex-col gap-1.5 font-mono text-xs uppercase tracking-[0.14em] text-fg/85 transition-opacity duration-300"
+      style={{ opacity: expanded ? 1 : 0.55 }}
+    >
+      {kind === "live" && (
+        <span className="flex items-center gap-2 text-[var(--color-hazard)]">
+          <span className="h-1.5 w-1.5 animate-blink rounded-full bg-[var(--color-hazard)]" />
+          {t.connect.live}
+        </span>
+      )}
+      {lines.map((l, i) => (
+        <span key={i} className="flex gap-2">
+          <span aria-hidden className="text-[var(--color-hazard)]">
+            {l.k}
+          </span>
+          <span className="min-w-0 break-words">{l.v}</span>
+        </span>
+      ))}
+    </div>
+  );
 }
 
 /** "May 2026" in English; the resume's own "2026.05" style in Mongolian. */
