@@ -88,7 +88,7 @@ export function Footer() {
                   e.preventDefault();
                   scrollTo(l.href);
                 }}
-                className="font-mono text-xs uppercase tracking-widest text-muted transition-colors hover:text-fg"
+                className="inline-flex min-h-11 items-center font-mono text-xs uppercase tracking-widest text-muted transition-colors hover:text-fg md:min-h-0"
               >
                 {l.label}
               </a>
@@ -103,10 +103,12 @@ export function Footer() {
                 href={s.href}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="group flex items-center justify-between gap-4 font-mono text-xs uppercase tracking-widest text-muted transition-colors hover:text-fg"
+                className="group flex min-h-11 items-center justify-between gap-4 font-mono text-xs uppercase tracking-widest text-muted transition-colors hover:text-fg md:min-h-0"
               >
                 {s.label}
-                <span className="opacity-0 transition-opacity group-hover:opacity-60">
+                {/* Revealed on hover — so on a touch screen, always shown, and
+                    at full muted strength: at 60% it read 3-point-something:1. */}
+                <span className="opacity-0 transition-opacity group-hover:opacity-60 [@media(hover:none)]:opacity-100">
                   {s.handle}
                 </span>
               </a>
@@ -168,7 +170,9 @@ function FooterCol({
   return (
     <div>
       <p className="micro mb-4">{title}</p>
-      <ul className="space-y-3">{children}</ul>
+      {/* Rows are 44px tap targets on a phone, so they carry their own
+          spacing there; on desktop they are type-height again. */}
+      <ul className="md:space-y-3">{children}</ul>
     </div>
   );
 }

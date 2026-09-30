@@ -130,7 +130,8 @@ const en = {
   },
   footer: {
     aria: "Footer",
-    index: "Index",
+    /* Not "Index": the column's first link is the Index chapter. */
+    index: "Contents",
     elsewhere: "Elsewhere",
     top: "Top",
     /** Trademark credit for the marks on the Signal panels (see BrandMarks). */

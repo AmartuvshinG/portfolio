@@ -47,7 +47,8 @@ export function LangToggle({ className }: { className?: string }) {
               aria-pressed={on}
               onClick={() => setLocale(l)}
               className={cn(
-                "relative px-1.5 py-3 font-mono text-xs tracking-[0.18em] transition-colors duration-200",
+                /* 44px wide on touch only: the desktop navbar is tight. */
+                "relative px-1.5 py-3 font-mono text-xs tracking-[0.18em] transition-colors duration-200 [@media(pointer:coarse)]:min-w-11",
                 on ? "text-fg" : "text-faint hover:text-fg"
               )}
             >
