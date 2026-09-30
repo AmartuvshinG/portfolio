@@ -488,7 +488,7 @@ export function FilmBackdrop() {
       <span
         ref={hudRef}
         data-film-hud
-        className="absolute bottom-8 right-3 hidden rotate-180 font-mono text-[11px] tabular tracking-[0.2em] text-fg/55 [writing-mode:vertical-rl] md:block"
+        className="absolute bottom-8 right-3 hidden rotate-180 font-mono text-[11px] tabular tracking-[0.2em] text-[color-mix(in_srgb,var(--color-hazard)_70%,transparent)] [writing-mode:vertical-rl] md:block"
       />
     </div>
   );

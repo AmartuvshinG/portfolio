@@ -153,9 +153,10 @@ export function CraftIndex({ items }: { items: Capability[] }) {
   );
 }
 
-/** HUD corner brackets around the evidence panel. */
+/** HUD corner brackets around the evidence panel, in sodium: the same
+ *  targeting language as the active nav link. */
 function Brackets() {
-  const arm = "absolute h-5 w-5 border-fg/70";
+  const arm = "absolute h-5 w-5 border-[var(--color-hazard)]";
   return (
     <span aria-hidden className="pointer-events-none absolute -inset-3 z-10">
       <span className={cn(arm, "left-0 top-0 border-l-2 border-t-2")} />

@@ -281,7 +281,7 @@ function ChapterCard({
         x,
         opacity,
         backgroundImage:
-          "linear-gradient(100deg, var(--spectrum-1), var(--spectrum-2) 50%, var(--spectrum-3))",
+          "linear-gradient(100deg, var(--color-hazard), var(--spectrum-1) 42%, var(--spectrum-3))",
       }}
       className="pointer-events-none absolute bottom-[calc(67%-0.12em)] left-0 block whitespace-nowrap bg-clip-text font-display text-[clamp(3rem,8.5vw,9.5rem)] uppercase leading-none tracking-tight text-transparent [-webkit-text-stroke:1px_rgba(255,255,255,0.18)]"
     >
