@@ -1,8 +1,10 @@
 "use client";
 
+import { useEffect, useRef, useState } from "react";
 import { ArrowUp } from "lucide-react";
 import { useI18n } from "@/lib/i18n";
 import { useSmoothScroll } from "@/components/chrome/SmoothScroll";
+import { UbClock } from "@/components/chrome/Navbar";
 
 /**
  * Footer, continuing the dark closing act — it carries `data-act="void"` so the
@@ -14,6 +16,18 @@ export function Footer() {
   const { navLinks, socials, profile, contact } = c;
   const { scrollTo } = useSmoothScroll();
   const year = new Date().getFullYear();
+  const marqueeRef = useRef<HTMLDivElement>(null);
+  const [marqueeLive, setMarqueeLive] = useState(false);
+
+  useEffect(() => {
+    const el = marqueeRef.current;
+    if (!el) return;
+    const io = new IntersectionObserver(([e]) => setMarqueeLive(e.isIntersecting), {
+      rootMargin: "200px 0px",
+    });
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
 
   return (
     <footer
@@ -24,8 +38,13 @@ export function Footer() {
       {/* Marquee wordmark. Set in the outline weight rather than solid: at 8rem
           a filled wordmark is heavier than the closing headline above it and
           steals the last word of the page. */}
-      <div className="overflow-hidden border-y border-line py-6">
-        <div className="animate-marquee flex shrink-0 items-center gap-10 whitespace-nowrap">
+      <div ref={marqueeRef} className="overflow-hidden border-y border-line py-6">
+        {/* Paused while off screen: an infinite animation keeps the compositor
+            busy on every frame of every visit, seen or not. */}
+        <div
+          className="animate-marquee flex shrink-0 items-center gap-10 whitespace-nowrap"
+          style={{ animationPlayState: marqueeLive ? "running" : "paused" }}
+        >
           {Array.from({ length: 8 }).map((_, i) => (
             <span
               key={i}
@@ -98,8 +117,20 @@ export function Footer() {
 
       <div className="flex flex-col items-start justify-between gap-3 border-t border-line px-5 py-5 font-mono text-xs uppercase tracking-[0.2em] text-faint md:flex-row md:items-center md:px-8">
         <div className="flex flex-col gap-2">
-          <span>
-            © {year} {profile.fullName}
+          {/* The closing status line: the site signs off the way the nav
+              opened it — the lamp, the local time, the name in its script. */}
+          <span className="flex flex-wrap items-center gap-x-4 gap-y-2">
+            <span>
+              © {year} {profile.fullName}
+            </span>
+            <UbClock className="flex" />
+            <span
+              aria-hidden
+              lang="mn-Mong"
+              className="font-script text-sm normal-case tracking-normal text-[color-mix(in_srgb,var(--color-hazard)_70%,transparent)]"
+            >
+              {profile.nameScript}
+            </span>
           </span>
           {/* The trademark credit for the marks on the Signal panels. Sentence
               case and normal tracking: it is a sentence someone may actually
@@ -114,8 +145,12 @@ export function Footer() {
           /* `h-11`, not `py-2` — the padded box came out at ~34px. The border
              is the visible shape, so the height goes on the box and the
              padding stays where it was. */
-          className="flex h-11 items-center gap-2 rounded-full border border-line px-4 transition-colors hover:border-current hover:text-fg"
+          className="group relative flex h-11 items-center gap-2 rounded-full border border-line px-4 transition-colors hover:border-current hover:text-fg"
         >
+          <span
+            aria-hidden
+            className="hud-brackets pointer-events-none absolute -inset-1.5 scale-110 opacity-0 transition-[opacity,transform] duration-200 [--hud-c:var(--color-hazard)] group-hover:scale-100 group-hover:opacity-100 group-focus-visible:scale-100 group-focus-visible:opacity-100"
+          />
           <ArrowUp size={12} /> {t.footer.top}
         </button>
       </div>

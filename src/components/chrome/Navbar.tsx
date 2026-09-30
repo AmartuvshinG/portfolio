@@ -881,7 +881,13 @@ function useScramble(text: string) {
  * once a second and never re-renders. The server renders a placeholder, so
  * hydration always agrees. Shown only when the capsule has the room.
  */
-function UbClock() {
+export function UbClock({
+  /** Visibility classes. The nav's default shows it only when the capsule
+   *  has room; the footer passes `flex`. */
+  className = "hidden @[80rem]:flex",
+}: {
+  className?: string;
+}) {
   const ref = useRef<HTMLSpanElement>(null);
 
   useEffect(() => {
@@ -903,7 +909,7 @@ function UbClock() {
   return (
     <span
       aria-hidden
-      className="hidden items-center gap-2 font-mono text-xs tabular tracking-[0.18em] text-faint @[80rem]:flex"
+      className={cn("items-center gap-2 font-mono text-xs tabular tracking-[0.18em] text-faint", className)}
     >
       <span className="h-1 w-1 rounded-full bg-[var(--color-hazard)]" />
       UB
