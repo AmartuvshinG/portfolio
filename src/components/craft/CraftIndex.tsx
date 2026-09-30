@@ -99,10 +99,10 @@ export function CraftIndex({ items }: { items: Capability[] }) {
         >
           <ol className="flex flex-col gap-[clamp(0.5rem,1.6svh,1.25rem)]">
             {items.map((item, i) => (
-              <li key={item.code} className="flex items-baseline gap-4 lg:gap-6">
+              <li key={item.code} className="flex items-start gap-4 lg:gap-6">
                 <span
                   className={cn(
-                    "micro tabular w-14 shrink-0 transition-colors duration-300",
+                    "micro tabular mt-[clamp(0.3rem,0.75vw,0.95rem)] w-14 shrink-0 transition-colors duration-300",
                     i === active ? "text-fg" : "text-muted"
                   )}
                 >
