@@ -178,8 +178,11 @@ void main() {
     }
     c += vec3(0.2, 0.75, 1.0) * flare * 0.2;
 
-    // Sodium haze pooling low in the frame (screen blend, never clips).
-    vec3 haze = uAmber * smoothstep(0.35, 1.05, suv.y) * 0.2 * uHaze;
+    // Sodium haze pooling low in the frame (screen blend, never clips). It
+    // peaks above the bottom edge and falls away under it, because the
+    // bottom strip is where the page sets its micro-labels.
+    float hazeBand = smoothstep(0.35, 0.8, suv.y) * (1.0 - smoothstep(0.84, 1.0, suv.y) * 0.75);
+    vec3 haze = uAmber * hazeBand * 0.18 * uHaze;
     c = 1.0 - (1.0 - c) * (1.0 - haze);
 
     // Rain takes the colour of what is behind it, so it glows in front of

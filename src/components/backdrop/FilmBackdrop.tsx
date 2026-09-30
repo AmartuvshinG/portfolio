@@ -479,7 +479,7 @@ export function FilmBackdrop() {
         className="absolute inset-0"
         style={{
           background:
-            "linear-gradient(180deg, rgba(5,6,13,0.5), rgba(5,6,13,0) 22%, rgba(5,6,13,0) 70%, rgba(5,6,13,0.6))",
+            "linear-gradient(180deg, rgba(5,6,13,0.5), rgba(5,6,13,0) 22%, rgba(5,6,13,0) 68%, rgba(5,6,13,0.72))",
         }}
       />
       {/* The reel readout: which reel, where in it. Set vertically in the

@@ -198,7 +198,9 @@ export function Hero() {
                  address are both in Contact and the menu sheet. */
               className="liquid-glass hidden w-fit rounded-2xl px-5 py-4 md:block"
             >
-              <span className="micro">{t.hero.currently}</span>
+              {/* Brighter than a stock micro-label: the card is glass, and the
+                  rain runs behind it (measured 3.3:1 at muted; 4.5 needed). */}
+              <span className="micro text-fg/85">{t.hero.currently}</span>
               <p className="mt-2 max-w-[15rem] font-tech text-sm font-semibold uppercase leading-tight text-fg">
                 {profile.status}
               </p>
