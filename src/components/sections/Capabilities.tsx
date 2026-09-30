@@ -6,14 +6,16 @@ import { SectionHeader } from "@/components/ui/SectionHeader";
 import { CapabilityCard } from "@/components/ui/CapabilityCard";
 import { RevealStagger, Reveal } from "@/components/motion/Reveal";
 import { ChapterSeam } from "@/components/chrome/ChapterSeam";
-import { CraftStack, CraftTrack, useWideCraft } from "@/components/craft/CraftTrack";
+import { CraftStack, useWideCraft } from "@/components/craft/CraftTrack";
+import { CraftIndex } from "@/components/craft/CraftIndex";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
 
 /**
  * Craft: the six capabilities.
  *
- * On a wide screen the section pins and the scroll carries a row of glass cards
- * sideways past the centre (CraftTrack). On a phone the cards stack, each
+ * On a wide screen the section pins into an index (CraftIndex): six titles
+ * whose letters roll over as the scroll — or the pointer — reaches them, and
+ * one evidence panel that wipes to match. On a phone the cards stack, each
  * separating into its layers as it rises. Under reduced motion it is the
  * static bento: full-stack and machine learning on the two wide cards, the
  * supporting skills under them.
@@ -65,7 +67,7 @@ export function Capabilities() {
         )}
       </div>
 
-      {!reduced && wide && <CraftTrack items={c.capabilities} />}
+      {!reduced && wide && <CraftIndex items={c.capabilities} />}
     </section>
   );
 }

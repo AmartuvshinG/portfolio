@@ -31,6 +31,9 @@ export interface Capability {
   proof?: string;
   /** Wide card in the bento. */
   feature?: boolean;
+  /** A screenshot from `public/work/` that shows this skill in the proof
+   *  project. Craft's index shows it; without one it draws a schematic. */
+  shot?: string;
   /** Tools named in the description or tags, shown as marks. Locale-free. */
   stack: TechKey[];
 }
@@ -211,6 +214,7 @@ export const capabilities: Capability[] = [
     stack: ["react", "fastapi", "postgresql", "supabase"],
     icon: "layers",
     proof: "spotfixes",
+    shot: "/work/spotfixes-stack.webp",
     feature: true,
   },
   {
@@ -222,6 +226,7 @@ export const capabilities: Capability[] = [
     stack: ["scikitlearn", "python", "chromadb"],
     icon: "brain",
     proof: "spotfixes",
+    shot: "/work/spotfixes-accuracy.webp",
     feature: true,
   },
   {
@@ -242,6 +247,7 @@ export const capabilities: Capability[] = [
     stack: ["usability", "accessibility"],
     icon: "pen",
     proof: "spotfixes",
+    shot: "/work/spotfixes-capabilities.webp",
   },
   {
     code: "SYS/05",
