@@ -10,7 +10,7 @@ import {
   Rajdhani,
 } from "next/font/google";
 import "./globals.css";
-import { site } from "@/lib/content";
+import { profile, site } from "@/lib/content";
 import { SmoothScroll } from "@/components/chrome/SmoothScroll";
 import { LocaleProvider } from "@/lib/i18n";
 import { ActTheme } from "@/components/chrome/ActTheme";
@@ -159,6 +159,16 @@ export default function RootLayout({
       data-act="void"
       className={`${michroma.variable} ${chakra.variable} ${archivo.variable} ${monoHud.variable} ${montserrat.variable} ${exo.variable} ${onest.variable} ${rajdhani.variable} h-full`}
     >
+      <head>
+        {/* The hero's Mongol-script sign. Subset by Google to exactly the
+            glyphs of the name (`text=`), so it costs a few KB, not the whole
+            Noto Sans Mongolian; derived from the string, so they never drift. */}
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
+        <link
+          rel="stylesheet"
+          href={`https://fonts.googleapis.com/css2?family=Noto+Sans+Mongolian&display=swap&text=${encodeURIComponent(profile.nameScript)}`}
+        />
+      </head>
       <body className="min-h-full antialiased">
         <a
           href="#main"

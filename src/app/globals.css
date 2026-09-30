@@ -320,6 +320,10 @@ html.hud-cursor * {
 /* ---------------------------------------------------------------------------
    Typographic utilities
    ------------------------------------------------------------------------- */
+/* Mongol bichig, for the hero's vertical sign only. */
+@utility font-script {
+  font-family: "Noto Sans Mongolian", serif;
+}
 @utility font-tech {
   font-family: var(--font-tech);
 }
@@ -545,6 +549,85 @@ html.hud-cursor * {
   color: transparent;
   -webkit-text-stroke: 1px color-mix(in srgb, var(--color-fg) 16%, transparent);
 }
+
+/* NeonSign (ui/NeonSign.tsx): type as a lit tube.
+   The glow is a generated-content copy behind the real glyphs, so it never
+   counts as text. Unlit, the tube is dim glass (still >3:1 for large type, in
+   case anything measures it before it strikes). Lit, it stutters on once and
+   holds: after the strike nothing here animates, so nothing repaints on
+   scroll. `data-idle` adds one brief dip every ~7s, for small signage only. */
+.neon-sign {
+  --neon-core: #fff5e8;
+  --neon-in: var(--color-hazard);
+  --neon-out: var(--spectrum-1);
+  position: relative;
+  display: inline-block;
+  isolation: isolate;
+  color: color-mix(in srgb, var(--color-fg) 45%, transparent);
+}
+.neon-sign[data-tone="sodium"] {
+  --neon-core: #ffd8a0;
+  --neon-out: #ff6a1a;
+}
+.neon-sign::before {
+  content: attr(data-text);
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  color: transparent;
+  pointer-events: none;
+  opacity: 0;
+  text-shadow:
+    0 0 0.02em var(--neon-in),
+    0 0 0.1em color-mix(in srgb, var(--neon-in) 80%, transparent),
+    0 0 0.32em color-mix(in srgb, var(--neon-out) 75%, transparent),
+    0 0 0.8em color-mix(in srgb, var(--neon-out) 45%, transparent);
+}
+.neon-sign[data-lit] {
+  color: var(--neon-core);
+  animation: neon-strike 0.9s linear both;
+}
+.neon-sign[data-lit]::before { opacity: 1; }
+.neon-sign[data-lit][data-idle]::before { animation: neon-idle 7s 1.5s linear infinite; }
+@keyframes neon-strike {
+  0% { opacity: 0.35; }
+  6% { opacity: 1; }
+  10% { opacity: 0.3; }
+  18% { opacity: 1; }
+  22% { opacity: 0.4; }
+  34% { opacity: 1; }
+  40% { opacity: 0.7; }
+  46%, 100% { opacity: 1; }
+}
+@keyframes neon-idle {
+  0%, 90%, 100% { opacity: 1; }
+  91% { opacity: 0.25; }
+  92% { opacity: 1; }
+  93.5% { opacity: 0.45; }
+  95% { opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .neon-sign[data-lit],
+  .neon-sign[data-lit][data-idle]::before { animation: none; }
+}
+
+/* The frame a vertical sign hangs in: a hairline box with sodium corner
+   brackets, the tube glowing inside it. */
+.script-sign {
+  border: 1px solid color-mix(in srgb, var(--color-hazard) 22%, transparent);
+  background: linear-gradient(180deg, rgba(5, 6, 13, 0.55), rgba(5, 6, 13, 0.25));
+}
+.script-sign::before,
+.script-sign::after {
+  content: "";
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  border-color: var(--color-hazard);
+  border-style: solid;
+}
+.script-sign::before { top: -3px; left: -3px; border-width: 2px 0 0 2px; }
+.script-sign::after { bottom: -3px; right: -3px; border-width: 0 2px 2px 0; }
 
 /* Restored from NEXUS for the mobile nav sheet. */
 @utility holo-grid {

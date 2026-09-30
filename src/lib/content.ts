@@ -156,6 +156,14 @@ export const profile = {
   heroSub:
     "Software engineering graduate. I build full-stack web apps and machine learning tools, most recently an AI bug triage platform trained on 222,000+ Mozilla Firefox bug reports.",
   kicker: "PORTFOLIO — 2026",
+  /**
+   * The name in classical Mongolian script (Mongol bichig), set vertically as
+   * the hero's neon sign. DRAFT: ᠠᠮᠤᠷ (amur, "peace") + ᠲᠦᠪᠰᠢᠨ (tübshin,
+   * "level/calm") — Amartuvshin must confirm the spelling before this ships.
+   * Decorative only (aria-hidden). app/layout.tsx subsets the font to exactly
+   * these glyphs, from this string.
+   */
+  nameScript: "ᠠᠮᠤᠷᠲᠦᠪᠰᠢᠨ",
 };
 
 /**

@@ -6,7 +6,7 @@ import { useI18n } from "@/lib/i18n";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
 import { usePointerDrift } from "@/hooks/usePointerDrift";
 import { useBootReady } from "@/hooks/useBootReady";
-import { GlitchText } from "@/components/motion/GlitchText";
+import { NeonSign } from "@/components/ui/NeonSign";
 import { ScrambleText } from "@/components/motion/ScrambleText";
 import { WordRevealLines } from "@/components/motion/WordReveal";
 import { Focus } from "@/components/hero/Entrance";
@@ -25,7 +25,7 @@ import { Focus } from "@/components/hero/Entrance";
  * The arrival, from the moment the preloader curtain starts to lift:
  *
  *   0.20s  the name rises out of its own clip, resolving from 26px of blur
- *   1.10s  a glitch burst hits the name and passes
+ *   1.25s  the name strikes like a neon tube: a stutter, then it holds
  *   1.15s  the lead arrives one word at a time, line two lagging line one
  *   1.70s  the availability card, the sub and the footer row settle
  */
@@ -35,9 +35,9 @@ import { Focus } from "@/components/hero/Entrance";
  *  viewport height is a much larger fraction of a thumb's travel. */
 const RUN = "h-[130vh] md:h-[180vh]";
 
-/** When the glitch burst fires and how long it holds, ms from mount. */
-const GLITCH_AT = 1100;
-const GLITCH_FOR = 900;
+/** When the name's tube strikes, ms after the curtain starts to lift — just
+ *  after it has finished rising out of its clip. */
+const STRIKE_AT = 1250;
 
 export function Hero() {
   const { c, t } = useI18n();
@@ -45,7 +45,7 @@ export function Hero() {
   const ref = useRef<HTMLElement>(null);
   const reduced = useReducedMotion();
   const [active, setActive] = useState(false);
-  const [burst, setBurst] = useState(false);
+  const [struck, setStruck] = useState(false);
 
   /* Everything below hangs off this. The arrival is 2.9s long and the curtain
      is up for the first 1.7 of them — on mount the whole sequence played behind
@@ -73,18 +73,17 @@ export function Hero() {
     return () => io.disconnect();
   }, []);
 
-  /* The glitch burst. A one-shot arrival beat on a timer rather than an
-     animation callback: the alternative is threading `onAnimationComplete`
-     through three components to reconstruct a schedule written down above. */
+  /* The strike. A one-shot arrival beat on a timer rather than an animation
+     callback: the alternative is threading `onAnimationComplete` through three
+     components to reconstruct a schedule written down above. It replaced a
+     glitch burst: a sign flickering on is the same jolt, but it is something
+     the city does, not something the screen does wrong. */
   useEffect(() => {
     if (!play) return;
-    const on = setTimeout(() => setBurst(true), GLITCH_AT);
-    const off = setTimeout(() => setBurst(false), GLITCH_AT + GLITCH_FOR);
-    return () => {
-      clearTimeout(on);
-      clearTimeout(off);
-    };
+    const on = setTimeout(() => setStruck(true), STRIKE_AT);
+    return () => clearTimeout(on);
   }, [play]);
+  const lit = reduced || struck;
 
   /* Travel. The name rises and scales as you leave, so the pair reads as a
      camera moving in rather than as a page sliding up. */
@@ -138,7 +137,9 @@ export function Hero() {
                   same fill. Both are also capped by height: on a wide, short
                   screen (1280×800) a width-only size ran the name down into
                   the lead. */}
-              <h1 className="display-caps flex overflow-hidden text-[min(8vw,15vh)] leading-[0.95] text-fg [:root:lang(mn)_&]:text-[min(10.6vw,16vh)]">
+              {/* The clip is only needed while the name rises; lit, it would
+                  cut the glow off in a hard box. */}
+              <h1 className={`display-caps flex ${lit ? "overflow-visible" : "overflow-hidden"} text-[min(8vw,15vh)] leading-[0.95] text-fg [:root:lang(mn)_&]:text-[min(10.6vw,16vh)]`}>
                 <motion.span
                   initial={reduced ? false : { y: "110%" }}
                   animate={{ y: play || reduced ? "0%" : "110%" }}
@@ -146,14 +147,36 @@ export function Hero() {
                   className="pointer-events-auto block"
                   style={{ paddingBottom: "0.08em" }}
                 >
-                  {/* `always` for the arrival burst only, then it falls back to
-                      hover. A permanent RGB split on 13vw of type is a headache;
-                      one that fires as the name lands and then waits for you is
-                      the same effect with a hundredth of the exposure. */}
-                  <GlitchText text={profile.wordmark} always={burst} />
+                  <NeonSign text={profile.wordmark} lit={lit} />
                 </motion.span>
               </h1>
             </Focus>
+          </div>
+        </motion.div>
+
+        {/* ---- THE SIGN ---------------------------------------------- */}
+        {/* His name in Mongol bichig, hung vertically at the frame's edge
+            like the signage of every rain-soaked street in the genre, except
+            this script was vertical first. Lit with the name, in sodium, with
+            the odd flicker a real tube has. Decorative. */}
+        <motion.div
+          aria-hidden
+          initial={reduced ? false : { opacity: 0 }}
+          animate={{ opacity: lit ? 1 : 0 }}
+          transition={{ duration: 0.3 }}
+          className="pointer-events-none absolute right-[5.5%] top-[13vh] z-10 hidden md:block"
+          style={reduced ? undefined : { y: copyY }}
+        >
+          <div className="script-sign relative px-3 py-5">
+            <NeonSign
+              text={profile.nameScript}
+              lit={lit}
+              tone="sodium"
+              idle
+              lang="mn-Mong"
+              className="font-script text-[clamp(1.6rem,2.3vw,2.6rem)] leading-none"
+              style={{ writingMode: "vertical-lr" }}
+            />
           </div>
         </motion.div>
 
