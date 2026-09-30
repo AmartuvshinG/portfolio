@@ -19,6 +19,9 @@ const en = {
     switchTo: "Switch language",
     current: "English",
   },
+  preloader: {
+    loading: "LOADING",
+  },
   nav: {
     openMenu: "Open menu",
     closeMenu: "Close menu",
@@ -33,6 +36,12 @@ const en = {
   },
   about: {
     aria: "Profile",
+    /** The dossier plate's extra fields. Both facts are already in the About
+     *  copy ("fluent in Mongolian and English") and the hero status. */
+    languages: "Languages",
+    languagesValue: "Mongolian · English",
+    status: "Status",
+    file: "Personnel file",
   },
   connect: {
     aria: "Find me elsewhere",
@@ -43,6 +52,8 @@ const en = {
     openSite: "Open live site",
     repos: (n: number) => `${n} public repos`,
     lastPush: "Last push",
+    /** The live product's lamp in its panel readout. */
+    live: "Live",
     recent: "Recently pushed",
   },
   work: {
@@ -168,6 +179,9 @@ const mn: UiStrings = {
     switchTo: "Хэл сонгох",
     current: "Монгол",
   },
+  preloader: {
+    loading: "АЧААЛЖ БАЙНА",
+  },
   nav: {
     openMenu: "Цэс нээх",
     closeMenu: "Цэс хаах",
@@ -182,6 +196,10 @@ const mn: UiStrings = {
   },
   about: {
     aria: "Танилцуулга",
+    languages: "Хэл",
+    languagesValue: "Монгол · Англи",
+    status: "Төлөв",
+    file: "Хувийн хэрэг",
   },
   connect: {
     aria: "Бусад сувгууд",
@@ -192,6 +210,7 @@ const mn: UiStrings = {
     openSite: "Сайт нээх",
     repos: (n: number) => `${n} нээлттэй репо`,
     lastPush: "Сүүлд шинэчилсэн",
+    live: "Ажиллаж байна",
     recent: "Сүүлд шинэчилсэн",
   },
   work: {

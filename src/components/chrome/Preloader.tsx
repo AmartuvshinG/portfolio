@@ -6,7 +6,8 @@ import { useReducedMotion } from "@/hooks/useReducedMotion";
 import { useLockScroll } from "@/hooks/useLockScroll";
 import { markBooted } from "@/hooks/useBootReady";
 import { useI18n } from "@/lib/i18n";
-import { GlowHorizon } from "@/components/ui/GlowHorizon";
+import { NeonSign } from "@/components/ui/NeonSign";
+import { srand } from "@/lib/utils";
 
 /**
  * First-load curtain.
@@ -19,13 +20,25 @@ import { GlowHorizon } from "@/components/ui/GlowHorizon";
  * Exits with a bottom-anchored curtain lift rather than a fade, so the hero is
  * revealed from underneath — the transition itself is the first piece of motion
  * the visitor sees and a crossfade wastes it.
+ *
+ * **A sign warming up.** Each letter of the name strikes on as its own neon
+ * tube — in a seeded, not left-to-right, order, the way a real sign
+ * catches — while rain runs down the glass. In the last stretch the vertical
+ * Mongol-script sign lights in exactly the spot the hero's sign occupies, so
+ * when the curtain lifts the sign is simply still there, and the hero's name
+ * strikes in turn. (It replaced a purple glow-horizon arc: the one screen
+ * still in the site's older look, and the first one anyone sees.)
  */
+
+/** When each letter's tube strikes, ms from mount: a rough left-to-right
+ *  sweep, jittered by a seeded hash so it catches like a real sign. */
+const strikeAt = (i: number) => Math.round(180 + i * 72 + srand(i * 7 + 3) * 220);
 
 /** Total run before the curtain lifts, ms. */
 const RUN_MS = 1700;
 
 export function Preloader() {
-  const { c } = useI18n();
+  const { c, t } = useI18n();
   const { profile } = c;
   const reduced = useReducedMotion();
   const [done, setDone] = useState(false);
@@ -93,20 +106,39 @@ export function Preloader() {
           exit={{ y: "-100%" }}
           transition={{ duration: 0.9, ease: [0.76, 0, 0.24, 1] }}
         >
-          {/* The curtain's own horizon. This is the only arc left on the site:
-              the hero and the section seams dropped theirs so the page behind
-              has one consistent ground, but a loading curtain is a separate
-              frame that lifts away within three seconds.
+          {/* Rain on the glass, and the film's scanlines. Both are single
+              layers; the rain is one transform loop, never a repaint. */}
+          <div aria-hidden className="preloader-rain pointer-events-none absolute inset-0" />
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-0"
+            style={{
+              backgroundImage:
+                "repeating-linear-gradient(180deg, rgba(0,0,0,0) 0 2px, rgba(0,0,0,0.28) 2px 3px)",
+            }}
+          />
 
-              Confined to the bottom two-fifths and run at low intensity. At full
-              height the arc stack's white specular layer is wider than the
-              viewport and simply whites the curtain out — the arcs only read as
-              a horizon when the frame is taller than the crown. */}
-          <div className="pointer-events-none absolute inset-x-0 bottom-0 h-[42%]">
-            <GlowHorizon variant="bottom" intensity={0.5} delay={0.3} />
+          <div className="relative flex items-center justify-between">
+            <span className="micro">{profile.kicker}</span>
+            <span className="micro flex items-center gap-2 text-[var(--color-hazard)]">
+              <span className="h-1.5 w-1.5 animate-blink rounded-full bg-[var(--color-hazard)]" />
+              {t.preloader.loading}
+            </span>
           </div>
 
-          <span className="micro relative">{profile.kicker}</span>
+          {/* The hero's sign, lit in its exact place so the hand-off is seamless. */}
+          <div className="pointer-events-none absolute right-[5.5%] top-[13vh] hidden md:block">
+            <div className="script-sign relative px-3 py-5">
+              <NeonSign
+                text={profile.nameScript}
+                lit={count >= 70}
+                tone="sodium"
+                lang="mn-Mong"
+                className="font-script text-[clamp(1.6rem,2.3vw,2.6rem)] leading-none"
+                style={{ writingMode: "vertical-lr" }}
+              />
+            </div>
+          </div>
 
           {/* The wordmark, letters rising out of a mask.
               Sized for eleven glyphs: Michroma sets AMARTUVSHIN at ~11× its
@@ -115,21 +147,16 @@ export function Preloader() {
               phone the counter takes its own row rather than squeezing the
               name further. */}
           <div className="relative flex flex-col items-start gap-3 md:flex-row md:items-end md:justify-between md:gap-6">
-            <h1 className="display-caps flex overflow-hidden text-[7.6vw] leading-[0.95] md:text-[6vw]">
+            {/* No rise out of a mask any more: the strike is the entrance, and
+                a clipping box would cut every tube's glow into a rectangle. */}
+            <h1 className="display-caps flex text-[7.6vw] leading-[0.95] md:text-[6vw]">
               {profile.wordmark.split("").map((ch, i) => (
-                <motion.span
+                <NeonSign
                   key={`${ch}-${i}`}
-                  initial={{ y: "110%" }}
-                  animate={{ y: "0%" }}
-                  transition={{
-                    delay: 0.06 * i,
-                    duration: 0.8,
-                    ease: [0.16, 1, 0.3, 1],
-                  }}
-                  className="block"
-                >
-                  {ch}
-                </motion.span>
+                  text={ch}
+                  lit
+                  style={{ ["--neon-delay" as string]: `${strikeAt(i)}ms`, ["--neon-dur" as string]: "0.6s" }}
+                />
               ))}
             </h1>
 
@@ -142,7 +169,10 @@ export function Preloader() {
           <div className="relative h-px w-full bg-line">
             <motion.span
               className="absolute inset-y-0 left-0"
-              style={{ backgroundImage: "var(--gradient-spectrum)" }}
+              style={{
+                backgroundImage:
+                  "linear-gradient(90deg, var(--color-hazard), var(--spectrum-1) 45%, var(--spectrum-3))",
+              }}
               animate={{ width: `${count}%` }}
               transition={{ duration: 0.1, ease: "linear" }}
             />

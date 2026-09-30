@@ -588,12 +588,14 @@ html.hud-cursor * {
 }
 .neon-sign[data-lit] {
   color: var(--neon-core);
-  animation: neon-strike 0.9s linear both;
+  /* Per-sign timing, so a row of glyphs can each strike on their own beat
+     (the preloader's name). */
+  animation: neon-strike var(--neon-dur, 0.9s) linear var(--neon-delay, 0ms) both;
 }
 .neon-sign[data-lit]::before { opacity: 1; }
 .neon-sign[data-lit][data-idle]::before { animation: neon-idle 7s 1.5s linear infinite; }
 @keyframes neon-strike {
-  0% { opacity: 0.35; }
+  0% { opacity: 0.12; }
   6% { opacity: 1; }
   10% { opacity: 0.3; }
   18% { opacity: 1; }
@@ -612,6 +614,27 @@ html.hud-cursor * {
 @media (prefers-reduced-motion: reduce) {
   .neon-sign[data-lit],
   .neon-sign[data-lit][data-idle]::before { animation: none; }
+}
+
+/* The preloader's rain: slanted hairline streaks in two sizes, tiled and
+   slid down in one compositor-only transform loop. The layer is taller than
+   the screen by one tile, so the loop is seamless. */
+.preloader-rain {
+  inset: -240px 0 0 0;
+  opacity: 0.35;
+  background-image:
+    repeating-linear-gradient(104deg, transparent 0 46px, rgba(170, 200, 230, 0.16) 46px 47px, transparent 47px 97px),
+    repeating-linear-gradient(98deg, transparent 0 71px, rgba(170, 200, 230, 0.1) 71px 72px, transparent 72px 143px);
+  -webkit-mask-image: repeating-linear-gradient(180deg, #000 0 26px, transparent 26px 60px);
+  mask-image: repeating-linear-gradient(180deg, #000 0 26px, transparent 26px 60px);
+  animation: preloader-rain 0.5s linear infinite;
+}
+@keyframes preloader-rain {
+  from { transform: translate3d(0, 0, 0); }
+  to { transform: translate3d(-14px, 60px, 0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .preloader-rain { animation: none; }
 }
 
 /* The frame a vertical sign hangs in: a hairline box with sodium corner
@@ -636,19 +659,22 @@ html.hud-cursor * {
    one element, so a targeting frame costs no extra nodes. `--hud-c` is the
    stroke colour; the live variant is the active nav link, in sodium with a
    faint under-glow. */
+/* The variables are *read* with fallbacks, never declared here: this rule is
+   unlayered, so declaring them would outrank every `[--hud-c:…]` utility on
+   the element and pin all brackets to the default grey. */
 .hud-brackets {
-  --hud-c: color-mix(in srgb, var(--color-fg) 55%, transparent);
-  --hud-l: 7px;
-  --hud-w: 1.5px;
+  --_c: var(--hud-c, color-mix(in srgb, var(--color-fg) 55%, transparent));
+  --_l: var(--hud-l, 7px);
+  --_w: var(--hud-w, 1.5px);
   background:
-    linear-gradient(var(--hud-c), var(--hud-c)) top left / var(--hud-l) var(--hud-w) no-repeat,
-    linear-gradient(var(--hud-c), var(--hud-c)) top left / var(--hud-w) var(--hud-l) no-repeat,
-    linear-gradient(var(--hud-c), var(--hud-c)) top right / var(--hud-l) var(--hud-w) no-repeat,
-    linear-gradient(var(--hud-c), var(--hud-c)) top right / var(--hud-w) var(--hud-l) no-repeat,
-    linear-gradient(var(--hud-c), var(--hud-c)) bottom left / var(--hud-l) var(--hud-w) no-repeat,
-    linear-gradient(var(--hud-c), var(--hud-c)) bottom left / var(--hud-w) var(--hud-l) no-repeat,
-    linear-gradient(var(--hud-c), var(--hud-c)) bottom right / var(--hud-l) var(--hud-w) no-repeat,
-    linear-gradient(var(--hud-c), var(--hud-c)) bottom right / var(--hud-w) var(--hud-l) no-repeat;
+    linear-gradient(var(--_c), var(--_c)) top left / var(--_l) var(--_w) no-repeat,
+    linear-gradient(var(--_c), var(--_c)) top left / var(--_w) var(--_l) no-repeat,
+    linear-gradient(var(--_c), var(--_c)) top right / var(--_l) var(--_w) no-repeat,
+    linear-gradient(var(--_c), var(--_c)) top right / var(--_w) var(--_l) no-repeat,
+    linear-gradient(var(--_c), var(--_c)) bottom left / var(--_l) var(--_w) no-repeat,
+    linear-gradient(var(--_c), var(--_c)) bottom left / var(--_w) var(--_l) no-repeat,
+    linear-gradient(var(--_c), var(--_c)) bottom right / var(--_l) var(--_w) no-repeat,
+    linear-gradient(var(--_c), var(--_c)) bottom right / var(--_w) var(--_l) no-repeat;
 }
 .hud-brackets-live {
   --hud-c: var(--color-hazard);
