@@ -1,8 +1,16 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { motion, useScroll, useTransform } from "framer-motion";
+import {
+  motion,
+  useMotionValueEvent,
+  useScroll,
+  useTransform,
+  type MotionValue,
+} from "framer-motion";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
+import { useI18n } from "@/lib/i18n";
+import { sweep } from "@/lib/sound";
 import { cn, srand } from "@/lib/utils";
 
 /**
@@ -103,6 +111,7 @@ export function ChapterSeam({
       ) : (
         <>
           {near && wipe && <Shutter progress={scrollYProgress} />}
+          {near && <ChapterCard anchor={ref} progress={scrollYProgress} />}
 
           {/* No glow arc while the film is the ground. The arc is a crest of
               light against a *painted* void core — the ground colour — which
@@ -204,5 +213,85 @@ function Slat({
               : "linear-gradient(180deg, color-mix(in srgb, var(--spectrum-3) 26%, transparent), transparent)",
       }}
     />
+  );
+}
+
+/** The split-flap alphabet, shared with ScrambleText's vocabulary. */
+const FLAP = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789/<>[]#*+";
+/** How many flips a glyph makes across the whole crossing. Stepped, not
+ *  smooth: the quantising is what makes it read as a mechanism. */
+const FLIPS = 22;
+
+/**
+ * The chapter card: the chapter's number and name, huge, crossing the join.
+ *
+ * It slides a quarter-screen sideways as you cross, and its letters resolve
+ * split-flap style — each one flipping through the alphabet in steps, then
+ * locking, left to right with a seeded stagger. Scrubbed by the same progress
+ * as the hairline, so it is driven, reversible, and still at rest.
+ *
+ * The name comes from the nav (the enclosing section's id → its link), so it
+ * always matches the navbar and ChapterFrame, and translates with them.
+ * Decoration only: `aria-hidden` on the seam, and the flipping text is written
+ * straight to the node, never through React.
+ */
+function ChapterCard({
+  anchor,
+  progress,
+}: {
+  anchor: React.RefObject<HTMLDivElement | null>;
+  progress: MotionValue<number>;
+}) {
+  const { c } = useI18n();
+  const textRef = useRef<HTMLSpanElement>(null);
+  const [id, setId] = useState<string | null>(null);
+  const x = useTransform(progress, [0, 1], ["14%", "-10%"]);
+  const opacity = useTransform(progress, [0, 0.3, 0.7, 1], [0, 0.32, 0.32, 0]);
+
+  useEffect(() => {
+    // One read of where this seam lives; there is nothing to derive it from.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setId(anchor.current?.closest("section[id]")?.id ?? null);
+  }, [anchor]);
+
+  const link = id ? c.navLinks.find((l) => l.href === `#${id}`) : undefined;
+  const text = link ? `${link.code} — ${link.label}`.toUpperCase() : "";
+
+  const render = (p: number) => {
+    const el = textRef.current;
+    if (!el || !text) return;
+    const chars = Array.from(text);
+    const step = Math.floor(p * FLIPS);
+    let out = "";
+    chars.forEach((ch, i) => {
+      /* Each glyph locks at its own point: left to right, jittered. */
+      const lock = 0.12 + (i / chars.length) * 0.3 + srand(i * 13 + 5) * 0.12;
+      if (p >= lock || ch === " " || ch === "—") out += ch;
+      else out += FLAP[(step * 7 + i * 11) % FLAP.length];
+    });
+    if (el.textContent !== out) el.textContent = out;
+  };
+
+  const last = useRef(0);
+  useMotionValueEvent(progress, "change", (p) => {
+    render(p);
+    if (last.current < 0.5 && p >= 0.5) sweep();
+    last.current = p;
+  });
+  useEffect(() => render(progress.get()));
+
+  if (!text) return null;
+  return (
+    <motion.span
+      style={{
+        x,
+        opacity,
+        backgroundImage:
+          "linear-gradient(100deg, var(--spectrum-1), var(--spectrum-2) 50%, var(--spectrum-3))",
+      }}
+      className="pointer-events-none absolute bottom-[calc(67%-0.12em)] left-0 block whitespace-nowrap bg-clip-text font-display text-[clamp(3rem,8.5vw,9.5rem)] uppercase leading-none tracking-tight text-transparent [-webkit-text-stroke:1px_rgba(255,255,255,0.18)]"
+    >
+      <span ref={textRef} />
+    </motion.span>
   );
 }

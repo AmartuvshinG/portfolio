@@ -170,6 +170,9 @@ function Theatre({ sectionRef: ref }: { sectionRef: React.RefObject<HTMLElement 
 
   return (
     <>
+      {/* The pinned stage had no seam, so Work was the one chapter without a
+          join or a chapter card. */}
+      <ChapterSeam />
       <div className="sticky top-0 h-dvh w-full overflow-hidden">
         {/* Per-file light. A radial gradient each, crossfaded on opacity — no
             blur filter, so nothing here is re-rasterised on scroll. */}
