@@ -553,13 +553,15 @@ html.hud-cursor * {
   -webkit-text-stroke: 1px color-mix(in srgb, var(--color-fg) 16%, transparent);
 }
 
-/* NeonSign (ui/NeonSign.tsx): type as a lit tube.
+/* NeonSign (ui/NeonSign.tsx): type as a lit tube. Class `neon-tube`, not
+   `neon-sign`: that name was already taken by ChapterFrame's side tab, whose
+   9s flicker rule (further down) then landed on every unlit NeonSign too.
    The glow is a generated-content copy behind the real glyphs, so it never
    counts as text. Unlit, the tube is dim glass (still >3:1 for large type, in
    case anything measures it before it strikes). Lit, it stutters on once and
    holds: after the strike nothing here animates, so nothing repaints on
    scroll. `data-idle` adds one brief dip every ~7s, for small signage only. */
-.neon-sign {
+.neon-tube {
   --neon-core: #fff5e8;
   --neon-in: var(--color-hazard);
   --neon-out: var(--spectrum-1);
@@ -568,11 +570,11 @@ html.hud-cursor * {
   isolation: isolate;
   color: color-mix(in srgb, var(--color-fg) 45%, transparent);
 }
-.neon-sign[data-tone="sodium"] {
+.neon-tube[data-tone="sodium"] {
   --neon-core: #ffd8a0;
   --neon-out: #ff6a1a;
 }
-.neon-sign::before {
+.neon-tube::before {
   content: attr(data-text);
   position: absolute;
   inset: 0;
@@ -586,14 +588,14 @@ html.hud-cursor * {
     0 0 0.32em color-mix(in srgb, var(--neon-out) 75%, transparent),
     0 0 0.8em color-mix(in srgb, var(--neon-out) 45%, transparent);
 }
-.neon-sign[data-lit] {
+.neon-tube[data-lit] {
   color: var(--neon-core);
   /* Per-sign timing, so a row of glyphs can each strike on their own beat
      (the preloader's name). */
   animation: neon-strike var(--neon-dur, 0.9s) linear var(--neon-delay, 0ms) both;
 }
-.neon-sign[data-lit]::before { opacity: 1; }
-.neon-sign[data-lit][data-idle]::before { animation: neon-idle 7s 1.5s linear infinite; }
+.neon-tube[data-lit]::before { opacity: 1; }
+.neon-tube[data-lit][data-idle]::before { animation: neon-idle 7s 1.5s linear infinite; }
 @keyframes neon-strike {
   0% { opacity: 0.12; }
   6% { opacity: 1; }
@@ -612,8 +614,8 @@ html.hud-cursor * {
   95% { opacity: 1; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .neon-sign[data-lit],
-  .neon-sign[data-lit][data-idle]::before { animation: none; }
+  .neon-tube[data-lit],
+  .neon-tube[data-lit][data-idle]::before { animation: none; }
 }
 
 /* The preloader's rain: slanted hairline streaks in two sizes, tiled and
@@ -748,21 +750,12 @@ html.hud-cursor * {
 .cf-node { transform-box: fill-box; transform-origin: center; }
 .cf-lit .cf-node { animation: cf-pulse 2.4s ease-in-out infinite; }
 
-/* The nav monogram's spark: one short dash runs the hexagon's perimeter, then
-   the mark rests for most of the cycle. Paint on a 28px SVG, so it is free. */
-@keyframes monogram-spark {
-  0% { stroke-dashoffset: 100; opacity: 0; }
-  2% { opacity: 1; }
-  20% { stroke-dashoffset: 0; opacity: 1; }
-  23%, 100% { stroke-dashoffset: 0; opacity: 0; }
-}
+/* The nav monogram's spark: one short dash runs the hexagon's perimeter. The
+   motion itself is played from JS (NavGlyphs Monogram) once every 8s — as an
+   infinite CSS loop it forced a style recalc on every frame, even at rest. */
 .monogram-spark {
   stroke-dasharray: 7 93;
   opacity: 0;
-  animation: monogram-spark 8s linear infinite;
-}
-@media (prefers-reduced-motion: reduce) {
-  .monogram-spark { animation: none; }
 }
 
 /* Lab tiles turning to face the camera.

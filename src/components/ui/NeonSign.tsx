@@ -22,7 +22,7 @@ type Tone = "white" | "sodium";
  * `idle` adds a rare dip in the glow (one every ~7s): for small signage only,
  * never for a headline someone is reading.
  *
- * Styles live in globals.css under `.neon-sign`.
+ * Styles live in globals.css under `.neon-tube`.
  */
 export function NeonSign({
   text,
@@ -71,7 +71,7 @@ export function NeonSign({
       data-tone={tone}
       data-lit={on ? "" : undefined}
       data-idle={idle ? "" : undefined}
-      className={cn("neon-sign", className)}
+      className={cn("neon-tube", className)}
       style={style}
     >
       {text}

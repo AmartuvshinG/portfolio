@@ -213,10 +213,14 @@ function Theatre({ sectionRef: ref }: { sectionRef: React.RefObject<HTMLElement 
                 <button
                   type="button"
                   onClick={() => openCase(current.slug)}
-                  aria-label={t.work.preview(current.title)}
                   className="group relative block w-full text-left"
                 >
-                  <div className="notch-card relative overflow-hidden bg-surface ring-1 ring-inset ring-line-strong shadow-[0_40px_120px_-20px_rgba(0,0,0,0.85)] transition-transform duration-300 ease-out group-hover:-translate-y-1">
+                  {/* Named by a hidden text child, not `aria-label`: the monitor's
+                      visible text is decorative (address bars, generated
+                      panels), and an aria-label that doesn't contain it fails
+                      WCAG 2.5.3 (label in name). The monitor is aria-hidden. */}
+                  <span className="sr-only">{t.work.preview(current.title)}</span>
+                  <div aria-hidden className="notch-card relative overflow-hidden bg-surface ring-1 ring-inset ring-line-strong shadow-[0_40px_120px_-20px_rgba(0,0,0,0.85)] transition-transform duration-300 ease-out group-hover:-translate-y-1">
                     {/* Browser bar */}
                     <div className="relative flex h-9 items-center gap-3 border-b border-line bg-deck px-4">
                       <span className="flex gap-1.5" aria-hidden>
@@ -611,10 +615,14 @@ function Stack({ reduced }: { reduced: boolean }) {
                 <button
                   type="button"
                   onClick={() => openCase(p.slug)}
-                  aria-label={t.work.preview(p.title)}
                   className="relative block aspect-[16/10] w-full overflow-hidden"
                 >
-                  <ShotImage project={p} sizes="(max-width: 768px) 100vw, 50vw" className="object-cover object-top" />
+                  {/* Hidden text name, decorative shot aria-hidden: see the
+                      theatre's monitor button (WCAG 2.5.3, label in name). */}
+                  <span className="sr-only">{t.work.preview(p.title)}</span>
+                  <span aria-hidden className="absolute inset-0">
+                    <ShotImage project={p} sizes="(max-width: 768px) 100vw, 50vw" className="object-cover object-top" />
+                  </span>
                 </button>
                 <div className="p-5 md:p-6">
                   <div className="flex items-center gap-3">
