@@ -4,7 +4,11 @@ import { useEffect, useRef, useSyncExternalStore } from "react";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
 
 /**
- * A spectrum ring with a magenta core, and nothing else.
+ * A sodium targeting reticle: four corners round a dot, which spring out to
+ * frame a link or button when the pointer is over it — the same targeting
+ * language as the active nav link, the Craft panel and the case file. It
+ * replaced a spectrum ring (2026-09-30). The four faults below are from the
+ * ring's history and the fixes still apply.
  *
  * This component was invisible for four separate reasons, all of which had to
  * go at once. Worth recording, because three of them are silent:
@@ -46,9 +50,22 @@ function subscribe(onChange: () => void) {
   return () => mq.removeEventListener("change", onChange);
 }
 
+/** What the reticle locks onto. */
+const LOCKABLE = "a, button, [role='button'], [data-cursor], input, textarea, select";
+/** Half-size of the free reticle, px. */
+const REST = 11;
+/** Breathing room around a locked element, px. */
+const PAD = 6;
+/** Corner arm length, px. */
+const ARM = 7;
+/** Beyond this the element is a surface, not a target. */
+const MAX_LOCK_W = 460;
+const MAX_LOCK_H = 160;
+
 export function HudCursor() {
   const reduced = useReducedMotion();
-  const ringRef = useRef<HTMLDivElement>(null);
+  const layerRef = useRef<HTMLDivElement>(null);
+  const dotRef = useRef<HTMLSpanElement>(null);
   const eligible = useSyncExternalStore(
     subscribe,
     () => window.matchMedia(QUERY).matches,
@@ -62,44 +79,103 @@ export function HudCursor() {
     const root = document.documentElement;
     root.classList.add("hud-cursor");
 
+    const layer = layerRef.current;
+    const dot = dotRef.current;
+    const corners = layer ? (Array.from(layer.querySelectorAll("[data-corner]")) as HTMLElement[]) : [];
+
     const mouse = { x: window.innerWidth / 2, y: window.innerHeight / 2 };
-    const pos = { ...mouse };
-    let hovering = false;
+    /* The reticle's box: centre and half-size, eased toward a target. Free,
+       the target is a small square on the pointer; locked, it is the element's
+       padded rect. */
+    const box = { x: mouse.x, y: mouse.y, w: REST, h: REST };
+    const aim = { ...box };
+    let lock: HTMLElement | null = null;
+    let lockRect: DOMRect | null = null;
     let seen = false;
     let raf = 0;
+
+    const retarget = () => {
+      if (lock && lockRect) {
+        aim.x = lockRect.left + lockRect.width / 2;
+        aim.y = lockRect.top + lockRect.height / 2;
+        aim.w = lockRect.width / 2 + PAD;
+        aim.h = lockRect.height / 2 + PAD;
+      } else {
+        aim.x = mouse.x;
+        aim.y = mouse.y;
+        aim.w = REST;
+        aim.h = REST;
+      }
+    };
+
+    const kick = () => {
+      if (!raf) raf = requestAnimationFrame(render);
+    };
 
     const onMove = (e: MouseEvent) => {
       mouse.x = e.clientX;
       mouse.y = e.clientY;
       seen = true;
-      hovering = Boolean(
-        (e.target as HTMLElement)?.closest(
-          "a, button, [data-cursor], input, textarea"
-        )
-      );
+      const el = (e.target as HTMLElement)?.closest<HTMLElement>(LOCKABLE) ?? null;
+      if (el !== lock) {
+        /* Read the rect once per element, not per frame. Large surfaces (a
+           whole Signal panel, the work monitor) are not locked onto: a
+           reticle the size of a card is a border, not a target. */
+        const r = el?.getBoundingClientRect() ?? null;
+        const small = r && r.width <= MAX_LOCK_W && r.height <= MAX_LOCK_H;
+        lock = small ? el : null;
+        lockRect = small ? r : null;
+      }
+      retarget();
+      kick();
+    };
+
+    /* The page scrolled under a locked element: its rect is stale. */
+    const onScroll = () => {
+      if (lock) {
+        lockRect = lock.getBoundingClientRect();
+        retarget();
+        kick();
+      }
     };
 
     const render = () => {
-      pos.x += (mouse.x - pos.x) * 0.2;
-      pos.y += (mouse.y - pos.y) * 0.2;
-      const ring = ringRef.current;
-      if (ring) {
-        ring.style.transform = `translate3d(${pos.x}px, ${pos.y}px, 0) translate(-50%, -50%) scale(${hovering ? 1.9 : 1})`;
-        // Hold at zero until the pointer actually moves, so the ring does not
-        // sit parked in the middle of the screen on load.
-        ring.style.opacity = seen ? (hovering ? "1" : "0.85") : "0";
-      }
-      raf = requestAnimationFrame(render);
+      raf = 0;
+      const k = lock ? 0.28 : 0.24;
+      box.x += (aim.x - box.x) * k;
+      box.y += (aim.y - box.y) * k;
+      box.w += (aim.w - box.w) * k;
+      box.h += (aim.h - box.h) * k;
+      const [tl, tr, bl, br] = corners;
+      const L = box.x - box.w;
+      const R = box.x + box.w;
+      const T = box.y - box.h;
+      const B = box.y + box.h;
+      if (tl) tl.style.transform = `translate3d(${L}px, ${T}px, 0)`;
+      if (tr) tr.style.transform = `translate3d(${R - ARM}px, ${T}px, 0)`;
+      if (bl) bl.style.transform = `translate3d(${L}px, ${B - ARM}px, 0)`;
+      if (br) br.style.transform = `translate3d(${R - ARM}px, ${B - ARM}px, 0)`;
+      if (dot) dot.style.transform = `translate3d(${mouse.x - 2}px, ${mouse.y - 2}px, 0)`;
+      // Hold hidden until the pointer actually moves, so nothing sits parked
+      // in the middle of the screen on load.
+      if (layer) layer.style.opacity = seen ? "1" : "0";
+      /* Settled: stop. The old ring re-rendered at display rate forever, even
+         with the mouse still — part of the site's idle rendering cost. */
+      const moving =
+        Math.abs(aim.x - box.x) + Math.abs(aim.y - box.y) + Math.abs(aim.w - box.w) + Math.abs(aim.h - box.h) > 0.2;
+      if (moving) raf = requestAnimationFrame(render);
     };
 
     window.addEventListener("mousemove", onMove, { passive: true });
-    raf = requestAnimationFrame(render);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    kick();
 
     /* A window narrowed past the breakpoint hands the native cursor back for
        free now: the media query flips, `active` goes false, and this effect
        tears down — which is the whole reason eligibility moved out of state. */
     return () => {
       window.removeEventListener("mousemove", onMove);
+      window.removeEventListener("scroll", onScroll);
       cancelAnimationFrame(raf);
       root.classList.remove("hud-cursor");
     };
@@ -107,32 +183,41 @@ export function HudCursor() {
 
   if (!active) return null;
 
+  const corner = (pos: string) => (
+    <span
+      data-corner
+      className="absolute left-0 top-0"
+      style={{
+        width: ARM,
+        height: ARM,
+        borderColor: "var(--color-hazard)",
+        borderStyle: "solid",
+        borderWidth: pos,
+        willChange: "transform",
+      }}
+    />
+  );
+
   return (
     <div
+      ref={layerRef}
       aria-hidden
-      className="pointer-events-none fixed inset-0 z-[130] hidden md:block"
+      className="pointer-events-none fixed inset-0 z-[130] hidden transition-opacity duration-200 md:block"
+      style={{ opacity: 0 }}
     >
-      {/* The transform carrier. Ring and core are siblings under it: a mask set
-          on the ring would clip anything nested inside it, core dot included. */}
-      <div
-        ref={ringRef}
-        className="absolute left-0 top-0 h-8 w-8 transition-opacity duration-200 ease-out"
-        style={{ opacity: 0, willChange: "transform" }}
-      >
-        {/* Painted as a masked conic ramp rather than as a border, so the ring
-            carries the full spectrum instead of one flat stop — and so no
-            `border-*` rule can ever override it the way one did before. */}
-        <span
-          className="absolute inset-0 rounded-full"
-          style={{
-            background:
-              "conic-gradient(from 0deg, var(--spectrum-1), var(--spectrum-2), var(--spectrum-3), var(--spectrum-1))",
-            mask: "radial-gradient(circle, transparent 0 42%, #000 44%)",
-            WebkitMask: "radial-gradient(circle, transparent 0 42%, #000 44%)",
-          }}
-        />
-        <span className="absolute left-1/2 top-1/2 h-1 w-1 -translate-x-1/2 -translate-y-1/2 rounded-full bg-signal" />
-      </div>
+      {/* Four sodium corners, each its own transform: the reticle resizes by
+          moving corners, never by animating a box's width and height, which
+          would be layout on every frame. Border colour is inline so no
+          `border-*` rule can override it (fault 1 above). Order: TL TR BL BR. */}
+      {corner("1.5px 0 0 1.5px")}
+      {corner("1.5px 1.5px 0 0")}
+      {corner("0 0 1.5px 1.5px")}
+      {corner("0 1.5px 1.5px 0")}
+      <span
+        ref={dotRef}
+        className="absolute left-0 top-0 h-1 w-1 rounded-full bg-fg"
+        style={{ willChange: "transform" }}
+      />
     </div>
   );
 }
