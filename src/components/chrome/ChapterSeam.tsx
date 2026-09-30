@@ -10,7 +10,6 @@ import {
 } from "framer-motion";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
 import { useI18n } from "@/lib/i18n";
-import { sweep } from "@/lib/sound";
 import { cn, srand } from "@/lib/utils";
 
 /**
@@ -272,12 +271,7 @@ function ChapterCard({
     if (el.textContent !== out) el.textContent = out;
   };
 
-  const last = useRef(0);
-  useMotionValueEvent(progress, "change", (p) => {
-    render(p);
-    if (last.current < 0.5 && p >= 0.5) sweep();
-    last.current = p;
-  });
+  useMotionValueEvent(progress, "change", render);
   useEffect(() => render(progress.get()));
 
   if (!text) return null;

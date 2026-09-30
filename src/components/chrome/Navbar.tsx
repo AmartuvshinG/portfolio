@@ -15,8 +15,6 @@ import { X } from "lucide-react";
 import { navLinks as sectionLinks, type NavLink } from "@/lib/content";
 import { useI18n } from "@/lib/i18n";
 import { LangToggle } from "@/components/chrome/LangToggle";
-import { SoundToggle } from "@/components/chrome/SoundToggle";
-import { tick } from "@/lib/sound";
 import { isCaseHash } from "@/lib/caseFile";
 import { useSmoothScroll } from "@/components/chrome/SmoothScroll";
 import { useOverlay } from "@/hooks/useOverlay";
@@ -467,7 +465,6 @@ export function Navbar() {
                 the type scale went up it was the item pushing the controls off the
                 edge at 1440px. */}
             <div className="flex shrink-0 items-center gap-4">
-              <SoundToggle className="hidden lg:flex" />
               <LangToggle className="hidden sm:flex" />
 
               <button
@@ -632,10 +629,7 @@ export function Navbar() {
               >
                 {contact.email}
               </a>
-              <div className="flex items-center gap-3">
-                <SoundToggle />
-                <LangToggle />
-              </div>
+              <LangToggle />
             </div>
           </motion.div>
         )}
@@ -771,7 +765,6 @@ function DockLink({
               go(link.href);
             }}
             aria-current={isActive ? "location" : undefined}
-            onMouseEnter={() => tick(Number(link.code))}
             className={linkClass}
           >
             {label}

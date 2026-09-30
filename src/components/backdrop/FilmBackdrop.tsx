@@ -4,7 +4,6 @@ import { useEffect, useId, useRef, useState } from "react";
 import { ScrollTrigger } from "@/lib/gsap";
 import { FILM, clamp, easeInOut, loadWhole, seeker } from "@/lib/film";
 import { createFilmRenderer } from "@/lib/filmShader";
-import { droneFollow } from "@/lib/sound";
 
 /**
  * The film as the site's one ground.
@@ -219,7 +218,6 @@ export function FilmBackdrop() {
       if (cityDur > 0 && iris < 1) citySeek.to(Math.min(cityT, cityDur - 0.04));
       if (issDur > 0 && f > CITY_LEN) issSeek.to(Math.min(issT, issDur - 0.04));
 
-      droneFollow(speed, iris);
       writeHud(f);
       if (veilRef.current) veilRef.current.style.opacity = String(veil);
       /* The daylit Earth fills the left half of the last shots, exactly where

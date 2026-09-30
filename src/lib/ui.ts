@@ -19,12 +19,6 @@ const en = {
     switchTo: "Switch language",
     current: "English",
   },
-  sound: {
-    /** The toggle's accessible name; its pressed state says on or off. */
-    label: "Sound",
-    on: "SOUND ON",
-    off: "SOUND",
-  },
   nav: {
     openMenu: "Open menu",
     closeMenu: "Close menu",
@@ -173,11 +167,6 @@ const mn: UiStrings = {
     mn: "МН",
     switchTo: "Хэл сонгох",
     current: "Монгол",
-  },
-  sound: {
-    label: "Дуу",
-    on: "ДУУ АСААЛТТАЙ",
-    off: "ДУУ",
   },
   nav: {
     openMenu: "Цэс нээх",

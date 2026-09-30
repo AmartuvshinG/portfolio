@@ -7,7 +7,6 @@ import { ArrowRight } from "lucide-react";
 import type { Capability } from "@/lib/content";
 import { useI18n } from "@/lib/i18n";
 import { caseHash, openCase } from "@/lib/caseFile";
-import { tick } from "@/lib/sound";
 import { ICONS } from "@/components/ui/CapabilityCard";
 import { TechMark, TechStrip, techLabel } from "@/components/ui/TechMarks";
 import {
@@ -62,14 +61,12 @@ export function CraftIndex({ items }: { items: Capability[] }) {
     if (i !== step) {
       setStep(i);
       setPointer(null);
-      if (i !== active) tick(i);
     }
   });
 
   const choose = (i: number) => {
     if (i === active) return;
     setPointer(i);
-    tick(i);
   };
 
   /** Glide to the scroll position where `i` is the step. */
