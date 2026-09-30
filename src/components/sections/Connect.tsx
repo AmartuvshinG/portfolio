@@ -85,6 +85,21 @@ export function Connect({ github }: { github: GitHubSummary | null }) {
     return () => mq.removeEventListener("change", update);
   }, []);
 
+  /* The channel art only animates while the section is near the screen. On a
+     phone every panel is expanded, so without this all three fields — ~150
+     SVG loops, none of them compositable — restyled every frame of every
+     visit, from the hero to the footer. Same gate as the footer marquee. */
+  const [inView, setInView] = useState(false);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const io = new IntersectionObserver(([e]) => setInView(e.isIntersecting), {
+      rootMargin: "200px 0px",
+    });
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
+
   const accordion = row && !reduced;
 
   return (
@@ -135,6 +150,7 @@ export function Connect({ github }: { github: GitHubSummary | null }) {
                 hovered === null ? REST : hovered === i ? OPEN : SHUT
               }
               expanded={!accordion || hovered === i}
+              live={inView}
               accordion={accordion}
               open={open}
               reduced={reduced}
@@ -154,6 +170,7 @@ function ChannelPanel({
   count,
   grow,
   expanded,
+  live,
   accordion,
   open,
   reduced,
@@ -165,6 +182,7 @@ function ChannelPanel({
   count: number;
   grow: number;
   expanded: boolean;
+  live: boolean;
   accordion: boolean;
   open: import("framer-motion").MotionValue<number>;
   reduced: boolean;
@@ -204,7 +222,7 @@ function ChannelPanel({
         <ChannelField
           kind={kind}
           seed={index}
-          lit={expanded}
+          lit={expanded && live}
         />
 
         {/* Ramp wash. Only under the open panel — at rest the row stays

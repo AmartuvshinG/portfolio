@@ -13,9 +13,12 @@ import { srand } from "@/lib/utils";
  * are seeded (`srand`), so they are stable across renders and hydration, and
  * they never claim to be anyone's real activity.
  *
- * Motion runs **only on the lit panel** (the `cf-lit` class gates every
- * keyframe in globals.css), so at most one field animates at a time. It is
- * opacity, transform and dash offset only. The ground is translucent so the
+ * Motion runs **only on a lit panel** (the `cf-lit` class gates every
+ * keyframe in globals.css). On a pointer device that is the hovered one; on a
+ * phone every panel is open, so Connect also unlights them all while the
+ * section is off screen. SVG children are never composited, so these loops
+ * cost a restyle and repaint per frame. It is opacity, transform and dash
+ * offset only. The ground is translucent so the
  * aurora shows through the glass.
  *
  * This is always *under* the channel's mark. The marks are never tinted.
