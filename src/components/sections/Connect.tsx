@@ -417,7 +417,10 @@ function Readout({
 
   return (
     <div
-      className="flex max-w-[34rem] flex-col gap-1.5 font-mono text-xs uppercase tracking-[0.14em] text-fg/85 transition-opacity duration-300"
+      /* A faint dark backing: the channel art (pulse lines, constellation)
+         runs behind at fixed positions and would otherwise strike through a
+         line of data. */
+      className="-mx-2.5 flex w-fit max-w-[34rem] flex-col gap-1.5 rounded-md bg-[#05060d]/55 px-2.5 py-2 font-mono text-xs uppercase tracking-[0.14em] text-fg/85 transition-opacity duration-300"
       style={{ opacity: expanded ? 1 : 0.55 }}
     >
       {kind === "live" && (
