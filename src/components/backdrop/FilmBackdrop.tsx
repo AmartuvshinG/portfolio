@@ -39,6 +39,8 @@ import { createFilmRenderer } from "@/lib/filmShader";
  */
 
 const CITY_LEN = 8;
+/** How often the rain advances. Half display rate: rain reads as rain at 30. */
+const RAIN_FPS = 30;
 const IRIS_END = 9;
 
 /**
@@ -151,6 +153,10 @@ export function FilmBackdrop() {
     let fPrev = -1;
     let speed = 0;
     let hudText = "";
+    /* While the city is on screen it is raining, and rain moves: the shader
+       then draws at RAIN_FPS even when nothing else has changed. */
+    let raining = false;
+    let lastRain = 0;
     let cityDur = 0;
     let issDur = 0;
     let ys: number[] = [];
@@ -237,8 +243,13 @@ export function FilmBackdrop() {
         const cityOn = cityAt ? clamp((now - cityAt) / 800) : 0;
         const issOn = issAt ? clamp((now - issAt) / 600) : 0;
         if ((cityAt && cityOn < 1) || (issAt && issOn < 1)) dirty = true;
+        raining = iris < 1 && cityOn > 0;
         renderer.draw(
           {
+            time: (now % 600000) * 0.001,
+            rain: (1 - iris) * cityOn,
+            /* Thickest at street level, thinning as the camera climbs. */
+            haze: (1 - iris) * (1 - (cityT / CITY_LEN) * 0.7),
             cityScale,
             cityShift: iris * 0.07,
             issScale,
@@ -350,7 +361,11 @@ export function FilmBackdrop() {
     window.addEventListener("scroll", onScroll, { passive: true });
 
     measure();
-    const frame = () => {
+    const frame = (now: number) => {
+      if (raining && now - lastRain >= 1000 / RAIN_FPS) {
+        lastRain = now;
+        dirty = true;
+      }
       if (dirty) {
         dirty = false;
         paint();
