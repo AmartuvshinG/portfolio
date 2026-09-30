@@ -12,6 +12,7 @@ import { useReducedMotion } from "@/hooks/useReducedMotion";
 import { useOverlay } from "@/hooks/useOverlay";
 import { EASE_EXPO } from "@/lib/motion";
 import { ShotImage } from "@/components/work/ShotImage";
+import { NeonSign } from "@/components/ui/NeonSign";
 
 const noopSubscribe = () => () => {};
 function useIsClient() {
@@ -129,6 +130,20 @@ function CaseFile({
             onClick={onClose}
           />
 
+          {/* Sodium targeting brackets framing the file, 6px outside the
+              panel: the panel is a notch clip-path, which would cut them off
+              if they lived inside it. Desktop only, where the panel is inset. */}
+          {!reduced && (
+            <motion.span
+              aria-hidden
+              className="hud-brackets pointer-events-none absolute hidden md:inset-2.5 md:block lg:inset-4 [--hud-c:var(--color-hazard)] [--hud-l:22px] [--hud-w:2px]"
+              initial={{ opacity: 0, scale: 1.02 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.4, delay: 0.25, ease: EASE_EXPO }}
+            />
+          )}
+
           <motion.div
             ref={panelRef}
             role="dialog"
@@ -140,13 +155,34 @@ function CaseFile({
             exit={reduced ? { opacity: 0 } : { opacity: 0, y: 32 }}
             transition={{ duration: 0.5, ease: EASE_EXPO }}
           >
+            {/* The scan-in: one sodium line sweeps down the file as it opens
+                (a full-size layer with the line on its bottom edge, slid from
+                -100% to 0, then gone). Transform and opacity only. */}
+            {!reduced && (
+              <motion.span
+                key={`scan-${project.slug}`}
+                aria-hidden
+                className="pointer-events-none absolute inset-0 z-20"
+                style={{
+                  background:
+                    "linear-gradient(180deg, transparent calc(100% - 60px), color-mix(in srgb, var(--color-hazard) 14%, transparent) calc(100% - 2px), var(--color-hazard))",
+                }}
+                initial={{ y: "-100%", opacity: 1 }}
+                animate={{ y: "0%", opacity: [1, 1, 0] }}
+                transition={{ duration: 0.75, ease: [0.45, 0, 0.2, 1], opacity: { times: [0, 0.8, 1], duration: 0.75 } }}
+              />
+            )}
+
             {/* Bar */}
             <div className="flex h-16 shrink-0 items-center justify-between gap-4 border-b border-line px-5 md:px-8">
               <div className="flex min-w-0 items-center gap-3">
                 <span className="font-mono text-sm tabular" style={{ color: color && readable(color) }}>
                   {project.index}
                 </span>
-                <span className="micro truncate">{t.caseFile.label}</span>
+                <span className="micro truncate">
+                  {t.caseFile.label}
+                  <span className="text-[var(--color-hazard)]"> · {project.title}</span>
+                </span>
               </div>
               <div className="flex items-center gap-4">
                 <span className="micro hidden sm:inline">{t.caseFile.esc}</span>
@@ -268,7 +304,11 @@ function CaseFile({
                             {project.metrics.map((m) => (
                               <div key={m.label}>
                                 <span className="micro">{m.label}</span>
-                                <p className="tabular mt-2 font-display text-xl text-fg md:text-2xl">{m.value}</p>
+                                {/* The results as lit numerals: each strikes on
+                                    the first time it scrolls into view. */}
+                                <p className="tabular mt-2 font-display text-2xl md:text-3xl">
+                                  <NeonSign text={m.value} lit="view" />
+                                </p>
                               </div>
                             ))}
                           </div>
@@ -292,6 +332,15 @@ function CaseFile({
                               height={1250}
                               sizes="(max-width: 768px) 100vw, 620px"
                               className="h-auto w-full"
+                            />
+                            {/* The film's scanlines, static. */}
+                            <span
+                              aria-hidden
+                              className="pointer-events-none absolute inset-0"
+                              style={{
+                                backgroundImage:
+                                  "repeating-linear-gradient(180deg, rgba(0,0,0,0) 0 2px, rgba(0,0,0,0.16) 2px 3px)",
+                              }}
                             />
                           </div>
                           {g.caption && <figcaption className="micro mt-3">{g.caption}</figcaption>}
