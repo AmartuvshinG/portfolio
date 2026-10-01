@@ -42,7 +42,7 @@ import { requestRewrite } from "@/lib/inkWriteQueue";
 
 const SEEN_KEY = "ink-intro-seen";
 /** Lift no matter what after this long (× timeScale). */
-const CEILING_MS = 13000;
+const CEILING_MS = 10000;
 
 const QUERY = "(prefers-reduced-motion: reduce)";
 function subscribeReduced(onChange: () => void) {

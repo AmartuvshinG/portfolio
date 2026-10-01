@@ -23,11 +23,11 @@ import { Seal } from "@/components/ui/Seal";
  *   1000   the brush lands at the crown and writes down the stem, one
  *          stroke at a time: each tooth and tail as it reaches it, a lift
  *          and a beat in the air back to the stem, on (the bake's route)
- *   4300   a spinner passes outside; its light crosses the wall
- *   5600   the neon stutters once
- *   8000   the last stroke; the brush leaves; the seal stamps — the paper
+ *   3120   a spinner passes outside; its light crosses the wall
+ *   3960   the neon stutters once
+ *   5500   the last stroke; the brush leaves; the seal stamps — the paper
  *          dips, the lamp jolts
- *   8750   done: the preloader racks focus and lifts
+ *   6250   done: the preloader racks focus and lifts
  *
  * The preloader owns the story around it (the letterbox, the slate, when to
  * lift, `markBooted`). It hands in `skip` and `focus`, and hears back through
@@ -44,11 +44,14 @@ const UNROLL_AT = 200;
 const UNROLL_MS = 800;
 const NEON_AT = 300;
 const WRITE_AT = 1000;
-/** Slow enough to watch a hand: ~19 strokes, a quarter of it in the air. */
-const WRITE_MS = 7000;
-const SWEEP_AT = 4300;
+/** A sure hand: ~19 strokes, a quarter of it in the air. Was 7000 — watchable,
+    but long enough that visitors waited on it. */
+const WRITE_MS = 4500;
+/* The spinner and the flicker are beats *inside* the writing, so they are
+   placed as fractions of it and move with it. */
+const SWEEP_AT = WRITE_AT + 0.471 * WRITE_MS;
 const SWEEP_MS = 1100;
-const FLICKER_AT = 5600;
+const FLICKER_AT = WRITE_AT + 0.657 * WRITE_MS;
 const WRITTEN = WRITE_AT + WRITE_MS;
 /** The seal lands this long after the last stroke… */
 const STAMP_DELAY = 120;
