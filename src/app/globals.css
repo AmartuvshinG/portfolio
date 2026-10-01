@@ -1169,3 +1169,5 @@ html.hud-cursor * {
 }
 .group:hover .monitor-reticle,
 .group:focus-visible .monitor-reticle { opacity: 1; transform: scale(0.985); }
+/* The same reticle on a Signal panel: closed onto the panel that is open. */
+.monitor-reticle[data-on] { opacity: 0.9; transform: scale(0.985); }

@@ -217,13 +217,16 @@ function ChannelPanel({
         href={social.href}
         target="_blank"
         rel="noreferrer noopener"
-        className="liquid-glass group/panel relative block h-[30vh] w-full overflow-hidden rounded-3xl md:h-full"
+        className="liquid-glass group/panel relative block h-[30vh] w-full overflow-hidden rounded-[3px] md:h-full"
       >
         <ChannelField
           kind={kind}
           seed={index}
           lit={expanded && live}
         />
+        {/* A terminal's frame, not a card's: reticle corners that close onto
+            the open panel (the work monitor's, see .monitor-reticle). */}
+        <span aria-hidden className="monitor-reticle z-[1]" data-on={expanded ? "" : undefined} />
 
         {/* Ramp wash. Only under the open panel — at rest the row stays
             achromatic so three channels don't compete with the backdrop. */}
@@ -371,17 +374,18 @@ function ChannelArt({
         className="pointer-events-none absolute inset-x-0 bottom-[42%] top-[24%] hidden items-center justify-center md:bottom-[26%] md:top-[38%] md:flex"
       >
         <div
-          className="w-[88%] max-w-[26rem] overflow-hidden rounded-lg shadow-[0_24px_60px_-12px_rgba(0,0,0,0.75)] ring-1 ring-white/10 transition-[transform,opacity] duration-300 ease-out"
+          className="w-[88%] max-w-[26rem] overflow-hidden shadow-[0_24px_60px_-12px_rgba(0,0,0,0.75)] ring-1 ring-white/10 transition-[transform,opacity] duration-300 ease-out"
           style={{
             opacity: lit ? 1 : 0.7,
             transform: `perspective(900px) rotateY(${lit ? -4 : -12}deg) scale(${lit ? 1 : 0.9})`,
           }}
         >
-          <div className="flex items-center gap-1.5 bg-[#12142a] px-2.5 py-1.5">
-            <span className="h-2 w-2 rounded-full bg-white/25" />
-            <span className="h-2 w-2 rounded-full bg-white/25" />
-            <span className="h-2 w-2 rounded-full bg-white/25" />
-            <span className="ml-2 truncate font-mono text-[0.625rem] text-white/60">spotfixes.com</span>
+          {/* The work monitor's bezel, small: a live feed, not a browser. */}
+          <div className="flex items-center gap-2 bg-[#06070c] px-2.5 py-1.5 font-mono text-[0.625rem] tracking-[0.2em]">
+            <span className="h-1.5 w-1.5 rounded-full bg-[var(--color-seal)] shadow-[0_0_6px_var(--color-seal)]" />
+            <span className="text-white/70">LIVE</span>
+            <span className="h-2.5 w-px bg-white/15" />
+            <span className="truncate tracking-normal text-white/60">spotfixes.com</span>
           </div>
           {/* eslint-disable-next-line @next/next/no-img-element -- decorative, fixed asset */}
           <img src={social.shot} alt="" loading="lazy" className="block aspect-[16/10] w-full object-cover object-top" />

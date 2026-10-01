@@ -208,9 +208,10 @@ function ChapterSpine({ chapters, active }: { chapters: string[]; active: number
             <span
               className={
                 "pointer-events-none absolute right-6 whitespace-nowrap font-mono text-[0.6875rem] uppercase tracking-[0.22em] transition-[opacity,transform] duration-300 " +
-                (on
-                  ? "translate-x-0 text-[var(--color-hazard)] opacity-90"
-                  : "translate-x-1 text-fg opacity-0 group-hover:translate-x-0 group-hover:opacity-90")
+                /* Labels only on hover: the navbar already says where you
+                   are, and an always-on label sat over section content. */
+                (on ? "text-[var(--color-hazard)]" : "text-fg") +
+                " translate-x-1 opacity-0 group-hover:translate-x-0 group-hover:opacity-90"
               }
             >
               <span className="tabular opacity-60">{link?.code ?? "--"}</span> {link?.label ?? id}
