@@ -696,6 +696,75 @@ html.hud-cursor * {
   100% { opacity: 0; transform: translateY(400%); }
 }
 
+/* ---- Signal (sections/Connect) ------------------------------------------
+   A panel is a terminal: a CRT's dark glass, a faint raster and a vignette
+   that curls the corners in. Static layers — nothing here animates. */
+.signal-crt::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  background:
+    radial-gradient(120% 90% at 50% 45%, transparent 55%, rgba(0, 0, 0, 0.55) 100%),
+    repeating-linear-gradient(180deg, rgba(0, 0, 0, 0) 0 2px, rgba(0, 0, 0, 0.18) 2px 3px);
+}
+
+/* The tuner's band: a ruler of fine ticks with a longer one every fifth,
+   between two hairlines. Background only. */
+.tuner-band {
+  border-block: 1px solid var(--color-line);
+  background-image:
+    repeating-linear-gradient(90deg, rgba(236, 238, 251, 0.22) 0 1px, transparent 1px 50px),
+    repeating-linear-gradient(90deg, rgba(236, 238, 251, 0.1) 0 1px, transparent 1px 10px);
+  background-size: 100% 9px, 100% 5px;
+  background-position: 0 100%, 0 100%;
+  background-repeat: repeat-x;
+}
+.tuner-needle {
+  position: absolute;
+  top: -4px;
+  bottom: -4px;
+  width: 2px;
+  margin-left: -1px;
+  background: var(--color-holo);
+  box-shadow: 0 0 10px var(--color-holo), 0 0 22px color-mix(in srgb, var(--color-holo) 45%, transparent);
+  pointer-events: none;
+}
+/* Scanning: the needle sweeps the band and back. A transform, so it costs
+   nothing; paused by Connect while the section is off screen. */
+.tuner-sweep {
+  left: 0;
+  animation: tuner-sweep 6s cubic-bezier(0.45, 0, 0.55, 1) infinite alternate;
+}
+@keyframes tuner-sweep {
+  from { transform: translateX(0); }
+  to { transform: translateX(var(--sweep, calc(100cqw - 2px))); }
+}
+.tuner-band { container-type: inline-size; }
+
+/* The live feed's scan: one soft holo band down the screenshot every few
+   seconds while its panel is open. */
+.feed-scan {
+  position: absolute;
+  inset-inline: 0;
+  top: 0;
+  height: 30%;
+  pointer-events: none;
+  background: linear-gradient(180deg, transparent, color-mix(in srgb, var(--color-holo) 16%, transparent) 85%, color-mix(in srgb, var(--color-holo) 55%, transparent));
+  mix-blend-mode: screen;
+  animation: feed-scan 3.6s cubic-bezier(0.45, 0, 0.3, 1) infinite;
+}
+@keyframes feed-scan {
+  0% { transform: translateY(-110%); opacity: 0; }
+  10% { opacity: 1; }
+  70% { transform: translateY(340%); opacity: 1; }
+  71%, 100% { transform: translateY(340%); opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .tuner-sweep, .feed-scan { animation: none; }
+}
+
 /* The frame a vertical sign hangs in: a hairline box with sodium corner
    brackets, the tube glowing inside it. */
 .script-sign {

@@ -63,6 +63,15 @@ const en = {
     /** The live product's lamp in its panel readout. */
     live: "Live",
     recent: "Recently pushed",
+    /** The tuner band over the three channels. */
+    tuner: "Channel tuner",
+    scanning: "Scanning",
+    tuned: "Tuned",
+    tuneHint: "← → to tune",
+    langMix: "Language mix",
+    repoLog: "Repo log",
+    started: (name: string, when: string) => `${name}, started ${when}`,
+    status: "Status",
   },
   work: {
     aria: "Selected work",
@@ -258,6 +267,14 @@ const mn: UiStrings = {
     lastPush: "Сүүлд шинэчилсэн",
     live: "Ажиллаж байна",
     recent: "Сүүлд шинэчилсэн",
+    tuner: "Суваг тааруулагч",
+    scanning: "Хайж байна",
+    tuned: "Тааруулсан",
+    tuneHint: "← → сонгох",
+    langMix: "Хэлний харьцаа",
+    repoLog: "Репогийн түүх",
+    started: (name: string, when: string) => `${name}, ${when}-д эхэлсэн`,
+    status: "Төлөв",
   },
   work: {
     aria: "Сонгосон төслүүд",

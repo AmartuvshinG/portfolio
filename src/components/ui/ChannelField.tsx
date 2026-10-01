@@ -3,7 +3,8 @@ import { srand } from "@/lib/utils";
 /**
  * The art behind a Signal channel, drawn from what the channel *is*:
  *
- *   github    a contribution grid; a diagonal wave runs through it when lit
+ *   github    nothing but the ground: the panel now shows his real repos, and
+ *             a seeded "contribution grid" beside real data would be a fake
  *   linkedin  a small network whose connections draw themselves in when lit
  *   live      stacked heartbeat traces that draw themselves in when lit — the
  *             service is up
@@ -49,55 +50,13 @@ export function ChannelField({
       style={{ opacity: lit ? 1 : 0.7 }}
     >
       <rect width={W} height={H} fill="#0b0d1a" fillOpacity="0.5" />
-      <ellipse cx={W / 2} cy={H * 0.86} rx={W * 0.8} ry={H * 0.42} fill={hue} opacity="0.22" />
-      {kind === "github" && <Grid seed={seed} />}
+      {/* A low pool of the channel's light at the foot — kept faint: the
+          panel is a terminal, not a lit slab. */}
+      <ellipse cx={W / 2} cy={H * 0.86} rx={W * 0.8} ry={H * 0.42} fill={hue} opacity="0.09" />
       {kind === "linkedin" && <Network seed={seed} />}
       {kind === "live" && <Pulse seed={seed} />}
     </svg>
   );
-}
-
-/* --- GitHub: a contribution grid, 10 columns by 26 weeks, running down the
-   panel rather than across it because the panels are tall. */
-const COLS = 10;
-const ROWS = 26;
-const PITCH = 27;
-const CELL = 21;
-
-function Grid({ seed }: { seed: number }) {
-  const x0 = (W - (COLS * PITCH - (PITCH - CELL))) / 2;
-  const y0 = (H - (ROWS * PITCH - (PITCH - CELL))) / 2;
-  const cells = [];
-  for (let r = 0; r < ROWS; r++) {
-    for (let c = 0; c < COLS; c++) {
-      const n = srand(seed * 977 + r * 31 + c);
-      /* Skewed toward empty, the way a real grid is. */
-      const level = n < 0.42 ? 0 : n < 0.68 ? 1 : n < 0.86 ? 2 : n < 0.95 ? 3 : 4;
-      const x = x0 + c * PITCH;
-      const y = y0 + r * PITCH;
-      if (level === 0) {
-        cells.push(
-          <rect key={`${r}-${c}`} x={x} y={y} width={CELL} height={CELL} rx="4" fill="#eceefb" fillOpacity="0.05" />
-        );
-      } else {
-        cells.push(
-          <rect
-            key={`${r}-${c}`}
-            className="cf-cell"
-            x={x}
-            y={y}
-            width={CELL}
-            height={CELL}
-            rx="4"
-            fill={STOPS[(r + c) % 3]}
-            fillOpacity={(0.06 + level * 0.075).toFixed(3)}
-            style={{ animationDelay: `${((r + c) * 0.06).toFixed(2)}s` }}
-          />
-        );
-      }
-    }
-  }
-  return <g>{cells}</g>;
 }
 
 /* --- LinkedIn: fourteen seeded nodes, each tied to its two nearest
