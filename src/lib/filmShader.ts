@@ -28,6 +28,11 @@
  * read as a space rather than a picture. The plates are overscanned while it
  * is on, so the shift never reaches the clamped edge of the frame.
  *
+ * The cursor is also a light. Around the (eased) pointer the rain catches it —
+ * drops brighten, a faint sodium pool sits on the wet glass — the way a hand
+ * torch picks out rain. City reel only, only while it rains, so it adds no
+ * draws: the rain already redraws at 30 fps.
+ *
  * Rain moves, so while the city is on screen the caller draws at 30fps even
  * at rest. Everything else still draws only when something changed.
  *
@@ -81,6 +86,7 @@ uniform float uRain;        // 0..1
 uniform float uHaze;        // 0..1
 uniform vec2 uLook;         // eased pointer, -1..1, +y down
 uniform float uOverscan;    // plate zoom that buys the look its headroom
+uniform float uCursorOn;    // 1 on a fine pointer
 
 // Dave Hoskins' sin-free hash: identical on every GPU.
 float hash11(float p) {
@@ -201,9 +207,14 @@ void main() {
     vec3 haze = uAmber * hazeBand * 0.18 * uHaze;
     c = 1.0 - (1.0 - c) * (1.0 - haze);
 
+    // The cursor's light: a soft pool where the eased pointer is.
+    vec2 cd = (suv - (uLook * 0.5 + 0.5)) * vec2(uRes.x / uRes.y, 1.0);
+    float torch = uCursorOn * exp(-dot(cd, cd) / 0.04);
+    c = 1.0 - (1.0 - c) * (1.0 - uAmber * 0.035 * torch * uRain);
+
     // Rain takes the colour of what is behind it, so it glows in front of
-    // a sign and is grey against the dark.
-    float r = (rNear * 0.26 + rMid * 0.17 + rFar * 0.11) * uRain;
+    // a sign and is grey against the dark — and catches the cursor's light.
+    float r = (rNear * 0.26 + rMid * 0.17 + rFar * 0.11) * uRain * (1.0 + 1.4 * torch);
     c += r * mix(vec3(0.7, 0.8, 0.9), c * 2.4, 0.6);
 
     col = c * uCityOn;
@@ -257,6 +268,8 @@ export interface FilmFrame {
   lookY: number;
   /** 1, or ~1.035 while the look is live. */
   overscan: number;
+  /** 1 when the pointer is a light (fine pointer), else 0. */
+  cursorOn: number;
 }
 
 function hexToRgb(hex: string, fallback: [number, number, number]): [number, number, number] {
@@ -335,6 +348,7 @@ export function createFilmRenderer(
     haze: U("uHaze"),
     look: U("uLook"),
     overscan: U("uOverscan"),
+    cursorOn: U("uCursorOn"),
   };
 
   const css = getComputedStyle(document.documentElement);
@@ -413,6 +427,7 @@ export function createFilmRenderer(
       gl.uniform1f(u.haze, f.haze);
       gl.uniform2f(u.look, f.lookX, f.lookY);
       gl.uniform1f(u.overscan, f.overscan);
+      gl.uniform1f(u.cursorOn, f.cursorOn);
       gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
     },
     dispose() {

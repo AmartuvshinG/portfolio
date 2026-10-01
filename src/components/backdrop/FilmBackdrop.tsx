@@ -297,6 +297,7 @@ export function FilmBackdrop() {
             lookX,
             lookY,
             overscan,
+            cursorOn: looking ? 1 : 0,
           },
           cityVersion,
           issVersion
