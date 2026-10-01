@@ -1,65 +1,10 @@
 "use client";
 
-import { useEffect, useId, useRef, type CSSProperties } from "react";
-import {
-  Cpu,
-  Hexagon,
-  Layers3,
-  RadioTower,
-  Route,
-  ScanFace,
-  Send,
-  type LucideIcon,
-} from "lucide-react";
-
+import { useEffect, useId, useRef } from "react";
 /**
- * The nav's glyph set, the monogram and the droplet's paint. They live here
- * because the header, the mobile sheet and the language toggle all draw them.
+ * The brand mark. It lives here because the header, the mobile sheet and the
+ * seal (ui/Seal) all draw it.
  */
-
-/** One glyph per section, keyed by anchor. Labels are always shown beside
-    them: the icons are wayfinding, not a replacement for the words. */
-export const NAV_ICONS: Record<string, LucideIcon> = {
-  "#hero": Hexagon,
-  "#about": ScanFace,
-  "#connect": RadioTower,
-  "#work": Layers3,
-  "#capabilities": Cpu,
-  "#timeline": Route,
-  "#contact": Send,
-};
-
-/**
- * The glass droplet behind an active item: a clear capsule with a lit upper
- * lip, a cool lower rim and a spectrum glow pooling underneath it. It carries
- * no backdrop-filter, because it moves on every change of section and a
- * filtered layer in motion is exactly what the perf budget forbids.
- */
-export const DROPLET_STYLE: CSSProperties = {
-  background:
-    "radial-gradient(120% 90% at 50% 0%, rgba(255,255,255,0.2), rgba(255,255,255,0.04) 55%, transparent 80%)," +
-    "linear-gradient(100deg, rgba(255,45,143,0.14), rgba(123,92,255,0.14), rgba(34,224,255,0.14))",
-  boxShadow:
-    "inset 0 1px 0 rgba(255,255,255,0.4)," +
-    "inset 0 -1px 0 rgba(34,224,255,0.28)," +
-    "inset 0 0 0 1px rgba(236,238,251,0.12)," +
-    "0 6px 18px -6px rgba(123,92,255,0.6)",
-};
-
-/**
- * The squash-and-settle a droplet does when it lands: it arrives stretched
- * along its travel and wobbles once back to round. Framer composes this scale
- * with the `layoutId` projection, so the droplet slides *and* deforms.
- */
-export const DROPLET_LAND = {
-  initial: { scaleX: 1.28, scaleY: 0.84 },
-  animate: { scaleX: 1, scaleY: 1 },
-  transition: {
-    layout: { type: "spring", stiffness: 420, damping: 34 },
-    scaleX: { type: "spring", stiffness: 520, damping: 13 },
-    scaleY: { type: "spring", stiffness: 520, damping: 13 },
-  },
-} as const;
 
 /**
  * The brand mark: an "A" chevron cut into a hexagon, stroked on the ramp.

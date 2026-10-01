@@ -3,14 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import {
-  AnimatePresence,
-  motion,
-  useMotionValue,
-  useSpring,
-  useTransform,
-  type MotionValue,
-} from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import { X } from "lucide-react";
 import { navLinks as sectionLinks, type NavLink } from "@/lib/content";
 import { useI18n } from "@/lib/i18n";
@@ -18,93 +11,60 @@ import { LangToggle } from "@/components/chrome/LangToggle";
 import { isCaseHash } from "@/lib/caseFile";
 import { useSmoothScroll } from "@/components/chrome/SmoothScroll";
 import { useOverlay } from "@/hooks/useOverlay";
-import { useReducedMotion } from "@/hooks/useReducedMotion";
-import { MagneticButton } from "@/components/motion/MagneticButton";
 import { cn } from "@/lib/utils";
-import { Monogram, NAV_ICONS } from "@/components/chrome/NavGlyphs";
+import { Monogram } from "@/components/chrome/NavGlyphs";
+import { InkSign } from "@/components/ui/InkSign";
 
-const BAR_SPRING = { type: "spring", stiffness: 200, damping: 50 } as const;
-
-/* --- The dock.
-   Lifted from the macOS-dock reference, with one substitution that is the whole
-   design decision: it magnifies **words, not icons**. There is no guessable
-   glyph for "Signal" or "Craft", so an icon dock turns every visit into a
-   hover-hunt for a section you could otherwise have read. The magnification is
-   the part of that pattern worth having; the iconography is not.
-
-   The reference's spring, unchanged — it is doing the work. */
-const DOCK_SPRING = { mass: 0.1, stiffness: 150, damping: 12 } as const;
-/** Influence either side of a link's centre, px. */
-const REACH = 150;
-/** Scale at dead centre. */
-const PEAK = 1.24;
-/** Lift at dead centre, px. */
-const LIFT = -6;
-
-/** How long after the last scroll event the glass comes back, ms. */
-const GLASS_DELAY = 150;
-/** Crossfade either side of that, ms. Must match the CSS duration below. */
-const GLASS_FADE = 220;
+/** UB's coordinates: the HUD's one piece of standing telemetry. */
+const COORDS = "47.92°N 106.92°E";
 
 /**
- * The command bar.
+ * The HUD.
  *
- * Sits flush across the viewport at rest. Past the fold it contracts into a
- * floating liquid-glass capsule: a lit rim, a highlight that follows the
- * pointer, and while the page is still, real refraction through the `#lg`
- * filter. The active section is a glass droplet that slides between links on a
- * `layoutId` and lands with a squash, which doubles as a position indicator.
+ * No bar and no capsule: the chrome sits *in the frame*, the way a camera's
+ * readout does. The wordmark and the city's coordinates hold the top-left
+ * corner; the chapter index holds the top-right. Past the fold a dark scrim
+ * fades in behind them (no backdrop-filter — a blur on fixed chrome is a tax on
+ * every scroll frame), and at a chapter cut the letterbox's top bar closes in
+ * behind the row, so the HUD ends up printed on the matte.
  *
- * Three things here are less obvious than they look, and each is a fix for a
- * real defect rather than a preference:
+ * The links: a mono index and a wide-tracked label. Hover draws a hairline out
+ * from the left with a little sodium light under it, and the label decodes
+ * through its own script (useScramble). The section you are in carries the
+ * live hairline, which slides between links on a `layoutId`. Scroll progress
+ * lives in the chapter spine at the right edge (ChapterFrame), not here.
  *
- * 1. **The console is a container query context, not a viewport one.** Its
- *    contents are `flex-nowrap` inside an `overflow-hidden` row — so when
- *    the links plus the controls overflow, the excess is *silently cut off* at the
- *    capsule's edge with no scrollbar and no warning. Sizing the drop
- *    ladder off the viewport could never be right, because the thing
- *    overflowing is the console, whose width is a `min()` of two other things.
+ * Kept from the capsule, each a fix rather than a taste:
  *
- * 2. **The glass is on demand.** See `GLASS_DELAY` below.
- *
- * 3. **It knows what page it is on.** The section observer can only work on the
+ * 1. **The row is a container query context.** Its contents are `nowrap`; the
+ *    wordmark, then the coordinates, give way as the row narrows, and the
+ *    breakpoints are measured against the row, not the viewport.
+ * 2. **It knows what page it is on.** The section observer can only work on the
  *    home route; everywhere else the active item comes from the pathname.
+ * 3. **Deep links re-land** while the page is still growing (see below).
  */
 export function Navbar() {
   const { c, t, locale } = useI18n();
   const { navLinks, profile, contact } = c;
   /* Where the full link row takes over from the menu sheet. Mongolian labels
-     run ~40% longer, and at 1080px the row overran the console by ~170px — so
-     Mongolian keeps the sheet until 1280.
+     run ~40% longer, so Mongolian keeps the sheet until 1280.
      Written out in full because Tailwind only sees literal class names. */
   const mn = locale === "mn";
   const deskQuery = mn ? "(min-width: 1280px)" : "(min-width: 1080px)";
   const { scrollTo } = useSmoothScroll();
   const pathname = usePathname();
   const isHome = pathname === "/";
-  const reduced = useReducedMotion();
 
-  /* Pointer position across the link row, in viewport coordinates. `Infinity`
-     parks every link at rest — the distance transform clamps, so the value
-     never has to be special-cased downstream. */
-  const mouseX = useMotionValue(Infinity);
-  const [dockable, setDockable] = useState(false);
-
-  const [contracted, setContracted] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
   const [observed, setObserved] = useState<string | null>("#hero");
   const [open, setOpen] = useState(false);
-  const [progress, setProgress] = useState(0);
-  const [scrolling, setScrolling] = useState(false);
-  const [glassLive, setGlassLive] = useState(false);
   const toggleRef = useRef<HTMLButtonElement>(null);
-  const barRef = useRef<HTMLDivElement>(null);
   const sheetRef = useRef<HTMLDivElement>(null);
 
   const closeSheet = useCallback(() => setOpen(false), []);
 
-  /* The sheet is a real modal now — same trap, restore and lock as the dossier,
-     the palette and ESPER. See the sheet's own markup below for why that forced
-     it to grow a header of its own. */
+  /* The sheet is a real modal — same trap, restore and lock as the dossier and
+     the palette. See the sheet's own markup for why it has a header of its own. */
   useOverlay({
     open,
     onClose: closeSheet,
@@ -113,103 +73,28 @@ export function Navbar() {
   });
 
   /* The site is one route. Off it (a 404) there is nothing to observe, and no
-     pill at all is the correct answer — a great deal better than lighting
-     INDEX. */
+     active link at all is the correct answer. */
   const active = isHome ? observed : null;
 
-  /* Contract past the fold, track read progress, and drive the glass. */
+  /* The scrim past the fold. One boolean, flipped at most twice a gesture. */
   useEffect(() => {
     let ticking = false;
-    let inGesture = false;
-    let idle: ReturnType<typeof setTimeout>;
-    let kill: ReturnType<typeof setTimeout>;
-
     const onScroll = () => {
-      /* Gesture start. The teardown is scheduled **once here, not on every
-         scroll event** — resetting it per event meant that during a continuous
-         scroll (an event every frame) the timer was cleared and rescheduled
-         forever and the filter was never actually removed, which is the whole
-         point of the exercise. */
-      if (!inGesture) {
-        inGesture = true;
-        setScrolling(true);
-        /* Tear the filter down only after the fade-out has finished — pulling
-           the filtered layer mid-transition pops for a frame. */
-        kill = setTimeout(() => setGlassLive(false), GLASS_FADE);
-      }
-
-      clearTimeout(idle);
-      idle = setTimeout(() => {
-        inGesture = false;
-        /* Cancel a teardown that has not fired yet: a flick shorter than the
-           fade never needs the filter removed at all. */
-        clearTimeout(kill);
-        setScrolling(false);
-        /* Stand the layer back up in the same commit that starts the fade-in,
-           so it exists before its opacity begins to climb. Both of these live
-           in a timer callback rather than an effect body — React batches them
-           into one render, and setting state synchronously in an effect
-           cascades. */
-        setGlassLive(true);
-      }, GLASS_DELAY);
-
       if (ticking) return;
       ticking = true;
       requestAnimationFrame(() => {
-        const y = window.scrollY;
-        const max = document.documentElement.scrollHeight - window.innerHeight;
-        setContracted(y > 100);
-        setProgress(max > 0 ? Math.min(1, y / max) : 0);
+        setScrolled(window.scrollY > 100);
         ticking = false;
       });
     };
-
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
-    return () => {
-      window.removeEventListener("scroll", onScroll);
-      clearTimeout(idle);
-      clearTimeout(kill);
-    };
+    return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  /* --- The on-demand glass.
-     A `backdrop-filter` on a *fixed* element makes its layer depend on the
-     scrolling content beneath it: the compositor has to rasterise the page,
-     filter it, then composite, in that order, on every frame of every scroll,
-     for the entire session. That is why the previous `glass` utility was
-     stripped from this component in the performance pass.
-
-     The bargain: the filter is only live while the page is *still*. During a
-     scroll the bar falls back to its opaque fill, which at 92% was doing all
-     the legibility work anyway; ~150ms after you stop, the real blur crossfades
-     in. You only ever see glass when you are in a position to look at it.
-
-     Order matters. `backdrop-filter` is written *before* the fade-in starts and
-     removed only *after* the fade-out has finished, because creating or
-     destroying the filtered layer mid-transition pops for a frame. And
-     `opacity: 0` is not enough on its own — the `none` is what actually buys
-     the frames back. */
-  const glassSupported =
-    typeof CSS !== "undefined" &&
-    CSS.supports?.("backdrop-filter", "blur(1px)") &&
-    /* Somebody who has asked for less transparency has asked for exactly this
-       feature to be off. */
-    typeof window !== "undefined" &&
-    !window.matchMedia("(prefers-reduced-transparency: reduce)").matches;
-
-  const glassOn = glassSupported && contracted && !open && !scrolling;
-
-  /* Active-chapter tracking. Home only, and rebuilt when the route changes —
-     with `[]` deps this ran once on mount, so arriving on a case file left the
-     observer permanently unattached and the nav dead for the rest of the
-     session, including after navigating back to the home page. */
+  /* Active-chapter tracking. Home only, and rebuilt when the route changes. */
   useEffect(() => {
-    /* No need to clear `observed` off-route — `active` already ignores it
-       there, and writing state from an effect to represent something already
-       derivable is how you get a render cascade. */
     if (!isHome) return;
-
     /* The static list, not the translated one: only the hrefs are read, and
        they are the same in every language — depending on the translated
        array would tear the observer down on every language switch. */
@@ -276,11 +161,12 @@ export function Navbar() {
     };
     const ro = new ResizeObserver(settle);
     ro.observe(document.body);
-    /* One last landing after the curtain has lifted, then hands off. */
+    /* One last landing after the curtain has lifted, then hands off. The ink
+       intro runs ~5s on a first view, so this waits longer than it used to. */
     const giveUp = window.setTimeout(() => {
       land();
       finish();
-    }, 3000);
+    }, 6500);
     const opts = { once: true, passive: true } as const;
     window.addEventListener("wheel", finish, opts);
     window.addEventListener("touchstart", finish, opts);
@@ -295,25 +181,12 @@ export function Navbar() {
     };
   }, [isHome, scrollTo]);
 
-  /* The dock only exists where there is a pointer to drive it. On touch the
-     magnification could only ever fire on tap — landing a label at 1.24x under
-     the finger that is already navigating away from it — and reduced motion has
-     asked for exactly this class of thing to stop. Measured once and on change
-     rather than read during render, so SSR and hydration agree on `false`. */
-  useEffect(() => {
-    const mq = window.matchMedia("(hover: hover) and (pointer: fine)");
-    const update = () => setDockable(mq.matches && !reduced);
-    update();
-    mq.addEventListener("change", update);
-    return () => mq.removeEventListener("change", update);
-  }, [reduced]);
-
   /* Close the sheet the moment the viewport reaches the desktop breakpoint.
      The sheet and its toggle are both `min-[1080px]:hidden` (1280 in
-     Mongolian — see `deskQuery`), so widening the
-     window with it open hid the whole thing in CSS while `open` stayed true —
-     leaving a scroll lock held by a dialog that no longer exists on screen and
-     no control left to close it. The query must match the one in the class. */
+     Mongolian — see `deskQuery`), so widening the window with it open hid the
+     whole thing in CSS while `open` stayed true — leaving a scroll lock held
+     by a dialog that no longer exists on screen and no control left to close
+     it. The query must match the one in the class. */
   useEffect(() => {
     if (!open) return;
     const mq = window.matchMedia(deskQuery);
@@ -323,78 +196,45 @@ export function Navbar() {
     return () => mq.removeEventListener("change", check);
   }, [open, deskQuery]);
 
-  /* With the full link row showing, a bar narrower than 72rem cannot hold the
-     wordmark as well; the monogram carries the brand alone there. Phones never
-     show the row, so they always keep the name. */
-  const wordmarkFit = mn
-    ? "@max-[72rem]:min-[1280px]:hidden"
-    : "@max-[72rem]:min-[1080px]:hidden";
-
   const go = (href: string) => {
     scrollTo(href);
     setOpen(false);
   };
 
+  const brand = (
+    <>
+      <Monogram className="shrink-0" />
+      <span
+        className={cn(
+          "font-display text-lg text-fg",
+          /* With the full link row showing, a row under 70rem cannot hold the
+             wordmark too; the monogram carries the brand alone there. */
+          mn ? "@max-[70rem]:min-[1280px]:hidden" : "@max-[70rem]:min-[1080px]:hidden"
+        )}
+      >
+        {profile.wordmark}
+      </span>
+    </>
+  );
+
   return (
     <>
       <header className="fixed inset-x-0 top-0 z-[60]">
-        <motion.div
-          ref={barRef}
-          /* The glint: one custom property on the bar itself, written only
-             while the pointer is over it. */
-          onPointerMove={(e) => {
-            const el = barRef.current;
-            if (!el || !contracted) return;
-            const box = el.getBoundingClientRect();
-            el.style.setProperty("--gx", `${(((e.clientX - box.left) / box.width) * 100).toFixed(1)}%`);
+        {/* The scrim: only past the fold, and only a gradient — the frame
+            stays open; the HUD just keeps its legibility over the film. */}
+        <span
+          aria-hidden
+          className="pointer-events-none absolute inset-x-0 top-0 h-28 transition-opacity duration-500"
+          style={{
+            opacity: scrolled ? 1 : 0,
+            background: "linear-gradient(180deg, rgba(2,3,6,0.88) 0%, rgba(2,3,6,0.55) 45%, rgba(2,3,6,0) 100%)",
           }}
-          animate={{
-            /* 84rem, not 72: ten links, a status lamp and the controls do not
-               fit in 1152px, and the capsule's overflow hides the evidence. */
-            width: contracted ? "min(96%, 84rem)" : "100%",
-            y: contracted ? 14 : 0,
-          }}
-          transition={BAR_SPRING}
-          className={cn(
-            "@container relative mx-auto",
-            contracted && "rounded-full shadow-[0_18px_60px_rgba(0,0,0,0.6)]"
-          )}
-        >
-          {/* Tinted fill — what you actually see while scrolling. */}
-          {contracted && (
-            <span
-              aria-hidden
-              className="absolute inset-0 rounded-full bg-bg transition-opacity duration-[220ms]"
-              style={{ opacity: glassOn ? 0.42 : 0.92 }}
-            />
-          )}
-          {/* Glass — live only when the page is still. `liquid-glass-live`
-              carries the backdrop-filter (refraction on Chromium, blur
-              elsewhere), and it is on the element only while `glassLive`. */}
-          {contracted && glassSupported && (
-            <span
-              aria-hidden
-              className={cn(
-                "absolute inset-0 rounded-full transition-opacity duration-[220ms]",
-                glassLive && "liquid-glass-live"
-              )}
-              style={{
-                opacity: glassOn ? 1 : 0,
-                background:
-                  "radial-gradient(40% 140% at var(--gx, 30%) 0%, rgba(255,255,255,0.12), transparent 70%)," +
-                  "linear-gradient(180deg, rgba(236,238,251,0.07), transparent 46%)",
-              }}
-            />
-          )}
-
-          <nav
-            className={cn(
-              "relative mx-auto flex h-16 flex-nowrap items-center justify-between gap-4 overflow-hidden transition-[padding] duration-300",
-              contracted ? "px-3 md:px-4" : "max-w-[1600px] px-5 md:px-8"
-            )}
-          >
-            {/* Wordmark. A real link off-route so it navigates home rather than
-                scrolling a page that has no #hero. */}
+        />
+        <nav className="@container relative mx-auto flex h-16 max-w-[1800px] flex-nowrap items-center justify-between gap-3 px-5 sm:gap-6 md:px-8 lg:px-10">
+          {/* Top-left: the brand, and where it is broadcasting from. A real
+              link off-route so it navigates home rather than scrolling a page
+              that has no #hero. */}
+          <div className="flex min-w-0 shrink-0 items-center gap-5">
             {isHome ? (
               <a
                 href="#hero"
@@ -402,138 +242,84 @@ export function Navbar() {
                   e.preventDefault();
                   go("#hero");
                 }}
-                className="flex shrink-0 items-center gap-2.5 rounded-full"
+                className="flex shrink-0 items-center gap-2.5"
                 aria-label={`${profile.wordmark} — ${t.nav.backToTop}`}
               >
-                <Monogram className="shrink-0" />
-                <span className={cn("font-display text-xl text-fg", wordmarkFit)}>
-                  {profile.wordmark}
-                </span>
+                {brand}
               </a>
             ) : (
               <Link
                 href="/"
-                className="flex shrink-0 items-center gap-2.5 rounded-full"
+                className="flex shrink-0 items-center gap-2.5"
                 aria-label={`${profile.wordmark} — ${t.nav.home}`}
               >
-                <Monogram className="shrink-0" />
-                <span className={cn("font-display text-xl text-fg", wordmarkFit)}>
-                  {profile.wordmark}
-                </span>
+                {brand}
               </Link>
             )}
+            <span aria-hidden className="hidden items-center gap-3 @[84rem]:flex">
+              <span className="h-3 w-px bg-line-strong" />
+              <span className="font-mono text-[0.6875rem] tabular tracking-[0.2em] text-faint">{COORDS}</span>
+            </span>
+          </div>
 
-            {/* Desktop links.
-                `shrink-0`, not `min-w-0`. Allowing this list to shrink below
-                its content does not make it overflow — flex just compresses it
-                until the last links sit *underneath* the status cluster, which
-                looks like a rendering fault and, worse, leaves
-                `nav.scrollWidth === nav.clientWidth`, so an overflow check
-                reports everything is fine. Refusing to shrink turns a silent
-                overlap into a visible overflow that the ladder below can be
-                measured against. */}
-            <ul
-              className={cn(
-                "hidden shrink-0 flex-nowrap items-center gap-0.5",
-                mn ? "min-[1280px]:flex" : "min-[1080px]:flex"
-              )}
-              onMouseMove={(e) => dockable && mouseX.set(e.clientX)}
-              onMouseLeave={() => mouseX.set(Infinity)}
-            >
-              {/* No INDEX here: the wordmark beside this row already goes to
-                  the top, and seven links plus the language switch and the
-                  rest crowded the capsule. The sheet, palette and footer keep
-                  it. */}
-              {navLinks.filter((l) => l.href !== "#hero").map((link) => (
-                <DockLink
-                  key={link.href}
-                  link={link}
-                  isActive={active === link.href}
-                  isHome={isHome}
-                  dockable={dockable}
-                  mouseX={mouseX}
-                  go={go}
-                />
-              ))}
+          {/* Top-right: the chapter index. `shrink-0`: a list allowed to
+              shrink is compressed under its neighbours rather than overflowing,
+              which reads as a rendering fault and hides from overflow checks. */}
+          <div className="flex shrink-0 items-center gap-3 sm:gap-6">
+            <ul className={cn("hidden shrink-0 flex-nowrap items-center", mn ? "min-[1280px]:flex" : "min-[1080px]:flex")}>
+              {/* No INDEX: the wordmark already goes to the top. The sheet,
+                  palette and footer keep it. */}
+              {navLinks
+                .filter((l) => l.href !== "#hero")
+                .map((link) => (
+                  <HudLink key={link.href} link={link} isActive={active === link.href} isHome={isHome} go={go} />
+                ))}
             </ul>
 
-            {/* Right: language, menu button.
-                The ladder here is the fix for the clipping — each item declares
-                the console width below which it is not worth its space. No
-                clock: the Ulaanbaatar time lives in the footer's end frame,
-                where it reads as a sign-off rather than as chrome competing
-                with the chapter links. */}
-            <div className="flex shrink-0 items-center gap-4">
-              <LangToggle className="hidden sm:flex" />
+            <LangToggle className="hidden sm:flex" />
 
-              <button
-                ref={toggleRef}
-                type="button"
-                onClick={() => setOpen((v) => !v)}
-                aria-label={open ? t.nav.closeMenu : t.nav.openMenu}
-                aria-expanded={open}
-                aria-controls="mobile-nav"
-                className={cn(
-                  "liquid-glass flex h-11 w-11 items-center justify-center rounded-full text-fg",
-                  mn ? "min-[1280px]:hidden" : "min-[1080px]:hidden"
-                )}
-              >
-                {/* Two strokes that cross into an X. */}
-                <span aria-hidden className="relative block h-4 w-4">
-                  {[-1, 1].map((d) => (
-                    <span
-                      key={d}
-                      className="absolute left-0 top-1/2 h-[1.5px] w-full rounded-full bg-current transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]"
-                      style={{
-                        transform: open
-                          ? `translateY(-50%) rotate(${d * 45}deg)`
-                          : `translateY(calc(-50% + ${d * 4}px))`,
-                      }}
-                    />
-                  ))}
-                </span>
-              </button>
-            </div>
-          </nav>
-
-          {/* The capsule's rim: a lit upper lip and a cool lower edge, drawn
-              over the content so it reads as the edge of the glass. */}
-          {contracted && (
-            <span
-              aria-hidden
-              className="pointer-events-none absolute inset-0 rounded-full"
-              style={{
-                boxShadow:
-                  "inset 0 1px 0 rgba(255,255,255,0.22), inset 0 0 0 1px rgba(236,238,251,0.1), inset 0 -1px 0 rgba(34,224,255,0.18)",
-              }}
-            />
-          )}
-
-          {/* Read-progress hairline along the bar's base. Pulled in from the
-              ends when contracted so it stays inside the capsule's curve. */}
-          <span
-            aria-hidden
-            className={cn(
-              "absolute bottom-0 h-px origin-left",
-              contracted ? "inset-x-10" : "inset-x-0"
-            )}
-            style={{
-              backgroundImage: "var(--gradient-spectrum)",
-              transform: `scaleX(${progress})`,
-              opacity: progress > 0.005 ? 0.9 : 0,
-              transition: "opacity 300ms linear",
-            }}
-          />
-        </motion.div>
+            <button
+              ref={toggleRef}
+              type="button"
+              onClick={() => setOpen((v) => !v)}
+              aria-label={open ? t.nav.closeMenu : t.nav.openMenu}
+              aria-expanded={open}
+              aria-controls="mobile-nav"
+              className={cn(
+                "hud-brackets flex h-11 items-center gap-3 px-3 font-mono text-[0.75rem] uppercase tracking-[0.24em] text-fg",
+                mn ? "min-[1280px]:hidden" : "min-[1080px]:hidden"
+              )}
+            >
+              <span aria-hidden className="hidden min-[420px]:inline [:root:lang(mn)_&]:normal-case [:root:lang(mn)_&]:tracking-[0.08em]">
+                {/* Below 420px the wordmark needs the room; the button keeps
+                    its accessible name either way. */}
+                {t.nav.index}
+              </span>
+              {/* Two hairlines of unequal length that cross into an X. */}
+              <span aria-hidden className="relative block h-3 w-5">
+                {[-1, 1].map((d) => (
+                  <span
+                    key={d}
+                    className="absolute right-0 top-1/2 h-px bg-current transition-[transform,width] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]"
+                    style={{
+                      width: open || d < 0 ? "100%" : "60%",
+                      transform: open
+                        ? `translateY(-50%) rotate(${d * 45}deg)`
+                        : `translateY(calc(-50% + ${d * 3.5}px))`,
+                    }}
+                  />
+                ))}
+              </span>
+            </button>
+          </div>
+        </nav>
       </header>
 
-      {/* Mobile full-screen sheet.
+      {/* The phone index: a full-screen sheet of big, developing links.
           A real modal: `z-80` so it is over the header rather than under it,
           and `aria-modal` so the page behind is gone from the a11y tree. That
-          last one is why it carries its own wordmark, lamp and close button —
-          the header's copies are outside the dialog, and `aria-modal` makes
-          them unreachable to a screen reader, so a sheet without its own close
-          affordance would have had no way out but the Escape key. */}
+          is why it carries its own wordmark and close button — the header's
+          copies are outside the dialog and unreachable to a screen reader. */}
       <AnimatePresence>
         {open && (
           <motion.div
@@ -544,10 +330,10 @@ export function Navbar() {
             aria-label={t.nav.siteMenu}
             initial={{ opacity: 0, clipPath: "inset(0 0 100% 0)" }}
             animate={{ opacity: 1, clipPath: "inset(0 0 0% 0)" }}
-            exit={{ opacity: 0, clipPath: "inset(0 0 100% 0)" }}
-            transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+            exit={{ opacity: 0, clipPath: "inset(100% 0 0 0)" }}
+            transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
             className={cn(
-              "liquid-glass-live fixed inset-0 z-[80] flex flex-col bg-bg/80 px-8",
+              "liquid-glass-live fixed inset-0 z-[80] flex flex-col overflow-hidden bg-[#020306]/85 px-6",
               mn ? "min-[1280px]:hidden" : "min-[1080px]:hidden"
             )}
             style={{
@@ -555,77 +341,86 @@ export function Navbar() {
               paddingBottom: "env(safe-area-inset-bottom)",
             }}
           >
-            <div className="holo-grid absolute inset-0 opacity-20" aria-hidden />
+            {/* The name, brushed, as a ghost down the sheet's right edge. */}
+            <InkSign tone="ghost" className="pointer-events-none absolute -right-2 top-[12%] h-[70%]" />
 
-            {/* The sheet's own header row. `h-16` matches the bar it covers, so
-                the wordmark lands on the same optical line it was already on
-                and the transition reads as the page opening rather than as two
-                headers swapping. */}
             <div className="relative flex h-16 shrink-0 items-center justify-between">
               <span className="flex items-center gap-3">
                 <Monogram className="shrink-0" />
-                <span className="font-display text-xl text-fg">
-                  {profile.wordmark}
-                </span>
+                <span className="font-display text-lg text-fg">{profile.wordmark}</span>
               </span>
               <button
                 type="button"
                 data-autofocus
                 onClick={closeSheet}
                 aria-label={t.nav.closeMenu}
-                className="liquid-glass -mr-2 flex h-11 w-11 items-center justify-center rounded-full text-fg"
+                className="hud-brackets -mr-1 flex h-11 w-11 items-center justify-center text-fg"
               >
-                <X size={18} />
+                <X size={18} strokeWidth={1.5} />
               </button>
             </div>
 
-            <ul className="relative my-auto space-y-1">
-              {navLinks.map((link, i) => (
-                <motion.li
-                  key={link.href}
-                  initial={{ opacity: 0, y: 24 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{
-                    delay: 0.05 * i,
-                    duration: 0.5,
-                    ease: [0.16, 1, 0.3, 1],
-                  }}
-                  className="border-b border-line"
-                >
-                  {isHome ? (
-                    <a
-                      href={link.href}
-                      onClick={(e) => {
-                        e.preventDefault();
-                        go(link.href);
-                      }}
-                      className="flex items-center gap-4 py-3"
+            <ul className="relative my-auto">
+              {navLinks.map((link, i) => {
+                const isActive = active === link.href;
+                const inner = (
+                  <>
+                    <span
+                      className={cn(
+                        "w-8 shrink-0 font-mono text-xs tabular",
+                        isActive ? "text-[var(--color-hazard)]" : "text-faint"
+                      )}
                     >
-                      <SheetGlyph href={link.href} code={link.code} />
-                      <span className="font-nav text-3xl font-semibold uppercase tracking-[0.14em] text-fg [:root:lang(mn)_&]:normal-case [:root:lang(mn)_&]:tracking-normal">
-                        {link.label}
-                      </span>
-                    </a>
-                  ) : (
-                    <Link
-                      href={`/${link.href}`}
-                      onClick={() => setOpen(false)}
-                      className="flex items-center gap-4 py-3"
-                    >
-                      <SheetGlyph href={link.href} code={link.code} />
-                      <span className="font-nav text-3xl font-semibold uppercase tracking-[0.14em] text-fg [:root:lang(mn)_&]:normal-case [:root:lang(mn)_&]:tracking-normal">
-                        {link.label}
-                      </span>
-                    </Link>
-                  )}
-                </motion.li>
-              ))}
+                      {link.code}
+                    </span>
+                    <span className="font-tech text-[clamp(2rem,9vw,3.25rem)] font-semibold uppercase leading-none tracking-[0.04em] text-fg [:root:lang(mn)_&]:normal-case [:root:lang(mn)_&]:tracking-normal">
+                      {link.label}
+                    </span>
+                    {isActive && (
+                      <span
+                        aria-hidden
+                        className="ml-auto h-1.5 w-1.5 self-center rounded-full bg-[var(--color-hazard)] shadow-[0_0_12px_var(--color-hazard)]"
+                      />
+                    )}
+                  </>
+                );
+                return (
+                  <motion.li
+                    key={link.href}
+                    /* Each line develops top to bottom, one after another —
+                       the site's one entrance, as a list. */
+                    initial={{ opacity: 0, clipPath: "inset(0 0 100% 0)", y: 10 }}
+                    animate={{ opacity: 1, clipPath: "inset(0 0 0% 0)", y: 0 }}
+                    transition={{ delay: 0.12 + 0.06 * i, duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
+                    className="border-b border-line"
+                  >
+                    {isHome ? (
+                      <a
+                        href={link.href}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          go(link.href);
+                        }}
+                        aria-current={isActive ? "location" : undefined}
+                        className="flex items-baseline gap-4 py-3.5"
+                      >
+                        {inner}
+                      </a>
+                    ) : (
+                      <Link
+                        href={`/${link.href}`}
+                        onClick={() => setOpen(false)}
+                        className="flex items-baseline gap-4 py-3.5"
+                      >
+                        {inner}
+                      </Link>
+                    )}
+                  </motion.li>
+                );
+              })}
             </ul>
             <div className="relative mb-6 flex shrink-0 flex-wrap items-center justify-between gap-4">
-              <a
-                href={`mailto:${contact.email}`}
-                className="hud-label flex h-11 items-center"
-              >
+              <a href={`mailto:${contact.email}`} className="hud-label flex h-11 items-center">
                 {contact.email}
               </a>
               <LangToggle />
@@ -638,82 +433,50 @@ export function Navbar() {
 }
 
 /**
- * One link in the dock.
+ * One link in the HUD: index, label, and the hairlines.
  *
- * Three things here are deliberate and each one is a fix rather than a taste:
- *
- * 1. **Scale, never width.** The capsule's row is `overflow-hidden` with
- *    `flex-nowrap` contents, so it clips overflow silently — no scrollbar, no
- *    warning, the tail links simply vanish past the curve. Animating the
- *    *width* of a magnified link would push the last two links out of the panel
- *    on any narrow-ish viewport. `scale` changes what you see and not what the
- *    row measures, so the layout is identical at rest and at full deflection.
- *    The growth is absorbed by the existing horizontal padding, which is why
- *    `PEAK` is 1.24 and not the reference's 1.6.
- *
- * 2. **`transformOrigin: 50% 100%`.** Growing from the baseline is what makes
- *    this read as a dock; growing from the centre reads as a zoom.
- *
- * 3. **The transform is not on the `MagneticButton`.** That component writes a
- *    raw CSS `transform` every frame for its own magnet effect, so the two
- *    would overwrite each other at frame rate. The dock transform goes on the
- *    `<li>`, outside it — the same reason the active pill already sits out
- *    there.
+ * The active hairline is one element on a `layoutId`, so it travels between
+ * links rather than blinking from one to the next. The hover hairline draws
+ * out from the left over 300ms with a little sodium light pooled under the
+ * label; both are transform/opacity only. The label decodes on hover and on
+ * focus (useScramble); its accessible name is a separate sr-only copy.
  */
-function DockLink({
+function HudLink({
   link,
   isActive,
   isHome,
-  dockable,
-  mouseX,
   go,
 }: {
   link: NavLink;
   isActive: boolean;
   isHome: boolean;
-  dockable: boolean;
-  mouseX: MotionValue<number>;
   go: (href: string) => void;
 }) {
-  const ref = useRef<HTMLLIElement>(null);
-
-  /* Signed distance from the pointer to this link's centre. Measured per frame
-     off the live rect rather than cached: the row reflows when the bar
-     contracts, and a cached centre would leave every link magnifying at the
-     wrong moment for the rest of the session. */
-  const distance = useTransform(mouseX, (x: number) => {
-    const box = ref.current?.getBoundingClientRect();
-    if (!box) return REACH * 2;
-    return x - box.left - box.width / 2;
-  });
-
-  const scale = useSpring(
-    useTransform(distance, [-REACH, 0, REACH], [1, PEAK, 1]),
-    DOCK_SPRING
-  );
-  const y = useSpring(
-    useTransform(distance, [-REACH, 0, REACH], [0, LIFT, 0]),
-    DOCK_SPRING
-  );
-  /* A tighter falloff than the scale, so the hairline belongs to one link
-     rather than smearing across three. */
-  const rule = useSpring(
-    useTransform(distance, [-REACH * 0.4, 0, REACH * 0.4], [0, 1, 0]),
-    DOCK_SPRING
-  );
-
   const { ref: scrambleRef, run: runScramble } = useScramble(link.label);
-  const label = (
+  const linkClass = cn(
+    "group/hud relative flex items-baseline gap-2 whitespace-nowrap px-2.5 py-3 font-nav text-[1.0625rem] font-semibold uppercase tracking-[0.2em] transition-colors duration-300 @[76rem]:px-3.5",
+    /* Exo 2 caps in Cyrillic run long; mixed case keeps the Mongolian row. */
+    "[:root:lang(mn)_&]:normal-case [:root:lang(mn)_&]:tracking-[0.02em]",
+    isActive ? "text-fg" : "text-muted hover:text-fg"
+  );
+  const parts = (
     <>
-      {/* The section's index, where the lucide glyph used to be: the HUD's
-          own wayfinding, and two mono digits are narrower than an icon. Still
-          the first thing to go when the capsule runs short. */}
+      {/* Light pooled under the label on hover. */}
+      <span
+        aria-hidden
+        className="pointer-events-none absolute inset-x-1 bottom-0 h-6 opacity-0 transition-opacity duration-300 group-hover/hud:opacity-100 group-focus-visible/hud:opacity-100"
+        style={{
+          background:
+            "radial-gradient(60% 100% at 50% 100%, color-mix(in srgb, var(--color-hazard) 22%, transparent), transparent)",
+        }}
+      />
+      {/* The index: the first thing to go when the row runs short. */}
       <span
         aria-hidden
         className={cn(
-          "hidden font-mono text-[0.6875rem] tabular tracking-normal transition-colors @[78rem]:inline",
+          "hidden font-mono text-[0.6875rem] tabular tracking-normal transition-colors duration-300 @[76rem]:inline",
           "[:root:lang(mn)_&]:hidden [:root:lang(mn)_&]:@[84rem]:inline",
-          isActive ? "text-[var(--color-hazard)]" : "text-faint"
+          isActive ? "text-[var(--color-hazard)]" : "text-faint group-hover/hud:text-[var(--color-hazard)]"
         )}
       >
         {link.code}
@@ -722,97 +485,52 @@ function DockLink({
       <span ref={scrambleRef} aria-hidden className="inline-block whitespace-nowrap">
         {link.label}
       </span>
-    </>
-  );
-
-  const linkClass = cn(
-    "relative flex items-center gap-2 whitespace-nowrap rounded-full px-2.5 py-2 font-nav text-[1.0625rem] font-semibold uppercase tracking-[0.2em] transition-colors @[76rem]:px-3.5",
-    /* Exo 2 caps in Cyrillic run long; mixed case keeps the Mongolian row
-       inside the console. */
-    "[:root:lang(mn)_&]:normal-case [:root:lang(mn)_&]:tracking-[0.02em]",
-    isActive ? "text-fg" : "text-muted hover:text-fg"
-  );
-
-  return (
-    <motion.li
-      ref={ref}
-      className="relative"
-      style={
-        dockable
-          ? { scale, y, transformOrigin: "50% 100%" }
-          : undefined
-      }
-    >
-      {/* The active section: sodium corner brackets and a faint amber
-          under-glow, sliding between links on one layoutId. It replaced the
-          glass droplet: a HUD targets things, it does not puddle under them. */}
+      {/* The hover hairline, drawn from the left. */}
+      {!isActive && (
+        <span
+          aria-hidden
+          className="pointer-events-none absolute inset-x-2.5 bottom-1 h-px origin-left scale-x-0 bg-fg/60 transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover/hud:scale-x-100 group-focus-visible/hud:scale-x-100 @[76rem]:inset-x-3.5"
+        />
+      )}
       {isActive && (
         <motion.span
           layoutId="nav-active"
           aria-hidden
-          className="hud-brackets hud-brackets-live absolute inset-0"
-          transition={{ layout: { type: "spring", stiffness: 420, damping: 36 } }}
+          className="pointer-events-none absolute inset-x-2.5 bottom-1 h-px bg-[var(--color-hazard)] shadow-[0_0_8px_var(--color-hazard),0_0_18px_color-mix(in_srgb,var(--color-hazard)_50%,transparent)] @[76rem]:inset-x-3.5"
+          transition={{ layout: { type: "spring", stiffness: 380, damping: 34 } }}
         />
       )}
-
-      <MagneticButton strength={0.2}>
-        {isHome ? (
-          <a
-            href={link.href}
-            onClick={(e) => {
-              e.preventDefault();
-              go(link.href);
-            }}
-            aria-current={isActive ? "location" : undefined}
-            onMouseEnter={runScramble}
-            onFocus={runScramble}
-            className={linkClass}
-          >
-            {label}
-          </a>
-        ) : (
-          <Link
-            href={`/${link.href}`}
-            aria-current={isActive ? "page" : undefined}
-            onMouseEnter={runScramble}
-            onFocus={runScramble}
-            className={linkClass}
-          >
-            {label}
-          </Link>
-        )}
-      </MagneticButton>
-
-      {!isActive && (
-        <span
-          aria-hidden
-          className="hud-brackets pointer-events-none absolute inset-0 scale-110 opacity-0 transition-[opacity,transform] duration-200 [li:hover>&]:scale-100 [li:hover>&]:opacity-100 [li:focus-within>&]:scale-100 [li:focus-within>&]:opacity-100"
-        />
-      )}
-
-      {/* The dock's indicator. A ramp hairline drawing itself under the nearest
-          link — the one piece of colour the row gets, and it replaces the
-          reference's floating tooltip, which would be repeating a word the
-          visitor is already reading. */}
-      {dockable && (
-        <motion.span
-          aria-hidden
-          className="spectrum-rule absolute inset-x-2 bottom-0 h-px origin-center"
-          style={{ scaleX: rule, opacity: rule }}
-        />
-      )}
-    </motion.li>
+    </>
   );
-}
 
-/** The sheet's row marker: the section glyph over its number. */
-function SheetGlyph({ href, code }: { href: string; code: string }) {
-  const Icon = NAV_ICONS[href];
   return (
-    <span className="liquid-glass flex h-10 w-10 shrink-0 flex-col items-center justify-center rounded-full">
-      {Icon && <Icon aria-hidden size={15} strokeWidth={1.75} className="text-fg" />}
-      <span className="spectrum-text font-mono text-[0.625rem] leading-none">{code}</span>
-    </span>
+    <li className="relative">
+      {isHome ? (
+        <a
+          href={link.href}
+          onClick={(e) => {
+            e.preventDefault();
+            go(link.href);
+          }}
+          aria-current={isActive ? "location" : undefined}
+          onMouseEnter={runScramble}
+          onFocus={runScramble}
+          className={linkClass}
+        >
+          {parts}
+        </a>
+      ) : (
+        <Link
+          href={`/${link.href}`}
+          aria-current={isActive ? "page" : undefined}
+          onMouseEnter={runScramble}
+          onFocus={runScramble}
+          className={linkClass}
+        >
+          {parts}
+        </Link>
+      )}
+    </li>
   );
 }
 
@@ -838,7 +556,7 @@ function flapFor(ch: string) {
  * never jostle the row. The accessible name is a separate sr-only copy, so
  * nothing ever hears the scramble.
  */
-function useScramble(text: string) {
+export function useScramble(text: string) {
   const ref = useRef<HTMLSpanElement>(null);
   const raf = useRef(0);
 
@@ -874,10 +592,9 @@ function useScramble(text: string) {
 }
 
 /**
- * Local time in Ulaanbaatar, HH:MM:SS. It used to be a UTC clock that
- * re-rendered the whole navbar every second; this one writes one text node
- * once a second and never re-renders. The server renders a placeholder, so
- * hydration always agrees. Footer only; the navbar no longer carries it.
+ * Local time in Ulaanbaatar, HH:MM:SS. It writes one text node once a second
+ * and never re-renders. The server renders a placeholder, so hydration always
+ * agrees. Footer only; the navbar does not carry it.
  */
 export function UbClock({
   /** Visibility classes. */

@@ -34,6 +34,8 @@ const en = {
     siteMenu: "Site menu",
     backToTop: "back to top",
     home: "home",
+    /** The phone's menu button, visible text. */
+    index: "Index",
   },
   hero: {
     aria: "Introduction",
@@ -218,6 +220,7 @@ const mn: UiStrings = {
     siteMenu: "Сайтын цэс",
     backToTop: "дээш буцах",
     home: "нүүр",
+    index: "Гарчиг",
   },
   hero: {
     aria: "Танилцуулга",

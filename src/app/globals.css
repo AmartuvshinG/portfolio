@@ -806,17 +806,6 @@ html.hud-cursor * {
 }
 
 
-/* Neon signage that has not been serviced in a while. Mostly lit, with a short
-   arrhythmic stutter — an even blink reads as a cursor, not as a failing tube. */
-@keyframes neon-flicker {
-  0%, 88%, 100% { opacity: 1; }
-  89% { opacity: 0.28; }
-  90.5% { opacity: 1; }
-  92% { opacity: 0.4; }
-  93% { opacity: 0.9; }
-}
-
-.neon-sign { animation: neon-flicker 9s steps(1, end) infinite; }
 
 /* Signal channel fields (ChannelField.tsx). Every loop is gated on `.cf-lit`,
    so only the open panel animates. */

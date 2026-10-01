@@ -1,14 +1,14 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { AnimatePresence, motion } from "framer-motion";
+import { useEffect, useRef, useState } from "react";
+import { useSmoothScroll } from "@/components/chrome/SmoothScroll";
 import { gsap, ScrollTrigger } from "@/lib/gsap";
 import { sectionIndex } from "@/lib/content";
 import { useI18n } from "@/lib/i18n";
 
 /**
  * The entire surviving HUD budget: a corner crosshair, two hairline gutter
- * rules, and chapter numbering. Everything else from the old NEXUS overlay —
+ * rules, chapter numbering, and the spine (scroll progress and chapter ticks). Everything else from the old NEXUS overlay —
  * scanlines, telemetry, tickers, the console dock — is gone.
  *
  * This is KPR's chrome, and the restraint is the point. Micro-type at the edges
@@ -84,48 +84,11 @@ export function ChapterFrame() {
         <span className="absolute left-1/2 top-1/2 h-3 w-px -translate-x-1/2 -translate-y-1/2 bg-current opacity-60" />
       </span>
 
-      {/* --- Signage, right gutter.
-              The chapter name as a lit sign hung off the edge of the frame,
-              which is the one piece of Kowloon vocabulary the site was missing:
-              in a neon city the type is not printed on things, it is *mounted*
-              on them and it glows onto whatever is behind it.
-
-              Cheap by construction. The glow is a blurred copy of the panel,
-              and a blur that only ever re-rasterises when the chapter changes
-              is nothing like a blur that re-rasterises per scroll frame — this
-              is fixed chrome, so nothing underneath it invalidates it. The
-              flicker is pure opacity. */}
-      <div className="absolute right-5 top-1/2 -translate-y-1/2 translate-x-[0.55rem]">
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={id}
-            initial={{ opacity: 0, y: 14 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -14 }}
-            transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
-            className="relative"
-          >
-            {/* The tube's spill. Sits behind the panel and is the only thing
-                that makes it read as lit rather than printed. */}
-            <span
-              aria-hidden
-              className="absolute inset-0 -z-10"
-              style={{
-                backgroundImage: "var(--gradient-spectrum)",
-                filter: "blur(13px)",
-                opacity: 0.55,
-              }}
-            />
-            <span
-              className="chamfer-sm neon-sign flex items-center gap-3 border border-line-strong bg-void/80 px-2 py-4 font-mono text-[0.75rem] uppercase tracking-[0.34em] text-fg"
-              style={{ writingMode: "vertical-rl" }}
-            >
-              <span className="spectrum-text font-semibold">{name}</span>
-              <span className="tabular opacity-45">{code}</span>
-            </span>
-          </motion.div>
-        </AnimatePresence>
-      </div>
+      {/* --- The spine, right gutter: the page as a reel. A hairline track,
+              a sodium fill for how far you are, and a tick where each
+              chapter begins. Hover a tick for its name; click to go. It
+              replaced a flickering neon tab that said only where you were. */}
+      <ChapterSpine chapters={chapters} active={active} />
 
       {/* Chapter numbering, set vertically in the left gutter.
           It reads bottom-to-top up the rule rather than sitting horizontally in
@@ -142,6 +105,116 @@ export function ChapterFrame() {
         <span className="h-6 w-px bg-current opacity-30" />
         <span className="micro !text-current opacity-70">{name}</span>
       </div>
+    </div>
+  );
+}
+
+/**
+ * The page as a reel, down the right gutter.
+ *
+ * Tick positions are where each chapter starts as a fraction of the scroll
+ * range, so the fill reaches a tick exactly as its chapter arrives. Measured on
+ * resize and when the page height changes; the fill is one transform written
+ * per scroll frame.
+ *
+ * The ticks are a pointer convenience, not navigation: the frame is
+ * aria-hidden, so they are taken out of the tab order (keyboard users have the
+ * navbar, the j/k keys and the palette).
+ */
+function ChapterSpine({ chapters, active }: { chapters: string[]; active: number }) {
+  const { c } = useI18n();
+  const { scrollTo } = useSmoothScroll();
+  const fillRef = useRef<HTMLSpanElement>(null);
+  const [marks, setMarks] = useState<number[]>([]);
+
+  useEffect(() => {
+    let raf = 0;
+    const measure = () => {
+      const max = document.documentElement.scrollHeight - window.innerHeight;
+      if (max <= 0) return;
+      setMarks(
+        chapters.map((id) => {
+          const el = document.getElementById(id);
+          if (!el) return 0;
+          return Math.min(1, Math.max(0, (el.getBoundingClientRect().top + window.scrollY) / max));
+        })
+      );
+    };
+    const paint = () => {
+      raf = 0;
+      const max = document.documentElement.scrollHeight - window.innerHeight;
+      const p = max > 0 ? Math.min(1, window.scrollY / max) : 0;
+      if (fillRef.current) fillRef.current.style.transform = `scaleY(${p.toFixed(4)})`;
+    };
+    const onScroll = () => {
+      if (!raf) raf = requestAnimationFrame(paint);
+    };
+    measure();
+    paint();
+    let t: ReturnType<typeof setTimeout> | undefined;
+    const ro = new ResizeObserver(() => {
+      clearTimeout(t);
+      t = setTimeout(() => {
+        measure();
+        paint();
+      }, 250);
+    });
+    ro.observe(document.body);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      cancelAnimationFrame(raf);
+      clearTimeout(t);
+      ro.disconnect();
+      window.removeEventListener("scroll", onScroll);
+    };
+  }, [chapters]);
+
+  /* Ends above the film's vertical reel timecode in the same gutter. */
+  return (
+    <div className="absolute bottom-[34vh] right-5 top-[18vh] w-px translate-x-1/2">
+      <span className="absolute inset-0 bg-current opacity-[0.14]" />
+      <span
+        ref={fillRef}
+        className="absolute inset-0 origin-top"
+        style={{
+          transform: "scaleY(0)",
+          background: "linear-gradient(180deg, color-mix(in srgb, var(--color-hazard) 30%, transparent), var(--color-hazard))",
+          boxShadow: "0 0 8px color-mix(in srgb, var(--color-hazard) 60%, transparent)",
+        }}
+      />
+      {marks.map((m, i) => {
+        const id = chapters[i];
+        const link = c.navLinks.find((l) => l.href === `#${id}`);
+        const on = i === active;
+        return (
+          <button
+            key={id}
+            type="button"
+            tabIndex={-1}
+            onClick={() => scrollTo(`#${id}`)}
+            className="group pointer-events-auto absolute left-1/2 flex h-5 w-5 -translate-x-1/2 -translate-y-1/2 items-center justify-center"
+            style={{ top: `${m * 100}%` }}
+          >
+            <span
+              className={
+                on
+                  ? "h-2 w-2 rotate-45 bg-[var(--color-hazard)] shadow-[0_0_10px_var(--color-hazard)] transition-all duration-300"
+                  : "h-1.5 w-1.5 rotate-45 border border-current opacity-50 transition-all duration-300 group-hover:opacity-100"
+              }
+            />
+            <span
+              className={
+                "pointer-events-none absolute right-6 whitespace-nowrap font-mono text-[0.6875rem] uppercase tracking-[0.22em] transition-[opacity,transform] duration-300 " +
+                (on
+                  ? "translate-x-0 text-[var(--color-hazard)] opacity-90"
+                  : "translate-x-1 text-fg opacity-0 group-hover:translate-x-0 group-hover:opacity-90")
+              }
+            >
+              <span className="tabular opacity-60">{link?.code ?? "--"}</span> {link?.label ?? id}
+            </span>
+          </button>
+        );
+      })}
     </div>
   );
 }
