@@ -1145,3 +1145,27 @@ html.hud-cursor * {
 @media (prefers-reduced-motion: reduce) {
   .hero-streak { display: none; }
 }
+
+/* The work monitor's reticle: four sodium corners on the picture, set a
+   little wide and closing onto it when the monitor is hovered (it is a
+   `group`). Gradient-painted, so no extra nodes. */
+.monitor-reticle {
+  position: absolute;
+  inset: 10px;
+  pointer-events: none;
+  --_c: color-mix(in srgb, var(--color-hazard) 85%, transparent);
+  background:
+    linear-gradient(var(--_c), var(--_c)) top left / 16px 1.5px no-repeat,
+    linear-gradient(var(--_c), var(--_c)) top left / 1.5px 16px no-repeat,
+    linear-gradient(var(--_c), var(--_c)) top right / 16px 1.5px no-repeat,
+    linear-gradient(var(--_c), var(--_c)) top right / 1.5px 16px no-repeat,
+    linear-gradient(var(--_c), var(--_c)) bottom left / 16px 1.5px no-repeat,
+    linear-gradient(var(--_c), var(--_c)) bottom left / 1.5px 16px no-repeat,
+    linear-gradient(var(--_c), var(--_c)) bottom right / 16px 1.5px no-repeat,
+    linear-gradient(var(--_c), var(--_c)) bottom right / 1.5px 16px no-repeat;
+  opacity: 0.35;
+  transform: scale(1.02);
+  transition: opacity 300ms, transform 450ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+.group:hover .monitor-reticle,
+.group:focus-visible .monitor-reticle { opacity: 1; transform: scale(0.985); }

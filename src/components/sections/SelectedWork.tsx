@@ -224,13 +224,18 @@ function Theatre({ sectionRef: ref }: { sectionRef: React.RefObject<HTMLElement 
                       WCAG 2.5.3 (label in name). The monitor is aria-hidden. */}
                   <span className="sr-only">{t.work.preview(current.title)}</span>
                   <div aria-hidden className="notch-card relative overflow-hidden bg-surface ring-1 ring-inset ring-line-strong shadow-[0_40px_120px_-20px_rgba(0,0,0,0.85)] transition-transform duration-300 ease-out group-hover:-translate-y-1">
-                    {/* Browser bar */}
-                    <div className="relative flex h-9 items-center gap-3 border-b border-line bg-deck px-4">
-                      <span className="flex gap-1.5" aria-hidden>
-                        {[0, 1, 2].map((d) => (
-                          <span key={d} className="h-2.5 w-2.5 rounded-full bg-fg/20" />
-                        ))}
+                    {/* The bezel: a field monitor's status strip, not a
+                        browser's traffic lights. The REC lamp, which file is
+                        up, then the real address of the build. */}
+                    <div className="relative flex h-9 items-center gap-3 border-b border-line bg-[#06070c] px-4">
+                      <span className="flex items-center gap-1.5 font-mono text-[0.625rem] tracking-[0.22em] text-fg/70" aria-hidden>
+                        <span className="h-1.5 w-1.5 rounded-full bg-[var(--color-seal)] shadow-[0_0_8px_var(--color-seal)]" />
+                        REC
                       </span>
+                      <span className="font-mono text-[0.625rem] tabular tracking-[0.22em] text-[var(--color-hazard)]" aria-hidden>
+                        {current.index}/{String(n).padStart(2, "0")}
+                      </span>
+                      <span className="h-3 w-px bg-line" aria-hidden />
                       <div className="relative h-5 flex-1">
                         {projects.map((p, i) => (
                           <Address key={p.slug} project={p} pos={pos} i={i} n={n} live={live} fallback={t.work.noSite} />
@@ -254,6 +259,8 @@ function Theatre({ sectionRef: ref }: { sectionRef: React.RefObject<HTMLElement 
                       </div>
                       <span aria-hidden className="monitor-veil" />
                       <span aria-hidden className="monitor-scan" />
+                      {/* Reticle corners on the picture, closing in on hover. */}
+                      <span aria-hidden className="monitor-reticle" />
                     </div>
                   </div>
                 </button>
@@ -389,9 +396,20 @@ function Glow({ color, ...layer }: Layer & { color: string }) {
       style={{
         opacity,
         willChange: promote(layer.live, "opacity"),
-        background: `radial-gradient(60% 55% at 70% 55%, color-mix(in srgb, ${color} 22%, transparent) 0%, transparent 70%)`,
+        background: `radial-gradient(60% 55% at 70% 58%, color-mix(in srgb, ${color} 20%, transparent) 0%, transparent 70%)`,
       }}
-    />
+    >
+      {/* A beam falling on the monitor from above the frame, in the file's
+          own colour: a light rig, not a backdrop. Static geometry; only the
+          layer's opacity moves. */}
+      <span
+        className="absolute inset-0"
+        style={{
+          clipPath: "polygon(52% 0, 80% 0, 100% 100%, 38% 100%)",
+          background: `linear-gradient(180deg, color-mix(in srgb, ${color} 16%, transparent) 0%, color-mix(in srgb, ${color} 6%, transparent) 55%, transparent 90%)`,
+        }}
+      />
+    </motion.div>
   );
 }
 
