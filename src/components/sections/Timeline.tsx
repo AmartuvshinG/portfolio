@@ -130,13 +130,20 @@ export function Timeline() {
         <Reveal className="mt-14">
           <span className="micro">{t.path.numbers}</span>
         </Reveal>
-        <dl className="mt-6 grid grid-cols-2 gap-x-6 gap-y-10 border-t border-line pt-10 md:grid-cols-4">
+        {/* A readout: each figure in its own channel behind a holo hairline.
+            The figures were sized to the viewport alone, so at 1440 "222K+"
+            ran into the "89%" beside it; now they are sized to their column
+            and can never meet. */}
+        <dl className="mt-6 grid grid-cols-2 gap-x-6 gap-y-10 border-t border-line pt-10 md:grid-cols-4 md:gap-x-0">
           {c.stats.map((stat) => (
-            <div key={stat.label} className="min-w-0">
-              <dd className="display-caps text-[clamp(2rem,5vw,4.25rem)] text-fg">
+            <div
+              key={stat.label}
+              className="@container flex min-w-0 flex-col border-l border-[color-mix(in_srgb,var(--color-holo)_45%,transparent)] pl-4 md:pl-6"
+            >
+              <dt className="order-2 mt-3 text-base leading-snug text-muted">{stat.label}</dt>
+              <dd className="display-caps order-1 whitespace-nowrap text-[clamp(1.75rem,21cqw,4rem)] text-fg">
                 <AnimatedCounter value={stat.value} suffix={stat.suffix} unit={stat.unit} />
               </dd>
-              <dt className="mt-3 text-base leading-snug text-muted">{stat.label}</dt>
             </div>
           ))}
         </dl>

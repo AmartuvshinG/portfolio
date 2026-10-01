@@ -650,7 +650,28 @@ html.hud-cursor * {
   display: inline-block;
   padding: 0.2em 0.55em 0.2em 0.65em;
   background: rgba(5, 6, 13, 0.72);
-  box-shadow: inset 2px 0 0 var(--color-hazard);
+  /* Its left edge is a sodium tube: the bar, and the light it throws. */
+  box-shadow: inset 2px 0 0 var(--color-hazard), -6px 0 14px -6px var(--color-hazard);
+}
+/* The tube strikes as the plate scrolls in — a stutter, then it holds —
+   scrubbed by the plate's own entry, so it happens once per pass and never
+   loops. Paint only, on a small element; where scroll-driven animation is
+   unsupported the tube is simply lit. */
+@supports (animation-timeline: view()) {
+  .kicker-plate {
+    animation: kicker-strike linear both;
+    animation-timeline: view();
+    animation-range: entry 20% entry 100%;
+  }
+}
+@keyframes kicker-strike {
+  0% { box-shadow: inset 2px 0 0 color-mix(in srgb, var(--color-hazard) 25%, transparent), -6px 0 14px -6px transparent; }
+  30% { box-shadow: inset 2px 0 0 var(--color-hazard), -6px 0 14px -6px var(--color-hazard); }
+  38% { box-shadow: inset 2px 0 0 color-mix(in srgb, var(--color-hazard) 35%, transparent), -6px 0 14px -6px transparent; }
+  52%, 100% { box-shadow: inset 2px 0 0 var(--color-hazard), -6px 0 14px -6px var(--color-hazard); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .kicker-plate { animation: none; }
 }
 
 /* The work monitor waking under the cursor (SelectedWork). One lean, one
