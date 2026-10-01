@@ -480,7 +480,8 @@ function HudLink({
         className={cn(
           "hidden font-mono text-[0.6875rem] tabular tracking-normal transition-colors duration-300 @[76rem]:inline",
           "[:root:lang(mn)_&]:hidden [:root:lang(mn)_&]:@[84rem]:inline",
-          isActive ? "text-[var(--color-hazard)]" : "text-faint group-hover/hud:text-[var(--color-hazard)]"
+          /* Muted, not faint: over the film, faint measured 4.28–4.49:1. */
+          isActive ? "text-[var(--color-hazard)]" : "text-muted group-hover/hud:text-[var(--color-hazard)]"
         )}
       >
         {link.code}
