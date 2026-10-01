@@ -9,6 +9,7 @@ import {
   useTransform,
 } from "framer-motion";
 import { useLockScroll } from "@/hooks/useLockScroll";
+import { usePointerDrift } from "@/hooks/usePointerDrift";
 import { markBooted } from "@/hooks/useBootReady";
 import { useI18n } from "@/lib/i18n";
 import { LedSign } from "@/components/chrome/LedSign";
@@ -90,6 +91,10 @@ export function Preloader() {
 
   /* The sign writes `lit`; the story animates `glow`. Everything else on the
      screen is a transform of these two, so nothing re-renders per frame. */
+  /* The parallax lives on the soft layers — the wall light and the rain — and
+     never on the sign: a sub-pixel transform on the canvas blurs every diode. */
+  const wallDrift = usePointerDrift(10);
+  const rainDrift = usePointerDrift(26);
   const lit = useMotionValue(0);
   const glow = useMotionValue(0);
   const room = useTransform(() => lit.get() * 0.35 + glow.get() * 0.65);
@@ -151,16 +156,18 @@ export function Preloader() {
           exit={{ y: "-100%" }}
           transition={{ duration: 0.9, ease: [0.76, 0, 0.24, 1] }}
         >
-          {/* The wall behind the sign, lit by it. */}
-          <motion.div
-            aria-hidden
-            className="pointer-events-none absolute inset-0"
-            style={{
-              opacity: room,
-              background:
-                "radial-gradient(ellipse 34% 52% at 50% 46%, rgba(255,150,52,0.26), rgba(255,106,26,0.08) 48%, rgba(5,6,13,0) 74%)",
-            }}
-          />
+          {/* The wall behind the sign, lit by it. Bled past the frame so its
+              drift never shows an edge. */}
+          <div ref={wallDrift} aria-hidden className="pointer-events-none absolute -inset-8">
+            <motion.div
+              className="absolute inset-0"
+              style={{
+                opacity: room,
+                background:
+                  "radial-gradient(ellipse 34% 52% at 50% 46%, rgba(255,150,52,0.26), rgba(255,106,26,0.08) 48%, rgba(5,6,13,0) 74%)",
+              }}
+            />
+          </div>
 
           {/* The street catching the light: the glow horizon, in sodium.
               The box is nearly twice the frame's width and runs under its
@@ -179,7 +186,9 @@ export function Preloader() {
             className="preloader-rain-light pointer-events-none absolute inset-0"
             style={{ opacity: rain }}
           >
-            <div className="preloader-rain absolute inset-0" />
+            <div ref={rainDrift} className="absolute -inset-8">
+              <div className="preloader-rain absolute inset-0" />
+            </div>
           </motion.div>
 
           {/* The film's scanlines. */}

@@ -3,7 +3,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { MotionValue } from "framer-motion";
 import { createPainter, layoutLeds, type LedPainter } from "@/lib/ledSign";
-import { usePointerDrift } from "@/hooks/usePointerDrift";
 import { NeonSign } from "@/components/ui/NeonSign";
 import { cn } from "@/lib/utils";
 
@@ -24,6 +23,13 @@ const SKIP_MS = 140;
  * stopped changing; a glow change restarts it. Nothing here runs at idle.
  *
  * Height comes from the parent; the width follows from the panel's shape.
+ *
+ * **Pin-sharp.** The pitch is a whole number of device pixels, the canvas is
+ * backed at exactly cols·pitch × rows·pitch and shown at that ÷ dpr, and its
+ * origin is nudged onto a whole device pixel after layout. Nothing moves it
+ * afterwards — the pointer drift that used to sit on it wrote sub-pixel
+ * transforms every frame, which resampled the whole sign into a blur. The
+ * room and the rain carry the parallax instead.
  */
 export function LedSign({
   text,
@@ -46,7 +52,6 @@ export function LedSign({
   const layout = useMemo(() => layoutLeds(), []);
   const boxRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const drift = usePointerDrift(12);
   const [fallback, setFallback] = useState(false);
   const skipRef = useRef(skip);
   /* Restart hook for the loop, set by the effect below. */
@@ -73,17 +78,26 @@ export function LedSign({
        painter would hand drawImage an empty sprite, which throws. */
     let painter: LedPainter | null = null;
     const size = () => {
-      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      // Up to 3x: the canvas is small, and a phone's 3x panel deserves it.
+      const dpr = Math.min(window.devicePixelRatio || 1, 3);
       const cssH = box.clientHeight;
       if (cssH < 8) {
         painter = null;
         return;
       }
-      painter = createPainter(ctx, layout, cssH, dpr);
+      const pitch = Math.max(3, Math.floor((cssH * dpr) / layout.rows));
+      painter = createPainter(ctx, layout, pitch);
       canvas.width = painter.width;
       canvas.height = painter.height;
-      canvas.style.height = `${cssH}px`;
-      canvas.style.width = `${(cssH * layout.cols) / layout.rows}px`;
+      canvas.style.width = `${painter.width / dpr}px`;
+      canvas.style.height = `${painter.height / dpr}px`;
+      // Onto the device grid: whatever fraction of a device pixel the
+      // centring left us at, take it back.
+      canvas.style.transform = "";
+      const r = canvas.getBoundingClientRect();
+      const fx = (Math.round(r.left * dpr) - r.left * dpr) / dpr;
+      const fy = (Math.round(r.top * dpr) - r.top * dpr) / dpr;
+      canvas.style.transform = `translate(${fx}px, ${fy}px)`;
     };
     size();
 
@@ -148,7 +162,7 @@ export function LedSign({
 
   return (
     <div ref={boxRef} className={cn("relative flex justify-center", className)}>
-      <div ref={drift}>
+      <div>
         {fallback ? (
           <NeonSign
             text={text}
