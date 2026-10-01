@@ -11,6 +11,7 @@ import {
 import { useReducedMotion } from "@/hooks/useReducedMotion";
 import { useI18n } from "@/lib/i18n";
 import { cn, srand } from "@/lib/utils";
+import { GlowHorizon } from "@/components/ui/GlowHorizon";
 
 /**
  * The join between two sections.
@@ -112,15 +113,25 @@ export function ChapterSeam({
           {near && wipe && <Shutter progress={scrollYProgress} />}
           {near && <ChapterCard anchor={ref} progress={scrollYProgress} />}
 
-          {/* No glow arc while the film is the ground. The arc is a crest of
-              light against a *painted* void core — the ground colour — which
-              vanishes over a flat ground and is an opaque dark disc over a
-              picture: it drew a hard-edged band under every seam. Cut out
-              with a mask instead, its container edges showed as a boxed band.
-              The film's own scene change now marks the join. To bring the arc
-              back (e.g. if the aurora returns): `<GlowHorizon lite
-              variant="top" intensity={0.42} progress={scrollYProgress}
-              />` here, gated on `near`. */}
+          {/* The glow arc, as rings. The filled arc is a crest of light
+              against a *painted* void core — the ground colour — which is an
+              opaque dark disc over the film: it drew a hard-edged band under
+              every seam, and hollowing it with a mask showed the container's
+              box instead. The `ring` form has no core at all: only the
+              blurred rims exist, so there is nothing to paint dark and
+              nothing to cut out. Intensity is measured, not chosen: the
+              rim crosses the section kicker, and at 0.5 it pulled "01 —
+              ABOUT ME" to 4.41:1 and "06 — CONTACT" to 4.28:1; at 0.3 the
+              lowest is 4.70. (Over a flat ground again, the old form is
+              `<GlowHorizon lite variant="top" … />`.) */}
+          {near && (
+            <GlowHorizon
+              form="ring"
+              variant="top"
+              intensity={0.3}
+              progress={scrollYProgress}
+            />
+          )}
 
           {/* The hairline. Draws from the centre outward so the join reads as
               something opening rather than something sliding in from one side.

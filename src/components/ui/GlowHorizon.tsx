@@ -55,6 +55,8 @@ interface ArcSpec {
   delay: number;
   /** Arcs with an offset slide a little further on their own timing. */
   offset?: boolean;
+  /** Draw only a border this many px wide — a ring, not a filled disc. */
+  ring?: number;
 }
 
 /**
@@ -91,6 +93,44 @@ const SEAM_ARCS: ArcSpec[] = [
   { color: "#05060d", size: "120%", blur: 42, delay: 0, offset: true },
 ];
 
+/**
+ * Sodium: the street-light half of the palette, for the preloader — the LED
+ * sign's light spilling onto the street. Same structure (crest, two colours,
+ * the void last), so it is the same gesture in a warmer key, and quicker: it
+ * has well under two seconds on screen before the curtain lifts. No cool
+ * colour in it: with a teal rim the arc read as a lit planet from orbit —
+ * which is exactly what got it taken out of the hero.
+ */
+const SODIUM_ARCS: ArcSpec[] = [
+  {
+    color: "#fff1dc",
+    size: "132%",
+    boxShadow: "0px -4px 23px 0px rgba(255,214,160,0.7)",
+    delay: 0.6,
+  },
+  { color: "#ffa02b", size: "120%", blur: 31, delay: 0.3, offset: true },
+  { color: "#ff6a1a", size: "126%", blur: 44, delay: 0.15, offset: true },
+  /* The void is home from the start (no offset): the stack is on screen for
+     ~1.5s, and a void still sliding in left the floor glowing brown. */
+  { color: "#05060d", size: "120%", blur: 51, delay: 0 },
+];
+
+/**
+ * Light-only seam stack, for use over a picture (`form="ring"`). Over the film
+ * the usual void arc is an opaque dark band, and hollowing a filled stack with
+ * a CSS mask clips each blurred arc's glow at its own box — a boxed edge. So
+ * these arcs are *rings*: a blurred elliptical border with nothing inside.
+ * Only the rim exists, so there is nothing to hollow and nothing to clip;
+ * the container's own edges sit off-screen (sides) or above the crown (top).
+ * `mix-blend-mode` would not help either: every section is its own stacking
+ * context, so a blend never reaches the backdrop.
+ */
+const RING_ARCS: ArcSpec[] = [
+  { color: "#22e0ff", size: "122%", blur: 22, ring: 14, delay: 0.3, offset: true },
+  { color: "#ff2d8f", size: "128%", blur: 30, ring: 18, delay: 0, offset: true },
+  { color: "rgba(255,238,220,0.55)", size: "124%", blur: 1, ring: 1.5, delay: 0 },
+];
+
 export interface GlowHorizonProps {
   className?: string;
   variant?: GlowHorizonVariant;
@@ -102,6 +142,13 @@ export interface GlowHorizonProps {
   delay?: number;
   /** Use the cheaper three-arc stack. Every scroll-mounted instance should. */
   lite?: boolean;
+  /** `sodium` is the warm street-light stack (preloader). */
+  palette?: "spectrum" | "sodium";
+  /**
+   * `ring` draws only the rims (no void, nothing inside): the one form that
+   * can sit over the film. See RING_ARCS.
+   */
+  form?: "fill" | "ring";
 }
 
 export function GlowHorizon({
@@ -111,9 +158,11 @@ export function GlowHorizon({
   progress,
   delay = 0,
   lite = false,
+  palette = "spectrum",
+  form = "fill",
 }: GlowHorizonProps) {
   const reduced = useReducedMotion();
-  const arcs = lite ? SEAM_ARCS : ARCS;
+  const arcs = form === "ring" ? RING_ARCS : palette === "sodium" ? SODIUM_ARCS : lite ? SEAM_ARCS : ARCS;
   const { axis, scaleAxis, enterPct, restPct } = VARIANTS[variant];
 
   return (
@@ -221,7 +270,9 @@ function Arc({
       className="absolute inset-0 rounded-[100%]"
       style={{
         scale: parseFloat(arc.size) / 100,
-        background: arc.color,
+        ...(arc.ring
+          ? { border: `${arc.ring}px solid ${arc.color}` }
+          : { background: arc.color }),
         ...(arc.blur !== undefined && { filter: `blur(${arc.blur}px)` }),
         ...(arc.boxShadow && { boxShadow: arc.boxShadow }),
       }}
