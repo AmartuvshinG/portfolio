@@ -1,11 +1,16 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { INK_NAME } from "@/lib/inkName";
+import { brushAt } from "@/lib/inkPath";
+import { createLightBrush, loadInkImage, LIGHT_PAD } from "@/lib/lightBrush";
+import { enqueueWrite, onRewrite } from "@/lib/inkWriteQueue";
+import { useReducedMotion } from "@/hooks/useReducedMotion";
+import { useI18n } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 
 /**
- * The intro's calligraphy, as a static sign: the brushed name from the bake
+ * The intro's calligraphy, as a sign: the brushed name from the bake
  * (`ink-name-mask.png`, dry-brush streaks and all) used as a mask, so it can
  * be filled with anything — sodium neon in the hero, ink on a plate, a ghost
  * in the margin.
@@ -18,67 +23,199 @@ import { cn } from "@/lib/utils";
  * Tones:
  *   neon   sodium tube: a hot core and a static glow (a drop-shadow on the
  *          wrapper — filters apply before masks, so the glow cannot sit on
- *          the masked element itself). Strikes on with a stutter when lit;
- *          `idle` adds a rare dip, opacity only.
+ *          the masked element itself). `idle` adds a rare dip, opacity only.
  *   ink    sumi, for a paper-coloured ground.
  *   ghost  the name barely there, for margins.
+ *
+ * Lighting (`lit`):
+ *   true / false   on or unlit glass.
+ *   "view"         strikes on, with a stutter, the first time it is seen.
+ *   "write"        the intro's brush again, in light: when it is on screen
+ *                  the dark tube lights along the brush's own route, stroke
+ *                  by stroke, with a spark at the front (lib/lightBrush). Then
+ *                  the static sign takes over and the context is released.
+ *                  One sign writes at a time (lib/inkWriteQueue). With
+ *                  `rewritable`, a click writes it again; so does the
+ *                  palette's "Rewrite signs". Without WebGL it strikes on.
  *
  * Decorative: always aria-hidden. Height comes from `className`; the width
  * follows the bake's aspect ratio.
  */
+
+/** How long a sign takes to write, s, and how long the fresh light cools. */
+const WRITE_SECS = 3.4;
+const SETTLE_SECS = 0.7;
+const LEAD_SECS = 0.25;
+
+type Phase = "dark" | "writing" | "lit" | "struck";
+
 export function InkSign({
   tone = "neon",
   lit = true,
   idle = false,
+  rewritable = false,
   className,
   style,
 }: {
   tone?: "neon" | "ink" | "ghost";
-  /** true, false, or "view" to strike the first time it scrolls into view. */
-  lit?: boolean | "view";
+  lit?: boolean | "view" | "write";
   idle?: boolean;
+  /** Click to write it again (a `lit="write"` sign only). */
+  rewritable?: boolean;
   className?: string;
   style?: React.CSSProperties;
 }) {
+  const { t } = useI18n();
+  const reduced = useReducedMotion();
   const ref = useRef<HTMLSpanElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
   const [seen, setSeen] = useState(false);
+  const [inView, setInView] = useState(false);
+  const [phase, setPhaseState] = useState<Phase>("dark");
+  /* The effect below must not re-run on the phases it sets itself — that
+     would cancel the write the moment it started — so it reads this. */
+  const phaseRef = useRef<Phase>("dark");
+  const setPhase = useCallback((p: Phase) => {
+    phaseRef.current = p;
+    setPhaseState(p);
+  }, []);
+  const [run, setRun] = useState(0);
+  const write = lit === "write" && !reduced;
+
   useEffect(() => {
-    if (lit !== "view") return;
+    if (lit !== "view" && lit !== "write") return;
     const el = ref.current;
     if (!el) return;
     const io = new IntersectionObserver(
       ([e]) => {
-        if (e.isIntersecting) {
-          setSeen(true);
-          io.disconnect();
-        }
+        setInView(e.isIntersecting);
+        if (e.isIntersecting) setSeen(true);
       },
       { rootMargin: "0px 0px -15% 0px" }
     );
     io.observe(el);
     return () => io.disconnect();
   }, [lit]);
-  const on = lit === "view" ? seen : lit;
+
+  /* The write: queued, then a few seconds of light, then handed to CSS. */
+  useEffect(() => {
+    if (!write || !inView || phaseRef.current !== "dark") return;
+    const box = ref.current;
+    let cancelled = false;
+    let raf = 0;
+    let finish = () => {};
+    const cancel = enqueueWrite(async (done) => {
+      const canvas = canvasRef.current;
+      const image = await loadInkImage(INK_NAME.src);
+      if (cancelled) return done();
+      const rect = box?.getBoundingClientRect();
+      const renderer =
+        canvas && image && rect && rect.width > 4 ? createLightBrush(canvas, image, INK_NAME, rect.width, rect.height) : null;
+      if (!renderer) {
+        setPhase("struck");
+        return done();
+      }
+      setPhase("writing");
+      const t0 = performance.now();
+      let ended = false;
+      finish = () => {
+        if (ended) return;
+        ended = true;
+        cancelAnimationFrame(raf);
+        // Also on leaving mid-write: come back to a finished sign.
+        setPhase("lit");
+        // Let the canvas fade over the static sign before the context goes.
+        window.setTimeout(() => {
+          renderer.dispose();
+          done();
+        }, 450);
+      };
+      const frame = (now: number) => {
+        const s = (now - t0) / 1000 - LEAD_SECS;
+        const wt = s / WRITE_SECS;
+        const b = brushAt(wt);
+        renderer.draw({
+          t: wt,
+          secs: WRITE_SECS,
+          tipX: b.x,
+          tipY: b.y,
+          tipLift: b.lift,
+          tipVis: Math.min(1, Math.max(0, (wt + 0.04) / 0.04)) * Math.max(0, 1 - Math.max(0, wt - 1) / 0.05),
+        });
+        if (s > WRITE_SECS + SETTLE_SECS) return finish();
+        raf = requestAnimationFrame(frame);
+      };
+      raf = requestAnimationFrame(frame);
+    });
+    return () => {
+      cancelled = true;
+      cancel();
+      finish();
+    };
+    // `run` restarts it after a rewrite has set the phase back to dark.
+  }, [write, inView, run, setPhase]);
+
+  const rewrite = useCallback(() => {
+    if (!write) return;
+    if (phaseRef.current !== "lit" && phaseRef.current !== "struck") return;
+    setPhase("dark");
+    setRun((n) => n + 1);
+  }, [write, setPhase]);
+
+  useEffect(() => {
+    if (!write) return;
+    return onRewrite(() => {
+      if (inView) rewrite();
+    });
+  }, [write, inView, rewrite]);
+
+  const on =
+    lit === "write"
+      ? reduced || phase === "lit" || phase === "struck"
+      : lit === "view"
+        ? seen
+        : lit;
 
   return (
     <span
       ref={ref}
       aria-hidden
-      data-tone={tone}
-      data-lit={on ? "" : undefined}
-      data-idle={idle ? "" : undefined}
-      className={cn("ink-sign block", className)}
+      className={cn("relative block", rewritable && write && "pointer-events-auto cursor-pointer", className)}
       style={{ aspectRatio: `${INK_NAME.width} / ${INK_NAME.height}`, ...style }}
+      onClick={rewritable ? rewrite : undefined}
+      data-cursor-label={rewritable && write ? t.common.rewrite : undefined}
     >
       <span
-        className="ink-sign-fill block h-full w-full"
-        style={{
-          WebkitMaskImage: `url(${INK_NAME.mask})`,
-          maskImage: `url(${INK_NAME.mask})`,
-          WebkitMaskSize: "100% 100%",
-          maskSize: "100% 100%",
-        }}
-      />
+        data-tone={tone}
+        data-lit={on ? "" : undefined}
+        data-idle={idle ? "" : undefined}
+        // Written, not struck: the light already ran through it, so no stutter.
+        data-written={phase === "lit" ? "" : undefined}
+        className="ink-sign absolute inset-0 block"
+      >
+        <span
+          className="ink-sign-fill block h-full w-full"
+          style={{
+            WebkitMaskImage: `url(${INK_NAME.mask})`,
+            maskImage: `url(${INK_NAME.mask})`,
+            WebkitMaskSize: "100% 100%",
+            maskSize: "100% 100%",
+          }}
+        />
+      </span>
+      {lit === "write" && !reduced && (
+        <canvas
+          ref={canvasRef}
+          className="pointer-events-none absolute transition-opacity duration-[450ms]"
+          style={{
+            left: -LIGHT_PAD,
+            top: -LIGHT_PAD,
+            width: `calc(100% + ${LIGHT_PAD * 2}px)`,
+            height: `calc(100% + ${LIGHT_PAD * 2}px)`,
+            opacity: phase === "writing" ? 1 : 0,
+          }}
+        />
+      )}
     </span>
   );
 }

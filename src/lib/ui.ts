@@ -195,6 +195,8 @@ const en = {
   },
   common: {
     newTab: "(opens in a new tab)",
+    /** The cursor's label over a written neon sign: click and it writes again. */
+    rewrite: "REWRITE",
   },
   notFound: {
     eyebrow: "Page not found",
@@ -386,6 +388,7 @@ const mn: UiStrings = {
   },
   common: {
     newTab: "(шинэ цонхонд нээгдэнэ)",
+    rewrite: "ДАХИН БИЧИХ",
   },
   notFound: {
     eyebrow: "Хуудас олдсонгүй",

@@ -122,7 +122,7 @@ export function About() {
               aria-hidden
               className="pointer-events-none absolute inset-y-0 right-0 hidden w-20 items-center justify-center border-l border-line md:flex"
             >
-              <InkSign tone="neon" lit="view" idle className="h-[min(78%,22rem)]" />
+              <InkSign tone="neon" lit="write" idle rewritable className="h-[min(78%,22rem)]" />
             </div>
           </div>
         </Reveal>

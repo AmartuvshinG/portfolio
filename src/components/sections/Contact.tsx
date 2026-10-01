@@ -53,11 +53,14 @@ export function Contact() {
     >
       <ChapterSeam wipe />
 
-      {/* The hero's sign again, unlit: a ghost of the name in Mongol bichig
-          down the right margin, behind the astronaut. */}
+      {/* The bookend: the hero's sign again, down the right margin, written
+          in light once more as you arrive — dimmer, a sign further down the
+          street, so it never competes with the address. */}
       <InkSign
-        tone="ghost"
-        className="pointer-events-none absolute right-[1.5%] top-[14%] hidden h-[min(64vh,40rem)] md:block"
+        tone="neon"
+        lit="write"
+        idle
+        className="pointer-events-none absolute right-[1.5%] top-[14%] hidden h-[min(64vh,40rem)] opacity-45 md:block"
       />
 
       <div className="relative mx-auto max-w-[1800px] px-5 md:px-8 lg:px-16">

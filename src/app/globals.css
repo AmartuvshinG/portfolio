@@ -720,6 +720,10 @@ html.hud-cursor * {
 .ink-sign[data-tone="neon"][data-lit][data-idle] {
   animation: ink-strike 0.9s steps(1, end) both, ink-idle 7.3s 2s linear infinite;
 }
+/* Written, not struck: the light already ran through the tube (lib/
+   lightBrush), so it comes on without the stutter and only idles. */
+.ink-sign[data-tone="neon"][data-lit][data-written] { animation: none; }
+.ink-sign[data-tone="neon"][data-lit][data-written][data-idle] { animation: ink-idle 7.3s 2s linear infinite; }
 .ink-sign[data-tone="ink"] .ink-sign-fill { background: var(--color-ink); }
 .ink-sign[data-tone="ghost"] .ink-sign-fill {
   background: linear-gradient(180deg, color-mix(in srgb, var(--color-fg) 10%, transparent), color-mix(in srgb, var(--color-fg) 4%, transparent));

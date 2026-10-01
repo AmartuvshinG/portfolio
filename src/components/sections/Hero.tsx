@@ -183,8 +183,10 @@ export function Hero() {
           style={reduced ? undefined : { y: copyY }}
         >
           <div className="script-sign relative px-3 py-5">
-            {/* The intro's brushwork, turned into the city's neon. */}
-            <InkSign tone="neon" lit={lit} idle className="h-[min(21vh,13rem)]" />
+            {/* The intro's brushwork, turned into the city's neon: the tube
+                lights along the brush's route, the name written again in
+                light as the curtain clears. Click it to write it again. */}
+            <InkSign tone="neon" lit={reduced ? true : lit ? "write" : false} idle rewritable className="h-[min(21vh,13rem)]" />
           </div>
         </motion.div>
 
