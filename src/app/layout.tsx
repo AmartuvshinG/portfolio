@@ -16,6 +16,7 @@ import { LocaleProvider } from "@/lib/i18n";
 import { ActTheme } from "@/components/chrome/ActTheme";
 import { SiteBackdrop } from "@/components/backdrop/SiteBackdrop";
 import { Preloader } from "@/components/chrome/Preloader";
+import { Letterbox } from "@/components/chrome/Letterbox";
 import { ChapterFrame } from "@/components/chrome/ChapterFrame";
 import { HudCursor } from "@/components/chrome/HudCursor";
 import { Diagnostics } from "@/components/chrome/Diagnostics";
@@ -201,6 +202,7 @@ export default function RootLayout({
             <LiquidGlassFilter />
 
             <Preloader />
+            <Letterbox />
             <HudCursor />
             <Diagnostics />
 
