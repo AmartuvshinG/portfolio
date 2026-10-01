@@ -459,13 +459,11 @@ export function Navbar() {
 
             {/* Right: language, menu button.
                 The ladder here is the fix for the clipping — each item declares
-                the console width below which it is not worth its space. There
-                used to be a live UTC clock here too: it re-rendered the navbar
-                every second to show a timezone nobody visiting needs, and after
-                the type scale went up it was the item pushing the controls off the
-                edge at 1440px. */}
+                the console width below which it is not worth its space. No
+                clock: the Ulaanbaatar time lives in the footer's end frame,
+                where it reads as a sign-off rather than as chrome competing
+                with the chapter links. */}
             <div className="flex shrink-0 items-center gap-4">
-              <UbClock />
               <LangToggle className="hidden sm:flex" />
 
               <button
@@ -879,12 +877,11 @@ function useScramble(text: string) {
  * Local time in Ulaanbaatar, HH:MM:SS. It used to be a UTC clock that
  * re-rendered the whole navbar every second; this one writes one text node
  * once a second and never re-renders. The server renders a placeholder, so
- * hydration always agrees. Shown only when the capsule has the room.
+ * hydration always agrees. Footer only; the navbar no longer carries it.
  */
 export function UbClock({
-  /** Visibility classes. The nav's default shows it only when the capsule
-   *  has room; the footer passes `flex`. */
-  className = "hidden @[80rem]:flex",
+  /** Visibility classes. */
+  className = "flex",
 }: {
   className?: string;
 }) {
