@@ -10,6 +10,7 @@ import { NeonSign } from "@/components/ui/NeonSign";
 import { ScrambleText } from "@/components/motion/ScrambleText";
 import { WordRevealLines } from "@/components/motion/WordReveal";
 import { Focus } from "@/components/hero/Entrance";
+import { InkSign } from "@/components/ui/InkSign";
 
 /**
  * The opening frame: the name at a scale that has to break to fit, over the
@@ -168,15 +169,8 @@ export function Hero() {
           style={reduced ? undefined : { y: copyY }}
         >
           <div className="script-sign relative px-3 py-5">
-            <NeonSign
-              text={profile.nameScript}
-              lit={lit}
-              tone="sodium"
-              idle
-              lang="mn-Mong"
-              className="font-script text-[clamp(1.6rem,2.3vw,2.6rem)] leading-none"
-              style={{ writingMode: "vertical-lr" }}
-            />
+            {/* The intro's brushwork, turned into the city's neon. */}
+            <InkSign tone="neon" lit={lit} idle className="h-[min(21vh,13rem)]" />
           </div>
         </motion.div>
 

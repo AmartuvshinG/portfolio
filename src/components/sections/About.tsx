@@ -5,10 +5,10 @@ import { useI18n } from "@/lib/i18n";
 import { Reveal, RevealStagger } from "@/components/motion/Reveal";
 import { fadeUp } from "@/lib/motion";
 import { ChapterSeam } from "@/components/chrome/ChapterSeam";
-import { NeonSign } from "@/components/ui/NeonSign";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
+import { InkSign } from "@/components/ui/InkSign";
 
 /**
  * Profile: the lead as a pull quote, three paragraphs, and a signature row.
@@ -121,15 +121,7 @@ export function About() {
               aria-hidden
               className="pointer-events-none absolute inset-y-0 right-0 hidden w-20 items-center justify-center border-l border-line md:flex"
             >
-              <NeonSign
-                text={profile.nameScript}
-                lit="view"
-                tone="sodium"
-                idle
-                lang="mn-Mong"
-                className="font-script text-[1.9rem] leading-none"
-                style={{ writingMode: "vertical-lr" }}
-              />
+              <InkSign tone="neon" lit="view" idle className="h-[min(78%,22rem)]" />
             </div>
           </div>
         </Reveal>

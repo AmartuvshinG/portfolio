@@ -8,6 +8,7 @@ import { Reveal } from "@/components/motion/Reveal";
 import { ChapterSeam } from "@/components/chrome/ChapterSeam";
 import { LinkedInMark } from "@/components/ui/BrandMarks";
 import { NeonSign } from "@/components/ui/NeonSign";
+import { InkSign } from "@/components/ui/InkSign";
 
 /**
  * The closing block: the address, large, and the two ways in.
@@ -53,14 +54,10 @@ export function Contact() {
 
       {/* The hero's sign again, unlit: a ghost of the name in Mongol bichig
           down the right margin, behind the astronaut. */}
-      <span
-        aria-hidden
-        lang="mn-Mong"
-        className="outline-text pointer-events-none absolute right-[3%] top-[18%] hidden font-script text-[clamp(5rem,9vw,10rem)] leading-none md:block"
-        style={{ writingMode: "vertical-lr" }}
-      >
-        {c.profile.nameScript}
-      </span>
+      <InkSign
+        tone="ghost"
+        className="pointer-events-none absolute right-[1.5%] top-[14%] hidden h-[min(64vh,40rem)] md:block"
+      />
 
       <div className="relative mx-auto max-w-[1800px] px-5 md:px-8 lg:px-16">
         <Reveal className="flex flex-col gap-4">
