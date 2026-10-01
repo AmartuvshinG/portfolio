@@ -88,6 +88,7 @@ uniform vec2 uLook;         // eased pointer, -1..1, +y down
 uniform float uOverscan;    // plate zoom that buys the look its headroom
 uniform float uCursorOn;    // 1 on a fine pointer
 uniform float uBloom;       // 0 or 1: halation + grain (full quality only)
+uniform float uGrade;       // 1 = the grade; 0 = the raw footage (the lab's split view)
 
 // Dave Hoskins' sin-free hash: identical on every GPU.
 float hash11(float p) {
@@ -190,7 +191,7 @@ void main() {
     float mx = max(c.r, max(c.g, c.b));
     float sat = (mx - min(c.r, min(c.g, c.b))) / (mx + 0.001);
     vec3 tone = mix(teal, uAmber * 1.25, smoothstep(0.12, 0.7, l)) * l * 1.35;
-    c = mix(c, tone, 0.5 * (1.0 - sat));
+    c = mix(c, tone, 0.5 * (1.0 - sat) * uGrade);
 
     // Anamorphic flare: a horizontal smear of the brightest lights.
     float flare = 0.0;
@@ -199,7 +200,7 @@ void main() {
       vec3 t = texture2D(uCity, clamp(cuv + vec2(fi * 0.02, 0.0), 0.001, 0.999)).rgb;
       flare += max(0.0, dot(t, lumW) - 0.7) * (1.0 - abs(fi) / 6.0);
     }
-    c += vec3(0.2, 0.75, 1.0) * flare * 0.2;
+    c += vec3(0.2, 0.75, 1.0) * flare * 0.2 * uGrade;
 
     // Halation: on film, the brightest lights bleed a warm, red-leaning
     // glow into the emulsion around them. Two rings of taps, a bright-pass
@@ -260,7 +261,7 @@ void main() {
   }
 
   // Scanlines, fixed to the screen.
-  col *= 1.0 - 0.07 * step(2.0, mod(px.y, 3.0));
+  col *= 1.0 - 0.07 * step(2.0, mod(px.y, 3.0)) * uGrade;
 
   // Film grain, stepped at 24 fps, heavier in the shadows the way a stock's
   // grain shows most in the dark. Drawn only on frames the film already
@@ -300,6 +301,8 @@ export interface FilmFrame {
   cursorOn: number;
   /** 1 for halation and grain (full quality), else 0. */
   bloom: number;
+  /** The grade (split-tone, flare, scanlines); 0 shows the raw footage. Default 1. */
+  grade?: number;
 }
 
 function hexToRgb(hex: string, fallback: [number, number, number]): [number, number, number] {
@@ -380,6 +383,7 @@ export function createFilmRenderer(
     overscan: U("uOverscan"),
     cursorOn: U("uCursorOn"),
     bloom: U("uBloom"),
+    grade: U("uGrade"),
   };
 
   const css = getComputedStyle(document.documentElement);
@@ -408,9 +412,8 @@ export function createFilmRenderer(
   let w = 0;
   let h = 0;
   let rMax = 0;
-  function resize() {
-    const cw = window.innerWidth;
-    const ch = window.innerHeight;
+  /** The backdrop fills the window; the lab's split view passes its box. */
+  function resize(cw = window.innerWidth, ch = window.innerHeight) {
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
     const k = Math.min(1, Math.sqrt(MAX_PIXELS / (cw * ch * dpr * dpr)));
     w = Math.max(1, Math.round(cw * dpr * k));
@@ -437,7 +440,9 @@ export function createFilmRenderer(
   return {
     resize,
     lost: () => gl.isContextLost(),
-    draw(f: FilmFrame, cityVersion: number, issVersion: number) {
+    /** `clip`: draw only buffer columns [x0, x1) — the lab draws the raw and
+     *  the graded film side by side, two draws through a scissor. */
+    draw(f: FilmFrame, cityVersion: number, issVersion: number, clip?: [number, number]) {
       if (f.iris < 1) upload(0, city, cityVersion);
       if (f.iris > 0) upload(1, iss, issVersion);
       gl.uniform2f(u.res, w, h);
@@ -460,8 +465,16 @@ export function createFilmRenderer(
       gl.uniform1f(u.overscan, f.overscan);
       gl.uniform1f(u.cursorOn, f.cursorOn);
       gl.uniform1f(u.bloom, f.bloom);
+      gl.uniform1f(u.grade, f.grade ?? 1);
+      if (clip) {
+        gl.enable(gl.SCISSOR_TEST);
+        gl.scissor(Math.round(clip[0]), 0, Math.max(0, Math.round(clip[1] - clip[0])), h);
+      }
       gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+      if (clip) gl.disable(gl.SCISSOR_TEST);
     },
+    /** Buffer width, px (for the caller's scissor). */
+    width: () => w,
     dispose() {
       texes.forEach((t) => gl.deleteTexture(t));
       gl.deleteBuffer(buf);

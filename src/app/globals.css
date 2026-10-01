@@ -696,6 +696,40 @@ html.hud-cursor * {
   100% { opacity: 0; transform: translateY(400%); }
 }
 
+/* ---- LAB (sections/Lab) -----------------------------------------------------
+   The scrub slider: a hairline track with a holo fill to the thumb, and a
+   square thumb — the HUD's own shape, not the browser's pill. */
+.lab-range {
+  appearance: none;
+  height: 28px;
+  background: transparent;
+  cursor: pointer;
+}
+.lab-range::-webkit-slider-runnable-track {
+  height: 1px;
+  background: var(--color-line-strong);
+}
+.lab-range::-moz-range-track {
+  height: 1px;
+  background: var(--color-line-strong);
+}
+.lab-range::-webkit-slider-thumb {
+  appearance: none;
+  width: 12px;
+  height: 18px;
+  margin-top: -9px;
+  background: var(--color-void);
+  border: 1px solid var(--color-holo);
+  box-shadow: 0 0 10px color-mix(in srgb, var(--color-holo) 60%, transparent);
+}
+.lab-range::-moz-range-thumb {
+  width: 12px;
+  height: 18px;
+  border-radius: 0;
+  background: var(--color-void);
+  border: 1px solid var(--color-holo);
+}
+
 /* ---- Signal (sections/Connect) ------------------------------------------
    A panel is a terminal: a CRT's dark glass, a faint raster and a vignette
    that curls the corners in. Static layers — nothing here animates. */

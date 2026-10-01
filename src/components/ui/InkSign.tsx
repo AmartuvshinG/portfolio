@@ -68,7 +68,6 @@ export function InkSign({
   const { t } = useI18n();
   const reduced = useReducedMotion();
   const ref = useRef<HTMLSpanElement>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
   const [seen, setSeen] = useState(false);
   const [inView, setInView] = useState(false);
   const [phase, setPhaseState] = useState<Phase>("dark");
@@ -105,16 +104,27 @@ export function InkSign({
     let raf = 0;
     let finish = () => {};
     const cancel = enqueueWrite(async (done) => {
-      const canvas = canvasRef.current;
       const image = await loadInkImage(INK_NAME.src);
-      if (cancelled) return done();
-      const rect = box?.getBoundingClientRect();
-      const renderer =
-        canvas && image && rect && rect.width > 4 ? createLightBrush(canvas, image, INK_NAME, rect.width, rect.height) : null;
+      if (cancelled || !box) return done();
+      const rect = box.getBoundingClientRect();
+      /* A fresh canvas for every write. A context released with
+         loseContext stays lost on its canvas, so a rewrite (or React's
+         dev double-run) on the same element would get a dead one. */
+      const canvas = document.createElement("canvas");
+      canvas.className = "pointer-events-none absolute";
+      Object.assign(canvas.style, {
+        left: `${-LIGHT_PAD}px`,
+        top: `${-LIGHT_PAD}px`,
+        width: `calc(100% + ${LIGHT_PAD * 2}px)`,
+        height: `calc(100% + ${LIGHT_PAD * 2}px)`,
+        transition: "opacity 450ms",
+      });
+      const renderer = image && rect.width > 4 ? createLightBrush(canvas, image, INK_NAME, rect.width, rect.height) : null;
       if (!renderer) {
         setPhase("struck");
         return done();
       }
+      box.appendChild(canvas);
       setPhase("writing");
       const t0 = performance.now();
       let ended = false;
@@ -125,8 +135,10 @@ export function InkSign({
         // Also on leaving mid-write: come back to a finished sign.
         setPhase("lit");
         // Let the canvas fade over the static sign before the context goes.
+        canvas.style.opacity = "0";
         window.setTimeout(() => {
           renderer.dispose();
+          canvas.remove();
           done();
         }, 450);
       };
@@ -203,19 +215,7 @@ export function InkSign({
           }}
         />
       </span>
-      {lit === "write" && !reduced && (
-        <canvas
-          ref={canvasRef}
-          className="pointer-events-none absolute transition-opacity duration-[450ms]"
-          style={{
-            left: -LIGHT_PAD,
-            top: -LIGHT_PAD,
-            width: `calc(100% + ${LIGHT_PAD * 2}px)`,
-            height: `calc(100% + ${LIGHT_PAD * 2}px)`,
-            opacity: phase === "writing" ? 1 : 0,
-          }}
-        />
-      )}
+      {/* While writing, the light's canvas is appended here (see above). */}
     </span>
   );
 }
