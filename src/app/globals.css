@@ -655,6 +655,49 @@ html.hud-cursor * {
 }
 .preloader-rain-light .preloader-rain { opacity: 0.9; }
 
+/* The work monitor waking under the cursor (SelectedWork). One lean, one
+   scan band down the screen, one scanline veil: transform and opacity only,
+   and only where there is a hover. */
+.monitor-veil,
+.monitor-scan {
+  position: absolute;
+  inset-inline: 0;
+  pointer-events: none;
+  z-index: 60;
+}
+.monitor-veil {
+  inset-block: 0;
+  opacity: 0;
+  background-image: repeating-linear-gradient(180deg, rgba(0, 0, 0, 0) 0 2px, rgba(0, 0, 0, 0.22) 2px 3px);
+  transition: opacity 0.25s ease;
+}
+.monitor-scan {
+  top: 0;
+  height: 26%;
+  opacity: 0;
+  transform: translateY(-110%);
+  background: linear-gradient(
+    180deg,
+    rgba(34, 224, 255, 0) 0%,
+    rgba(34, 224, 255, 0.1) 45%,
+    rgba(255, 160, 43, 0.26) 54%,
+    rgba(255, 160, 43, 0) 62%
+  );
+}
+.monitor-lean {
+  transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  .group:hover .monitor-veil { opacity: 1; }
+  .group:hover .monitor-scan { animation: monitor-scan 0.8s cubic-bezier(0.33, 0, 0.2, 1) both; }
+  .group:hover .monitor-lean { transform: scale(1.025); }
+}
+@keyframes monitor-scan {
+  0% { opacity: 1; transform: translateY(-110%); }
+  85% { opacity: 1; }
+  100% { opacity: 0; transform: translateY(400%); }
+}
+
 /* The frame a vertical sign hangs in: a hairline box with sodium corner
    brackets, the tube glowing inside it. */
 .script-sign {

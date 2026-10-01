@@ -213,6 +213,7 @@ function Theatre({ sectionRef: ref }: { sectionRef: React.RefObject<HTMLElement 
                 <button
                   type="button"
                   onClick={() => openCase(current.slug)}
+                  data-cursor-label={t.work.view}
                   className="group relative block w-full text-left"
                 >
                   {/* Named by a hidden text child, not `aria-label`: the monitor's
@@ -238,11 +239,19 @@ function Theatre({ sectionRef: ref }: { sectionRef: React.RefObject<HTMLElement 
                       </span>
                     </div>
 
-                    {/* Screens */}
+                    {/* Screens. On hover the monitor answers: the picture leans in
+                        a little, a scan band runs down it once, and a faint
+                        scanline veil comes up — a structured response (see
+                        .monitor-scan in globals.css), so it reads as the
+                        screen waking, never as a fault. */}
                     <div className="relative aspect-[16/10] w-full overflow-hidden bg-void">
-                      {projects.map((p, i) => (
-                        <Screen key={p.slug} project={p} pos={pos} i={i} n={n} live={live} />
-                      ))}
+                      <div className="monitor-lean absolute inset-0">
+                        {projects.map((p, i) => (
+                          <Screen key={p.slug} project={p} pos={pos} i={i} n={n} live={live} />
+                        ))}
+                      </div>
+                      <span aria-hidden className="monitor-veil" />
+                      <span aria-hidden className="monitor-scan" />
                     </div>
                   </div>
                 </button>
@@ -615,6 +624,7 @@ function Stack({ reduced }: { reduced: boolean }) {
                 <button
                   type="button"
                   onClick={() => openCase(p.slug)}
+                  data-cursor-label={t.work.view}
                   className="relative block aspect-[16/10] w-full overflow-hidden"
                 >
                   {/* Hidden text name, decorative shot aria-hidden: see the

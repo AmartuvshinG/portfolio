@@ -66,6 +66,7 @@ export function HudCursor() {
   const reduced = useReducedMotion();
   const layerRef = useRef<HTMLDivElement>(null);
   const dotRef = useRef<HTMLSpanElement>(null);
+  const labelRef = useRef<HTMLSpanElement>(null);
   const eligible = useSyncExternalStore(
     subscribe,
     () => window.matchMedia(QUERY).matches,
@@ -81,6 +82,7 @@ export function HudCursor() {
 
     const layer = layerRef.current;
     const dot = dotRef.current;
+    const label = labelRef.current;
     const corners = layer ? (Array.from(layer.querySelectorAll("[data-corner]")) as HTMLElement[]) : [];
 
     const mouse = { x: window.innerWidth / 2, y: window.innerHeight / 2 };
@@ -90,6 +92,9 @@ export function HudCursor() {
     const box = { x: mouse.x, y: mouse.y, w: REST, h: REST };
     const aim = { ...box };
     let lock: HTMLElement | null = null;
+    /* The label: what clicking here does, for surfaces too big to lock onto
+       (the work monitor) and for case-file triggers. */
+    let labelText = "";
     let lockRect: DOMRect | null = null;
     let seen = false;
     let raf = 0;
@@ -103,8 +108,9 @@ export function HudCursor() {
       } else {
         aim.x = mouse.x;
         aim.y = mouse.y;
-        aim.w = REST;
-        aim.h = REST;
+        // A labelled surface opens the reticle a little: it is a target now.
+        aim.w = labelText ? REST + 5 : REST;
+        aim.h = labelText ? REST + 5 : REST;
       }
     };
 
@@ -116,6 +122,15 @@ export function HudCursor() {
       mouse.x = e.clientX;
       mouse.y = e.clientY;
       seen = true;
+      const text =
+        (e.target as HTMLElement)?.closest<HTMLElement>("[data-cursor-label]")?.dataset.cursorLabel ?? "";
+      if (text !== labelText) {
+        labelText = text;
+        if (label) {
+          if (text) label.textContent = text;
+          label.style.opacity = text ? "1" : "0";
+        }
+      }
       const el = (e.target as HTMLElement)?.closest<HTMLElement>(LOCKABLE) ?? null;
       if (el !== lock) {
         /* Read the rect once per element, not per frame. Large surfaces (a
@@ -156,6 +171,7 @@ export function HudCursor() {
       if (bl) bl.style.transform = `translate3d(${L}px, ${B - ARM}px, 0)`;
       if (br) br.style.transform = `translate3d(${R - ARM}px, ${B - ARM}px, 0)`;
       if (dot) dot.style.transform = `translate3d(${mouse.x - 2}px, ${mouse.y - 2}px, 0)`;
+      if (label) label.style.transform = `translate3d(${box.x + box.w + 8}px, ${box.y + box.h - 6}px, 0)`;
       // Hold hidden until the pointer actually moves, so nothing sits parked
       // in the middle of the screen on load.
       if (layer) layer.style.opacity = seen ? "1" : "0";
@@ -217,6 +233,14 @@ export function HudCursor() {
         ref={dotRef}
         className="absolute left-0 top-0 h-1 w-1 rounded-full bg-fg"
         style={{ willChange: "transform" }}
+      />
+      {/* The action under the pointer (`data-cursor-label`), set beside the
+          reticle's lower-right corner in sodium micro type. Text and opacity
+          are written straight to the node; nothing re-renders. */}
+      <span
+        ref={labelRef}
+        className="absolute left-0 top-0 whitespace-nowrap bg-[rgba(5,6,13,0.78)] px-1.5 py-0.5 pl-[calc(0.375rem+0.24em)] font-mono text-[11px] font-semibold uppercase tracking-[0.24em] text-[var(--color-hazard)] transition-opacity duration-150"
+        style={{ opacity: 0, willChange: "transform", textShadow: "0 0 8px rgba(255,160,43,0.55)" }}
       />
     </div>
   );

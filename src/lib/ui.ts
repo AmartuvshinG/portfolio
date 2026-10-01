@@ -62,6 +62,8 @@ const en = {
     eyebrow: "Selected work",
     title: "Work",
     open: "Open case file",
+    /** The cursor's label over a case file you can open. */
+    view: "VIEW",
     visit: "Visit site",
     prev: "Previous case file",
     next: "Next case file",
@@ -221,6 +223,7 @@ const mn: UiStrings = {
     eyebrow: "Сонгосон төслүүд",
     title: "Төслүүд",
     open: "Дэлгэрэнгүй",
+    view: "ҮЗЭХ",
     visit: "Сайт үзэх",
     prev: "Өмнөх төсөл",
     next: "Дараах төсөл",
