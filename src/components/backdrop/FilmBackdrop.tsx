@@ -200,6 +200,16 @@ export function FilmBackdrop() {
     let lookX = 0;
     let lookY = 0;
     const overscan = looking ? OVERSCAN : 1;
+    /* Halation and grain cost sixteen extra samples a pixel: only where the
+       site's own quality tier would say "full" (fine pointer, a real CPU, not
+       in low-power mode). Read once; a resize past it is not worth a rebuild. */
+    const bloom =
+      looking &&
+      window.innerWidth >= 900 &&
+      (navigator.hardwareConcurrency || 8) > 4 &&
+      document.documentElement.dataset.power !== "low"
+        ? 1
+        : 0;
 
     /** Resolve every key to the scrollY at which it lands. Keys whose section
      *  is missing borrow their neighbour's position, so the map never breaks. */
@@ -298,6 +308,7 @@ export function FilmBackdrop() {
             lookY,
             overscan,
             cursorOn: looking ? 1 : 0,
+            bloom,
           },
           cityVersion,
           issVersion

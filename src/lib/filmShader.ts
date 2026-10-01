@@ -87,6 +87,7 @@ uniform float uHaze;        // 0..1
 uniform vec2 uLook;         // eased pointer, -1..1, +y down
 uniform float uOverscan;    // plate zoom that buys the look its headroom
 uniform float uCursorOn;    // 1 on a fine pointer
+uniform float uBloom;       // 0 or 1: halation + grain (full quality only)
 
 // Dave Hoskins' sin-free hash: identical on every GPU.
 float hash11(float p) {
@@ -200,6 +201,23 @@ void main() {
     }
     c += vec3(0.2, 0.75, 1.0) * flare * 0.2;
 
+    // Halation: on film, the brightest lights bleed a warm, red-leaning
+    // glow into the emulsion around them. Two rings of taps, a bright-pass
+    // threshold, tinted toward red-orange. Full quality only — sixteen more
+    // samples a pixel is the price, and the pixel ceiling bounds it.
+    if (uBloom > 0.0) {
+      vec3 halo = vec3(0.0);
+      for (int i = 0; i < 8; i++) {
+        float a = float(i) * 0.7854;
+        vec2 o = vec2(cos(a), sin(a) * uCityAR);
+        vec3 t1 = texture2D(uCity, clamp(cuv + o * 0.010, 0.001, 0.999)).rgb;
+        vec3 t2 = texture2D(uCity, clamp(cuv + o * 0.024, 0.001, 0.999)).rgb;
+        halo += t1 * max(0.0, dot(t1, lumW) - 0.55) * 1.2 + t2 * max(0.0, dot(t2, lumW) - 0.55) * 0.7;
+      }
+      halo /= 8.0;
+      c += halo * vec3(1.0, 0.55, 0.38) * 0.9 * uBloom;
+    }
+
     // Sodium haze pooling low in the frame (screen blend, never clips). It
     // peaks above the bottom edge and falls away under it, because the
     // bottom strip is where the page sets its micro-labels.
@@ -244,6 +262,16 @@ void main() {
   // Scanlines, fixed to the screen.
   col *= 1.0 - 0.07 * step(2.0, mod(px.y, 3.0));
 
+  // Film grain, stepped at 24 fps, heavier in the shadows the way a stock's
+  // grain shows most in the dark. Drawn only on frames the film already
+  // draws, so at rest it simply holds.
+  if (uBloom > 0.0) {
+    float gt = floor(uTime * 24.0);
+    float gr = hash11(px.x * 0.7317 + px.y * 13.137 + gt * 71.3) - 0.5;
+    float lum = dot(col, lumW);
+    col += gr * 0.045 * (1.0 - smoothstep(0.0, 0.6, lum)) * uBloom;
+  }
+
   gl_FragColor = vec4(col, 1.0);
 }`;
 
@@ -270,6 +298,8 @@ export interface FilmFrame {
   overscan: number;
   /** 1 when the pointer is a light (fine pointer), else 0. */
   cursorOn: number;
+  /** 1 for halation and grain (full quality), else 0. */
+  bloom: number;
 }
 
 function hexToRgb(hex: string, fallback: [number, number, number]): [number, number, number] {
@@ -349,6 +379,7 @@ export function createFilmRenderer(
     look: U("uLook"),
     overscan: U("uOverscan"),
     cursorOn: U("uCursorOn"),
+    bloom: U("uBloom"),
   };
 
   const css = getComputedStyle(document.documentElement);
@@ -428,6 +459,7 @@ export function createFilmRenderer(
       gl.uniform2f(u.look, f.lookX, f.lookY);
       gl.uniform1f(u.overscan, f.overscan);
       gl.uniform1f(u.cursorOn, f.cursorOn);
+      gl.uniform1f(u.bloom, f.bloom);
       gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
     },
     dispose() {
