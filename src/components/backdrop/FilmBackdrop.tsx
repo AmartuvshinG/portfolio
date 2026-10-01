@@ -4,6 +4,7 @@ import { useEffect, useId, useRef, useState } from "react";
 import { ScrollTrigger } from "@/lib/gsap";
 import { FILM, clamp, easeInOut, loadWhole, seeker } from "@/lib/film";
 import { createFilmRenderer } from "@/lib/filmShader";
+import { INK_NAME } from "@/lib/inkName";
 import { pointerEnabled, pointerSettled, retainPointer, stepPointer } from "@/lib/pointer";
 
 /**
@@ -211,6 +212,40 @@ export function FilmBackdrop() {
         ? 1
         : 0;
 
+    /* The hero's neon sign, lying on the wet floor (filmShader's reflection).
+       Full quality and a desktop frame only. The sign is found once it is
+       lit and measured at rest (scrollY ≈ 0) — its position is all the
+       shader needs, read every 0.7 s until found, and again after a resize.
+       It fades in over a second and out as the hero scrolls away. */
+    const reflectOn = bloom === 1 && window.innerWidth >= 1024;
+    let sign: { x: number; y: number; w: number; h: number; floor: number } | null = null;
+    let signLitAt = 0;
+    let signPoll = 0;
+    let alive = true;
+    if (reflectOn && renderer) {
+      const img = new Image();
+      img.src = INK_NAME.mask;
+      img
+        .decode()
+        .then(() => {
+          // The decode can outlive this effect (and its renderer).
+          if (!alive) return;
+          renderer?.setSign(img);
+          dirty = true;
+        })
+        .catch(() => {});
+      signPoll = window.setInterval(() => {
+        if (sign || window.scrollY > 40) return;
+        const el = document.querySelector<HTMLElement>("#hero .ink-sign[data-lit]");
+        if (!el) return;
+        const r = el.getBoundingClientRect();
+        if (r.width < 4) return;
+        sign = { x: r.left, y: r.top, w: r.width, h: r.height, floor: Math.max(r.bottom + 32, window.innerHeight * 0.74) };
+        if (!signLitAt) signLitAt = performance.now();
+        dirty = true;
+      }, 700);
+    }
+
     /** Resolve every key to the scrollY at which it lands. Keys whose section
      *  is missing borrow their neighbour's position, so the map never breaks. */
     function measure() {
@@ -309,6 +344,13 @@ export function FilmBackdrop() {
             overscan,
             cursorOn: looking ? 1 : 0,
             bloom,
+            reflect: sign
+              ? {
+                  ...sign,
+                  amount:
+                    clamp((now - signLitAt) / 1200) * (1 - clamp(window.scrollY / (h * 0.6))) * (1 - iris),
+                }
+              : null,
           },
           cityVersion,
           issVersion
@@ -397,6 +439,7 @@ export function FilmBackdrop() {
     let debounce = 0;
     const remeasure = () => {
       renderer?.resize();
+      sign = null; // found and measured again at rest
       dirty = true;
       clearTimeout(debounce);
       debounce = window.setTimeout(measure, 250);
@@ -434,6 +477,8 @@ export function FilmBackdrop() {
 
     return () => {
       cancelAnimationFrame(rafId);
+      alive = false;
+      window.clearInterval(signPoll);
       releasePointer();
       clearTimeout(debounce);
       ro.disconnect();

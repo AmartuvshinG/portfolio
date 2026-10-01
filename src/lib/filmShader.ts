@@ -20,6 +20,10 @@
  *   flare        a horizontal anamorphic streak off the brightest lights
  *   haze         sodium light pooling low in the frame, thinning as the
  *                camera climbs
+ *   reflection   the hero's neon sign (its brushed mask, uploaded once),
+ *                mirrored on the wet floor in the lower frame: squashed,
+ *                smeared sideways and broken by ripples, the way a street
+ *                sign lies in a puddle. Full quality, desktop, hero only
  *
  * And the camera's look (fine pointers only): the cursor turns the frame a
  * little, the way the reference "mouse-responsive background" pans its plate,
@@ -89,6 +93,10 @@ uniform float uOverscan;    // plate zoom that buys the look its headroom
 uniform float uCursorOn;    // 1 on a fine pointer
 uniform float uBloom;       // 0 or 1: halation + grain (full quality only)
 uniform float uGrade;       // 1 = the grade; 0 = the raw footage (the lab's split view)
+uniform sampler2D uSign;    // the neon sign's mask (alpha)
+uniform vec4 uSignRect;     // the sign on screen, buffer px: x, y, w, h (y down)
+uniform float uFloor;       // the waterline, buffer px from the top
+uniform float uReflect;     // 0…1: how much of the sign lies on the floor
 
 // Dave Hoskins' sin-free hash: identical on every GPU.
 float hash11(float p) {
@@ -236,6 +244,35 @@ void main() {
     float r = (rNear * 0.26 + rMid * 0.17 + rFar * 0.11) * uRain * (1.0 + 1.4 * torch);
     c += r * mix(vec3(0.7, 0.8, 0.9), c * 2.4, 0.6);
 
+    // The sign on the wet floor. Below the waterline the sign is mirrored
+    // and squashed; a rough wet surface spreads it sideways and drags it
+    // into vertical streaks, and ripples bend it and break it into bands.
+    if (uReflect > 0.0 && px.y > uFloor) {
+      float depth = (px.y - uFloor) / (uSignRect.w * 0.9);
+      if (depth < 1.0) {
+        float ry = rp.y;
+        float rip = sin(ry * 120.0 + uTime * 2.4) * 0.05 + sin(ry * 310.0 - uTime * 3.3) * 0.02;
+        float cx = uSignRect.x + uSignRect.z * 0.5;
+        float u = (px.x - cx) / (uSignRect.z * 1.7) + 0.5 + rip * (0.4 + depth);
+        float v = 1.0 - depth;
+        float m = 0.0;
+        if (u > -0.2 && u < 1.2) {
+          for (int i = -2; i <= 2; i++) {
+            float du = float(i) * 0.06;
+            float wgt = 1.0 - abs(float(i)) * 0.3;
+            m += texture2D(uSign, vec2(u + du, v)).a * wgt;
+            m += texture2D(uSign, vec2(u + du, v + 0.035)).a * wgt * 0.7;
+            m += texture2D(uSign, vec2(u + du, v + 0.07)).a * wgt * 0.45;
+          }
+          m = smoothstep(0.08, 1.1, m / 2.2 * 2.5);
+        }
+        float bands = 0.55 + 0.45 * sin(ry * 240.0 + uTime * 1.7);
+        float fade = (1.0 - depth) * (1.0 - depth * 0.6) * uReflect * bands;
+        vec3 neonR = mix(vec3(1.0, 0.8, 0.5), uAmber, v * 0.7 + 0.3);
+        c = 1.0 - (1.0 - c) * (1.0 - clamp(neonR * m * fade * 1.5, 0.0, 0.92));
+      }
+    }
+
     col = c * uCityOn;
   }
   if (inside > 0.0) {
@@ -303,6 +340,8 @@ export interface FilmFrame {
   bloom: number;
   /** The grade (split-tone, flare, scanlines); 0 shows the raw footage. Default 1. */
   grade?: number;
+  /** The hero sign's reflection (CSS px; null when there is none). */
+  reflect?: { x: number; y: number; w: number; h: number; floor: number; amount: number } | null;
 }
 
 function hexToRgb(hex: string, fallback: [number, number, number]): [number, number, number] {
@@ -384,7 +423,11 @@ export function createFilmRenderer(
     cursorOn: U("uCursorOn"),
     bloom: U("uBloom"),
     grade: U("uGrade"),
+    signRect: U("uSignRect"),
+    floor: U("uFloor"),
+    reflect: U("uReflect"),
   };
+  gl.uniform1i(U("uSign"), 2);
 
   const css = getComputedStyle(document.documentElement);
   gl.uniform3fv(U("uS1"), hexToRgb(css.getPropertyValue("--spectrum-1"), [1, 0.176, 0.561]));
@@ -405,13 +448,14 @@ export function createFilmRenderer(
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, 1, 1, 0, gl.RGB, gl.UNSIGNED_BYTE, new Uint8Array([5, 6, 13]));
     return tex;
   };
-  const texes = [makeTex(0), makeTex(1)];
+  const texes = [makeTex(0), makeTex(1), makeTex(2)];
   /** Which frame each texture holds, so an unchanged frame is not re-uploaded. */
   const uploaded = [-1, -1];
 
   let w = 0;
   let h = 0;
   let rMax = 0;
+  let signReady = false;
   /** The backdrop fills the window; the lab's split view passes its box. */
   function resize(cw = window.innerWidth, ch = window.innerHeight) {
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
@@ -466,6 +510,13 @@ export function createFilmRenderer(
       gl.uniform1f(u.cursorOn, f.cursorOn);
       gl.uniform1f(u.bloom, f.bloom);
       gl.uniform1f(u.grade, f.grade ?? 1);
+      const r = signReady ? f.reflect : null;
+      if (r && r.amount > 0) {
+        const k = w / window.innerWidth;
+        gl.uniform4f(u.signRect, r.x * k, r.y * k, r.w * k, r.h * k);
+        gl.uniform1f(u.floor, r.floor * k);
+        gl.uniform1f(u.reflect, r.amount);
+      } else gl.uniform1f(u.reflect, 0);
       if (clip) {
         gl.enable(gl.SCISSOR_TEST);
         gl.scissor(Math.round(clip[0]), 0, Math.max(0, Math.round(clip[1] - clip[0])), h);
@@ -475,6 +526,24 @@ export function createFilmRenderer(
     },
     /** Buffer width, px (for the caller's scissor). */
     width: () => w,
+    /** The neon sign's mask, for its reflection on the floor. Once.
+     *  Uploaded small and pre-blurred: the sign is ~40px wide on screen, so
+     *  the full-size mask's thin strokes would be hit or missed per pixel;
+     *  a soft low-res copy reads as coverage, which is what a puddle shows. */
+    setSign(image: HTMLImageElement) {
+      const c = document.createElement("canvas");
+      c.width = 48;
+      c.height = Math.round((48 * image.naturalHeight) / Math.max(1, image.naturalWidth));
+      const ctx = c.getContext("2d");
+      if (!ctx) return;
+      ctx.filter = "blur(1.2px)";
+      ctx.drawImage(image, 0, 0, c.width, c.height);
+      gl.activeTexture(gl.TEXTURE2);
+      gl.bindTexture(gl.TEXTURE_2D, texes[2]);
+      gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, c);
+      signReady = true;
+    },
     dispose() {
       texes.forEach((t) => gl.deleteTexture(t));
       gl.deleteBuffer(buf);
