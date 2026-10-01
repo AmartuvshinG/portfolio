@@ -113,7 +113,8 @@ function Panel() {
       /* Opaque: page copy showing through a readout reads as a fault. */
       style={{ background: "#05060d" }}
     >
-      <div className="mb-2 flex items-center justify-between text-[var(--color-hazard)]">
+      {/* A readout, so it is lit in holo, not sodium (the warm/cool rule). */}
+      <div className="mb-2 flex items-center justify-between text-[var(--color-holo)]">
         <span>{d.title}</span>
         <span className="text-faint">` · esc</span>
       </div>
@@ -121,7 +122,7 @@ function Panel() {
         {rows.map(([k, v]) => (
           <div key={k} className="contents">
             <dt className="text-muted">{k}</dt>
-            <dd className="tabular whitespace-nowrap text-right text-fg">{v}</dd>
+            <dd className="tabular whitespace-nowrap text-right text-[var(--color-holo)]">{v}</dd>
           </div>
         ))}
       </dl>

@@ -246,8 +246,8 @@ export function CommandPalette() {
             style={{ backdropFilter: "blur(20px) saturate(1.3)" }}
           >
             <div className="flex items-center gap-3 border-b border-line px-5">
-              {/* A terminal's prompt, in sodium, where a search glass was. */}
-              <span aria-hidden className="shrink-0 font-mono text-sm text-[var(--color-hazard)]">
+              {/* A terminal's prompt, in holo (it is a readout), where a search glass was. */}
+              <span aria-hidden className="shrink-0 font-mono text-sm text-[var(--color-holo)]">
                 &gt;_
               </span>
               <input
@@ -282,7 +282,7 @@ export function CommandPalette() {
                    every cascade layer — so a plain utility here loses no
                    matter what its specificity is. Same hazard the two `@layer
                    base` comments in that file describe. */
-                className="w-full bg-transparent py-4 font-mono text-sm text-fg caret-[var(--color-hazard)] placeholder:text-faint focus-visible:[outline-offset:-4px]!"
+                className="w-full bg-transparent py-4 font-mono text-sm text-fg caret-[var(--color-holo)] placeholder:text-faint focus-visible:[outline-offset:-4px]!"
               />
               <kbd className="hud-label shrink-0 border border-line px-1.5 py-0.5">
                 ESC

@@ -64,6 +64,19 @@
          moment it appears in a third place it stops meaning anything. */
   --color-hazard: #ffa02b;
 
+  /* --- Holo: the cold half of the warm/cool rule.
+
+         Sodium is the *physical* city — ink, neon tubes, lamps, the letterbox,
+         the things you press. Holo is *data*: the light a readout throws.
+         Live numbers, terminal prompts, the Signal tuner, the case file's
+         figures, the lab's meters, the diagnostics. One glance should tell
+         a reading from a thing.
+
+         A pale cyan, paler than --spectrum-3 so mono micro-type holds 4.5:1
+         and more on every ground and over the film. Same ration as sodium:
+         small type, hairlines and lamps, never a fill, never display type. */
+  --color-holo: #7eeaff;
+
   /* --- The calligraphy. Sumi ink, the paper it is written on, and the
          vermilion of the seal. Only the intro scroll, the ink signs and the
          seal use them; they are materials, not a second accent. */
