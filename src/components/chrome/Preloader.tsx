@@ -1,42 +1,34 @@
 "use client";
 
-import { useEffect, useState, useSyncExternalStore } from "react";
-import {
-  AnimatePresence,
-  animate,
-  motion,
-  useMotionValue,
-  useTransform,
-} from "framer-motion";
+import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
+import { AnimatePresence, animate, motion, useMotionValue } from "framer-motion";
 import { useLockScroll } from "@/hooks/useLockScroll";
-import { usePointerDrift } from "@/hooks/usePointerDrift";
 import { markBooted } from "@/hooks/useBootReady";
 import { useI18n } from "@/lib/i18n";
-import { LedSign } from "@/components/chrome/LedSign";
-import { GlowHorizon } from "@/components/ui/GlowHorizon";
+import { InkScroll } from "@/components/chrome/InkScroll";
 
 /**
- * First-load curtain: his name in Mongol bichig, on a dot-matrix LED panel,
- * powering up in the dark.
+ * First-load curtain: his name in Mongol bichig, written by brush on a
+ * hanging scroll in a dark room, framed like the first shot of a film.
  *
- * It replaced the Latin wordmark striking on as neon tubes over a 0→100
- * counter. The counter narrated a delay; this one *is* the delay. The beats,
- * at timeScale 1:
+ * It replaced the dot-matrix LED sign. A sign is something the city switches
+ * on; this is something a hand makes — and the hero then shows the same
+ * name as the city's neon, which is the whole story of the site in two shots.
  *
- *      0 ms   dark. Only the dead panel shows, the name faintly in it.
- *    200 ms   current enters the top of the stem and runs down it; every
- *             tooth and loop catches as it is reached (lib/ledSign).
- *    500 ms   the street begins to glow: a sodium glow horizon rises from
- *             the foot of the frame — the sign's light spilling outward.
- *   1350 ms   the sign brightens the room: the halos bloom, a sodium wash
- *             lifts the wall behind it, the rain shows where the light falls
- *             on it, the Latin name appears and the lamp reads READY.
- *   2050 ms   the curtain lifts (the hero starts underneath, useBootReady).
+ * The room and its beats are InkScroll's (the lamp, the unrolling, the brush,
+ * the seal). This component owns the frame around it and the exit:
  *
- * Any key, click, wheel or touch skips: whatever is still dark catches at
- * once and the curtain lifts. A second view in the same tab, or Save-Data,
- * runs the whole thing at 0.55×. Background tabs cannot strand it: the beats
- * are timers, not frames, and the scroll lock goes with the curtain.
+ *   - 2.39:1 letterbox bars with a slate: reel and place up top, the
+ *     wordmark, a skip hint and the ink's progress rule below;
+ *   - when the scroll is done, a rack focus past it (the scroll goes soft)
+ *     while the curtain dissolves onto the hero's city and the bars slide
+ *     off. `markBooted` fires as the dissolve starts, so the hero's own
+ *     focus-pull plays under it and lands as the curtain clears.
+ *
+ * Any key, click, wheel or touch skips: the brush finishes in a quarter of a
+ * second, the seal stamps, and it lifts. A second view in the same tab, or
+ * Save-Data, runs at 0.55×. A ceiling timer lifts it regardless, so a stalled
+ * frame loop (a background tab) can never strand the page behind it.
  *
  * **First paint is the dark room.** Reduced motion is read with
  * useSyncExternalStore and a server snapshot of "motion allowed", so the
@@ -45,13 +37,11 @@ import { GlowHorizon } from "@/components/ui/GlowHorizon";
  * any script runs (globals.css, and a <noscript> style in the layout).
  */
 
-/** The beats, ms at timeScale 1. */
-const HORIZON_AT = 500;
-const BRIGHT_AT = 1350;
-const LIFT_AT = 2050;
-/** From a skip to the lift. */
-const SKIP_LIFT_MS = 320;
-const SEEN_KEY = "led-intro-seen";
+const SEEN_KEY = "ink-intro-seen";
+/** Lift no matter what after this long (× timeScale). */
+const CEILING_MS = 9000;
+/** UB's coordinates, for the slate. */
+const COORDS = "47.92°N 106.92°E";
 
 const QUERY = "(prefers-reduced-motion: reduce)";
 function subscribeReduced(onChange: () => void) {
@@ -59,6 +49,8 @@ function subscribeReduced(onChange: () => void) {
   mq.addEventListener("change", onChange);
   return () => mq.removeEventListener("change", onChange);
 }
+
+const noSubscribe = () => () => {};
 
 /** 0.55 on a repeat view or Save-Data, else 1. Client-only; nothing in the
  *  markup depends on it, so the server's 1 cannot mismatch. */
@@ -76,6 +68,10 @@ function initialTimeScale(): number {
   return seen || saveData ? 0.55 : 1;
 }
 
+/** The bars' height: the same rule as `letterboxBar` in lib/inkShader. */
+const BAR =
+  "h-[clamp(6dvh,calc((100dvh-41.841vw)/2),16dvh)] portrait:h-[7dvh]";
+
 export function Preloader() {
   const { c, t } = useI18n();
   const reduced = useSyncExternalStore(
@@ -85,66 +81,60 @@ export function Preloader() {
   );
   const [timeScale] = useState(initialTimeScale);
   const [done, setDone] = useState(false);
-  const [horizon, setHorizon] = useState(false);
-  const [bright, setBright] = useState(false);
+  const [ready, setReady] = useState(false);
+  const [writing, setWriting] = useState(false);
   const [skip, setSkip] = useState(false);
+  const touch = useSyncExternalStore(
+    noSubscribe,
+    () => window.matchMedia("(pointer: coarse)").matches,
+    () => false
+  );
 
-  /* The sign writes `lit`; the story animates `glow`. Everything else on the
-     screen is a transform of these two, so nothing re-renders per frame. */
-  /* The parallax lives on the soft layers — the wall light and the rain — and
-     never on the sign: a sub-pixel transform on the canvas blurs every diode. */
-  const wallDrift = usePointerDrift(10);
-  const rainDrift = usePointerDrift(26);
-  const lit = useMotionValue(0);
-  const glow = useMotionValue(0);
-  const room = useTransform(() => lit.get() * 0.35 + glow.get() * 0.65);
-  const rain = useTransform(() => 0.04 + glow.get() * 0.5);
+  const focus = useMotionValue(0);
+  const progress = useMotionValue(0);
 
   const finished = reduced || done;
   useLockScroll(!finished);
 
-  /* Release the hero as the curtain starts to lift (see useBootReady). Also
-     covers reduced motion, where `finished` resolves true straight after
-     hydration and there is no curtain. Never from the server snapshot. */
+  /* Release the hero as the dissolve starts (see useBootReady). Also covers
+     reduced motion, where `finished` resolves true straight after hydration
+     and there is no curtain. Never from the server snapshot. */
   useEffect(() => {
     if (finished) markBooted();
   }, [finished]);
 
   useEffect(() => {
+    return progress.on("change", (v) => {
+      if (v > 0) setWriting(true);
+    });
+  }, [progress]);
+
+  /* READY first, then the exit: AnimatePresence freezes the tree it is
+     removing, so a label changed in the same render never shows. */
+  const lift = useCallback(() => {
+    setReady(true);
+    animate(focus, 1, { duration: 1.0, ease: [0.45, 0, 0.2, 1] });
+    setTimeout(() => setDone(true), 240);
+  }, [focus]);
+
+  useEffect(() => {
     if (reduced) return;
-    const s = timeScale;
-    let glowAnim: ReturnType<typeof animate> | null = null;
-    const brighten = (duration: number) => {
-      setHorizon(true);
-      setBright(true);
-      glowAnim?.stop();
-      glowAnim = animate(glow, 1, { duration, ease: [0.16, 1, 0.3, 1] });
-    };
-
-    const timers = [
-      setTimeout(() => setHorizon(true), HORIZON_AT * s),
-      setTimeout(() => brighten(0.7 * s), BRIGHT_AT * s),
-      setTimeout(() => setDone(true), LIFT_AT * s),
-    ];
-
+    const ceiling = setTimeout(lift, CEILING_MS * timeScale);
     let skipped = false;
     const onSkip = () => {
       if (skipped) return;
       skipped = true;
-      timers.forEach(clearTimeout);
       setSkip(true);
-      brighten(0.25);
-      timers.push(setTimeout(() => setDone(true), SKIP_LIFT_MS));
     };
     const SKIP_EVENTS = ["keydown", "pointerdown", "wheel", "touchstart"] as const;
     for (const ev of SKIP_EVENTS) window.addEventListener(ev, onSkip, { passive: true });
-
     return () => {
-      timers.forEach(clearTimeout);
-      glowAnim?.stop();
+      clearTimeout(ceiling);
       for (const ev of SKIP_EVENTS) window.removeEventListener(ev, onSkip);
     };
-  }, [reduced, timeScale, glow]);
+  }, [reduced, timeScale, lift]);
+
+  const status = ready ? t.preloader.ready : writing ? t.preloader.writing : t.preloader.loading;
 
   return (
     <AnimatePresence>
@@ -153,101 +143,69 @@ export function Preloader() {
           key="preloader"
           aria-hidden
           className="preloader fixed inset-0 z-[120] overflow-hidden bg-void text-fg"
-          exit={{ y: "-100%" }}
-          transition={{ duration: 0.9, ease: [0.76, 0, 0.24, 1] }}
+          exit={{ opacity: 0 }}
+          /* A visitor who skipped has said they are in a hurry. */
+          transition={skip ? { duration: 0.6, delay: 0.1 } : { duration: 1.1, delay: 0.3, ease: [0.4, 0, 0.2, 1] }}
         >
-          {/* The wall behind the sign, lit by it. Bled past the frame so its
-              drift never shows an edge. */}
-          <div ref={wallDrift} aria-hidden className="pointer-events-none absolute -inset-8">
-            <motion.div
-              className="absolute inset-0"
-              style={{
-                opacity: room,
-                background:
-                  "radial-gradient(ellipse 34% 52% at 50% 46%, rgba(255,150,52,0.26), rgba(255,106,26,0.08) 48%, rgba(5,6,13,0) 74%)",
-              }}
-            />
-          </div>
-
-          {/* The street catching the light: the glow horizon, in sodium.
-              The box is nearly twice the frame's width and runs under its
-              foot, so the arc is a long, almost flat horizon low in the frame
-              (crown ≈ 92vh, just over the rule) — never a sphere, and no edge
-              of the box is ever on screen. */}
-          {horizon && (
-            <div aria-hidden className="pointer-events-none absolute -inset-x-[45%] top-[77.5vh] -bottom-[20vh]">
-              <GlowHorizon variant="bottom" palette="sodium" intensity={0.7} />
-            </div>
-          )}
-
-          {/* Rain: invisible in the dark, showing where the sign lights it. */}
-          <motion.div
-            aria-hidden
-            className="preloader-rain-light pointer-events-none absolute inset-0"
-            style={{ opacity: rain }}
-          >
-            <div ref={rainDrift} className="absolute -inset-8">
-              <div className="preloader-rain absolute inset-0" />
-            </div>
-          </motion.div>
-
-          {/* The film's scanlines. */}
-          <div
-            aria-hidden
-            className="pointer-events-none absolute inset-0"
-            style={{
-              backgroundImage:
-                "repeating-linear-gradient(180deg, rgba(0,0,0,0) 0 2px, rgba(0,0,0,0.28) 2px 3px)",
-            }}
+          <InkScroll
+            timeScale={timeScale}
+            skip={skip}
+            focus={focus}
+            progress={progress}
+            onDone={lift}
           />
 
-          {/* The sign, and the name under it once the light is up. */}
+          {/* ---- the letterbox, and the slate in it ---------------------- */}
           <motion.div
-            className="absolute inset-x-0 top-[13vh] flex flex-col items-center"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.35, ease: "easeOut" }}
+            className={`absolute inset-x-0 top-0 flex items-end justify-between bg-[#020306] px-5 pb-3 md:px-10 md:pb-4 ${BAR}`}
+            exit={{ y: "-100%" }}
+            transition={{ duration: 1.0, delay: 0.25, ease: [0.7, 0, 0.3, 1] }}
           >
-            <LedSign
-              text={c.profile.nameScript}
-              lit={lit}
-              glow={glow}
-              timeScale={timeScale}
-              skip={skip}
-              className="h-[60vh] md:h-[64vh]"
-            />
+            <span className="micro text-fg/70">{t.preloader.reel}</span>
+            <span className="micro flex items-center gap-4 text-fg/70">
+              <span className="hidden sm:inline">{COORDS}</span>
+              <span className="flex items-center gap-2 text-[var(--color-hazard)]">
+                <span
+                  className={`h-1.5 w-1.5 rounded-full bg-[var(--color-hazard)] ${ready ? "" : "animate-blink"}`}
+                />
+                {status}
+              </span>
+            </span>
+          </motion.div>
+
+          <motion.div
+            className={`absolute inset-x-0 bottom-0 flex items-start justify-between gap-6 bg-[#020306] px-5 pt-3 md:px-10 md:pt-4 ${BAR}`}
+            exit={{ y: "100%" }}
+            transition={{ duration: 1.0, delay: 0.25, ease: [0.7, 0, 0.3, 1] }}
+          >
             <motion.span
-              className="micro mt-[3vh] pl-[0.6em] tracking-[0.6em] text-[#ffd8a0]"
-              initial={{ opacity: 0, y: 6 }}
-              animate={bright ? { opacity: 0.9, y: 0 } : { opacity: 0, y: 6 }}
+              className="micro pl-[0.1em] tracking-[0.5em] text-[#ffd8a0]"
+              initial={{ opacity: 0, y: 4 }}
+              animate={ready || skip ? { opacity: 0.9, y: 0 } : { opacity: 0, y: 4 }}
               transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
             >
               {c.profile.wordmark}
             </motion.span>
-          </motion.div>
 
-          {/* Corners: what this is, and whether it is ready. */}
-          <div className="absolute inset-x-5 top-5 flex items-center justify-between md:inset-x-8 md:top-6">
-            <span className="micro">{c.profile.kicker}</span>
-            <span className="micro flex items-center gap-2 text-[var(--color-hazard)]">
-              <span
-                className={`h-1.5 w-1.5 rounded-full bg-[var(--color-hazard)] ${bright ? "" : "animate-blink"}`}
-              />
-              {bright ? t.preloader.ready : t.preloader.loading}
-            </span>
-          </div>
-
-          {/* The rule fills with the diodes that are on. */}
-          <div className="absolute inset-x-5 bottom-5 h-px bg-line md:inset-x-8 md:bottom-6">
             <motion.span
-              className="absolute inset-0 origin-left"
-              style={{
-                scaleX: lit,
-                backgroundImage:
-                  "linear-gradient(90deg, #ff6a1a, var(--color-hazard) 55%, #fff1dc)",
-              }}
-            />
-          </div>
+              className="micro hidden text-fg/45 md:block"
+              animate={{ opacity: skip || ready ? 0 : 1 }}
+              transition={{ duration: 0.3 }}
+            >
+              {touch ? t.preloader.skipTap : t.preloader.skipKey}
+            </motion.span>
+
+            {/* The rule fills as the name is written. */}
+            <div className="relative mt-[0.45em] h-px w-24 shrink-0 bg-line md:w-40">
+              <motion.span
+                className="absolute inset-0 origin-left"
+                style={{
+                  scaleX: progress,
+                  backgroundImage: "linear-gradient(90deg, #ff6a1a, var(--color-hazard) 55%, #fff1dc)",
+                }}
+              />
+            </div>
+          </motion.div>
         </motion.div>
       )}
     </AnimatePresence>

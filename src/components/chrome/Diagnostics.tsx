@@ -6,7 +6,7 @@ import { useQuality } from "@/hooks/useQuality";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
 import { isTextEntry, modalOpen } from "@/lib/keys";
 import { setDiagnostics, toggleDiagnostics, useDiagnosticsOpen } from "@/lib/diagnostics";
-import { LED_NAME } from "@/lib/ledName";
+import { INK_NAME } from "@/lib/inkName";
 
 /**
  * The backquote key: a small readout of what this page is actually doing.
@@ -94,7 +94,6 @@ function Panel() {
     };
   }, [d.none]);
 
-  const lit = LED_NAME.cells.join("").replace(/\./g, "").length;
   const rows: [string, React.ReactNode][] = [
     [d.fps, <span key="fps" ref={fpsRef}>—</span>],
     [d.reel, <span key="reel" ref={reelRef}>—</span>],
@@ -104,7 +103,7 @@ function Panel() {
     [d.viewport, `${env.w}×${env.h}`],
     [d.locale, locale.toUpperCase()],
     [d.motion, reduced ? d.reduced : d.full],
-    [d.leds, `${lit} · ${LED_NAME.cols}×${LED_NAME.rows}`],
+    [d.leds, `SDF ${INK_NAME.width}×${INK_NAME.height} · ±${INK_NAME.spread}px`],
   ];
 
   return (

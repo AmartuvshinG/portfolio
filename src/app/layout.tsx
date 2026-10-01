@@ -24,6 +24,7 @@ import { CommandPalette } from "@/components/chrome/CommandPalette";
 import { ChapterKeys } from "@/components/chrome/ChapterKeys";
 import { Footer } from "@/components/chrome/Footer";
 import { LiquidGlassFilter } from "@/components/ui/LiquidGlassFilter";
+import { INK_NAME } from "@/lib/inkName";
 
 /**
  * The display face: wide, square, one weight. Wordmark and section titles only.
@@ -169,7 +170,10 @@ export default function RootLayout({
           rel="stylesheet"
           href={`https://fonts.googleapis.com/css2?family=Noto+Sans+Mongolian&display=swap&text=${encodeURIComponent(profile.nameScript)}`}
         />
-        {/* The LED intro is in the server HTML (first paint is its dark
+        {/* The intro's brush: the first thing it needs, before any script
+            asks for it. */}
+        <link rel="preload" as="image" href={INK_NAME.src} fetchPriority="high" />
+        {/* The ink intro is in the server HTML (first paint is its dark
             room); without script it could never lift, so hide it. */}
         <noscript>
           <style>{`.preloader{display:none}`}</style>

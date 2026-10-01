@@ -1,8 +1,9 @@
 /**
- * The preloader's LED sign: a dot-matrix panel with the Mongol-script name
- * baked into it (lib/ledName), powering up in the dark.
+ * The LED dot-matrix: the Mongol-script name baked into a panel (lib/ledName).
+ * It was the intro's sign until the ink scroll replaced it (2026-10-01); the
+ * footer's LedTicker still runs on these diodes, as street signage.
  *
- * Pure drawing and timing — no React. LedSign owns the canvas and the clock.
+ * Pure drawing and timing — no React.
  *
  * **How it lights.** Mongol script hangs every letter off one continuous
  * vertical stem, so the sign is wired like one: current enters at the top of
@@ -28,158 +29,6 @@
  */
 
 import { LED_NAME } from "@/lib/ledName";
-import { srand } from "@/lib/utils";
-
-/** Unlit cells added round the name, so it sits in a panel, not a cut-out. */
-const PAD_X = 3;
-const PAD_Y = 3;
-
-export interface Led {
-  /** Panel cell. */
-  col: number;
-  row: number;
-  /** 0.42 / 0.72 / 1 from the bake's coverage level: edge cells burn dimmer. */
-  gain: number;
-  /** When the current reaches it, ms from the start of ignition. */
-  at: number;
-  /** Stutter: off-gaps before it holds, as [on, off] pairs in ms. */
-  stutter: number[] | null;
-}
-
-export interface LedLayout {
-  cols: number;
-  rows: number;
-  leds: Led[];
-  /** When the last diode has settled, ms. */
-  end: number;
-}
-
-/** The ignition window (current reaching the last diode), ms. */
-export const IGNITE_MS = 1150;
-/** Rise + settle of a single diode, ms. */
-const RISE_MS = 90;
-const SETTLE_MS = 320;
-
-/**
- * Build the panel and its ignition schedule. Deterministic: the same layout
- * every load, on the server and the client.
- */
-export function layoutLeds(): LedLayout {
-  const { cells } = LED_NAME;
-  const rows = cells.length + PAD_Y * 2;
-  const cols = cells[0].length + PAD_X * 2;
-
-  type Cell = { col: number; row: number; gain: number };
-  const lit: Cell[] = [];
-  const index = new Map<number, number>();
-  cells.forEach((line, r) => {
-    for (let c = 0; c < line.length; c++) {
-      const ch = line[c];
-      if (ch === ".") continue;
-      const lvl = Number(ch);
-      index.set((r + PAD_Y) * cols + c + PAD_X, lit.length);
-      lit.push({ col: c + PAD_X, row: r + PAD_Y, gain: lvl === 3 ? 1 : lvl === 2 ? 0.72 : 0.42 });
-    }
-  });
-
-  /* The stem: the adjacent pair of columns with the most solid cells. */
-  const solid = new Array(cols).fill(0);
-  for (const l of lit) if (l.gain >= 0.72) solid[l.col]++;
-  let stem = 0;
-  for (let c = 1; c < cols - 1; c++) {
-    if (solid[c] + solid[c + 1] > solid[stem] + solid[stem + 1]) stem = c;
-  }
-  const onStem = (l: Cell) => l.col >= stem - 1 && l.col <= stem + 2;
-
-  /* Dijkstra from the top of the stem. Moving down the stem is cheap;
-     everything else costs more, so branches visibly lag the spine. */
-  const dist = new Array(lit.length).fill(Infinity);
-  let start = -1;
-  for (let i = 0; i < lit.length; i++) {
-    if (onStem(lit[i]) && (start < 0 || lit[i].row < lit[start].row)) start = i;
-  }
-  dist[start] = 0;
-  const done = new Array(lit.length).fill(false);
-  for (;;) {
-    let u = -1;
-    for (let i = 0; i < lit.length; i++) {
-      if (!done[i] && dist[i] < Infinity && (u < 0 || dist[i] < dist[u])) u = i;
-    }
-    if (u < 0) break;
-    done[u] = true;
-    const a = lit[u];
-    for (let dy = -1; dy <= 1; dy++)
-      for (let dx = -1; dx <= 1; dx++) {
-        if (!dx && !dy) continue;
-        const v = index.get((a.row + dy) * cols + a.col + dx);
-        if (v === undefined || done[v]) continue;
-        const b = lit[v];
-        const step = Math.hypot(dx, dy) * (onStem(a) && onStem(b) ? 1 : 2.6);
-        if (dist[u] + step < dist[v]) dist[v] = dist[u] + step;
-      }
-  }
-  /* Islands the strokes do not reach (a detached dot, a hook the bake cut
-     off) jump from their nearest lit neighbour, a little late. */
-  for (let i = 0; i < lit.length; i++) {
-    if (dist[i] < Infinity) continue;
-    let best = Infinity;
-    for (let j = 0; j < lit.length; j++) {
-      if (dist[j] === Infinity) continue;
-      const d = dist[j] + Math.hypot(lit[i].col - lit[j].col, lit[i].row - lit[j].row) * 3;
-      if (d < best) best = d;
-    }
-    dist[i] = best;
-  }
-
-  const max = Math.max(...dist.filter((d) => d < Infinity), 1);
-  /* The holdout: the last solid stem diode in the bottom fifth. */
-  let holdout = -1;
-  for (let i = 0; i < lit.length; i++) {
-    const l = lit[i];
-    if (onStem(l) && l.gain === 1 && l.row > rows * 0.8 && (holdout < 0 || l.row > lit[holdout].row)) holdout = i;
-  }
-
-  const leds: Led[] = lit.map((l, i) => {
-    const jitter = (srand(i * 31 + 7) - 0.5) * 70;
-    let at = (dist[i] / max) * (IGNITE_MS - 120) + jitter;
-    let stutter: number[] | null = null;
-    if (i === holdout) {
-      at = IGNITE_MS - 40;
-      stutter = [30, 70, 25, 150, 40, 90];
-    } else if (srand(i * 13 + 101) < 0.125) {
-      stutter = srand(i * 7 + 3) < 0.5 ? [35, 60] : [25, 45, 30, 80];
-    }
-    return { ...l, at: Math.max(0, at), stutter };
-  });
-
-  const end = Math.max(...leds.map((l) => l.at + (l.stutter?.reduce((a, b) => a + b, 0) ?? 0))) + RISE_MS + SETTLE_MS;
-  return { cols, rows, leds, end };
-}
-
-/**
- * One diode's brightness at `t` ms of ignition, 0 … ~1.25 (before its gain).
- */
-export function brightness(led: Led, t: number): number {
-  let u = t - led.at;
-  if (u < 0) return 0;
-  if (led.stutter) {
-    const s = led.stutter;
-    for (let k = 0; k < s.length; k++) {
-      if (u < s[k]) return k % 2 === 0 ? 0.55 + 0.25 * srand(led.col * 97 + led.row * 13 + k) : 0;
-      u -= s[k];
-    }
-  }
-  if (u < RISE_MS) {
-    const x = u / RISE_MS;
-    return 1.25 * (1 - (1 - x) * (1 - x));
-  }
-  u -= RISE_MS;
-  if (u < SETTLE_MS) {
-    const x = u / SETTLE_MS;
-    return 1.25 - 0.25 * (x * x * (3 - 2 * x));
-  }
-  return 1;
-}
 
 /* ---- diodes ------------------------------------------------------------- */
 /*
@@ -196,7 +45,7 @@ export function brightness(led: Led, t: number): number {
  *    dark gap between them. The bloom sits *around* the diodes, never over.
  *
  * The caller's canvas must be backed at exactly cols·pitch × rows·pitch, shown
- * at that ÷ dpr, on a whole device pixel (LedSign snaps it).
+ * at that ÷ dpr, on a whole device pixel.
  */
 
 /** Core tints along the temperature ramp, coolest first. */
@@ -334,69 +183,6 @@ export function drawCore(
   const step = Math.min(CORE_STEPS - 1, Math.max(0, Math.round((b / 1.25) * (CORE_STEPS - 1))));
   ctx.globalAlpha = Math.min(1, 0.3 + b * 0.7);
   ctx.drawImage(kit.cores[step], col * kit.pitch, row * kit.pitch);
-}
-
-export interface LedPainter {
-  /** Canvas size in device px. */
-  width: number;
-  height: number;
-  /** Draw ignition time `t` (ms) with bloom `glow` 0…1. Returns the lit fraction. */
-  draw(t: number, glow: number): number;
-}
-
-/**
- * A painter for the intro sign at an integer device pitch. The caller backs
- * its canvas at `width × height` and shows it at that ÷ dpr.
- */
-export function createPainter(
-  ctx: CanvasRenderingContext2D,
-  layout: LedLayout,
-  pitch: number
-): LedPainter {
-  const width = pitch * layout.cols;
-  const height = pitch * layout.rows;
-  const kit = makeDiodes(pitch);
-  const panel = paintPanel(
-    layout.cols,
-    layout.rows,
-    pitch,
-    new Set(layout.leds.map((l) => l.row * layout.cols + l.col))
-  );
-  const total = layout.leds.length;
-  const drive = new Float32Array(total);
-
-  return {
-    width,
-    height,
-    draw(t, glow) {
-      ctx.globalCompositeOperation = "source-over";
-      ctx.globalAlpha = 1;
-      ctx.clearRect(0, 0, width, height);
-      ctx.drawImage(panel, 0, 0);
-
-      let on = 0;
-      for (let i = 0; i < total; i++) {
-        const b = brightness(layout.leds[i], t) * layout.leds[i].gain;
-        drive[i] = b;
-        if (b > 0) on++;
-      }
-      // Bloom under, then the lenses on top: a halo can never wash a
-      // neighbour's disc.
-      ctx.globalCompositeOperation = "lighter";
-      const haloK = 0.5 + glow * 0.5;
-      for (let i = 0; i < total; i++) {
-        const l = layout.leds[i];
-        if (drive[i] > 0) drawHalo(ctx, kit, l.col, l.row, drive[i] * haloK);
-      }
-      ctx.globalCompositeOperation = "source-over";
-      for (let i = 0; i < total; i++) {
-        const l = layout.leds[i];
-        if (drive[i] > 0) drawCore(ctx, kit, l.col, l.row, drive[i]);
-      }
-      ctx.globalAlpha = 1;
-      return on / total;
-    },
-  };
 }
 
 /* ---- the name, set horizontally ----------------------------------------- */

@@ -64,6 +64,13 @@
          moment it appears in a third place it stops meaning anything. */
   --color-hazard: #ffa02b;
 
+  /* --- The calligraphy. Sumi ink, the paper it is written on, and the
+         vermilion of the seal. Only the intro scroll, the ink signs and the
+         seal use them; they are materials, not a second accent. */
+  --color-ink: #0b0d14;
+  --color-paper: #e8dfc8;
+  --color-seal: #d23a2a;
+
   /* --- Hairlines. Resolved per depth by the [data-act] blocks below. */
   --color-line: rgba(236, 238, 251, 0.12);
   --color-line-strong: rgba(236, 238, 251, 0.3);
@@ -618,42 +625,13 @@ html.hud-cursor * {
   .neon-tube[data-lit][data-idle]::before { animation: none; }
 }
 
-/* The preloader's rain: slanted hairline streaks in two sizes, tiled and
-   slid down in one compositor-only transform loop. The layer is taller than
-   the screen by one tile, so the loop is seamless. */
-.preloader-rain {
-  inset: -240px 0 0 0;
-  opacity: 0.35;
-  background-image:
-    repeating-linear-gradient(104deg, transparent 0 46px, rgba(170, 200, 230, 0.16) 46px 47px, transparent 47px 97px),
-    repeating-linear-gradient(98deg, transparent 0 71px, rgba(170, 200, 230, 0.1) 71px 72px, transparent 72px 143px);
-  -webkit-mask-image: repeating-linear-gradient(180deg, #000 0 26px, transparent 26px 60px);
-  mask-image: repeating-linear-gradient(180deg, #000 0 26px, transparent 26px 60px);
-  animation: preloader-rain 0.5s linear infinite;
-}
-@keyframes preloader-rain {
-  from { transform: translate3d(0, 0, 0); }
-  to { transform: translate3d(-14px, 60px, 0); }
-}
-@media (prefers-reduced-motion: reduce) {
-  .preloader-rain { animation: none; }
-}
-
-/* The LED intro (Preloader). Its curtain is in the server HTML so that first
+/* The ink intro (Preloader). Its curtain is in the server HTML so that first
    paint is the dark room; visitors who prefer reduced motion must never see
    it, and this hides it before any script has run. (No-JS visitors get the
    same rule from a <noscript> style in the layout.) */
 @media (prefers-reduced-motion: reduce) {
   .preloader { display: none; }
 }
-/* The rain is only seen where the sign lights it: a soft pool round the
-   sign, nothing at the edges of the frame. The mask is static; only the rain
-   inside it moves, so this is one compositor layer. */
-.preloader-rain-light {
-  -webkit-mask-image: radial-gradient(ellipse 46% 62% at 50% 46%, #000 30%, transparent 100%);
-  mask-image: radial-gradient(ellipse 46% 62% at 50% 46%, #000 30%, transparent 100%);
-}
-.preloader-rain-light .preloader-rain { opacity: 0.9; }
 
 /* A section kicker's plate: a small dark tab with a sodium tick, the way a
    label is screwed onto a panel. The kickers sit over the film, and on a

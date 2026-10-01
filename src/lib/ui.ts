@@ -21,7 +21,12 @@ const en = {
   },
   preloader: {
     loading: "LOADING",
+    writing: "WRITING",
     ready: "READY",
+    /** The slate in the intro's top bar. */
+    reel: "REEL 01 · ULAANBAATAR",
+    skipKey: "Press any key to skip",
+    skipTap: "Tap to skip",
   },
   nav: {
     openMenu: "Open menu",
@@ -153,7 +158,7 @@ const en = {
     motion: "Motion",
     full: "Full",
     reduced: "Reduced",
-    leds: "Intro LEDs",
+    leds: "Intro ink",
     none: "None",
   },
   palette: {
@@ -201,7 +206,11 @@ const mn: UiStrings = {
   },
   preloader: {
     loading: "АЧААЛЖ БАЙНА",
+    writing: "БИЧИЖ БАЙНА",
     ready: "БЭЛЭН",
+    reel: "ХУУРЦАГ 01 · УЛААНБААТАР",
+    skipKey: "Алгасах бол дурын товч дарна уу",
+    skipTap: "Алгасах бол товшино уу",
   },
   nav: {
     openMenu: "Цэс нээх",
@@ -329,7 +338,7 @@ const mn: UiStrings = {
     motion: "Хөдөлгөөн",
     full: "Бүрэн",
     reduced: "Багасгасан",
-    leds: "Интро LED",
+    leds: "Интро бэх",
     none: "Байхгүй",
   },
   palette: {
