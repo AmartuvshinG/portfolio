@@ -6,6 +6,8 @@ import { useLockScroll } from "@/hooks/useLockScroll";
 import { markBooted } from "@/hooks/useBootReady";
 import { useI18n } from "@/lib/i18n";
 import { InkScroll } from "@/components/chrome/InkScroll";
+import { useIntroReplays } from "@/lib/intro";
+import { requestRewrite } from "@/lib/inkWriteQueue";
 
 /**
  * First-load curtain: his name in Mongol bichig, written by brush on a
@@ -27,7 +29,8 @@ import { InkScroll } from "@/components/chrome/InkScroll";
  *
  * Any key, click, wheel or touch skips: the brush finishes in a quarter of a
  * second, the seal stamps, and it lifts. A second view in the same tab, or
- * Save-Data, runs at 0.55×. A ceiling timer lifts it regardless, so a stalled
+ * Save-Data, runs at 0.55×; a replay (lib/intro — the footer, the palette)
+ * runs at full length again. A ceiling timer lifts it regardless, so a stalled
  * frame loop (a background tab) can never strand the page behind it.
  *
  * **First paint is the dark room.** Reduced motion is read with
@@ -71,13 +74,19 @@ const BAR =
   "h-[clamp(6dvh,calc((100dvh-41.841vw)/2),16dvh)] portrait:h-[7dvh]";
 
 export function Preloader() {
+  /* Keyed by the replay count: a replay is a fresh curtain with fresh state. */
+  const replays = useIntroReplays();
+  return <Curtain key={replays} replay={replays > 0} />;
+}
+
+function Curtain({ replay }: { replay: boolean }) {
   const { c, t } = useI18n();
   const reduced = useSyncExternalStore(
     subscribeReduced,
     () => window.matchMedia(QUERY).matches,
     () => false
   );
-  const [timeScale] = useState(initialTimeScale);
+  const [timeScale] = useState(() => (replay ? 1 : initialTimeScale()));
   const [done, setDone] = useState(false);
   const [ready, setReady] = useState(false);
   const [writing, setWriting] = useState(false);
@@ -92,6 +101,12 @@ export function Preloader() {
   const progress = useMotionValue(0);
 
   const finished = reduced || done;
+  /* After a replay the signs on screen write themselves again. */
+  useEffect(() => {
+    if (!replay || !done) return;
+    const id = window.setTimeout(requestRewrite, 900);
+    return () => window.clearTimeout(id);
+  }, [replay, done]);
   useLockScroll(!finished);
 
   /* Release the hero as the dissolve starts (see useBootReady). Also covers
@@ -141,6 +156,10 @@ export function Preloader() {
           key="preloader"
           aria-hidden
           className="preloader fixed inset-0 z-[120] overflow-hidden bg-void text-fg"
+          /* First load: the server's dark room is already there. A replay
+             fades the room in over the page. */
+          initial={replay ? { opacity: 0 } : false}
+          animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           /* A visitor who skipped has said they are in a hurry. */
           transition={skip ? { duration: 0.6, delay: 0.1 } : { duration: 1.1, delay: 0.3, ease: [0.4, 0, 0.2, 1] }}

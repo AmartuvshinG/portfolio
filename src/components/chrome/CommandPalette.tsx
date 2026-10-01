@@ -1,6 +1,9 @@
 "use client";
 
 import { toggleDiagnostics } from "@/lib/diagnostics";
+import { replayIntro } from "@/lib/intro";
+import { useReducedMotion } from "@/hooks/useReducedMotion";
+import { requestRewrite } from "@/lib/inkWriteQueue";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
@@ -51,6 +54,7 @@ export function CommandPalette() {
   const [cursor, setCursor] = useState(0);
   const [copied, setCopied] = useState(false);
   const [lowPower, setLowPower] = useState(false);
+  const reduced = useReducedMotion();
   const inputRef = useRef<HTMLInputElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
   const restoreFocus = useRef<HTMLElement | null>(null);
@@ -117,6 +121,15 @@ export function CommandPalette() {
       run: () => toggleDiagnostics(),
     });
 
+    /* The film again, and the neon signs on screen written again. Neither
+       exists under reduced motion. */
+    if (!reduced) {
+      actions.push(
+        { id: "a-replay", label: t.palette.replay, group: t.palette.actions, run: () => replayIntro() },
+        { id: "a-rewrite", label: t.palette.rewrite, group: t.palette.actions, run: () => requestRewrite() }
+      );
+    }
+
     /* Offered in the *other* language's own words — someone who needs the
        switch may not read the language the site is currently in. */
     if (available.length > 1) {
@@ -133,7 +146,7 @@ export function CommandPalette() {
     }
 
     return [...sections, ...files, ...actions];
-  }, [go, lowPower, navLinks, projects, contact, t, locale, setLocale, available]);
+  }, [go, lowPower, reduced, navLinks, projects, contact, t, locale, setLocale, available]);
 
   const results = useMemo(() => {
     const q = query.trim().toLowerCase();

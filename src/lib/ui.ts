@@ -156,6 +156,7 @@ const en = {
     index: "Contents",
     elsewhere: "Elsewhere",
     top: "Top",
+    replay: "Replay intro",
     /** The end credits. Every name here is a fact about how the site was made. */
     credits: {
       title: "Credits",
@@ -198,6 +199,8 @@ const en = {
     copiedEmail: "Copied",
     lowPower: "Low-power mode",
     diagnostics: "Diagnostics",
+    replay: "Replay the intro",
+    rewrite: "Rewrite the neon signs",
     language: "Монгол хэлээр үзэх",
     on: "ON",
     off: "OFF",
@@ -361,6 +364,7 @@ const mn: UiStrings = {
     index: "Агуулга",
     elsewhere: "Бусад",
     top: "Дээш",
+    replay: "Эхлэлийг дахин үзэх",
     credits: {
       title: "Титр",
       design: "Дизайн ба код",
@@ -401,6 +405,8 @@ const mn: UiStrings = {
     copiedEmail: "Хуулагдлаа",
     lowPower: "Хэмнэлттэй горим",
     diagnostics: "Оношилгоо",
+    replay: "Эхлэлийг дахин үзэх",
+    rewrite: "Неон самбаруудыг дахин бичих",
     language: "View in English",
     on: "ИДЭВХТЭЙ",
     off: "ИДЭВХГҮЙ",

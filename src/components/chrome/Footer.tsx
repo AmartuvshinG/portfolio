@@ -8,7 +8,9 @@ import { Reveal } from "@/components/motion/Reveal";
 import { Cta } from "@/components/ui/Cta";
 import { InkSign } from "@/components/ui/InkSign";
 import { Seal } from "@/components/ui/Seal";
-import { IconArrowUp } from "@/components/ui/HudIcons";
+import { IconArrowUp, IconReplay } from "@/components/ui/HudIcons";
+import { replayIntro } from "@/lib/intro";
+import { useReducedMotion } from "@/hooks/useReducedMotion";
 
 /** The footage's makers, as their own components name them. */
 const CITY = { name: "Guglielmo Giannattasio", via: "21st.dev", href: "https://www.guglielmogiannattasio.it" };
@@ -31,6 +33,7 @@ export function Footer() {
   const { c, t } = useI18n();
   const { navLinks, socials, profile, contact } = c;
   const { scrollTo } = useSmoothScroll();
+  const reduced = useReducedMotion();
   const year = new Date().getFullYear();
   const cr = t.footer.credits;
 
@@ -164,7 +167,14 @@ export function Footer() {
             {t.footer.credit}
           </span>
         </div>
-        <Cta variant="secondary" onClick={() => scrollTo(0)} icon={<IconArrowUp size={14} />} label={t.footer.top} arrow={null} />
+        <div className="flex flex-wrap items-center gap-3">
+          {/* The film can be run again. Not under reduced motion, where
+              there is no intro to run. */}
+          {!reduced && (
+            <Cta variant="secondary" onClick={replayIntro} icon={<IconReplay size={14} />} label={t.footer.replay} arrow={null} />
+          )}
+          <Cta variant="secondary" onClick={() => scrollTo(0)} icon={<IconArrowUp size={14} />} label={t.footer.top} arrow={null} />
+        </div>
       </div>
     </footer>
   );

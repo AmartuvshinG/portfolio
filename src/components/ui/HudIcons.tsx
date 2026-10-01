@@ -82,6 +82,13 @@ export const IconClose = (p: IconProps) => (
   </Svg>
 );
 
+export const IconReplay = (p: IconProps) => (
+  <Svg {...p}>
+    <path pathLength={1} d="M15.5 10a5.5 5.5 0 1 1-1.6-3.9" />
+    <path pathLength={1} d="M14.5 2.5v4h-4" />
+  </Svg>
+);
+
 export const IconArrowUp = (p: IconProps) => (
   <Svg {...p}>
     <path pathLength={1} d="M10 17V4" />
