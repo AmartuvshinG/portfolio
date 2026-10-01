@@ -13,6 +13,8 @@
  * jump the smooth-scroll layer never hears about.
  */
 
+import { playInkWipe } from "@/lib/inkWipe";
+
 export const CASE_EVENT = "casefile:change";
 
 const PATTERN = /^#case=([a-z0-9-]+)$/i;
@@ -43,10 +45,17 @@ export function isCaseHash(hash: string): boolean {
  * section hash back on the next scroll anyway.
  */
 export function openCase(slug: string) {
-  const { pathname, search } = window.location;
-  window.history.replaceState(window.history.state, "", pathname + search);
-  window.history.pushState(window.history.state, "", caseHash(slug));
-  window.dispatchEvent(new CustomEvent(CASE_EVENT, { detail: { pushed: true } }));
+  /* The dossier opens under the ink wipe, at the moment the screen is fully
+     covered, so it is revealed as the ink drains (lib/inkWipe). Without
+     WebGL or under reduced motion the wipe calls straight through. */
+  playInkWipe({
+    onCovered: () => {
+      const { pathname, search } = window.location;
+      window.history.replaceState(window.history.state, "", pathname + search);
+      window.history.pushState(window.history.state, "", caseHash(slug));
+      window.dispatchEvent(new CustomEvent(CASE_EVENT, { detail: { pushed: true } }));
+    },
+  });
 }
 
 /** Switch case files in place — prev/next inside an open file, no new entry. */

@@ -9,6 +9,7 @@ import { IconArrowLeft, IconArrowRight, IconClose } from "@/components/ui/HudIco
 import { accentColor, readable, type Project } from "@/lib/content";
 import { useI18n } from "@/lib/i18n";
 import { CASE_EVENT, clearCase, readCase, replaceCase } from "@/lib/caseFile";
+import { playInkWipe } from "@/lib/inkWipe";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
 import { useOverlay } from "@/hooks/useOverlay";
 import { EASE_EXPO } from "@/lib/motion";
@@ -58,13 +59,19 @@ export function CaseFileHost() {
 
   const project = c.projects.find((p) => p.slug === slug) ?? null;
 
+  /* Closing is the same cut in reverse: ink floods over the dossier, and the
+     page it was opened from is what drains back into view. */
   const close = useCallback(() => {
-    if (pushed.current) {
-      pushed.current = false;
-      window.history.back();
-    } else {
-      clearCase();
-    }
+    playInkWipe({
+      onCovered: () => {
+        if (pushed.current) {
+          pushed.current = false;
+          window.history.back();
+        } else {
+          clearCase();
+        }
+      },
+    });
   }, []);
 
   const go = useCallback((next: Project) => replaceCase(next.slug), []);
