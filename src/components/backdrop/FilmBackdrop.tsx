@@ -4,6 +4,7 @@ import { useEffect, useId, useRef, useState } from "react";
 import { ScrollTrigger } from "@/lib/gsap";
 import { FILM, clamp, easeInOut, loadWhole, seeker } from "@/lib/film";
 import { createFilmRenderer } from "@/lib/filmShader";
+import { pointerEnabled, pointerSettled, retainPointer, stepPointer } from "@/lib/pointer";
 
 /**
  * The film as the site's one ground.
@@ -35,10 +36,17 @@ import { createFilmRenderer } from "@/lib/filmShader";
  * Without WebGL, or if the context is lost, the videos show directly with the
  * CSS transforms and SVG ring below, exactly as before.
  *
+ * **The look.** On a fine pointer the camera turns a little toward the
+ * cursor (lib/pointer, the same eased value the hero name drifts on): the
+ * plates move ~1%, the rain at three depths more. It draws only while the
+ * ease is still catching up, so a resting mouse costs nothing.
+ *
  * Replaces the aurora (SiteBackdrop). Mounted only with motion allowed.
  */
 
 const CITY_LEN = 8;
+/** Plate zoom while the look is live: the headroom its shift needs. */
+const OVERSCAN = 1.035;
 /** How often the rain advances. Half display rate: rain reads as rain at 30. */
 const RAIN_FPS = 30;
 const IRIS_END = 9;
@@ -187,6 +195,11 @@ export function FilmBackdrop() {
     let rMax = Math.hypot(w / 2, h / 2) + 4;
     let dirty = true;
     let rafId = 0;
+    const looking = pointerEnabled();
+    const releasePointer = looking ? retainPointer() : () => {};
+    let lookX = 0;
+    let lookY = 0;
+    const overscan = looking ? OVERSCAN : 1;
 
     /** Resolve every key to the scrollY at which it lands. Keys whose section
      *  is missing borrow their neighbour's position, so the map never breaks. */
@@ -281,6 +294,9 @@ export function FilmBackdrop() {
             speed,
             cityOn,
             issOn,
+            lookX,
+            lookY,
+            overscan,
           },
           cityVersion,
           issVersion
@@ -290,7 +306,7 @@ export function FilmBackdrop() {
 
       /* City: a slow push as it plays, then the climb into the sky as the
          porthole opens. Hidden outright once the iris covers it. */
-      city!.style.transform = `translate3d(0, ${iris * 7}%, 0) scale(${cityScale})`;
+      city!.style.transform = `translate3d(${(-lookX * 1.2).toFixed(3)}%, ${(iris * 7 - lookY * 0.6).toFixed(3)}%, 0) scale(${cityScale * overscan})`;
       city!.style.visibility = iris >= 1 ? "hidden" : "visible";
 
       const layer = issLayerRef.current;
@@ -298,7 +314,7 @@ export function FilmBackdrop() {
         layer.style.visibility = iris <= 0 ? "hidden" : "visible";
         layer.style.clipPath = iris >= 1 ? "none" : `circle(${iris * rMax}px at 50% 50%)`;
       }
-      iss!.style.transform = `scale(${issScale})`;
+      iss!.style.transform = `translate3d(${(-lookX * 1.2).toFixed(3)}%, ${(-lookY * 0.6).toFixed(3)}%, 0) scale(${issScale * overscan})`;
       iss!.style.objectPosition = `${issPosX * 100}% 50%`;
 
       const ring = ringRef.current;
@@ -384,6 +400,14 @@ export function FilmBackdrop() {
 
     measure();
     const frame = (now: number) => {
+      if (looking) {
+        const look = stepPointer(now);
+        if (look.x !== lookX || look.y !== lookY) {
+          lookX = look.x;
+          lookY = look.y;
+          if (!pointerSettled()) dirty = true;
+        }
+      }
       if (raining && now - lastRain >= 1000 / RAIN_FPS) {
         lastRain = now;
         dirty = true;
@@ -398,6 +422,7 @@ export function FilmBackdrop() {
 
     return () => {
       cancelAnimationFrame(rafId);
+      releasePointer();
       clearTimeout(debounce);
       ro.disconnect();
       ScrollTrigger.removeEventListener("refresh", measure);

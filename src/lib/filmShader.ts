@@ -21,6 +21,13 @@
  *   haze         sodium light pooling low in the frame, thinning as the
  *                camera climbs
  *
+ * And the camera's look (fine pointers only): the cursor turns the frame a
+ * little, the way the reference "mouse-responsive background" pans its plate,
+ * but at depth — the reels move least, the far rain a little more, the rain
+ * on the glass most. Three speeds of the same gesture is what makes the film
+ * read as a space rather than a picture. The plates are overscanned while it
+ * is on, so the shift never reaches the clamped edge of the frame.
+ *
  * Rain moves, so while the city is on screen the caller draws at 30fps even
  * at rest. Everything else still draws only when something changed.
  *
@@ -72,6 +79,8 @@ uniform vec3 uAmber;        // the sodium token
 uniform float uTime;        // wrapped seconds
 uniform float uRain;        // 0..1
 uniform float uHaze;        // 0..1
+uniform vec2 uLook;         // eased pointer, -1..1, +y down
+uniform float uOverscan;    // plate zoom that buys the look its headroom
 
 // Dave Hoskins' sin-free hash: identical on every GPU.
 float hash11(float p) {
@@ -139,17 +148,24 @@ void main() {
   vec2 duv = suv + vec2(shear, 0.0);
 
   // Rain, in screen space (y down, scaled by height so it is round).
+  // Each depth shifts by its own share of the look: the parallax.
   vec2 rp = vec2(px.x, px.y) / uRes.y;
-  float rNear = uRain > 0.0 ? rain(rp, 22.0, 7.0, 0.07, 1.0) : 0.0;
-  float rMid = uRain > 0.0 ? rain(rp, 46.0, 9.5, 0.09, 7.0) : 0.0;
-  float rFar = uRain > 0.0 ? rain(rp, 92.0, 12.0, 0.13, 13.0) : 0.0;
+  vec2 lookH = uLook * vec2(uRes.x / uRes.y, 0.5);
+  float rNear = uRain > 0.0 ? rain(rp + lookH * 0.03, 22.0, 7.0, 0.07, 1.0) : 0.0;
+  float rMid = uRain > 0.0 ? rain(rp + lookH * 0.018, 46.0, 9.5, 0.09, 7.0) : 0.0;
+  float rFar = uRain > 0.0 ? rain(rp + lookH * 0.008, 92.0, 12.0, 0.13, 13.0) : 0.0;
   // The near drops bend the picture behind them, like water on glass.
   duv.x += rNear * 0.0035 * uRain;
 
   vec2 split = (duv - 0.5) * 0.014 * s;
 
-  // Porthole: the station inside the circle, the city outside.
-  float d = length(px - uRes * 0.5);
+  // The plates' share of the look, smallest of all: they are the far wall.
+  vec2 plateShift = uLook * vec2(0.012, 0.006);
+  vec2 puv = duv + plateShift;
+
+  // Porthole: the station inside the circle, the city outside. The hole is
+  // cut in the plate, so it moves with the plate.
+  float d = length(px - uRes * (0.5 - plateShift));
   float r = uIris * uRMax;
   float inside = uIris >= 1.0 ? 1.0 : (uIris <= 0.0 ? 0.0 : 1.0 - smoothstep(r - 1.0, r + 1.0, d));
 
@@ -158,7 +174,7 @@ void main() {
 
   vec3 col = vec3(0.0);
   if (inside < 1.0) {
-    vec2 cuv = coverUv(duv, uCityAR, uCityScale, vec2(0.5, 0.2), uCityShift, 0.5);
+    vec2 cuv = coverUv(puv, uCityAR, uCityScale * uOverscan, vec2(0.5, 0.2), uCityShift, 0.5);
     vec3 c = reel(uCity, cuv, split);
 
     // Split-tone: teal shadows, sodium highlights, weighted away from
@@ -193,7 +209,7 @@ void main() {
     col = c * uCityOn;
   }
   if (inside > 0.0) {
-    vec2 iuv = coverUv(duv, uIssAR, uIssScale, vec2(0.5), 0.0, uIssPosX);
+    vec2 iuv = coverUv(puv, uIssAR, uIssScale * uOverscan, vec2(0.5), 0.0, uIssPosX);
     vec3 c = reel(uIss, iuv, split);
     // Space: nearly neutral, a cool teal lift and nothing warm.
     c = mix(c, c * vec3(0.9, 1.0, 1.08), 0.5);
@@ -236,6 +252,11 @@ export interface FilmFrame {
   speed: number;
   cityOn: number;
   issOn: number;
+  /** Eased pointer, −1…1 (zeros on touch). */
+  lookX: number;
+  lookY: number;
+  /** 1, or ~1.035 while the look is live. */
+  overscan: number;
 }
 
 function hexToRgb(hex: string, fallback: [number, number, number]): [number, number, number] {
@@ -312,6 +333,8 @@ export function createFilmRenderer(
     time: U("uTime"),
     rain: U("uRain"),
     haze: U("uHaze"),
+    look: U("uLook"),
+    overscan: U("uOverscan"),
   };
 
   const css = getComputedStyle(document.documentElement);
@@ -388,6 +411,8 @@ export function createFilmRenderer(
       gl.uniform1f(u.time, f.time);
       gl.uniform1f(u.rain, f.rain);
       gl.uniform1f(u.haze, f.haze);
+      gl.uniform2f(u.look, f.lookX, f.lookY);
+      gl.uniform1f(u.overscan, f.overscan);
       gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
     },
     dispose() {

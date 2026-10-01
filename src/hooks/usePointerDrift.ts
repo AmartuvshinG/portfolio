@@ -2,23 +2,21 @@
 
 import { useEffect, useRef } from "react";
 import { useReducedMotion } from "./useReducedMotion";
+import { pointerEnabled, pointerSettled, retainPointer, stepPointer } from "@/lib/pointer";
 
 /**
  * Eases an element a few pixels against the cursor.
  *
- * The whole site drifts at one weight — the hero's glow horizon, the backdrop's
- * pointer bloom, the work world's camera — and that consistency is only
- * achievable if they share a curve. Lifted out of the retired ApertureSlab,
- * which is where this easing was first tuned.
- *
- * Frame-rate-independent: `1 - pow(k, delta)` rather than a flat per-frame lerp,
- * so the element tracks at the same speed on a 60Hz panel and a 144Hz one. A
- * bare `pos += (target - pos) * 0.1` is more than twice as fast at 144Hz, which
- * is exactly how "subtle drift" turns into "snaps to the cursor" on a gaming
- * monitor.
+ * The whole site drifts at one weight — the hero name, the preloader's sign,
+ * the film's camera — because they all read the same eased value
+ * (lib/pointer). Layers differ only in `distance`, and that difference is the
+ * parallax: the name travels 30px over a film that travels ~1%, so the frame
+ * has two planes before you have scrolled at all.
  *
  * Writes `transform` directly rather than going through state: this runs every
- * frame and re-rendering to move a decorative layer is pure waste.
+ * frame while the pointer moves, and re-rendering to move a decorative layer is
+ * pure waste. The loop stops once the layer has caught the cursor and restarts
+ * on the next move, so a still mouse costs nothing.
  */
 export function usePointerDrift(
   /** Travel in px at full deflection. Y is damped to half of this. */
@@ -30,40 +28,32 @@ export function usePointerDrift(
   useEffect(() => {
     if (reduced) return;
     const el = ref.current;
-    if (!el) return;
-    // Touch devices have no hover position to track; the listener would only
-    // ever fire on tap and jump the layer.
-    if (!window.matchMedia("(pointer: fine)").matches) return;
+    if (!el || !pointerEnabled()) return;
 
-    const target = { x: 0, y: 0 };
-    const pos = { x: 0, y: 0 };
     let raf = 0;
-    let last = performance.now();
-
-    const onMove = (e: MouseEvent) => {
-      target.x = (e.clientX / window.innerWidth) * 2 - 1;
-      target.y = (e.clientY / window.innerHeight) * 2 - 1;
-    };
-
+    let running = false;
     const render = (now: number) => {
-      const delta = Math.min((now - last) / 1000, 0.1);
-      last = now;
-      const k = 1 - Math.pow(0.0015, delta);
-      pos.x += (target.x - pos.x) * k;
-      pos.y += (target.y - pos.y) * k;
-      el.style.transform = `translate3d(${(-pos.x * distance).toFixed(2)}px, ${(
-        -pos.y *
+      const look = stepPointer(now);
+      el.style.transform = `translate3d(${(-look.x * distance).toFixed(2)}px, ${(
+        -look.y *
         distance *
         0.5
       ).toFixed(2)}px, 0)`;
+      if (pointerSettled()) {
+        running = false;
+        return;
+      }
       raf = requestAnimationFrame(render);
     };
-
-    window.addEventListener("mousemove", onMove, { passive: true });
-    raf = requestAnimationFrame(render);
+    const wake = () => {
+      if (running) return;
+      running = true;
+      raf = requestAnimationFrame(render);
+    };
+    const release = retainPointer(wake);
 
     return () => {
-      window.removeEventListener("mousemove", onMove);
+      release();
       cancelAnimationFrame(raf);
     };
   }, [reduced, distance]);
