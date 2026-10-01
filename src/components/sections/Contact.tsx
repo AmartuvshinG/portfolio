@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { AnimatePresence, motion, useAnimationControls } from "framer-motion";
 import { sectionIndex } from "@/lib/content";
 import { useI18n } from "@/lib/i18n";
 import { Reveal } from "@/components/motion/Reveal";
@@ -10,6 +11,9 @@ import { NeonSign } from "@/components/ui/NeonSign";
 import { InkSign } from "@/components/ui/InkSign";
 import { IconCheck, IconCopy, IconMail } from "@/components/ui/HudIcons";
 import { Cta } from "@/components/ui/Cta";
+import { Seal } from "@/components/ui/Seal";
+import { UbClock } from "@/components/chrome/Navbar";
+import { useReducedMotion } from "@/hooks/useReducedMotion";
 
 /**
  * The closing block: the address, large, and the two ways in.
@@ -21,12 +25,21 @@ import { Cta } from "@/components/ui/Cta";
  * recruiter actually does is copy the address or open LinkedIn, so those are
  * the whole block now: the email set as the headline act with a copy button,
  * then mail and LinkedIn as buttons, and when to expect a reply.
+ *
+ * Copying the address is answered the way the intro ends: his seal stamps
+ * beside it, with the same thud. The facts beside it are a status board —
+ * availability on a lamp, the reply window, the base, and the time it is
+ * there now (so a recruiter in another zone knows whether he is awake).
  */
 export function Contact() {
   const { c, t } = useI18n();
   const { contact, profile, socials } = c;
   const linkedin = socials.find((s) => s.mark === "linkedin");
   const [copied, setCopied] = useState(false);
+  /* Each copy stamps again, so the seal is keyed by a count, not the flag. */
+  const [stamps, setStamps] = useState(0);
+  const reduced = useReducedMotion();
+  const thud = useAnimationControls();
   const timer = useRef<number | undefined>(undefined);
 
   useEffect(() => () => window.clearTimeout(timer.current), []);
@@ -35,6 +48,8 @@ export function Contact() {
     try {
       await navigator.clipboard.writeText(contact.email);
       setCopied(true);
+      setStamps((n) => n + 1);
+      if (!reduced) void thud.start({ y: [0, 0, 2, 0], transition: { duration: 0.42, times: [0, 0.38, 0.55, 1] } });
       window.clearTimeout(timer.current);
       timer.current = window.setTimeout(() => setCopied(false), 2200);
     } catch {
@@ -84,7 +99,10 @@ export function Contact() {
 
             {/* The address is the headline. It breaks anywhere rather than
                 overflowing a phone, and the copy button sits on its baseline. */}
-            <div className="mt-3 flex flex-wrap items-end gap-x-5 gap-y-3">
+            {/* The thud: the line dips a hair as the seal lands. Driven by
+                controls, never by re-keying — a remount would take the Copy
+                button, and keyboard focus with it. */}
+            <motion.div className="mt-3 flex flex-wrap items-end gap-x-5 gap-y-3" animate={thud}>
               <a
                 href={`mailto:${contact.email}`}
                 className="spectrum-underline min-w-0 break-all font-tech text-[clamp(1.75rem,4.6vw,4rem)] font-semibold leading-[1.05] text-fg"
@@ -101,7 +119,24 @@ export function Contact() {
               <span aria-live="polite" className="sr-only">
                 {copied ? t.contact.copiedLive(contact.email) : ""}
               </span>
-            </div>
+              {/* His seal, pressed beside the address: falls in large, lands
+                  with the intro's ease, holds while "Copied" does. */}
+              <AnimatePresence>
+                {copied && (
+                  <motion.span
+                    key={stamps}
+                    aria-hidden
+                    className="mb-1 block h-12 w-12 shrink-0 md:h-14 md:w-14"
+                    initial={reduced ? { opacity: 0 } : { opacity: 0, scale: 1.5, rotate: -14 }}
+                    animate={{ opacity: 0.95, scale: 1, rotate: -6 }}
+                    exit={{ opacity: 0, transition: { duration: 0.5 } }}
+                    transition={{ duration: 0.16, ease: [0.55, 0, 0.9, 0.4] }}
+                  >
+                    <Seal className="h-full w-full" />
+                  </motion.span>
+                )}
+              </AnimatePresence>
+            </motion.div>
 
             <div className="mt-10 flex flex-wrap gap-3">
               {/* The ramp carries the colour and the label stays dark on it:
@@ -126,26 +161,44 @@ export function Contact() {
           </Reveal>
 
           <Reveal className="lg:col-span-4" delay={0.1}>
-            <dl className="grid gap-8 sm:grid-cols-3 lg:grid-cols-1">
-              <div>
-                <dt className="micro">{t.contact.availability}</dt>
-                <dd className="mt-2 font-tech text-xl font-semibold uppercase text-fg">
-                  {contact.availability}
-                </dd>
-              </div>
-              <div>
-                <dt className="micro">{t.contact.response}</dt>
-                <dd className="mt-2 font-tech text-xl font-semibold uppercase text-fg">
-                  {t.contact.responseTime}
-                </dd>
-              </div>
-              <div>
-                <dt className="micro">{t.contact.based}</dt>
-                <dd className="mt-2 font-tech text-xl font-semibold uppercase text-fg">
-                  {profile.location}
-                </dd>
-              </div>
-            </dl>
+            {/* The status board: a readout, so its values are lit in holo;
+                the one lamp, on availability, is sodium — the site's
+                "available" call. */}
+            <div className="relative border border-line bg-[#05060d]/60 px-5 py-4">
+              <span
+                aria-hidden
+                className="hud-brackets pointer-events-none absolute inset-0 [--hud-c:color-mix(in_srgb,var(--color-holo)_70%,transparent)] [--hud-l:10px]"
+              />
+              <p className="micro mb-3">{t.contact.board}</p>
+              <dl className="divide-y divide-line">
+                {[
+                  { k: t.contact.availability, v: contact.availability, lamp: true },
+                  { k: t.contact.response, v: t.contact.responseTime, lamp: false },
+                  { k: t.contact.based, v: profile.location, lamp: false },
+                ].map((row) => (
+                  <div key={row.k} className="grid grid-cols-[minmax(0,2fr)_minmax(0,3fr)] items-baseline gap-4 py-3">
+                    <dt className="micro">{row.k}</dt>
+                    <dd className="flex items-baseline gap-2 font-mono text-sm uppercase leading-snug tracking-[0.08em] text-[var(--color-holo)]">
+                      {row.lamp && (
+                        <span
+                          aria-hidden
+                          className="h-1.5 w-1.5 shrink-0 -translate-y-px animate-blink rounded-full bg-[var(--color-hazard)] shadow-[0_0_8px_var(--color-hazard)]"
+                        />
+                      )}
+                      {row.v}
+                    </dd>
+                  </div>
+                ))}
+                <div className="grid grid-cols-[minmax(0,2fr)_minmax(0,3fr)] items-baseline gap-4 py-3">
+                  <dt className="micro">{t.contact.localTime}</dt>
+                  <dd className="font-mono text-sm">
+                    {/* Aria-hidden ticking digits; the row's label is enough
+                        and nobody needs the seconds read out. */}
+                    <UbClock className="flex [&_span:last-child]:!text-[var(--color-holo)]" />
+                  </dd>
+                </div>
+              </dl>
+            </div>
           </Reveal>
         </div>
       </div>

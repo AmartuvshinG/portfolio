@@ -6,7 +6,9 @@ import { Reveal, RevealStagger } from "@/components/motion/Reveal";
 import { ChapterSeam } from "@/components/chrome/ChapterSeam";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
 import { cn } from "@/lib/utils";
-import { motion } from "framer-motion";
+import { motion, useInView } from "framer-motion";
+import { useEffect, useRef } from "react";
+import { useScramble } from "@/hooks/useScramble";
 import { InkSign } from "@/components/ui/InkSign";
 import { ScrubWords } from "@/components/motion/ScrubWords";
 
@@ -21,6 +23,10 @@ export function About() {
   const { c, t } = useI18n();
   const { about, profile } = c;
   const reduced = useReducedMotion();
+  const plateRef = useRef<HTMLDivElement>(null);
+  /* Same threshold as the scan below, so each value decodes as the line
+     passes it. */
+  const scanned = useInView(plateRef, { once: true, amount: 0.6 });
   return (
     <section
       id="about"
@@ -60,7 +66,7 @@ export function About() {
             panel reads as a file on a person; three rounded cards read as a
             pricing table. Every value is already stated elsewhere on the page. */}
         <Reveal className="mt-20 md:mt-28">
-          <div className="relative overflow-hidden border border-line bg-[#05060d]/60">
+          <div ref={plateRef} className="relative overflow-hidden border border-line bg-[#05060d]/60">
             {/* Own layer: .hud-brackets sets the `background` shorthand, and
                 unlayered CSS would wipe the plate's fill if they shared a node. */}
             <span
@@ -100,7 +106,7 @@ export function About() {
                   ...about.signature.map((s) => ({ k: s.k, v: s.v, wide: false })),
                   { k: t.about.languages, v: t.about.languagesValue, wide: false },
                   { k: t.about.status, v: profile.status, wide: true },
-                ].map((f) => (
+                ].map((f, i) => (
                   <div
                     key={f.k}
                     className={cn(
@@ -110,7 +116,7 @@ export function About() {
                   >
                     <dt className="micro">{f.k}</dt>
                     <dd className="font-tech text-lg font-semibold uppercase leading-tight text-fg">
-                      {f.v}
+                      <DossierValue text={f.v} play={scanned} delay={0.3 + i * 0.12} />
                     </dd>
                   </div>
                 ))}
@@ -128,5 +134,23 @@ export function About() {
         </Reveal>
       </div>
     </section>
+  );
+}
+
+/** A dossier value that decodes once, as the plate's scan line reaches it. */
+function DossierValue({ text, play, delay }: { text: string; play: boolean; delay: number }) {
+  const { ref, run } = useScramble(text);
+  useEffect(() => {
+    if (!play) return;
+    const id = window.setTimeout(run, delay * 1000);
+    return () => window.clearTimeout(id);
+  }, [play, delay, run]);
+  return (
+    <>
+      <span className="sr-only">{text}</span>
+      <span ref={ref} aria-hidden>
+        {text}
+      </span>
+    </>
   );
 }

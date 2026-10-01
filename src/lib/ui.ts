@@ -146,6 +146,9 @@ const en = {
     copy: "Copy",
     copied: "Copied",
     copiedLive: (email: string) => `${email} copied to the clipboard`,
+    /** The status board beside the address. */
+    board: "Status board",
+    localTime: "Local time",
   },
   footer: {
     aria: "Footer",
@@ -350,6 +353,8 @@ const mn: UiStrings = {
     copy: "Хуулах",
     copied: "Хуулсан",
     copiedLive: (email: string) => `${email} хаягийг хуулсан`,
+    board: "Төлөвийн самбар",
+    localTime: "Орон нутгийн цаг",
   },
   footer: {
     aria: "Хөл хэсэг",
