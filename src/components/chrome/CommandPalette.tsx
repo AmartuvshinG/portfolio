@@ -1,5 +1,6 @@
 "use client";
 
+import { toggleDiagnostics } from "@/lib/diagnostics";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
@@ -106,6 +107,15 @@ export function CommandPalette() {
         },
       },
     ];
+
+    /* The diagnostics readout — the same toggle as the backquote key. */
+    actions.push({
+      id: "a-diag",
+      label: t.palette.diagnostics,
+      hint: "`",
+      group: t.palette.actions,
+      run: () => toggleDiagnostics(),
+    });
 
     /* Offered in the *other* language's own words — someone who needs the
        switch may not read the language the site is currently in. */

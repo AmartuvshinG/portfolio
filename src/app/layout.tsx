@@ -18,6 +18,7 @@ import { SiteBackdrop } from "@/components/backdrop/SiteBackdrop";
 import { Preloader } from "@/components/chrome/Preloader";
 import { ChapterFrame } from "@/components/chrome/ChapterFrame";
 import { HudCursor } from "@/components/chrome/HudCursor";
+import { Diagnostics } from "@/components/chrome/Diagnostics";
 import { Navbar } from "@/components/chrome/Navbar";
 import { CommandPalette } from "@/components/chrome/CommandPalette";
 import { ChapterKeys } from "@/components/chrome/ChapterKeys";
@@ -197,6 +198,7 @@ export default function RootLayout({
 
             <Preloader />
             <HudCursor />
+            <Diagnostics />
 
             <Navbar />
             <ChapterFrame />

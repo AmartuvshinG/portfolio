@@ -443,7 +443,8 @@ export function FilmBackdrop() {
   }, []);
 
   return (
-    <div className="absolute inset-0">
+    /* `data-film-renderer` is read by the diagnostics panel (` key). */
+    <div className="absolute inset-0" data-film-renderer={glOn ? "WebGL" : "Video"}>
       {/* No `src`: the loading effect hands each video a blob URL. */}
       <video
         ref={cityRef}
