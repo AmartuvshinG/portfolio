@@ -15,6 +15,8 @@ import { useReducedMotion } from "@/hooks/useReducedMotion";
 /** The footage's makers, as their own components name them. */
 const CITY = { name: "Guglielmo Giannattasio", via: "21st.dev", href: "https://www.guglielmogiannattasio.it" };
 const STATION = { name: "yuraoak", via: "GitHub", href: "https://github.com/yuraoak/airlock-hero-assets" };
+/** The Path's globe is Natural Earth's land, baked (scripts/bake-land-dots). */
+const MAP = { name: "Natural Earth", href: "https://www.naturalearthdata.com" };
 
 /**
  * The end of the reel.
@@ -57,6 +59,15 @@ export function Footer() {
         <a href={STATION.href} target="_blank" rel="noopener noreferrer" className="spectrum-underline">
           {STATION.name}
           <span className="text-muted"> — {cr.via} {STATION.via}</span>
+          <span className="sr-only">{t.common.newTab}</span>
+        </a>
+      ),
+    },
+    {
+      role: cr.map,
+      value: (
+        <a href={MAP.href} target="_blank" rel="noopener noreferrer" className="spectrum-underline">
+          {MAP.name}
           <span className="sr-only">{t.common.newTab}</span>
         </a>
       ),

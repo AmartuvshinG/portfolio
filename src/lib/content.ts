@@ -11,6 +11,7 @@
  */
 
 import type { TechKey } from "@/components/ui/TechMarks";
+import type { StopKey } from "@/lib/routeGeo";
 
 export type AccentKey = "accent" | "accent-2" | "alert";
 
@@ -89,17 +90,15 @@ export interface TimelineEntry {
   /** The dates as a phrase — what a screen reader announces in place of the
       animated stamp: "May 2025 – Apr 2026". */
   period: string;
-  kind: "work" | "education";
+  kind: "work" | "education" | "project";
+  /** Where it happened: the Path draws the journey between these. */
+  stop: StopKey;
+  /** Something the Path shows beside this entry: the GPA on the degree, the
+      measured figures and the case file on the capstone. Locale-free. */
+  extra?: "gpa" | "spotfixes";
   title: string;
   org: string;
   description: string;
-}
-
-export interface Stat {
-  label: string;
-  value: number;
-  suffix?: string;
-  unit?: string;
 }
 
 export interface SocialLink {
@@ -421,61 +420,88 @@ export const projects: Project[] = [
   },
 ];
 
-/** Real numbers only. Each one is sourced in the resume or the Spotfixes report. */
-export const stats: Stat[] = [
-  { label: "BUG RECORDS TRAINED ON", value: 222, suffix: "K+" },
-  { label: "MODEL ACCURACY", value: 89, unit: "%" },
-  { label: "GPA, FINAL FOUR SEMESTERS", value: 3.68, unit: "/4" },
-  { label: "AVERAGE PREDICTION TIME", value: 3.4, unit: "s" },
-];
-
+/**
+ * The journey, in the order it happened: the Path reads forward. Each entry
+ * says where it was (`stop`); the Path flies the route between them.
+ *
+ * Gannon's start date is in none of the sources, so the flight to Erie
+ * carries no date. Ask before adding one.
+ */
 export const timeline: TimelineEntry[] = [
   {
-    start: { year: 2026, month: 6 },
-    end: { year: 2026, month: 9 },
-    period: "Jun – Sep 2026",
-    kind: "work",
-    title: "Corporate Logistics Coordinator (Contractor, Khanbogd Khurd)",
-    org: "Oyu Tolgoi LLC",
-    description:
-      "Coordinated freight and transportation between the Ulaanbaatar headquarters and the mine site, and monitored logistics data to find routing inefficiencies.",
-  },
-  {
-    start: { year: 2026, month: 5 },
-    note: "graduated",
-    period: "Graduated May 2026",
+    start: { year: 2020 },
+    end: { year: 2021 },
+    period: "2020 – 2021",
     kind: "education",
-    title: "B.S. Software Engineering",
-    org: "Gannon University",
-    description:
-      "Erie, Pennsylvania, USA. Dean's List, College of Engineering and Business (Fall 2024, Spring 2025). Capstone: Spotfixes.",
-  },
-  {
-    start: { year: 2025, month: 5 },
-    end: { year: 2026, month: 4 },
-    period: "May 2025 – Apr 2026",
-    kind: "work",
-    title: "Foodservice Student Worker",
-    org: "Metz Culinary · Chick-fil-A",
-    description: "High-volume food preparation and inventory during peak campus hours.",
-  },
-  {
-    start: { year: 2023, month: 8 },
-    end: { year: 2024, month: 5 },
-    period: "Aug 2023 – May 2024",
-    kind: "work",
-    title: "Front Desk Student Attendant",
-    org: "Gannon Residence Life",
-    description: "Maintained student housing records in StarRez and resolved resident inquiries.",
+    stop: "ub",
+    title: "University studies · 21 credits",
+    org: "Mongolian University of Science and Technology",
+    description: "Ulaanbaatar, Mongolia. 21 credits completed.",
   },
   {
     start: { year: 2022, season: "summer" },
     end: { year: 2023, season: "summer" },
     period: "Summers 2022 & 2023",
     kind: "work",
+    stop: "erie",
     title: "Summer Student Conference Assistant",
     org: "Gannon Auxiliary Services",
     description: "Prepared residence halls and supported conference guests.",
+  },
+  {
+    start: { year: 2023, month: 8 },
+    end: { year: 2024, month: 5 },
+    period: "Aug 2023 – May 2024",
+    kind: "work",
+    stop: "erie",
+    title: "Front Desk Student Attendant",
+    org: "Gannon Residence Life",
+    description: "Maintained student housing records in StarRez and resolved resident inquiries.",
+  },
+  {
+    start: { year: 2025, month: 5 },
+    end: { year: 2026, month: 4 },
+    period: "May 2025 – Apr 2026",
+    kind: "work",
+    stop: "erie",
+    title: "Foodservice Student Worker",
+    org: "Metz Culinary · Chick-fil-A",
+    description: "High-volume food preparation and inventory during peak campus hours.",
+  },
+  {
+    start: { year: 2025, month: 8 },
+    end: { year: 2026, month: 5 },
+    period: "Aug 2025 – May 2026",
+    kind: "project",
+    stop: "erie",
+    extra: "spotfixes",
+    title: "Spotfixes · Senior Design Capstone",
+    org: "Gannon University · Team of 3",
+    description:
+      "A live platform that predicts bug severity, trained on 222,000+ Mozilla Firefox bug records. I led the React UI/UX and the usability testing and QA.",
+  },
+  {
+    start: { year: 2026, month: 5 },
+    note: "graduated",
+    period: "Graduated May 2026",
+    kind: "education",
+    stop: "erie",
+    extra: "gpa",
+    title: "B.S. Software Engineering",
+    org: "Gannon University",
+    description:
+      "Erie, Pennsylvania, USA. Dean's List, College of Engineering and Business (Fall 2024, Spring 2025).",
+  },
+  {
+    start: { year: 2026, month: 6 },
+    end: { year: 2026, month: 9 },
+    period: "Jun – Sep 2026",
+    kind: "work",
+    stop: "ub",
+    title: "Corporate Logistics Coordinator (Contractor, Khanbogd Khurd)",
+    org: "Oyu Tolgoi LLC",
+    description:
+      "Coordinated freight and transportation between the Ulaanbaatar headquarters and the mine site, and monitored logistics data to find routing inefficiencies.",
   },
 ];
 
@@ -530,7 +556,6 @@ export interface SiteContent {
   about: typeof about;
   capabilities: Capability[];
   projects: Project[];
-  stats: Stat[];
   timeline: TimelineEntry[];
   contact: typeof contact;
   socials: SocialLink[];
@@ -542,7 +567,6 @@ export const en: SiteContent = {
   about,
   capabilities,
   projects,
-  stats,
   timeline,
   contact,
   socials,

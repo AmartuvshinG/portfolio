@@ -1,504 +1,572 @@
 "use client";
 
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
+  AnimatePresence,
+  animate,
   motion,
   useInView,
+  useMotionValue,
   useMotionValueEvent,
   useScroll,
   useTransform,
-  type Transition,
 } from "framer-motion";
-import { BriefcaseBusiness, GraduationCap } from "lucide-react";
-import { sectionIndex, type Stamp, type TimelineEntry } from "@/lib/content";
+import { BriefcaseBusiness, GraduationCap, Layers } from "lucide-react";
+import { sectionIndex, timeline as baseTimeline, type TimelineEntry } from "@/lib/content";
 import { useI18n } from "@/lib/i18n";
+import { openCase } from "@/lib/caseFile";
+import { isInteractive, modalOpen } from "@/lib/keys";
+import { distanceKm, type StopKey } from "@/lib/routeGeo";
+import { EASE_DEVELOP } from "@/lib/motion";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
-import { AnimatedCounter } from "@/components/motion/AnimatedCounter";
-import { Reveal } from "@/components/motion/Reveal";
-import { SectionHeader } from "@/components/ui/SectionHeader";
+import { useSmoothScroll } from "@/components/chrome/SmoothScroll";
 import { ChapterSeam } from "@/components/chrome/ChapterSeam";
-import { EASE_EXPO } from "@/lib/motion";
+import { SectionHeader } from "@/components/ui/SectionHeader";
+import { IconArrowRight } from "@/components/ui/HudIcons";
+import { ScrambleText } from "@/components/motion/ScrambleText";
+import { RouteMap, type RouteProgress } from "@/components/path/RouteMap";
+import { DateStamp, yearNeon, type PathWords } from "@/components/path/NeonStamp";
 import { cn } from "@/lib/utils";
 
-/** The line on screen the rail's head rides, as a fraction of the viewport. */
-const READ_LINE = 0.6;
+/* ---------------------------------------------------------------------------
+   Path: the route.
 
-/** The month line's size. The rail node is centred on it, so both read it. */
-const MONTH_SIZE = "clamp(1.5rem, 2.4vw, 2.25rem)";
+   His record is a journey with a shape — Ulaanbaatar, then Erie, then home —
+   so the chapter flies it. A pinned stage: the LED globe across the top, the
+   entry on screen below it on the left, and the whole route as a log on the
+   right. Scrolling moves through the entries in the order they happened; at
+   each change of city the stage stops to fly the leg, the line lighting across
+   the Arctic on the way out and a packet running it back on the way home. The
+   last entry's tail runs the freight between Ulaanbaatar and the mine, which
+   is what that job was.
 
-type PathWords = ReturnType<typeof useI18n>["t"]["path"];
+   The neon date stamps are the old ledger's, unchanged (path/NeonStamp).
 
-/**
- * Path: the numbers, then the record.
- *
- * **Three lanes: date, rail, role.** The rail runs between the dates and the
- * roles; each row's node sits on it, level with that row's month.
- *
- * **Each date is said once.** A row shows its start as a stamp — the month
- * over a large year — and its end beside an arrow, leaving out whatever the end
- * shares with the start ("JUN 2026 → SEP", never "2026 … 2026"). The phrase a
- * screen reader hears is the row's `period`; the stamp itself is decoration.
- *
- * **The year is set in the display face** — the wordmark's, and the stats'
- * just above — lit in a neon of its own per year so years read apart at a
- * glance.
- *
- * **The stamp is dark until its row arrives**, then strikes on like a neon
- * sign: the month flashes, stutters and holds; then each digit of the year
- * does the same, left to right. It resets when the
- * row leaves the screen, so it plays again on the way back. It replaced an
- * odometer roll that read as a lottery machine. Under reduced motion it is
- * simply there.
- *
- * **The beam** is `scaleY` on a full-height line, not an animated `height`:
- * height is layout, and it was being recomputed on every scroll frame.
- */
+   Phones and reduced motion get the same globe, drawn once, over the record as
+   a list grouped by city — no pin.
+   --------------------------------------------------------------------------- */
+
+/** Scroll per entry, in viewport heights. */
+const STEP_VH = 46;
+/** Length of a flight, in entries. */
+const LEG = 1.3;
+/** Rest before the first entry. */
+const EDGE = 0.3;
+/** The last entry's stay, through which the freight runs. */
+const TAIL = 1.1;
+
+/** Locale-free: both languages list the same entries in the same places. */
+const KM = Math.round(distanceKm("ub", "erie") / 10) * 10;
+
+interface Leg {
+  from: StopKey;
+  to: StopKey;
+  start: number;
+  end: number;
+  /** The entries either side of it. */
+  before: number;
+  after: number;
+}
+
+/** Where each entry and each flight sits along the stage, in entry units. */
+function plan(entries: Pick<TimelineEntry, "stop">[]) {
+  const at: number[] = [];
+  const legs: Leg[] = [];
+  let p = 0;
+  entries.forEach((e, i) => {
+    if (i > 0) {
+      p += 1;
+      const prev = entries[i - 1].stop;
+      if (e.stop !== prev) {
+        legs.push({ from: prev, to: e.stop, start: p - 0.5, end: p - 0.5 + LEG, before: i - 1, after: i });
+        p += LEG;
+      }
+    }
+    at.push(p);
+  });
+  const last = at[at.length - 1];
+  const end = last + TAIL;
+  return { at, legs, freight: [last - 0.3, end - 0.15] as const, span: end + EDGE };
+}
+const BEATS = plan(baseTimeline);
+const OUT = BEATS.legs.find((l) => l.from === "ub" && l.to === "erie");
+const BACK = BEATS.legs.find((l) => l.from === "erie" && l.to === "ub");
+
+type Moment = { kind: "entry"; i: number } | { kind: "leg"; k: number };
+
+function momentAt(pos: number): Moment {
+  const k = BEATS.legs.findIndex((l) => pos >= l.start && pos < l.end);
+  if (k >= 0) return { kind: "leg", k };
+  let i = 0;
+  BEATS.at.forEach((a, j) => {
+    if (a - 0.5 <= pos) i = j;
+  });
+  return { kind: "entry", i };
+}
+
+const sameMoment = (a: Moment, b: Moment) =>
+  a.kind === b.kind && (a.kind === "entry" ? a.i === (b as typeof a).i : a.k === (b as typeof a).k);
+
+const clamp01 = (x: number) => (x < 0 ? 0 : x > 1 ? 1 : x);
+const span = (pos: number, a: number, b: number) => clamp01((pos - a) / (b - a));
+
 export function Timeline() {
-  const { c, t } = useI18n();
+  const { t } = useI18n();
   const reduced = useReducedMotion();
-  const listRef = useRef<HTMLOListElement>(null);
-  const sectionRef = useRef<HTMLElement>(null);
-  const tops = useRef<number[]>([]);
-
-  /* The fibre's packets run only while Path is on screen (`[data-live]`,
-     globals.css): an off-screen infinite loop is idle cost for nothing. */
+  const ref = useRef<HTMLElement>(null);
+  /* Stacked until we know there is room to pin; SSR and first paint agree. */
+  const [roomy, setRoomy] = useState(false);
   useEffect(() => {
-    const el = sectionRef.current;
-    if (!el) return;
-    const io = new IntersectionObserver(([e]) => {
-      if (e.isIntersecting) el.dataset.live = "";
-      else delete el.dataset.live;
-    });
-    io.observe(el);
-    return () => io.disconnect();
+    const mq = window.matchMedia("(min-width: 768px) and (min-height: 600px)");
+    const update = () => setRoomy(mq.matches);
+    update();
+    mq.addEventListener("change", update);
+    return () => mq.removeEventListener("change", update);
   }, []);
-  const [active, setActive] = useState(0);
+  const pinned = roomy && !reduced;
 
-  const { scrollYProgress } = useScroll({
-    target: listRef,
-    offset: [`start ${READ_LINE * 100}%`, `end ${READ_LINE * 100}%`],
-  });
-  const headY = useTransform(scrollYProgress, [0, 1], ["0%", "100%"]);
-  const headOpacity = useTransform(scrollYProgress, [0, 0.02, 0.98, 1], [0, 1, 1, 0]);
-  /* The fibre's lit length, as a clip: packets run only where the rail is lit. */
-  const fibreClip = useTransform(scrollYProgress, (p) => `inset(0 -6px ${((1 - p) * 100).toFixed(2)}% -6px)`);
-
-  /* Each row's node centre, relative to the list. Measured from the nodes
-     themselves, which never move: the animations live on other cells. */
-  useLayoutEffect(() => {
-    const list = listRef.current;
-    if (!list) return;
-    const measure = () => {
-      const origin = list.getBoundingClientRect().top;
-      tops.current = Array.from(list.querySelectorAll<HTMLElement>("[data-node]")).map((n) => {
-        const r = n.getBoundingClientRect();
-        return r.top - origin + r.height / 2;
-      });
-    };
-    measure();
-    const ro = new ResizeObserver(measure);
-    ro.observe(list);
-    return () => ro.disconnect();
-  }, [c.timeline]);
-
-  useMotionValueEvent(scrollYProgress, "change", (p) => {
-    const list = listRef.current;
-    if (!list) return;
-    const head = p * list.offsetHeight;
-    let i = 0;
-    tops.current.forEach((top, k) => {
-      if (top <= head) i = k;
-    });
-    if (i !== active) setActive(i);
-  });
-
+  /* One <section> for both layouts, never swapped (see SelectedWork): the
+     navbar, ChapterFrame and ChapterKeys hold on to it from mount. */
   return (
     <section
-      ref={sectionRef}
+      ref={ref}
       id="timeline"
       data-act="deck"
-      data-chapter="LEDGER"
-      className="relative"
+      data-chapter="ROUTE"
       aria-label={t.path.aria}
+      /* `clip`, not `hidden`: it trims the title card's streak at the edge of
+         a phone without making a scroll container, so the stage still sticks. */
+      className="relative overflow-x-clip"
+      style={pinned ? { height: `${(BEATS.span + EDGE) * STEP_VH + 100}vh` } : undefined}
     >
       <ChapterSeam />
-
-      <div className="mx-auto max-w-[1800px] px-5 pt-24 md:px-8 md:pt-36 lg:px-16">
-        <SectionHeader index={sectionIndex("#timeline")} label={t.path.eyebrow} title={t.path.title} />
-
-        {/* --- Numbers --- */}
-        <Reveal className="mt-14">
-          <span className="micro">{t.path.numbers}</span>
-        </Reveal>
-        {/* A readout: each figure in its own channel behind a holo hairline.
-            The figures were sized to the viewport alone, so at 1440 "222K+"
-            ran into the "89%" beside it; now they are sized to their column
-            and can never meet. */}
-        <dl className="mt-6 grid grid-cols-2 gap-x-6 gap-y-10 border-t border-line pt-10 md:grid-cols-4 md:gap-x-0">
-          {c.stats.map((stat) => (
-            <div
-              key={stat.label}
-              className="@container flex min-w-0 flex-col border-l border-[color-mix(in_srgb,var(--color-holo)_45%,transparent)] pl-4 md:pl-6"
-            >
-              <dt className="order-2 mt-3 text-base leading-snug text-muted">{stat.label}</dt>
-              <dd className="display-caps order-1 whitespace-nowrap text-[clamp(1.75rem,21cqw,4rem)] text-fg">
-                <AnimatedCounter value={stat.value} suffix={stat.suffix} unit={stat.unit} />
-              </dd>
-            </div>
-          ))}
-        </dl>
-      </div>
-
-      {/* --- Record --- */}
-      <div className="mx-auto max-w-[1800px] px-5 pb-24 pt-24 md:px-8 md:pb-36 md:pt-28 lg:px-16">
-        <Reveal>
-          <span className="micro">{t.path.record}</span>
-        </Reveal>
-
-        {/* The lane widths are variables so the rail's x can be derived from
-            the same numbers the grid uses — it can never drift off the nodes. */}
-        <div className="relative mt-10 [--lane:2.25rem] [--yc:0rem] md:[--lane:5rem] md:[--yc:14rem] lg:[--lane:7rem] lg:[--yc:19rem]">
-          <div
-            aria-hidden
-            className="absolute bottom-0 top-0 w-px bg-line"
-            style={{ left: "calc(var(--yc) + var(--lane) / 2)" }}
-          >
-            {!reduced && (
-              <>
-                <motion.div
-                  className="absolute inset-0 origin-top"
-                  style={{
-                    scaleY: scrollYProgress,
-                    background:
-                      "linear-gradient(to bottom, var(--spectrum-1), var(--spectrum-2) 50%, var(--spectrum-3))",
-                  }}
-                />
-                {/* The fibre: packets of light running down the lit length of
-                    the rail, like signal down a cable. A repeating gradient
-                    slid by transform (compositor only), clipped to the lit
-                    part, and paused off screen by `.fibre[data-off]`. */}
-                <motion.div className="fibre absolute -inset-x-[2px] inset-y-0 overflow-hidden" style={{ clipPath: fibreClip }} >
-                  <span className="fibre-packets" />
-                </motion.div>
-                {/* The head rides a full-height wrapper translated by a
-                    percentage — a transform's % is of the element's own
-                    height, which here is the rail's — so it travels the whole
-                    rail without animating `top`. */}
-                <motion.div className="absolute inset-0" style={{ y: headY, opacity: headOpacity }}>
-                  <span
-                    className="absolute -left-[5px] -top-[5px] h-[11px] w-[11px] rounded-full"
-                    style={{
-                      background: "var(--spectrum-3)",
-                      boxShadow: "0 0 12px 3px color-mix(in srgb, var(--spectrum-3) 55%, transparent)",
-                    }}
-                  />
-                </motion.div>
-              </>
-            )}
-          </div>
-
-          <ol ref={listRef}>
-            {c.timeline.map((entry, i) => (
-              <Row
-                key={entry.title}
-                entry={entry}
-                on={i === active}
-                past={i < active}
-                reduced={reduced}
-                words={t.path}
-              />
-            ))}
-          </ol>
-        </div>
-      </div>
+      {pinned ? <Stage sectionRef={ref} /> : <Record reduced={reduced} />}
     </section>
   );
 }
 
-function Row({
-  entry,
-  on,
-  past,
-  reduced,
-  words,
-}: {
-  entry: TimelineEntry;
-  on: boolean;
-  past: boolean;
-  reduced: boolean;
-  words: PathWords;
-}) {
-  const ref = useRef<HTMLLIElement>(null);
-  /* Not `once`: leaving the screen resets the stamp, so it prints again when
-     the row comes back. */
-  const inView = useInView(ref, { margin: "0px 0px -18% 0px", amount: 0.25 });
-  const play = reduced || inView;
+/* -------------------------------------------------------------------------- */
+/* The pinned stage                                                           */
+/* -------------------------------------------------------------------------- */
 
-  const { scrollYProgress } = useScroll({ target: ref, offset: ["start 96%", `start ${READ_LINE * 100}%`] });
-  const bodyY = useTransform(scrollYProgress, [0.2, 1], [36, 0]);
-  const bodyOpacity = useTransform(scrollYProgress, [0.2, 0.7], [0, 1]);
+function Stage({ sectionRef: ref }: { sectionRef: React.RefObject<HTMLElement | null> }) {
+  const { c, t } = useI18n();
+  const P = t.path;
+  const entries = c.timeline;
+  const { scrollTo } = useSmoothScroll();
 
-  const Kind = entry.kind === "education" ? GraduationCap : BriefcaseBusiness;
+  const { scrollYProgress } = useScroll({ target: ref, offset: ["start start", "end end"] });
+  const pos = useTransform(scrollYProgress, (p) => p * (BEATS.span + EDGE) - EDGE);
+  const out = useTransform(pos, (v) => (OUT ? span(v, OUT.start, OUT.end) : 1));
+  const back = useTransform(pos, (v) => (BACK ? span(v, BACK.start, BACK.end) : 0));
+  const freight = useTransform(pos, (v) => span(v, BEATS.freight[0], BEATS.freight[1]));
+  const progress = useMemo<RouteProgress>(() => ({ out, back, freight }), [out, back, freight]);
+
+  const [moment, setMoment] = useState<Moment>(() => momentAt(pos.get()));
+  useMotionValueEvent(pos, "change", (v) => {
+    const m = momentAt(v);
+    setMoment((prev) => (sameMoment(prev, m) ? prev : m));
+  });
+
+  /** Scroll to entry `i`'s plateau. */
+  const goTo = useCallback(
+    (i: number) => {
+      const el = ref.current;
+      if (!el) return;
+      const k = Math.min(entries.length - 1, Math.max(0, i));
+      const top = el.getBoundingClientRect().top + window.scrollY;
+      const travel = el.offsetHeight - window.innerHeight;
+      scrollTo(top + ((BEATS.at[k] + EDGE) / (BEATS.span + EDGE)) * travel);
+    },
+    [entries.length, scrollTo, ref]
+  );
+
+  /* ←/→ while the stage is pinned, as in Work. Up/down stay with ChapterKeys. */
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      if (modalOpen() || isInteractive(document.activeElement)) return;
+      const r = ref.current?.getBoundingClientRect();
+      if (!r || r.top > 1 || r.bottom < window.innerHeight - 1) return;
+      e.preventDefault();
+      const fwd = e.key === "ArrowRight";
+      if (moment.kind === "entry") goTo(moment.i + (fwd ? 1 : -1));
+      else {
+        const leg = BEATS.legs[moment.k];
+        goTo(fwd ? leg.after : leg.before);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [moment, goTo, ref]);
+
+  const here: StopKey | null = moment.kind === "entry" ? entries[moment.i].stop : null;
+  /** Entries before this are behind us. */
+  const reached = moment.kind === "entry" ? moment.i : BEATS.legs[moment.k].after;
 
   return (
-    <li
-      ref={ref}
-      className="relative grid grid-cols-[var(--lane)_minmax(0,1fr)] border-b border-line py-10 [grid-template-areas:'lane_year'_'lane_body'] first:pt-2 md:grid-cols-[var(--yc)_var(--lane)_minmax(0,1fr)] md:py-14 md:[grid-template-areas:'year_lane_body']"
-    >
-      <div className="relative [grid-area:year]">
-        <DateStamp entry={entry} play={play} instant={reduced} words={words} />
-      </div>
+    <div className="sticky top-0 h-dvh w-full overflow-hidden">
+      <div className="relative mx-auto flex h-full max-w-[1800px] flex-col px-5 pb-6 pt-20 md:px-8 lg:px-16">
+        {/* The globe, with the masthead over its dark upper corner. */}
+        <div className="relative min-h-0 flex-[1.05] [@media(max-height:820px)]:flex-[0.8]">
+          <RouteMap
+            className="absolute inset-0"
+            progress={progress}
+            here={here}
+            labels={P.places}
+            distance={P.distance(KM)}
+          />
+          <div className="relative flex items-start justify-between gap-6 pt-3">
+            <div>
+              <span className="eyebrow kicker-plate">
+                {sectionIndex("#timeline")} — {P.eyebrow}
+              </span>
+              <h2 className="display-caps mt-3 text-[clamp(1.6rem,3.4vw,3.25rem)] text-fg">{P.title}</h2>
+            </div>
+            <span className="micro tabular hidden pt-2 lg:block">{P.hint}</span>
+          </div>
+        </div>
 
-      {/* Node on the rail, level with the month. */}
-      <div aria-hidden className="relative flex justify-center [grid-area:lane]">
-        <span
-          data-node
-          className={cn(
-            "h-3.5 w-3.5 rotate-45 border transition-all duration-200",
-            on || past ? "border-transparent" : "border-line-strong bg-bg",
-            on && "scale-125"
-          )}
-          style={{
-            marginTop: `calc(${MONTH_SIZE} * 0.5 - 7px)`,
-            ...(on || past ? { background: yearNeon(entry.start.year) } : {}),
-            ...(on ? { boxShadow: `0 0 14px 2px ${yearNeon(entry.start.year)}` } : {}),
-          }}
-        />
-      </div>
+        <div className="grid min-h-0 flex-1 grid-cols-[minmax(0,5fr)_minmax(0,7fr)] gap-8 pt-2 lg:gap-14">
+          {/* The entry on screen. Decoration: the log beside it carries the
+              same words, and more, for assistive tech. */}
+          <div aria-hidden className="relative min-h-0">
+            <AnimatePresence mode="wait" initial={false}>
+              <motion.div
+                key={moment.kind === "entry" ? `e${moment.i}` : `l${moment.k}`}
+                className="absolute inset-0"
+                initial={{ opacity: 0, clipPath: "inset(0% 0% 100% 0%)" }}
+                animate={{ opacity: 1, clipPath: "inset(0% 0% 0% 0%)" }}
+                exit={{ opacity: 0, transition: { duration: 0.14 } }}
+                transition={{ duration: 0.45, ease: EASE_DEVELOP }}
+              >
+                {moment.kind === "entry" ? (
+                  <EntryCard entry={entries[moment.i]} words={P} />
+                ) : (
+                  <TransitCard leg={BEATS.legs[moment.k]} words={P} />
+                )}
+              </motion.div>
+            </AnimatePresence>
+          </div>
 
-      <motion.div
-        className="mt-5 [grid-area:body] md:mt-0"
-        style={reduced ? undefined : { y: bodyY, opacity: bodyOpacity }}
-      >
-        {/* A bracketed tag, not a glass pill: the HUD labels things. */}
-        <span className="hud-brackets inline-flex items-center gap-1.5 px-3 py-1 font-mono text-sm uppercase tracking-wider text-muted [--hud-c:color-mix(in_srgb,var(--color-hazard)_80%,transparent)] [--hud-l:6px]">
-          <Kind size={14} aria-hidden />
-          {entry.kind === "education" ? words.education : words.work}
-        </span>
+          <Log entries={entries} moment={moment} reached={reached} words={P} goTo={goTo} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/** The entry on screen: the neon stamp beside what it was. */
+function EntryCard({ entry, words }: { entry: TimelineEntry; words: PathWords }) {
+  /* The stamp strikes when it arrives: flip `play` on the frame after mount
+     (framer's `initial={false}` would otherwise land on the end state). */
+  const [play, setPlay] = useState(false);
+  useEffect(() => {
+    const id = requestAnimationFrame(() => setPlay(true));
+    return () => cancelAnimationFrame(id);
+  }, []);
+
+  return (
+    <div className="grid grid-cols-[auto_minmax(0,1fr)] gap-6 lg:gap-9">
+      <DateStamp entry={entry} play={play} instant={false} words={words} size="md" />
+      <div className="min-w-0">
+        <KindTag kind={entry.kind} words={words} />
+        {/* A long title steps down a size rather than pushing the card off
+            the stage: the stage is one screen tall and does not scroll. */}
         <h3
           className={cn(
-            "mt-4 font-tech text-3xl font-bold uppercase leading-[1.08] text-balance transition-colors duration-200 md:text-4xl lg:text-[2.75rem]",
-            on ? "text-fg" : "text-fg/85"
+            "mt-3 font-tech font-bold uppercase leading-[1.08] text-balance text-fg",
+            entry.title.length > 40
+              ? "text-xl lg:text-2xl [@media(max-height:820px)]:text-lg"
+              : "text-2xl lg:text-[2rem] [@media(max-height:820px)]:text-2xl"
           )}
         >
           {entry.title}
         </h3>
-        <p className="mt-3 font-mono text-sm uppercase tracking-[0.18em] text-fg/70 md:text-base">{entry.org}</p>
-        <p className="mt-5 max-w-3xl text-lg leading-relaxed text-fg/80">{entry.description}</p>
-      </motion.div>
-    </li>
-  );
-}
-
-function stampLabel(s: Stamp, words: PathWords): string | null {
-  if (s.season === "summer") return words.summer;
-  if (s.month) return words.months[s.month - 1];
-  return null;
-}
-
-/**
- * Each year has its own neon, so years read apart at a glance: the start year,
- * an end year that differs, and the row's node all carry it. Three are the
- * site's spectrum stops (violet lifted for contrast), plus the hazard amber and
- * a coral. Lime is deliberately absent — it is the colour of the reference
- * this site must not resemble.
- */
-const YEAR_NEON: Record<number, string> = {
-  2026: "#22e0ff",
-  2025: "#ff2d8f",
-  2024: "#ffa02b",
-  2023: "#a48bff",
-  2022: "#ff6a5c",
-};
-const FALLBACK_NEON = ["#22e0ff", "#ff2d8f", "#ffa02b", "#a48bff", "#ff6a5c"];
-function yearNeon(year: number): string {
-  return YEAR_NEON[year] ?? FALLBACK_NEON[year % FALLBACK_NEON.length];
-}
-
-/**
- * The start as month-over-year, the end beside an arrow. The end drops
- * whatever it shares with the start: the year when it is the same year
- * ("JUN 2026 → SEP"), the season when it is the same season ("SUMMER 2022 →
- * 2023").
- */
-function DateStamp({
-  entry,
-  play,
-  instant,
-  words,
-}: {
-  entry: TimelineEntry;
-  play: boolean;
-  instant: boolean;
-  words: PathWords;
-}) {
-  const { start, end, note } = entry;
-  const startLabel = stampLabel(start, words);
-  const endLabel = end ? stampLabel(end, words) : null;
-  const endShowsLabel = !!end && !!endLabel && (endLabel !== startLabel || end.year === start.year);
-  const endShowsYear = !!end && end.year !== start.year;
-  const neon = yearNeon(start.year);
-
-  return (
-    <>
-      {/* What assistive tech reads. The stamp below is drawn segments and
-          flickering words, none of which would read as a date. */}
-      <span className="sr-only">{entry.period}</span>
-
-      <div aria-hidden>
-        {startLabel && (
-          <Ignite play={play} instant={instant} delay={0}>
-            <span
-              className="block font-tech font-bold uppercase leading-none tracking-wide text-fg"
-              style={{ fontSize: MONTH_SIZE }}
-            >
-              {startLabel}
-            </span>
-          </Ignite>
-        )}
-
-        <NeonYear
-          value={start.year}
-          color={neon}
-          play={play}
-          instant={instant}
-          delay={0.18}
-          className="mt-3 text-[clamp(2.25rem,4vw,3.75rem)]"
-        />
-
-        {end && (endShowsLabel || endShowsYear) && (
-          <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-1">
-            <Arrow play={play} instant={instant} delay={0.7} />
-            {endShowsLabel && (
-              <Ignite play={play} instant={instant} delay={0.8}>
-                <span className="block font-tech text-2xl font-bold uppercase leading-none text-fg md:text-[1.75rem]">
-                  {endLabel}
-                </span>
-              </Ignite>
-            )}
-            {endShowsYear && (
-              <NeonYear
-                value={end.year}
-                color={yearNeon(end.year)}
-                play={play}
-                instant={instant}
-                delay={0.9}
-                className="text-xl md:text-2xl"
-              />
-            )}
-          </div>
-        )}
-
-        {note === "graduated" && (
-          <Ignite play={play} instant={instant} delay={0.7} className="mt-4">
-            <span
-              className="inline-flex rounded-full border px-3 py-1 font-mono text-sm font-semibold uppercase tracking-[0.16em] text-fg"
-              style={{ borderColor: `color-mix(in srgb, ${neon} 60%, transparent)` }}
-            >
-              {words.graduated}
-            </span>
-          </Ignite>
-        )}
+        <p className="mt-2 font-mono text-sm uppercase tracking-[0.18em] text-fg/70">{entry.org}</p>
+        <p className="mt-3 line-clamp-5 max-w-2xl text-base leading-relaxed text-fg/80 lg:text-[1.0625rem] [@media(max-height:820px)]:text-[0.9375rem] [@media(max-height:820px)]:leading-snug">
+          {entry.description}
+        </p>
+        <Extra entry={entry} words={words} className="mt-4" />
       </div>
-    </>
+    </div>
   );
 }
 
-/**
- * A neon tube striking: dark, a hard flash, a stutter, then steady. Opacity
- * only, one short burst, no loop — it reads as the sign coming on, not as a
- * fault, because it happens once and settles.
- */
-const STRIKE = { opacity: [0, 1, 0.15, 0.85, 0.35, 1], times: [0, 0.12, 0.26, 0.44, 0.6, 1] };
-
-function strike(play: boolean, instant: boolean, delay: number, duration: number) {
-  if (instant) return { animate: { opacity: 1 }, transition: { duration: 0 } };
-  if (!play) return { animate: { opacity: 0 }, transition: { duration: 0 } };
-  return {
-    animate: { opacity: STRIKE.opacity },
-    transition: { duration, times: STRIKE.times, delay, ease: "linear" as const },
-  };
-}
-
-function Ignite({
-  play,
-  instant,
-  delay,
-  className,
-  children,
-}: {
-  play: boolean;
-  instant: boolean;
-  delay: number;
-  className?: string;
-  children: React.ReactNode;
-}) {
+/** Between cities: where from, where to, how far. */
+function TransitCard({ leg, words }: { leg: Leg; words: PathWords }) {
   return (
-    <motion.div className={cn("w-fit", className)} initial={false} {...strike(play, instant, delay, 0.6)}>
-      {children}
-    </motion.div>
+    <div>
+      <span className="micro !text-[var(--color-holo)]">{words.transit}</span>
+      <p className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 font-tech text-2xl font-bold uppercase leading-tight text-fg lg:text-[2rem]">
+        <span>{words.placesLong[leg.from]}</span>
+        <IconArrowRight size={22} className="text-[var(--color-hazard)]" />
+        <span>{words.placesLong[leg.to]}</span>
+      </p>
+      <p
+        className="display-caps tabular mt-5 text-[clamp(1.5rem,2.6vw,2.5rem)] leading-none"
+        style={{ color: "var(--color-holo)", textShadow: "0 0 18px color-mix(in srgb, var(--color-holo) 45%, transparent)" }}
+      >
+        {words.distance(KM)}
+      </p>
+    </div>
   );
 }
 
-/**
- * A year in the display face — the same one as the wordmark in the navbar and
- * the figures under "By the numbers" — lit in its year's neon. Each digit
- * strikes on by itself, left to right. The glow is a static text-shadow: one
- * paint when the digit appears, nothing per frame.
- *
- * It replaced two hand-drawn SVG numeral faces (seven-segment, then angular
- * tubes). Both read as a device rather than as this site; the display face is
- * already the voice of every other number on the page.
- */
-function NeonYear({
-  value,
-  color,
-  play,
-  instant,
-  delay,
-  className,
-}: {
-  value: number;
-  color: string;
-  play: boolean;
-  instant: boolean;
-  delay: number;
-  className?: string;
-}) {
+function KindTag({ kind, words }: { kind: TimelineEntry["kind"]; words: PathWords }) {
+  const Icon = kind === "education" ? GraduationCap : kind === "project" ? Layers : BriefcaseBusiness;
   return (
-    <span
-      className={cn("display-caps tabular flex leading-none", className)}
-      style={{
-        color,
-        textShadow: `0 0 18px color-mix(in srgb, ${color} 55%, transparent), 0 0 2px color-mix(in srgb, ${color} 80%, white)`,
-      }}
-    >
-      {String(value)
-        .split("")
-        .map((ch, i) => (
-          <motion.span key={i} className="inline-block" initial={false} {...strike(play, instant, delay + i * 0.12, 0.5)}>
-            {ch}
-          </motion.span>
-        ))}
+    <span className="hud-brackets inline-flex items-center gap-1.5 px-3 py-1 font-mono text-sm uppercase tracking-wider text-muted [--hud-c:color-mix(in_srgb,var(--color-hazard)_80%,transparent)] [--hud-l:6px]">
+      <Icon size={14} aria-hidden />
+      {kind === "education" ? words.education : kind === "project" ? words.project : words.work}
     </span>
   );
 }
 
-/** A short arrow that draws itself from the start date toward the end. */
-function Arrow({ play, instant, delay }: { play: boolean; instant: boolean; delay: number }) {
-  const t: Transition = instant || !play ? { duration: 0 } : { duration: 0.4, ease: EASE_EXPO, delay };
+/** The figures an entry carries: the GPA on the degree, the capstone's measurements. */
+function Extra({ entry, words, className }: { entry: TimelineEntry; words: PathWords; className?: string }) {
+  const { c } = useI18n();
+  if (entry.extra === "gpa") {
+    return (
+      <div className={cn("flex items-baseline gap-3", className)}>
+        <span className="display-caps tabular text-2xl text-fg">
+          3.68<span className="text-base text-muted">/4</span>
+        </span>
+        <span className="micro">{words.gpa}</span>
+      </div>
+    );
+  }
+  if (entry.extra === "spotfixes") {
+    const metrics = c.projects.find((p) => p.slug === "spotfixes")?.metrics ?? [];
+    return (
+      <dl className={cn("flex flex-wrap gap-x-7 gap-y-2", className)}>
+        {metrics.map((m) => (
+          <div key={m.label} className="flex flex-col-reverse">
+            <dt className="micro">{m.label}</dt>
+            <dd className="display-caps tabular text-xl text-fg">{m.value}</dd>
+          </div>
+        ))}
+      </dl>
+    );
+  }
+  return null;
+}
+
+/**
+ * The route log: every entry, in order, with the flights between them. Each
+ * row takes you to its entry. Rows ahead of you are dim; the one on screen
+ * decodes its title like a departures board turning over.
+ *
+ * This is also the chapter's text for assistive tech: each row's button is
+ * named by its year, title and city, and the period, organisation and
+ * description follow it as hidden text.
+ */
+function Log({
+  entries,
+  moment,
+  reached,
+  words,
+  goTo,
+}: {
+  entries: TimelineEntry[];
+  moment: Moment;
+  reached: number;
+  words: PathWords;
+  goTo: (i: number) => void;
+}) {
   return (
-    <svg width="34" height="14" viewBox="0 0 34 14" fill="none" className="shrink-0 text-muted">
-      <motion.path
-        d="M1 7 H31 M25 1.5 L31 7 L25 12.5"
-        stroke="currentColor"
-        strokeWidth="1.8"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        initial={false}
-        animate={{ pathLength: play ? 1 : 0 }}
-        transition={t}
-      />
-    </svg>
+    <div className="flex min-h-0 flex-col">
+      <div className="flex items-center justify-between gap-4 border-b border-line-strong pb-2">
+        <span className="micro">{words.board}</span>
+        <button
+          type="button"
+          onClick={() => openCase("spotfixes")}
+          className="micro inline-flex min-h-6 items-center gap-1.5 !text-fg transition-colors hover:!text-[var(--color-hazard)]"
+        >
+          {words.openCase} <IconArrowRight size={13} />
+        </button>
+      </div>
+      <ol className="min-h-0 overflow-hidden">
+        {entries.map((e, i) => {
+          const on = moment.kind === "entry" && moment.i === i;
+          const leg = BEATS.legs.find((l) => l.after === i);
+          const legOn = leg && moment.kind === "leg" && BEATS.legs[moment.k] === leg;
+          return (
+            <li key={`${e.title}-${i}`}>
+              {leg && (
+                <div
+                  aria-hidden
+                  className={cn(
+                    "flex items-center gap-3 border-b border-line px-3 py-1.5 font-mono text-[0.6875rem] uppercase tracking-[0.2em] transition-colors duration-300 [@media(max-height:820px)]:py-1",
+                    legOn ? "text-[var(--color-holo)]" : i <= reached ? "text-faint" : "text-faint/60"
+                  )}
+                >
+                  <span>{words.places[leg.from]}</span>
+                  <IconArrowRight size={11} />
+                  <span>{words.places[leg.to]}</span>
+                  <span className="tabular ml-auto">{words.distance(KM)}</span>
+                </div>
+              )}
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => goTo(i)}
+                  aria-current={on ? "step" : undefined}
+                  className={cn(
+                    "grid w-full grid-cols-[3.25rem_minmax(0,1fr)_auto] items-center gap-4 border-b border-line px-3 py-2 text-left transition-[opacity,background-color] duration-300 [@media(max-height:820px)]:py-1.5",
+                    on
+                      ? "bg-[color-mix(in_srgb,var(--color-hazard)_9%,transparent)]"
+                      : "hover:bg-[color-mix(in_srgb,var(--color-fg)_4%,transparent)]",
+                    !on && i > reached && "opacity-45"
+                  )}
+                >
+                  <span
+                    aria-hidden
+                    className="absolute inset-y-1 left-0 w-[2px] transition-colors duration-300"
+                    style={{ background: on ? "var(--color-hazard)" : "transparent" }}
+                  />
+                  <span className="display-caps tabular text-sm" style={{ color: yearNeon(e.start.year) }}>
+                    {e.start.year}
+                  </span>
+                  <span className="min-w-0 truncate font-tech text-[0.9375rem] font-semibold uppercase tracking-wide text-fg">
+                    {on ? <ScrambleText key={`s${i}`} text={e.title} immediate speed={28} /> : e.title}
+                  </span>
+                  <span className="micro hidden xl:inline">{words.places[e.stop]}</span>
+                </button>
+                <span className="sr-only">
+                  {e.period}. {e.org}. {e.description}
+                </span>
+              </div>
+            </li>
+          );
+        })}
+      </ol>
+    </div>
+  );
+}
+
+/* -------------------------------------------------------------------------- */
+/* Phones and reduced motion: the globe over the record                       */
+/* -------------------------------------------------------------------------- */
+
+function Record({ reduced }: { reduced: boolean }) {
+  const { c, t } = useI18n();
+  const P = t.path;
+  const entries = c.timeline;
+
+  /* The route draws once, the first time the globe is seen — out, home, then
+     the freight — and stays drawn. Under reduced motion it is simply there. */
+  const out = useMotionValue(reduced ? 1 : 0);
+  const back = useMotionValue(reduced ? 1 : 0);
+  const freight = useMotionValue(reduced ? 1 : 0);
+  const progress = useMemo<RouteProgress>(() => ({ out, back, freight }), [out, back, freight]);
+  const mapRef = useRef<HTMLDivElement>(null);
+  const seen = useInView(mapRef, { once: true, amount: 0.4 });
+  useEffect(() => {
+    if (!seen) return;
+    if (reduced) {
+      out.set(1);
+      back.set(1);
+      freight.set(1);
+      return;
+    }
+    let stopped = false;
+    const run = async () => {
+      await animate(out, 1, { duration: 1.6, ease: [0.4, 0, 0.2, 1] });
+      if (stopped) return;
+      await animate(back, 1, { duration: 1.1, ease: "linear" });
+      if (stopped) return;
+      await animate(freight, 0.999, { duration: 1.4, ease: "linear" });
+      if (!stopped) freight.set(1);
+    };
+    void run();
+    return () => {
+      stopped = true;
+    };
+  }, [seen, reduced, out, back, freight]);
+
+  /* The record in runs of one city, with the flight that led to each run. */
+  const groups: { stop: StopKey; leg?: Leg; items: { entry: TimelineEntry; i: number }[] }[] = [];
+  entries.forEach((entry, i) => {
+    const last = groups[groups.length - 1];
+    if (last && last.stop === entry.stop) last.items.push({ entry, i });
+    else groups.push({ stop: entry.stop, leg: BEATS.legs.find((l) => l.after === i), items: [{ entry, i }] });
+  });
+
+  return (
+    <div className="mx-auto max-w-[1800px] px-5 pb-24 pt-24 md:px-8 md:pb-36 md:pt-36 lg:px-16">
+      <SectionHeader index={sectionIndex("#timeline")} label={P.eyebrow} title={P.title} />
+
+      <div ref={mapRef} className="relative mt-8 h-[min(48vw,440px)] w-full">
+        <RouteMap
+          className="absolute inset-0"
+          progress={progress}
+          here={null}
+          labels={P.places}
+          distance={P.distance(KM)}
+        />
+      </div>
+
+      {groups.map((g, k) => (
+        <div key={k} className="mt-10 first-of-type:mt-6">
+          {g.leg && (
+            <p className="mb-6 flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-xs uppercase tracking-[0.2em] text-[var(--color-holo)]">
+              <span>{P.places[g.leg.from]}</span>
+              <IconArrowRight size={12} />
+              <span>{P.places[g.leg.to]}</span>
+              <span className="tabular text-faint">· {P.distance(KM)}</span>
+            </p>
+          )}
+          <h3 className="flex items-center gap-3 font-mono text-sm uppercase tracking-[0.22em] text-fg">
+            <span aria-hidden className="h-2 w-2 rotate-45 bg-[var(--color-hazard)]" />
+            {P.placesLong[g.stop]}
+          </h3>
+          <ol className="mt-2">
+            {g.items.map(({ entry, i }) => (
+              <Row key={`${entry.title}-${i}`} entry={entry} reduced={reduced} words={P} />
+            ))}
+          </ol>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function Row({ entry, reduced, words }: { entry: TimelineEntry; reduced: boolean; words: PathWords }) {
+  const ref = useRef<HTMLLIElement>(null);
+  /* Not `once`: leaving the screen resets the stamp, so it strikes again when
+     the row comes back. */
+  const inView = useInView(ref, { margin: "0px 0px -18% 0px", amount: 0.25 });
+  const play = reduced || inView;
+
+  return (
+    <li
+      ref={ref}
+      className="grid gap-5 border-b border-line py-8 md:grid-cols-[14rem_minmax(0,1fr)] md:gap-10 md:py-12 lg:grid-cols-[19rem_minmax(0,1fr)]"
+    >
+      <div>
+        <span className="sr-only">{entry.period}</span>
+        <DateStamp entry={entry} play={play} instant={reduced} words={words} />
+      </div>
+      <div>
+        <KindTag kind={entry.kind} words={words} />
+        <h4 className="mt-4 font-tech text-3xl font-bold uppercase leading-[1.08] text-balance text-fg md:text-4xl">
+          {entry.title}
+        </h4>
+        <p className="mt-3 font-mono text-sm uppercase tracking-[0.18em] text-fg/70 md:text-base">{entry.org}</p>
+        <p className="mt-5 max-w-3xl text-lg leading-relaxed text-fg/80">{entry.description}</p>
+        <Extra entry={entry} words={words} className="mt-5" />
+        {entry.extra === "spotfixes" && (
+          <button
+            type="button"
+            onClick={() => openCase("spotfixes")}
+            className="micro mt-5 inline-flex min-h-11 items-center gap-1.5 !text-fg transition-colors hover:!text-[var(--color-hazard)]"
+          >
+            {words.openCase} <IconArrowRight size={13} />
+          </button>
+        )}
+      </div>
+    </li>
   );
 }

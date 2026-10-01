@@ -167,24 +167,16 @@ const capabilities: Record<string, Pick<Capability, "title" | "description" | "t
 /** In the same order as the English timeline. */
 const timeline: Pick<TimelineEntry, "period" | "title" | "org" | "description">[] = [
   {
-    period: "2026.06 – 2026.09",
-    title: "Корпорацийн логистикийн зохицуулагч (гэрээт, Ханбогд Хурд)",
-    org: "Оюу Толгой ХХК",
-    description:
-      "Төв оффис болон уурхайн хоорондын ачаа тээврийг зохицуулж, логистикийн өгөгдлийг хянан маршрутын үр ашиггүй байдлыг илрүүлсэн.",
+    period: "2020 – 2021",
+    title: "Их сургуулийн суралцалт · 21 кредит",
+    org: "Шинжлэх Ухаан, Технологийн Их Сургууль",
+    description: "Улаанбаатар, Монгол. 21 кредит судалсан.",
   },
   {
-    period: "2026.05-д төгссөн",
-    title: "Програм хангамжийн инженерчлэлийн бакалавр",
-    org: "Ганнон Их Сургууль",
-    description:
-      "Эри, Пенсильвани, АНУ. Инженерчлэл, бизнесийн коллежийн деканы жагсаалт (2024 намар, 2025 хавар). Төгсөлтийн төсөл: Spotfixes.",
-  },
-  {
-    period: "2025.05 – 2026.04",
-    title: "Хоол үйлчилгээний ажилтан",
-    org: "Metz Culinary · Chick-fil-A",
-    description: "Оюутны хотхоны оргил цагаар хоол бэлтгэл, нөөцийг хариуцсан.",
+    period: "2022, 2023 оны зун",
+    title: "Зуны хурлын туслах ажилтан",
+    org: "Ганнон, Туслах үйлчилгээ",
+    description: "Оюутны байр бэлтгэж, хурлын зочдод үйлчилсэн.",
   },
   {
     period: "2023.08 – 2024.05",
@@ -193,10 +185,31 @@ const timeline: Pick<TimelineEntry, "period" | "title" | "org" | "description">[
     description: "StarRez-д оюутны байрны бүртгэл хөтөлж, оршин суугчдын хүсэлтийг шийдвэрлэсэн.",
   },
   {
-    period: "2022, 2023 оны зун",
-    title: "Зуны хурлын туслах ажилтан",
-    org: "Ганнон, Туслах үйлчилгээ",
-    description: "Оюутны байр бэлтгэж, хурлын зочдод үйлчилсэн.",
+    period: "2025.05 – 2026.04",
+    title: "Хоол үйлчилгээний ажилтан",
+    org: "Metz Culinary · Chick-fil-A",
+    description: "Оюутны хотхоны оргил цагаар хоол бэлтгэл, нөөцийг хариуцсан.",
+  },
+  {
+    period: "2025.08 – 2026.05",
+    title: "Spotfixes · Төгсөлтийн төсөл",
+    org: "Ганнон Их Сургууль · 3 хүний баг",
+    description:
+      "Mozilla Firefox-ийн 222,000+ алдааны бүртгэлээр сургасан, алдааны зэрэглэлийг таамагладаг ажиллаж буй платформ. Би React интерфэйсийн UI/UX, хэрэглэгчийн туршилт, QA-г хариуцсан.",
+  },
+  {
+    period: "2026.05-д төгссөн",
+    title: "Програм хангамжийн инженерчлэлийн бакалавр",
+    org: "Ганнон Их Сургууль",
+    description:
+      "Эри, Пенсильвани, АНУ. Инженерчлэл, бизнесийн коллежийн деканы жагсаалт (2024 намар, 2025 хавар).",
+  },
+  {
+    period: "2026.06 – 2026.09",
+    title: "Корпорацийн логистикийн зохицуулагч (гэрээт, Ханбогд Хурд)",
+    org: "Оюу Толгой ХХК",
+    description:
+      "Төв оффис болон уурхайн хоорондын ачаа тээврийг зохицуулж, логистикийн өгөгдлийг хянан маршрутын үр ашиггүй байдлыг илрүүлсэн.",
   },
 ];
 
@@ -216,13 +229,6 @@ const socials: Record<string, Partial<SocialLink>> = {
   IN: { label: "LINKEDIN", handle: "in/amartuvshinganzorig" },
   LV: { label: "SPOTFIXES", handle: "spotfixes.com · ажиллаж буй" },
 };
-
-const statLabels = [
-  "СУРГАЛТАД АШИГЛАСАН АЛДААНЫ БҮРТГЭЛ",
-  "ЗАГВАРЫН НАРИЙВЧЛАЛ",
-  "СҮҮЛИЙН 4 УЛИРЛЫН ГОЛЧ ДҮН",
-  "ТААМАГЛАЛЫН ДУНДАЖ ХУГАЦАА",
-];
 
 function required<T>(v: T | undefined, what: string): T {
   if (v === undefined) throw new Error(`content.mn: missing translation for ${what}`);
@@ -277,7 +283,6 @@ export const mn: SiteContent = {
       gallery: p.gallery?.map((g, i) => ({ ...g, ...(w.gallery?.[i] ?? {}) })),
     };
   }),
-  stats: en.stats.map((s, i) => ({ ...s, label: statLabels[i] ?? s.label })),
   timeline: en.timeline.map((e, i) => ({
     ...e,
     ...required(timeline[i], `timeline entry ${i}`),
