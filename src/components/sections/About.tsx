@@ -36,7 +36,7 @@ export function About() {
           {/* Lead — set large in the serif, treated as a pull quote rather
               than as body copy with a heading over it. */}
           <Reveal className="md:col-span-7">
-            <span className="micro">
+            <span className="micro kicker-plate">
               {sectionIndex("#about")} — {about.heading}
             </span>
             <h2 className="mt-6 font-tech text-[clamp(2.25rem,5vw,4.5rem)] leading-[1.04]">

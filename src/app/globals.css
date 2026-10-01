@@ -655,6 +655,18 @@ html.hud-cursor * {
 }
 .preloader-rain-light .preloader-rain { opacity: 0.9; }
 
+/* A section kicker's plate: a small dark tab with a sodium tick, the way a
+   label is screwed onto a panel. The kickers sit over the film, and on a
+   phone a lit sign passed straight behind "01 — ABOUT ME" (2.5:1 measured).
+   A text halo cannot fix that — thin mono strokes cast too little shadow
+   (2.7:1 even stacked four deep) — a plate does (6.8:1). */
+.kicker-plate {
+  display: inline-block;
+  padding: 0.2em 0.55em 0.2em 0.65em;
+  background: rgba(5, 6, 13, 0.72);
+  box-shadow: inset 2px 0 0 var(--color-hazard);
+}
+
 /* The work monitor waking under the cursor (SelectedWork). One lean, one
    scan band down the screen, one scanline veil: transform and opacity only,
    and only where there is a hover. */
