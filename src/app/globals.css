@@ -343,7 +343,7 @@ html.hud-cursor * {
 /* ---------------------------------------------------------------------------
    Typographic utilities
    ------------------------------------------------------------------------- */
-/* Mongol bichig, for the hero's vertical sign only. */
+/* Mongol bichig: the name's signs and the chapters' script labels. */
 @utility font-script {
   font-family: "Noto Sans Mongolian", serif;
 }

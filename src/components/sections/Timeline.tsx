@@ -26,6 +26,7 @@ import { IconArrowRight } from "@/components/ui/HudIcons";
 import { ScrambleText } from "@/components/motion/ScrambleText";
 import { RouteMap, type RouteProgress } from "@/components/path/RouteMap";
 import { DateStamp, yearNeon, type PathWords } from "@/components/path/NeonStamp";
+import { ScriptLabel } from "@/components/ui/ScriptLabel";
 import { cn } from "@/lib/utils";
 
 /* ---------------------------------------------------------------------------
@@ -218,7 +219,8 @@ function Stage({ sectionRef: ref }: { sectionRef: React.RefObject<HTMLElement | 
             distance={P.distance(KM)}
           />
           <div className="relative flex items-start justify-between gap-6 pt-3">
-            <div>
+            <div className="relative">
+              <ScriptLabel href="#timeline" />
               <span className="eyebrow kicker-plate">
                 {sectionIndex("#timeline")} — {P.eyebrow}
               </span>
@@ -496,7 +498,7 @@ function Record({ reduced }: { reduced: boolean }) {
 
   return (
     <div className="mx-auto max-w-[1800px] px-5 pb-24 pt-24 md:px-8 md:pb-36 md:pt-36 lg:px-16">
-      <SectionHeader index={sectionIndex("#timeline")} label={P.eyebrow} title={P.title} />
+      <SectionHeader index={sectionIndex("#timeline")} label={P.eyebrow} title={P.title} chapter="#timeline" />
 
       <div ref={mapRef} className="relative mt-8 h-[min(48vw,440px)] w-full">
         <RouteMap

@@ -45,6 +45,7 @@ export function Capabilities() {
             index={sectionIndex("#capabilities")}
             label={t.craft.eyebrow}
             title={t.craft.title}
+            chapter="#capabilities"
           />
           <Reveal>
             <p className="max-w-md text-lg leading-relaxed text-muted md:text-right">

@@ -19,6 +19,8 @@ export interface NavLink {
   label: string;
   href: string;
   code: string;
+  /** The chapter's name in Mongol script, hung beside its masthead. Locale-free. */
+  script?: string;
 }
 
 export interface Capability {
@@ -178,15 +180,23 @@ export const profile = {
  * find him, what he built, what he can do, where he's been, how to reach him.
  * Work sits ahead of Craft on purpose — the evidence before the claims.
  */
+/*
+ * DRAFT — every `script` word below needs Amartuvshin's proofread before this
+ * merges (Claude's spelling; traditional script, read top to bottom). U+180E
+ * (MVS) is written as an escape before a detached final ᠠ.
+ *
+ *   Profile  танилцуулга   Signal   дохио   Work  ажил   Craft  ур чадвар
+ *   Studio   бийр          Path     зам     Contact  холбоо
+ */
 export const navLinks: NavLink[] = [
   { label: "Index", href: "#hero", code: "00" },
-  { label: "Profile", href: "#about", code: "01" },
-  { label: "Signal", href: "#connect", code: "02" },
-  { label: "Work", href: "#work", code: "03" },
-  { label: "Craft", href: "#capabilities", code: "04" },
-  { label: "Studio", href: "#studio", code: "05" },
-  { label: "Path", href: "#timeline", code: "06" },
-  { label: "Contact", href: "#contact", code: "07" },
+  { label: "Profile", href: "#about", code: "01", script: "ᠲᠠᠨᠢᠯᠴᠠᠭᠤᠯᠭ\u180Eᠠ" },
+  { label: "Signal", href: "#connect", code: "02", script: "ᠳᠣᠬᠢᠶ\u180Eᠠ" },
+  { label: "Work", href: "#work", code: "03", script: "ᠠᠵᠢᠯ" },
+  { label: "Craft", href: "#capabilities", code: "04", script: "ᠤᠷ ᠴᠢᠳᠠᠪᠤᠷᠢ" },
+  { label: "Studio", href: "#studio", code: "05", script: "ᠪᠢᠷ" },
+  { label: "Path", href: "#timeline", code: "06", script: "ᠵᠠᠮ" },
+  { label: "Contact", href: "#contact", code: "07", script: "ᠬᠣᠯᠪᠣᠭ\u180Eᠠ" },
 ];
 
 /**

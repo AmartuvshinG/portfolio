@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { ScrambleText } from "@/components/motion/ScrambleText";
+import { ScriptLabel } from "@/components/ui/ScriptLabel";
 import { DUR, EASE_DEVELOP, inView } from "@/lib/motion";
 import { cn } from "@/lib/utils";
 
@@ -20,6 +21,8 @@ interface SectionHeaderProps {
    * out. `tech` also exists for titles too long to survive Michroma's width.
    */
   voice?: "caps" | "tech";
+  /** The chapter's href, to hang its name in Mongol script beside it (ScriptLabel). */
+  chapter?: string;
 }
 
 /**
@@ -44,6 +47,7 @@ export function SectionHeader({
   className,
   align = "left",
   voice = "caps",
+  chapter,
 }: SectionHeaderProps) {
   const [on, setOn] = useState(false);
   const ease = EASE_DEVELOP;
@@ -51,7 +55,7 @@ export function SectionHeader({
   return (
     <motion.div
       className={cn(
-        "title-card flex flex-col gap-5",
+        "title-card relative flex flex-col gap-5",
         align === "center" && "items-center text-center",
         className
       )}
@@ -61,6 +65,7 @@ export function SectionHeader({
       viewport={inView}
       onViewportEnter={() => setOn(true)}
     >
+      {chapter && <ScriptLabel href={chapter} />}
       <div className="flex items-center gap-4">
         {on ? (
           <ScrambleText text={index} className="eyebrow tabular" />

@@ -22,6 +22,7 @@ import { ChapterSeam } from "@/components/chrome/ChapterSeam";
 import { cn } from "@/lib/utils";
 import { IconArrowLeft, IconArrowRight } from "@/components/ui/HudIcons";
 import { Cta } from "@/components/ui/Cta";
+import { ScriptLabel } from "@/components/ui/ScriptLabel";
 
 /* ---------------------------------------------------------------------------
    The work theatre.
@@ -185,7 +186,8 @@ function Theatre({ sectionRef: ref }: { sectionRef: React.RefObject<HTMLElement 
         <div className="relative mx-auto flex h-full max-w-[1800px] flex-col px-5 pb-8 pt-24 md:px-8 lg:px-16">
           {/* Masthead */}
           <div className="flex items-end justify-between gap-6">
-            <div>
+            <div className="relative">
+              <ScriptLabel href="#work" />
               <span className="eyebrow kicker-plate">
                 {sectionIndex("#work")} — {t.work.eyebrow}
               </span>
@@ -598,7 +600,8 @@ function Stack({ reduced }: { reduced: boolean }) {
   return (
     <>
       <ChapterSeam />
-      <div className="mx-auto max-w-[1800px] px-5 md:px-8 lg:px-16">
+      <div className="relative mx-auto max-w-[1800px] px-5 md:px-8 lg:px-16">
+        <ScriptLabel href="#work" className="lg:left-7" />
         <span className="eyebrow kicker-plate">
           {sectionIndex("#work")} — {t.work.eyebrow}
         </span>

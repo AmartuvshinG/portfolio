@@ -11,6 +11,7 @@ import { useScramble } from "@/hooks/useScramble";
 import { ChapterSeam } from "@/components/chrome/ChapterSeam";
 import { ChannelField } from "@/components/ui/ChannelField";
 import { GitHubMark, LinkedInMark } from "@/components/ui/BrandMarks";
+import { ScriptLabel } from "@/components/ui/ScriptLabel";
 import type { GitHubSummary } from "@/lib/github";
 
 /**
@@ -147,7 +148,8 @@ export function Connect({ github }: { github: GitHubSummary | null }) {
 
       <div className="relative z-10 mx-auto w-full max-w-[1800px] px-5 md:px-8 lg:px-16">
         <div className="flex flex-col justify-between gap-6 md:flex-row md:items-end">
-          <div className="flex flex-col gap-5">
+          <div className="relative flex flex-col gap-5">
+            <ScriptLabel href="#connect" />
             <div className="flex items-center gap-4">
               <span className="eyebrow tabular">{sectionIndex("#connect")}</span>
               <span className="h-px w-12 bg-current opacity-25" />

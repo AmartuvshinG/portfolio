@@ -10,7 +10,10 @@ import {
   Rajdhani,
 } from "next/font/google";
 import "./globals.css";
-import { profile, site } from "@/lib/content";
+import { navLinks, profile, site } from "@/lib/content";
+
+/** Every Mongol-script glyph the page sets: the name and the chapter labels. */
+const SCRIPT_GLYPHS = [profile.nameScript, ...navLinks.map((l) => l.script ?? "")].join("");
 import { SmoothScroll } from "@/components/chrome/SmoothScroll";
 import { LocaleProvider } from "@/lib/i18n";
 import { ActTheme } from "@/components/chrome/ActTheme";
@@ -163,13 +166,14 @@ export default function RootLayout({
       className={`${michroma.variable} ${chakra.variable} ${archivo.variable} ${monoHud.variable} ${montserrat.variable} ${exo.variable} ${onest.variable} ${rajdhani.variable} h-full`}
     >
       <head>
-        {/* The hero's Mongol-script sign. Subset by Google to exactly the
-            glyphs of the name (`text=`), so it costs a few KB, not the whole
-            Noto Sans Mongolian; derived from the string, so they never drift. */}
+        {/* Mongol script: the name, and the chapters' names hung beside
+            their mastheads (ScriptLabel). Subset by Google to exactly those
+            glyphs (`text=`), so it costs a few KB, not the whole Noto Sans
+            Mongolian; derived from the strings, so they never drift. */}
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
         <link
           rel="stylesheet"
-          href={`https://fonts.googleapis.com/css2?family=Noto+Sans+Mongolian&display=swap&text=${encodeURIComponent(profile.nameScript)}`}
+          href={`https://fonts.googleapis.com/css2?family=Noto+Sans+Mongolian&display=swap&text=${encodeURIComponent(SCRIPT_GLYPHS)}`}
         />
         {/* The intro's brush: the first thing it needs, before any script
             asks for it. */}

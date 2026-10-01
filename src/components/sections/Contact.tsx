@@ -13,6 +13,7 @@ import { IconCheck, IconCopy, IconMail } from "@/components/ui/HudIcons";
 import { Cta } from "@/components/ui/Cta";
 import { Seal } from "@/components/ui/Seal";
 import { UbClock } from "@/components/chrome/Navbar";
+import { ScriptLabel } from "@/components/ui/ScriptLabel";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
 
 /**
@@ -78,7 +79,8 @@ export function Contact() {
       />
 
       <div className="relative mx-auto max-w-[1800px] px-5 md:px-8 lg:px-16">
-        <Reveal className="flex flex-col gap-4">
+        <Reveal className="relative flex flex-col gap-4">
+          <ScriptLabel href="#contact" />
           <span className="micro kicker-plate w-fit">
             {sectionIndex("#contact")} — {contact.heading}
           </span>

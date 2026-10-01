@@ -52,7 +52,7 @@ export function Studio() {
 
       <div className="relative mx-auto max-w-[1800px] px-5 md:px-8 lg:px-16">
         <div className="flex flex-col justify-between gap-8 md:flex-row md:items-end">
-          <SectionHeader index={sectionIndex("#studio")} label={S.eyebrow} title={S.title} />
+          <SectionHeader index={sectionIndex("#studio")} label={S.eyebrow} title={S.title} chapter="#studio" />
           <Reveal>
             <p className="max-w-md text-lg leading-relaxed text-muted md:text-right">{S.lead}</p>
           </Reveal>

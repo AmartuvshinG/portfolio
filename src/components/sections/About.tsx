@@ -11,6 +11,7 @@ import { useEffect, useRef } from "react";
 import { useScramble } from "@/hooks/useScramble";
 import { InkSign } from "@/components/ui/InkSign";
 import { ScrubWords } from "@/components/motion/ScrubWords";
+import { ScriptLabel } from "@/components/ui/ScriptLabel";
 
 /**
  * Profile: the lead as a pull quote, three paragraphs, and a signature row.
@@ -41,7 +42,8 @@ export function About() {
         <div className="grid gap-14 md:grid-cols-12">
           {/* Lead — set large in the serif, treated as a pull quote rather
               than as body copy with a heading over it. */}
-          <Reveal className="md:col-span-7">
+          <Reveal className="relative md:col-span-7">
+            <ScriptLabel href="#about" />
             <span className="micro kicker-plate">
               {sectionIndex("#about")} — {about.heading}
             </span>
