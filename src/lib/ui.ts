@@ -21,6 +21,7 @@ const en = {
   },
   preloader: {
     loading: "LOADING",
+    ready: "READY",
   },
   nav: {
     openMenu: "Open menu",
@@ -182,6 +183,7 @@ const mn: UiStrings = {
   },
   preloader: {
     loading: "АЧААЛЖ БАЙНА",
+    ready: "БЭЛЭН",
   },
   nav: {
     openMenu: "Цэс нээх",

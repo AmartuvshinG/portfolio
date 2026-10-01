@@ -53,7 +53,7 @@ const DEVICES = [
   ["390 ", { viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true }],
 ];
 
-/** Long enough for the preloader and the entrances. */
+/** After the curtain has gone: long enough for the hero's entrances. */
 const SETTLE = 2600;
 
 /**
@@ -71,6 +71,9 @@ async function sweep(page, label, reducedMotion, locale) {
 
   for (const [act, hash] of ACTS) {
     await page.goto(`${BASE}/?lang=${locale}${hash}`);
+    // The intro's length varies (first view, repeat view, skip), so wait for
+    // the curtain itself rather than a guess, then for the entrances.
+    await page.waitForFunction(() => !document.querySelector(".preloader"), null, { timeout: 15000 });
     await page.waitForTimeout(SETTLE);
 
     let builder = new AxeBuilder({ page }).withTags(TAGS);

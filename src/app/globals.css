@@ -639,6 +639,22 @@ html.hud-cursor * {
   .preloader-rain { animation: none; }
 }
 
+/* The LED intro (Preloader). Its curtain is in the server HTML so that first
+   paint is the dark room; visitors who prefer reduced motion must never see
+   it, and this hides it before any script has run. (No-JS visitors get the
+   same rule from a <noscript> style in the layout.) */
+@media (prefers-reduced-motion: reduce) {
+  .preloader { display: none; }
+}
+/* The rain is only seen where the sign lights it: a soft pool round the
+   sign, nothing at the edges of the frame. The mask is static; only the rain
+   inside it moves, so this is one compositor layer. */
+.preloader-rain-light {
+  -webkit-mask-image: radial-gradient(ellipse 46% 62% at 50% 46%, #000 30%, transparent 100%);
+  mask-image: radial-gradient(ellipse 46% 62% at 50% 46%, #000 30%, transparent 100%);
+}
+.preloader-rain-light .preloader-rain { opacity: 0.9; }
+
 /* The frame a vertical sign hangs in: a hairline box with sodium corner
    brackets, the tube glowing inside it. */
 .script-sign {

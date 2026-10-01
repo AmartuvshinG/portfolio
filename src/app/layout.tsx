@@ -168,6 +168,11 @@ export default function RootLayout({
           rel="stylesheet"
           href={`https://fonts.googleapis.com/css2?family=Noto+Sans+Mongolian&display=swap&text=${encodeURIComponent(profile.nameScript)}`}
         />
+        {/* The LED intro is in the server HTML (first paint is its dark
+            room); without script it could never lift, so hide it. */}
+        <noscript>
+          <style>{`.preloader{display:none}`}</style>
+        </noscript>
       </head>
       <body className="min-h-full antialiased">
         <a
