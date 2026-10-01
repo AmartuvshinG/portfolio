@@ -468,11 +468,6 @@ html.hud-cursor * {
 /* ---------------------------------------------------------------------------
    Surfaces
    ------------------------------------------------------------------------- */
-@utility deck-card {
-  background: var(--color-surface);
-  border: 1px solid var(--color-line);
-}
-
 @utility glass {
   background: color-mix(in srgb, var(--color-bg) 74%, transparent);
   backdrop-filter: blur(16px) saturate(1.25);
@@ -783,15 +778,6 @@ html.hud-cursor * {
   background-size: 48px 48px;
 }
 
-/* An iridescent bloom, the workhorse of the whole look. Sits behind content at
-   low opacity; this is where ref3's point-cloud glow lives in plain CSS. */
-@utility spectrum-bloom {
-  background-image:
-    radial-gradient(60% 50% at 18% 30%, rgba(255, 45, 143, 0.34), transparent 70%),
-    radial-gradient(55% 55% at 78% 22%, rgba(34, 224, 255, 0.28), transparent 70%),
-    radial-gradient(70% 60% at 50% 92%, rgba(123, 92, 255, 0.32), transparent 72%);
-}
-
 /* ---------------------------------------------------------------------------
    Keyframes
    ------------------------------------------------------------------------- */
@@ -835,102 +821,8 @@ html.hud-cursor * {
   opacity: 0;
 }
 
-/* Lab tiles turning to face the camera.
-   The transform lives in CSS rather than in a framer `whileHover` because the
-   value is the exact inverse of the plane's rotation and has to compose under
-   it; the tile supplies it as a custom property (see Lab.tsx) so the geometry
-   stays next to the geometry it is the inverse of. */
-.lab-face {
-  transform-origin: center;
-  transition: transform 520ms var(--ease-expo);
-}
-.group:hover > .lab-face,
-.group:focus-visible > .lab-face {
-  transform: var(--lab-face, none);
-}
-@media (prefers-reduced-motion: reduce) {
-  .lab-face { transition: none; }
-  .group:hover > .lab-face,
-  .group:focus-visible > .lab-face { transform: none; }
-}
-
 @utility animate-blink { animation: soft-blink 1.8s ease-in-out infinite; }
-@utility animate-drift { animation: spectrum-drift 34s ease-in-out infinite; }
 
-/* Everything in the hero atmosphere stops dead for reduced motion. The plates
-   still layer and still occlude — the composition survives; only the loops go. */
-@media (prefers-reduced-motion: reduce) {
-  .hero-lamp,
-  [class*="animate-"] {
-    animation: none !important;
-  }
-
-  /* Route morphs too. A view transition is a full-screen animation of the
-     entire page and is exactly what the preference is asking to stop; without
-     this it runs regardless, because the browser drives it rather than us. */
-  ::view-transition-group(*),
-  ::view-transition-old(*),
-  ::view-transition-new(*) {
-    animation: none !important;
-  }
-}
-
-/* The work card → case file morph. Slower than the browser default, on the
-   site's own easing, so it reads as one continuous move rather than a cut. */
-::view-transition-group(*) {
-  animation-duration: 480ms;
-  animation-timing-function: var(--ease-expo);
-}
-
-/* ---------------------------------------------------------------------------
-   Glitch text — RGB split, driven by GlitchText.tsx
-   ---------------------------------------------------------------------------
-   Restored from NEXUS and recoloured: the original split to `--color-cyan` and
-   `--color-red`, neither of which exists in this palette — left as-is the
-   layers would inherit `currentColor` and the effect would be three identical
-   copies of the text, i.e. nothing.
-
-   `mix-blend-mode: screen` is what makes the offsets read as light leaking
-   rather than as a drop shadow, and it is the reason the ground under this has
-   to stay dark. `steps(2)` keeps the shift snapping between positions instead
-   of sliding, which is the difference between a signal fault and a wobble.
-   ------------------------------------------------------------------------- */
-@keyframes glitch-shift {
-  0%, 100% { clip-path: inset(0 0 0 0); transform: translate(0); }
-  20% { clip-path: inset(20% 0 40% 0); transform: translate(-2px, 0); }
-  40% { clip-path: inset(60% 0 10% 0); transform: translate(2px, 0); }
-  60% { clip-path: inset(30% 0 50% 0); transform: translate(-1px, 0); }
-  80% { clip-path: inset(10% 0 70% 0); transform: translate(1px, 0); }
-}
-
-.glitch {
-  position: relative;
-  display: inline-block;
-}
-.glitch::before,
-.glitch::after {
-  content: attr(data-text);
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  opacity: 0;
-  clip-path: inset(0 0 0 0);
-  transition: opacity 160ms linear;
-}
-.glitch[data-active="true"]::before {
-  color: var(--spectrum-1);
-  opacity: 0.85;
-  transform: translate(-2px, 0);
-  animation: glitch-shift 0.4s steps(2) infinite;
-  mix-blend-mode: screen;
-}
-.glitch[data-active="true"]::after {
-  color: var(--spectrum-3);
-  opacity: 0.85;
-  transform: translate(2px, 0);
-  animation: glitch-shift 0.4s steps(2) infinite reverse;
-  mix-blend-mode: screen;
-}
 
 /* ---------------------------------------------------------------------------
    Aurora — the site-wide backdrop (components/backdrop/Aurora.tsx)
@@ -1112,4 +1004,124 @@ html.hud-cursor * {
   .title-streak { display: none; }
   .title-card .title-card-title { transition: none; }
   .title-card:not([data-on]) .title-card-title { letter-spacing: revert-layer; }
+}
+
+/* ---------------------------------------------------------------------------
+   The one button (ui/Cta). Three cuts, one behaviour. The chamfer is cut on
+   the fill layer (::before), never on the control: a clip-path on the control
+   would clip its own focus ring.
+   ------------------------------------------------------------------------- */
+.cta {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.65rem;
+  height: 2.75rem;
+  padding: 0 1.3rem;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  white-space: nowrap;
+  transition: transform 150ms cubic-bezier(0.2, 0, 0, 1), color 300ms, filter 150ms;
+}
+.cta::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  transition: background-color 300ms, opacity 300ms;
+}
+.cta-primary { color: var(--color-void); }
+.cta-primary::before {
+  background-image: var(--gradient-spectrum);
+  clip-path: polygon(0 0, 100% 0, 100% calc(100% - 9px), calc(100% - 9px) 100%, 0 100%);
+}
+.cta-secondary,
+.cta-icon { color: var(--color-fg); }
+.cta-secondary::before,
+.cta-icon::before {
+  border: 1px solid var(--color-line-strong);
+  background-color: color-mix(in srgb, var(--color-void) 35%, transparent);
+}
+.cta-secondary:hover::before,
+.cta-icon:hover::before {
+  background-color: color-mix(in srgb, var(--color-fg) 7%, transparent);
+  border-color: color-mix(in srgb, var(--color-fg) 55%, transparent);
+}
+.cta-icon { width: 2.75rem; padding: 0; justify-content: center; }
+/* HUD corners on the framed cuts: four short strokes, painted with the
+   gradients so they cost no nodes. They tighten in on hover. */
+.cta-secondary::after,
+.cta-icon::after {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  z-index: -1;
+  pointer-events: none;
+  --_c: var(--color-hazard);
+  background:
+    linear-gradient(var(--_c), var(--_c)) top left / 7px 1.5px no-repeat,
+    linear-gradient(var(--_c), var(--_c)) top left / 1.5px 7px no-repeat,
+    linear-gradient(var(--_c), var(--_c)) bottom right / 7px 1.5px no-repeat,
+    linear-gradient(var(--_c), var(--_c)) bottom right / 1.5px 7px no-repeat;
+  opacity: 0;
+  transform: scale(1.08);
+  transition: opacity 250ms, transform 300ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+.cta-secondary:hover::after,
+.cta-icon:hover::after,
+.cta-secondary:focus-visible::after,
+.cta-icon:focus-visible::after { opacity: 1; transform: scale(1); }
+
+/* The light curtain: a wash with a hot leading edge that crosses once per
+   hover (an animation, so it restarts on every entry and never parks). */
+.cta-curtain {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  transform: translateX(-102%);
+  background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.08) 55%, rgba(255, 246, 230, 0.55) 96%, #fff 100%);
+}
+.cta-secondary .cta-curtain,
+.cta-icon .cta-curtain {
+  background: linear-gradient(90deg, transparent 0%, color-mix(in srgb, var(--color-hazard) 10%, transparent) 60%, color-mix(in srgb, var(--color-hazard) 70%, white) 100%);
+}
+.cta:hover .cta-curtain,
+.cta:focus-visible .cta-curtain { animation: cta-sweep 0.75s cubic-bezier(0.45, 0, 0.2, 1); }
+@keyframes cta-sweep {
+  from { transform: translateX(-102%); }
+  to { transform: translateX(102%); }
+}
+
+/* The arrow slides on and leaves a ghost behind it. */
+.cta-arrow-lead,
+.cta-arrow-ghost { transition: transform 320ms cubic-bezier(0.22, 1, 0.36, 1), opacity 320ms; }
+.cta-arrow-ghost { opacity: 0; }
+.cta:hover .cta-arrow-lead,
+.cta:focus-visible .cta-arrow-lead { transform: translateX(4px); }
+.cta:hover .cta-arrow-ghost,
+.cta:focus-visible .cta-arrow-ghost { opacity: 0.35; transform: translateX(-3px); transition-duration: 520ms; }
+
+/* Press: a thunk and a flash. */
+.cta:active { transform: scale(0.97); filter: brightness(1.3); transition-duration: 60ms; }
+.cta:disabled { opacity: 0.3; pointer-events: none; }
+
+/* HUD icons redraw their strokes when the control is hovered or focused. */
+.hud-ico path { stroke-dasharray: 1; stroke-dashoffset: 0; }
+.group:hover .hud-ico path,
+.group:focus-visible .hud-ico path { animation: hud-draw 0.5s cubic-bezier(0.22, 1, 0.36, 1); }
+.group:hover .hud-ico path + path,
+.group:focus-visible .hud-ico path + path { animation-delay: 0.08s; animation-fill-mode: backwards; }
+@keyframes hud-draw {
+  from { stroke-dashoffset: 1; }
+  to { stroke-dashoffset: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cta, .cta-arrow-lead, .cta-arrow-ghost { transition: none; }
+  .cta:hover .cta-curtain, .cta:focus-visible .cta-curtain,
+  .group:hover .hud-ico path, .group:focus-visible .hud-ico path { animation: none; }
 }

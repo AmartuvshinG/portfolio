@@ -4,7 +4,8 @@ import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "
 import { createPortal } from "react-dom";
 import Image from "next/image";
 import { AnimatePresence, motion } from "framer-motion";
-import { ArrowLeft, ArrowRight, ArrowUpRight, X } from "lucide-react";
+import { Cta } from "@/components/ui/Cta";
+import { IconArrowLeft, IconArrowRight, IconClose } from "@/components/ui/HudIcons";
 import { accentColor, readable, type Project } from "@/lib/content";
 import { useI18n } from "@/lib/i18n";
 import { CASE_EVENT, clearCase, readCase, replaceCase } from "@/lib/caseFile";
@@ -191,9 +192,10 @@ function CaseFile({
                   data-autofocus
                   onClick={onClose}
                   aria-label={t.caseFile.close}
-                  className="flex h-11 w-11 items-center justify-center border border-line text-fg transition-colors hover:border-current"
+                  className="cta cta-icon group"
                 >
-                  <X size={18} />
+                  <span aria-hidden className="cta-curtain" />
+                  <IconClose size={17} />
                 </button>
               </div>
             </div>
@@ -239,21 +241,7 @@ function CaseFile({
                     <ul className="mt-8 flex flex-wrap gap-3">
                       {project.links.map((l, n) => (
                         <li key={l.href}>
-                          <a
-                            href={l.href}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="chamfer-sm group inline-flex h-11 items-center gap-2 px-5 font-mono text-xs uppercase tracking-[0.18em] transition-transform duration-300 hover:scale-[1.03]"
-                            style={
-                              n === 0
-                                ? { backgroundImage: "var(--gradient-spectrum)", color: "var(--color-void)" }
-                                : { boxShadow: "inset 0 0 0 1px var(--color-line-strong)", color: "var(--color-fg)" }
-                            }
-                          >
-                            {l.label}
-                            <ArrowUpRight size={15} aria-hidden className="transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
-                            <span className="sr-only">{t.common.newTab}</span>
-                          </a>
+                          <Cta variant={n === 0 ? "primary" : "secondary"} href={l.href} external label={l.label} />
                         </li>
                       ))}
                     </ul>
@@ -353,19 +341,22 @@ function CaseFile({
                 {prev && next && (
                   <nav className="mt-20 grid gap-3 border-t border-line pt-8 sm:grid-cols-2">
                     {[
-                      { p: prev, label: t.caseFile.prev, Icon: ArrowLeft, align: "text-left" },
-                      { p: next, label: t.caseFile.next, Icon: ArrowRight, align: "sm:text-right" },
+                      { p: prev, label: t.caseFile.prev, Icon: IconArrowLeft, align: "text-left" },
+                      { p: next, label: t.caseFile.next, Icon: IconArrowRight, align: "sm:text-right" },
                     ].map(({ p, label, Icon, align }) => (
                       <button
                         key={label}
                         type="button"
                         onClick={() => onGo(p)}
-                        className={`group flex flex-col gap-2 border border-line p-5 transition-colors hover:border-line-strong ${align}`}
+                        /* The curtain and the HUD corners of a secondary
+                           control, at panel size. */
+                        className={`cta cta-secondary group !h-auto flex-col !items-stretch gap-2 p-5 normal-case tracking-normal ${align}`}
                       >
+                        <span aria-hidden className="cta-curtain" />
                         <span className={`micro flex items-center gap-2 ${align === "sm:text-right" ? "sm:justify-end" : ""}`}>
-                          {Icon === ArrowLeft && <Icon size={14} aria-hidden />}
+                          {Icon === IconArrowLeft && <Icon size={14} />}
                           {label}
-                          {Icon === ArrowRight && <Icon size={14} aria-hidden />}
+                          {Icon === IconArrowRight && <Icon size={14} />}
                         </span>
                         <span className="display-caps text-lg text-fg md:text-xl">{p.title}</span>
                       </button>

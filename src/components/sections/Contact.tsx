@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { ArrowUpRight, Check, Copy, Mail } from "lucide-react";
 import { sectionIndex } from "@/lib/content";
 import { useI18n } from "@/lib/i18n";
 import { Reveal } from "@/components/motion/Reveal";
@@ -9,6 +8,8 @@ import { ChapterSeam } from "@/components/chrome/ChapterSeam";
 import { LinkedInMark } from "@/components/ui/BrandMarks";
 import { NeonSign } from "@/components/ui/NeonSign";
 import { InkSign } from "@/components/ui/InkSign";
+import { IconCheck, IconCopy, IconMail } from "@/components/ui/HudIcons";
+import { Cta } from "@/components/ui/Cta";
 
 /**
  * The closing block: the address, large, and the two ways in.
@@ -87,42 +88,36 @@ export function Contact() {
               >
                 {contact.email}
               </a>
-              <button
-                type="button"
+              <Cta
+                variant="secondary"
                 onClick={copy}
-                className="liquid-glass mb-1 flex h-11 shrink-0 items-center gap-2 rounded-full px-4 font-mono text-xs uppercase tracking-[0.16em] text-fg transition-transform duration-200 hover:scale-[1.03]"
-              >
-                {copied ? <Check size={15} aria-hidden /> : <Copy size={15} aria-hidden />}
-                {copied ? t.contact.copied : t.contact.copy}
-              </button>
+                className="mb-1 shrink-0"
+                icon={copied ? <IconCheck size={15} /> : <IconCopy size={15} />}
+                label={copied ? t.contact.copied : t.contact.copy}
+              />
               <span aria-live="polite" className="sr-only">
                 {copied ? t.contact.copiedLive(contact.email) : ""}
               </span>
             </div>
 
             <div className="mt-10 flex flex-wrap gap-3">
-              <a
+              {/* The ramp carries the colour and the label stays dark on it:
+                  bone on magenta is only ~3:1. */}
+              <Cta
                 href={`mailto:${contact.email}`}
-                style={{ backgroundImage: "var(--gradient-spectrum)" }}
-                /* The ramp carries the colour and the label stays dark on it:
-                   bone on magenta is only ~3:1. */
-                className="chamfer-sm flex items-center gap-3 px-7 py-3.5 font-mono text-xs uppercase tracking-[0.2em] text-void transition-transform duration-300 hover:scale-[1.03]"
-              >
-                <Mail size={15} aria-hidden />
-                {t.contact.emailMe}
-              </a>
+                icon={<IconMail size={15} />}
+                label={t.contact.emailMe}
+                className="h-12 px-7"
+              />
               {linkedin && (
-                <a
+                <Cta
+                  variant="secondary"
                   href={linkedin.href}
-                  target="_blank"
-                  rel="noreferrer noopener"
-                  className="liquid-glass group flex items-center gap-3 rounded-full px-6 py-3.5 font-mono text-xs uppercase tracking-[0.2em] text-fg transition-transform duration-300 hover:scale-[1.03]"
-                >
-                  <LinkedInMark className="h-4 w-auto" />
-                  LinkedIn
-                  <ArrowUpRight size={14} aria-hidden className="text-muted group-hover:text-fg" />
-                  <span className="sr-only">{t.common.newTab}</span>
-                </a>
+                  external
+                  icon={<LinkedInMark className="h-4 w-auto" />}
+                  label="LinkedIn"
+                  className="h-12 px-6"
+                />
               )}
             </div>
           </Reveal>

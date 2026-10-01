@@ -10,7 +10,7 @@ import {
   useTransform,
   type MotionValue,
 } from "framer-motion";
-import { ArrowLeft, ArrowRight, ArrowUpRight } from "lucide-react";
+import { ArrowUpRight } from "lucide-react";
 import { accentColor, projects as baseProjects, readable, sectionIndex, type Project } from "@/lib/content";
 import { useI18n } from "@/lib/i18n";
 import { openCase } from "@/lib/caseFile";
@@ -20,6 +20,8 @@ import { useSmoothScroll } from "@/components/chrome/SmoothScroll";
 import { ShotImage } from "@/components/work/ShotImage";
 import { ChapterSeam } from "@/components/chrome/ChapterSeam";
 import { cn } from "@/lib/utils";
+import { IconArrowLeft, IconArrowRight } from "@/components/ui/HudIcons";
+import { Cta } from "@/components/ui/Cta";
 
 /* ---------------------------------------------------------------------------
    The work theatre.
@@ -262,24 +264,20 @@ function Theatre({ sectionRef: ref }: { sectionRef: React.RefObject<HTMLElement 
           {/* Controls */}
           <div className="mt-6 flex items-center justify-between gap-6">
             <div className="flex items-center gap-3">
-              <button
-                type="button"
+              <Cta
+                variant="icon"
                 onClick={() => goTo(active - 1)}
                 disabled={active === 0}
                 aria-label={t.work.prev}
-                className="flex h-11 w-11 items-center justify-center border border-line text-fg transition-colors hover:border-line-strong disabled:opacity-30"
-              >
-                <ArrowLeft size={16} />
-              </button>
-              <button
-                type="button"
+                icon={<IconArrowLeft size={16} />}
+              />
+              <Cta
+                variant="icon"
                 onClick={() => goTo(active + 1)}
                 disabled={active === n - 1}
                 aria-label={t.work.next}
-                className="flex h-11 w-11 items-center justify-center border border-line text-fg transition-colors hover:border-line-strong disabled:opacity-30"
-              >
-                <ArrowRight size={16} />
-              </button>
+                icon={<IconArrowRight size={16} />}
+              />
               <span className="micro tabular ml-2 !text-fg">{t.work.count(active + 1, n)}</span>
             </div>
 
@@ -460,27 +458,10 @@ function Story({ project, active, ...layer }: Layer & { project: Project; active
         )}
 
         <div className="mt-7 flex flex-wrap items-center gap-3">
-          <button
-            type="button"
-            onClick={() => openCase(project.slug)}
-            className="chamfer-sm inline-flex h-11 items-center gap-2 px-5 font-mono text-xs uppercase tracking-[0.18em] text-void transition-transform duration-300 hover:scale-[1.03]"
-            style={{ backgroundImage: "var(--gradient-spectrum)" }}
-          >
-            {t.work.open}
-            <ArrowRight size={15} aria-hidden />
-          </button>
-          {live && (
-            <a
-              href={live.href}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex h-11 items-center gap-2 border border-line-strong px-5 font-mono text-xs uppercase tracking-[0.18em] text-fg transition-colors hover:border-fg"
-            >
-              {live.label}
-              <ArrowUpRight size={15} aria-hidden />
-              <span className="sr-only">{t.common.newTab}</span>
-            </a>
-          )}
+          {/* Not magnetic: this sits on a scroll-driven layer, and the lean
+              would fight its transform. */}
+          <Cta onClick={() => openCase(project.slug)} label={t.work.open} magnetic={false} />
+          {live && <Cta variant="secondary" href={live.href} external label={live.label} magnetic={false} />}
         </div>
       </motion.div>
     </motion.div>
@@ -646,25 +627,8 @@ function Stack({ reduced }: { reduced: boolean }) {
                   <h3 className="display-caps mt-3 text-[clamp(1.4rem,6vw,2rem)] text-fg">{p.title}</h3>
                   <p className="mt-3 text-base leading-relaxed text-muted">{p.summary}</p>
                   <div className="mt-5 flex flex-wrap gap-3">
-                    <button
-                      type="button"
-                      onClick={() => openCase(p.slug)}
-                      className="chamfer-sm inline-flex h-11 items-center gap-2 px-5 font-mono text-xs uppercase tracking-[0.16em] text-void"
-                      style={{ backgroundImage: "var(--gradient-spectrum)" }}
-                    >
-                      {t.work.open} <ArrowRight size={15} aria-hidden />
-                    </button>
-                    {live && (
-                      <a
-                        href={live.href}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex h-11 items-center gap-2 border border-line-strong px-4 font-mono text-xs uppercase tracking-[0.16em] text-fg"
-                      >
-                        {live.label} <ArrowUpRight size={15} aria-hidden />
-                        <span className="sr-only">{t.common.newTab}</span>
-                      </a>
-                    )}
+                    <Cta onClick={() => openCase(p.slug)} label={t.work.open} magnetic={false} />
+                    {live && <Cta variant="secondary" href={live.href} external label={live.label} magnetic={false} />}
                   </div>
                 </div>
               </article>
