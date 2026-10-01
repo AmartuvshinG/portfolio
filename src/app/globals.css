@@ -1075,3 +1075,52 @@ html.hud-cursor * {
     transform: none;
   }
 }
+
+/* The develop reveal's line (motion/Reveal). A box the height of the block,
+   transparent but for a sodium hairline on its bottom edge and a short wash
+   of light trailing above it; it slides down (transform only) as the clip
+   opens, so the line rides the reveal's leading edge. */
+.develop-front {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    180deg,
+    transparent calc(100% - 36px),
+    color-mix(in srgb, var(--color-hazard) 10%, transparent) calc(100% - 2px),
+    color-mix(in srgb, var(--color-hazard) 85%, white) calc(100% - 1px)
+  );
+}
+@media (prefers-reduced-motion: reduce) {
+  .develop-front { display: none; }
+}
+
+/* Title cards (ui/SectionHeader): the title's tracking closes from a little
+   wide to its face's own as the card lands. Letter-spacing reflows, so it is
+   kept small (one heading, once) and never used on running text. */
+.title-card .title-card-title {
+  transition: letter-spacing 1.3s cubic-bezier(0.22, 1, 0.36, 1) 0.1s;
+}
+.title-card:not([data-on]) .title-card-title {
+  letter-spacing: 0.07em;
+}
+/* The streak that crosses a title card once: a bright hairline with a soft
+   flare round it, wider than tall, like an anamorphic lens catching a light. */
+.title-streak {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 70%;
+  height: 46px;
+  margin-top: -23px;
+  pointer-events: none;
+  mix-blend-mode: screen;
+  background:
+    linear-gradient(90deg, transparent, rgba(255, 236, 206, 0.95) 50%, transparent) center / 100% 1px no-repeat,
+    radial-gradient(50% 50% at 50% 50%, color-mix(in srgb, var(--color-hazard) 35%, transparent), transparent 70%);
+}
+@media (prefers-reduced-motion: reduce) {
+  .title-streak { display: none; }
+  .title-card .title-card-title { transition: none; }
+  .title-card:not([data-on]) .title-card-title { letter-spacing: revert-layer; }
+}

@@ -2,7 +2,7 @@
 
 import { motion, type Variants } from "framer-motion";
 import type { ReactNode } from "react";
-import { fadeUp, inView } from "@/lib/motion";
+import { develop, developFront, inView } from "@/lib/motion";
 import { cn } from "@/lib/utils";
 
 interface RevealProps {
@@ -15,28 +15,36 @@ interface RevealProps {
 }
 
 /**
- * Scroll-reveal wrapper. Fades + rises into view once. Under reduced motion,
- * Framer's MotionConfig (set in SmoothScroll) neutralises the transform, so
- * content simply appears. Use `asChild` inside a <RevealStagger>.
+ * Scroll-reveal wrapper: the develop reveal (lib/motion `develop`). The block
+ * resolves top to bottom behind a travelling sodium line, once. Under reduced
+ * motion, Framer's MotionConfig (set in SmoothScroll) neutralises the
+ * transform and CSS hides the line, so content simply appears. Use `asChild`
+ * inside a <RevealStagger>.
+ *
+ * A caller passing its own `variants` gets those and no line.
  */
 export function Reveal({
   children,
   className,
-  variants = fadeUp,
+  variants = develop,
   delay = 0,
   asChild = false,
 }: RevealProps) {
+  const front = variants === develop && (
+    <motion.span aria-hidden className="develop-front" variants={developFront} transition={{ delay }} />
+  );
   if (asChild) {
     return (
-      <motion.div variants={variants} className={className}>
+      <motion.div variants={variants} className={cn("relative", className)}>
         {children}
+        {front}
       </motion.div>
     );
   }
 
   return (
     <motion.div
-      className={cn(className)}
+      className={cn("relative", className)}
       variants={variants}
       initial="hidden"
       whileInView="show"
@@ -44,6 +52,7 @@ export function Reveal({
       transition={{ delay }}
     >
       {children}
+      {front}
     </motion.div>
   );
 }

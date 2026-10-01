@@ -3,7 +3,6 @@
 import { sectionIndex } from "@/lib/content";
 import { useI18n } from "@/lib/i18n";
 import { Reveal, RevealStagger } from "@/components/motion/Reveal";
-import { fadeUp } from "@/lib/motion";
 import { ChapterSeam } from "@/components/chrome/ChapterSeam";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
 import { cn } from "@/lib/utils";
@@ -47,7 +46,7 @@ export function About() {
           <Reveal className="md:col-span-5 md:pt-24" delay={0.12}>
             <RevealStagger className="space-y-5">
               {about.paragraphs.map((p, i) => (
-                <Reveal key={i} asChild variants={fadeUp}>
+                <Reveal key={i} asChild>
                   <p className="text-base leading-relaxed text-muted">{p}</p>
                 </Reveal>
               ))}
@@ -58,7 +57,7 @@ export function About() {
         {/* The dossier plate. It replaced three glass cards: one bracketed
             panel reads as a file on a person; three rounded cards read as a
             pricing table. Every value is already stated elsewhere on the page. */}
-        <Reveal className="mt-20 md:mt-28" variants={fadeUp}>
+        <Reveal className="mt-20 md:mt-28">
           <div className="relative overflow-hidden border border-line bg-[#05060d]/60">
             {/* Own layer: .hud-brackets sets the `background` shorthand, and
                 unlayered CSS would wipe the plate's fill if they shared a node. */}
