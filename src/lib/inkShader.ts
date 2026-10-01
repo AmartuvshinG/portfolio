@@ -38,44 +38,12 @@
  * and a sin-free hash (see the GLSL traps memory).
  */
 
-const VERT = `
-attribute vec2 aPos;
-void main() { gl_Position = vec4(aPos, 0.0, 1.0); }`;
-
-const FRAG = `
-#ifdef GL_FRAGMENT_PRECISION_HIGH
-precision highp float;
-#else
-precision mediump float;
-#endif
-
-uniform vec2 uRes;
-uniform float uPx;          // buffer px per CSS px
-uniform sampler2D uInk;
-uniform vec2 uTexSize;
-uniform float uSpread;      // texture px
-uniform vec4 uInkBox;       // x, y, w, h (buffer px, y down)
-uniform vec4 uPaper;        // x0, y0, x1, y1
-uniform vec4 uMount;        // x0, y0, x1, y1 (y1 = rest position of the roller)
-uniform float uRollerY;
-uniform float uRollerR;
-uniform float uT;           // writing, 0…1 (+ a tail while it dries)
-uniform float uWriteSecs;
-uniform float uTime;        // seconds, wrapped
-uniform float uLamp;
-uniform float uNeon;
-uniform float uFocus;
-uniform float uZoom;
-uniform float uDip;         // buffer px
-uniform float uSweep;       // −1 = none, else 0…1 across the window
-uniform vec2 uLook;
-uniform vec3 uTip;          // brush tip: x, y (0…1 of the ink box), lift 0…1
-uniform float uTipR;        // stroke half-width at the tip, texture px
-uniform float uTipVis;      // the brush is over the paper, 0…1
-uniform vec3 uSodium;
-uniform vec3 uMagenta;
-uniform vec3 uTeal;
-
+/**
+ * The room's shared GLSL: noise, shapes and the rain on the window. The intro
+ * (below) and the Studio (lib/studioBrush) both draw the same room, so they
+ * share these lines rather than keeping two copies that could drift.
+ */
+export const INK_GLSL_LIB = `
 float hash(vec2 p) {
   vec3 p3 = fract(vec3(p.xyx) * 0.1031);
   p3 += dot(p3, p3.yzx + 33.33);
@@ -117,7 +85,7 @@ vec2 sdSeg(vec2 p, vec2 a, vec2 b) {
 }
 
 /* Rain on the window glass, as the shadow it throws: soft vertical runs. */
-float rainShade(vec2 q) {
+float rainShade(vec2 q, float time) {
   float s = 0.0;
   for (int i = 0; i < 2; i++) {
     float scale = i == 0 ? 30.0 : 57.0;
@@ -125,14 +93,54 @@ float rainShade(vec2 q) {
     float col = floor(gx);
     float h = hash(vec2(col, float(i) * 7.0 + 1.0));
     float speed = 0.07 + 0.16 * h;
-    float f = fract(q.y * (2.0 + h * 2.0) - uTime * speed - h * 10.0);
+    float f = fract(q.y * (2.0 + h * 2.0) - time * speed - h * 10.0);
     float cx = abs(fract(gx) - 0.5);
     float run = smoothstep(0.32, 0.0, cx) * smoothstep(0.0, 0.04, f) * smoothstep(0.75, 0.08, f);
     s += run * step(0.42, h);
   }
   return clamp(s, 0.0, 1.0);
 }
+`;
 
+const VERT = `
+attribute vec2 aPos;
+void main() { gl_Position = vec4(aPos, 0.0, 1.0); }`;
+
+const FRAG = `
+#ifdef GL_FRAGMENT_PRECISION_HIGH
+precision highp float;
+#else
+precision mediump float;
+#endif
+
+uniform vec2 uRes;
+uniform float uPx;          // buffer px per CSS px
+uniform sampler2D uInk;
+uniform vec2 uTexSize;
+uniform float uSpread;      // texture px
+uniform vec4 uInkBox;       // x, y, w, h (buffer px, y down)
+uniform vec4 uPaper;        // x0, y0, x1, y1
+uniform vec4 uMount;        // x0, y0, x1, y1 (y1 = rest position of the roller)
+uniform float uRollerY;
+uniform float uRollerR;
+uniform float uT;           // writing, 0…1 (+ a tail while it dries)
+uniform float uWriteSecs;
+uniform float uTime;        // seconds, wrapped
+uniform float uLamp;
+uniform float uNeon;
+uniform float uFocus;
+uniform float uZoom;
+uniform float uDip;         // buffer px
+uniform float uSweep;       // −1 = none, else 0…1 across the window
+uniform vec2 uLook;
+uniform vec3 uTip;          // brush tip: x, y (0…1 of the ink box), lift 0…1
+uniform float uTipR;        // stroke half-width at the tip, texture px
+uniform float uTipVis;      // the brush is over the paper, 0…1
+uniform vec3 uSodium;
+uniform vec3 uMagenta;
+uniform vec3 uTeal;
+
+${INK_GLSL_LIB}
 void main() {
   vec2 frag = vec2(gl_FragCoord.x, uRes.y - gl_FragCoord.y);
   vec2 c = uRes * 0.5;
@@ -154,7 +162,7 @@ void main() {
             * smoothstep(0.02, 0.1, q.y) * smoothstep(0.98, 0.84, q.y);
   float slat = fract(q.y * 34.0 - q.x * 2.2);
   float blinds = smoothstep(0.3, 0.42, slat) * smoothstep(0.98, 0.86, slat);
-  float rain = rainShade(vec2(wx, q.y));
+  float rain = rainShade(vec2(wx, q.y), uTime);
   float pulse = 0.88 + 0.12 * sin(uTime * 1.3);
   vec3 neonCol = mix(uMagenta, uTeal, smoothstep(0.25, 0.85, q.y + 0.15 * (q.x - 0.7)));
   float through = win * blinds * (1.0 - 0.85 * rain) * uNeon * pulse;
