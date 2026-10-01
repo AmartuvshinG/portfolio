@@ -1,6 +1,6 @@
 "use client";
 
-import { useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import {
   motion,
   useInView,
@@ -57,7 +57,21 @@ export function Timeline() {
   const { c, t } = useI18n();
   const reduced = useReducedMotion();
   const listRef = useRef<HTMLOListElement>(null);
+  const sectionRef = useRef<HTMLElement>(null);
   const tops = useRef<number[]>([]);
+
+  /* The fibre's packets run only while Path is on screen (`[data-live]`,
+     globals.css): an off-screen infinite loop is idle cost for nothing. */
+  useEffect(() => {
+    const el = sectionRef.current;
+    if (!el) return;
+    const io = new IntersectionObserver(([e]) => {
+      if (e.isIntersecting) el.dataset.live = "";
+      else delete el.dataset.live;
+    });
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
   const [active, setActive] = useState(0);
 
   const { scrollYProgress } = useScroll({
@@ -66,6 +80,8 @@ export function Timeline() {
   });
   const headY = useTransform(scrollYProgress, [0, 1], ["0%", "100%"]);
   const headOpacity = useTransform(scrollYProgress, [0, 0.02, 0.98, 1], [0, 1, 1, 0]);
+  /* The fibre's lit length, as a clip: packets run only where the rail is lit. */
+  const fibreClip = useTransform(scrollYProgress, (p) => `inset(0 -6px ${((1 - p) * 100).toFixed(2)}% -6px)`);
 
   /* Each row's node centre, relative to the list. Measured from the nodes
      themselves, which never move: the animations live on other cells. */
@@ -98,6 +114,7 @@ export function Timeline() {
 
   return (
     <section
+      ref={sectionRef}
       id="timeline"
       data-act="deck"
       data-chapter="LEDGER"
@@ -149,6 +166,13 @@ export function Timeline() {
                       "linear-gradient(to bottom, var(--spectrum-1), var(--spectrum-2) 50%, var(--spectrum-3))",
                   }}
                 />
+                {/* The fibre: packets of light running down the lit length of
+                    the rail, like signal down a cable. A repeating gradient
+                    slid by transform (compositor only), clipped to the lit
+                    part, and paused off screen by `.fibre[data-off]`. */}
+                <motion.div className="fibre absolute -inset-x-[2px] inset-y-0 overflow-hidden" style={{ clipPath: fibreClip }} >
+                  <span className="fibre-packets" />
+                </motion.div>
                 {/* The head rides a full-height wrapper translated by a
                     percentage — a transform's % is of the element's own
                     height, which here is the rail's — so it travels the whole
@@ -239,7 +263,8 @@ function Row({
         className="mt-5 [grid-area:body] md:mt-0"
         style={reduced ? undefined : { y: bodyY, opacity: bodyOpacity }}
       >
-        <span className="liquid-glass inline-flex items-center gap-1.5 rounded-full px-3 py-1 font-mono text-sm uppercase tracking-wider text-muted">
+        {/* A bracketed tag, not a glass pill: the HUD labels things. */}
+        <span className="hud-brackets inline-flex items-center gap-1.5 px-3 py-1 font-mono text-sm uppercase tracking-wider text-muted [--hud-c:color-mix(in_srgb,var(--color-hazard)_80%,transparent)] [--hud-l:6px]">
           <Kind size={14} aria-hidden />
           {entry.kind === "education" ? words.education : words.work}
         </span>

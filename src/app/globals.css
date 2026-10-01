@@ -1171,3 +1171,29 @@ html.hud-cursor * {
 .group:focus-visible .monitor-reticle { opacity: 1; transform: scale(0.985); }
 /* The same reticle on a Signal panel: closed onto the panel that is open. */
 .monitor-reticle[data-on] { opacity: 0.9; transform: scale(0.985); }
+
+/* The Path rail's fibre (sections/Timeline): short packets of light sliding
+   down the lit length of the rail. The strip is twice its box and slides by
+   one period, so the loop is seamless; transform only. It runs only while
+   the section is on screen (Timeline sets `[data-live]` on it). */
+.fibre-packets {
+  position: absolute;
+  inset: -96px 0 0 0;
+  background: repeating-linear-gradient(
+    180deg,
+    transparent 0 72px,
+    rgba(255, 255, 255, 0) 72px,
+    rgba(255, 250, 240, 0.95) 88px,
+    transparent 96px
+  );
+  animation: fibre-run 1.6s linear infinite;
+  animation-play-state: paused;
+}
+#timeline[data-live] .fibre-packets { animation-play-state: running; }
+@keyframes fibre-run {
+  from { transform: translate3d(0, 0, 0); }
+  to { transform: translate3d(0, 96px, 0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .fibre-packets { display: none; }
+}
