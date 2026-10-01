@@ -4,7 +4,7 @@ import { toggleDiagnostics } from "@/lib/diagnostics";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
-import { Check, Copy, Languages, Search, Zap } from "lucide-react";
+import { Check, Copy, Languages, Zap } from "lucide-react";
 import { useI18n } from "@/lib/i18n";
 import { openCase } from "@/lib/caseFile";
 import { useSmoothScroll } from "@/components/chrome/SmoothScroll";
@@ -246,7 +246,10 @@ export function CommandPalette() {
             style={{ backdropFilter: "blur(20px) saturate(1.3)" }}
           >
             <div className="flex items-center gap-3 border-b border-line px-5">
-              <Search size={16} className="shrink-0 text-muted" />
+              {/* A terminal's prompt, in sodium, where a search glass was. */}
+              <span aria-hidden className="shrink-0 font-mono text-sm text-[var(--color-hazard)]">
+                &gt;_
+              </span>
               <input
                 ref={inputRef}
                 /* No `autoFocus`. The overlay hook owns initial focus for all
@@ -279,7 +282,7 @@ export function CommandPalette() {
                    every cascade layer — so a plain utility here loses no
                    matter what its specificity is. Same hazard the two `@layer
                    base` comments in that file describe. */
-                className="w-full bg-transparent py-4 font-mono text-sm text-fg placeholder:text-faint focus-visible:[outline-offset:-4px]!"
+                className="w-full bg-transparent py-4 font-mono text-sm text-fg caret-[var(--color-hazard)] placeholder:text-faint focus-visible:[outline-offset:-4px]!"
               />
               <kbd className="hud-label shrink-0 border border-line px-1.5 py-0.5">
                 ESC
@@ -309,10 +312,19 @@ export function CommandPalette() {
                       }}
                       tabIndex={-1}
                       className={cn(
-                        "flex w-full items-center justify-between gap-4 px-5 py-2.5 text-left transition-colors",
+                        "relative flex w-full items-center justify-between gap-4 px-5 py-2.5 text-left transition-colors",
                         i === cursor ? "bg-fg/[0.07] text-fg" : "text-muted"
                       )}
                     >
+                      {/* The selection: a lit bar that slides between rows. */}
+                      {i === cursor && (
+                        <motion.span
+                          layoutId="palette-cursor"
+                          aria-hidden
+                          className="absolute inset-y-1 left-0 w-[2px] bg-[var(--color-hazard)] shadow-[0_0_10px_var(--color-hazard)]"
+                          transition={{ type: "spring", stiffness: 520, damping: 40 }}
+                        />
+                      )}
                       <span className="flex items-center gap-3">
                         {cmd.id === "a-power" && <Zap size={14} />}
                         {cmd.id === "a-lang" && <Languages size={14} />}
