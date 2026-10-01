@@ -17,15 +17,12 @@ import { InkSign } from "@/components/ui/InkSign";
 import { useScramble } from "@/hooks/useScramble";
 import { playInkWipe } from "@/lib/inkWipe";
 
-/** UB's coordinates: the HUD's one piece of standing telemetry. */
-const COORDS = "47.92°N 106.92°E";
-
 /**
  * The HUD.
  *
  * No bar and no capsule: the chrome sits *in the frame*, the way a camera's
- * readout does. The wordmark and the city's coordinates hold the top-left
- * corner; the chapter index holds the top-right. Past the fold a dark scrim
+ * readout does. The wordmark holds the top-left corner; the chapter index
+ * holds the top-right. Past the fold a dark scrim
  * fades in behind them (no backdrop-filter — a blur on fixed chrome is a tax on
  * every scroll frame), and at a chapter cut the letterbox's top bar closes in
  * behind the row, so the HUD ends up printed on the matte.
@@ -39,8 +36,8 @@ const COORDS = "47.92°N 106.92°E";
  * Kept from the capsule, each a fix rather than a taste:
  *
  * 1. **The row is a container query context.** Its contents are `nowrap`; the
- *    wordmark, then the coordinates, give way as the row narrows, and the
- *    breakpoints are measured against the row, not the viewport.
+ *    wordmark gives way as the row narrows, and the breakpoints are measured
+ *    against the row, not the viewport.
  * 2. **It knows what page it is on.** The section observer can only work on the
  *    home route; everywhere else the active item comes from the pathname.
  * 3. **Deep links re-land** while the page is still growing (see below).
@@ -233,9 +230,8 @@ export function Navbar() {
           }}
         />
         <nav className="@container relative mx-auto flex h-16 max-w-[1800px] flex-nowrap items-center justify-between gap-3 px-5 sm:gap-6 md:px-8 lg:px-10">
-          {/* Top-left: the brand, and where it is broadcasting from. A real
-              link off-route so it navigates home rather than scrolling a page
-              that has no #hero. */}
+          {/* Top-left: the brand. A real link off-route so it navigates home
+              rather than scrolling a page that has no #hero. */}
           <div className="flex min-w-0 shrink-0 items-center gap-5">
             {isHome ? (
               <a
@@ -258,10 +254,6 @@ export function Navbar() {
                 {brand}
               </Link>
             )}
-            <span aria-hidden className="hidden items-center gap-3 @[84rem]:flex">
-              <span className="h-3 w-px bg-line-strong" />
-              <span className="font-mono text-[0.6875rem] tabular tracking-[0.2em] text-faint">{COORDS}</span>
-            </span>
           </div>
 
           {/* Top-right: the chapter index. `shrink-0`: a list allowed to

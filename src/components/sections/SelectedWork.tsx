@@ -225,13 +225,9 @@ function Theatre({ sectionRef: ref }: { sectionRef: React.RefObject<HTMLElement 
                   <span className="sr-only">{t.work.preview(current.title)}</span>
                   <div aria-hidden className="notch-card relative overflow-hidden bg-surface ring-1 ring-inset ring-line-strong shadow-[0_40px_120px_-20px_rgba(0,0,0,0.85)] transition-transform duration-300 ease-out group-hover:-translate-y-1">
                     {/* The bezel: a field monitor's status strip, not a
-                        browser's traffic lights. The REC lamp, which file is
-                        up, then the real address of the build. */}
+                        browser's traffic lights. Which file is up, then the
+                        real address of the build. */}
                     <div className="relative flex h-9 items-center gap-3 border-b border-line bg-[#06070c] px-4">
-                      <span className="flex items-center gap-1.5 font-mono text-[0.625rem] tracking-[0.22em] text-fg/70" aria-hidden>
-                        <span className="h-1.5 w-1.5 rounded-full bg-[var(--color-seal)] shadow-[0_0_8px_var(--color-seal)]" />
-                        REC
-                      </span>
                       <span className="font-mono text-[0.625rem] tabular tracking-[0.22em] text-[var(--color-hazard)]" aria-hidden>
                         {current.index}/{String(n).padStart(2, "0")}
                       </span>

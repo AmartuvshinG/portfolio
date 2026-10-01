@@ -18,7 +18,7 @@ import { InkScroll } from "@/components/chrome/InkScroll";
  * The room and its beats are InkScroll's (the lamp, the unrolling, the brush,
  * the seal). This component owns the frame around it and the exit:
  *
- *   - 2.39:1 letterbox bars with a slate: reel and place up top, the
+ *   - 2.39:1 letterbox bars with a slate: reel and status up top, the
  *     wordmark, a skip hint and the ink's progress rule below;
  *   - when the scroll is done, a rack focus past it (the scroll goes soft)
  *     while the curtain dissolves onto the hero's city and the bars slide
@@ -40,8 +40,6 @@ import { InkScroll } from "@/components/chrome/InkScroll";
 const SEEN_KEY = "ink-intro-seen";
 /** Lift no matter what after this long (× timeScale). */
 const CEILING_MS = 9000;
-/** UB's coordinates, for the slate. */
-const COORDS = "47.92°N 106.92°E";
 
 const QUERY = "(prefers-reduced-motion: reduce)";
 function subscribeReduced(onChange: () => void) {
@@ -163,7 +161,6 @@ export function Preloader() {
           >
             <span className="micro text-fg/70">{t.preloader.reel}</span>
             <span className="micro flex items-center gap-4 text-fg/70">
-              <span className="hidden sm:inline">{COORDS}</span>
               <span className="flex items-center gap-2 text-[var(--color-hazard)]">
                 <span
                   className={`h-1.5 w-1.5 rounded-full bg-[var(--color-hazard)] ${ready ? "" : "animate-blink"}`}
