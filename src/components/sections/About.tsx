@@ -8,6 +8,7 @@ import { useReducedMotion } from "@/hooks/useReducedMotion";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
 import { InkSign } from "@/components/ui/InkSign";
+import { ScrubWords } from "@/components/motion/ScrubWords";
 
 /**
  * Profile: the lead as a pull quote, three paragraphs, and a signature row.
@@ -39,7 +40,8 @@ export function About() {
               {sectionIndex("#about")} — {about.heading}
             </span>
             <h2 className="mt-6 font-tech text-[clamp(2.25rem,5vw,4.5rem)] leading-[1.04]">
-              {about.lead}
+              {/* Lit a word at a time as you scroll past it. */}
+              <ScrubWords text={about.lead} />
             </h2>
           </Reveal>
 
