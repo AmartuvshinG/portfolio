@@ -117,12 +117,49 @@ function CaseFile({
     scrollRef.current?.scrollTo({ top: 0 });
   }, [project?.slug]);
 
+  /* The reading rail: which chapter the reader is in, watched against the
+     panel's own scroller (the page behind does not move). */
+  const [active, setActive] = useState("cf-overview");
+  useEffect(() => {
+    const root = scrollRef.current;
+    if (!root || !project) return;
+    const io = new IntersectionObserver(
+      (entries) => {
+        const hit = entries
+          .filter((e) => e.isIntersecting)
+          .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top)[0];
+        if (hit) setActive(hit.target.id);
+      },
+      { root, rootMargin: "-25% 0px -65% 0px" }
+    );
+    root.querySelectorAll("[data-chapter-id]").forEach((el) => io.observe(el));
+    return () => io.disconnect();
+  }, [project]);
+  const jump = (id: string) => {
+    const root = scrollRef.current;
+    const el = root?.querySelector<HTMLElement>(`#${id}`);
+    if (!root || !el) return;
+    // Measured against the scroller: offsetTop is relative to the nearest
+    // positioned ancestor, which is not the panel.
+    const top = root.scrollTop + el.getBoundingClientRect().top - root.getBoundingClientRect().top - 24;
+    root.scrollTo({ top, behavior: reduced ? "auto" : "smooth" });
+    setActive(id);
+  };
+
   if (!isClient) return null;
 
   const i = project ? projects.findIndex((p) => p.slug === project.slug) : -1;
   const prev = i >= 0 ? projects[(i - 1 + projects.length) % projects.length] : null;
   const next = i >= 0 ? projects[(i + 1) % projects.length] : null;
   const color = project ? accentColor[project.accent] : undefined;
+  const chapters = project
+    ? [
+        { id: "cf-overview", label: t.caseFile.overview },
+        { id: "cf-stack", label: t.caseFile.stack },
+        { id: "cf-outcomes", label: t.caseFile.outcomes },
+        ...(project.gallery?.length ? [{ id: "cf-gallery", label: t.caseFile.gallery }] : []),
+      ]
+    : [];
 
   return createPortal(
     <AnimatePresence>
@@ -263,113 +300,154 @@ function CaseFile({
                   />
                 </div>
 
-                <div className="mt-14 grid gap-12 md:grid-cols-12">
-                  <div className="md:col-span-7">
-                    <h3 className="micro mb-4">{t.caseFile.overview}</h3>
-                    <p className="text-base leading-relaxed text-fg/90 md:text-lg">
-                      {project.description}
-                    </p>
-
-                    <h3 className="micro mb-4 mt-12">{t.caseFile.outcomes}</h3>
-                    <ul>
-                      {project.highlights.map((h) => (
-                        <li key={h} className="flex items-start gap-4 border-b border-line py-4 text-base text-muted">
-                          <span className="mt-2.5 h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: color }} />
-                          {h}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-
-                  <aside className="md:col-span-5">
-                    <div className="notch-card bg-surface p-6 ring-1 ring-inset ring-line md:p-7">
-                      <h3 className="micro mb-4">{t.caseFile.stack}</h3>
-                      <div className="flex flex-wrap gap-2">
-                        {project.stack.map((s) => (
-                          <span key={s} className="rounded-full border border-line px-3 py-1.5 font-mono text-xs uppercase tracking-wider text-fg">
-                            {s}
-                          </span>
-                        ))}
-                      </div>
-
-                      {project.metrics.length > 0 && (
-                        <>
-                          <h3 className="micro mb-4 mt-8">{t.caseFile.metrics}</h3>
-                          <div className="grid grid-cols-3 gap-4 border-t border-line pt-5">
-                            {project.metrics.map((m) => (
-                              <div key={m.label}>
-                                <span className="micro">{m.label}</span>
-                                {/* The results as lit numerals: each strikes on
-                                    the first time it scrolls into view. */}
-                                <p className="tabular mt-2 font-display text-2xl md:text-3xl">
-                                  <NeonSign text={m.value} lit="view" />
-                                </p>
-                              </div>
-                            ))}
-                          </div>
-                        </>
-                      )}
-                    </div>
-                  </aside>
-                </div>
-
-                {project.gallery?.length ? (
-                  <section className="mt-16" aria-label={t.caseFile.gallery}>
-                    <h3 className="micro mb-6">{t.caseFile.gallery}</h3>
-                    <div className="grid gap-x-6 gap-y-10 md:grid-cols-2">
-                      {project.gallery.map((g) => (
-                        <figure key={g.src}>
-                          <div className="notch-card relative overflow-hidden bg-surface ring-1 ring-inset ring-line">
-                            <Image
-                              src={g.src}
-                              alt={g.alt}
-                              width={2000}
-                              height={1250}
-                              sizes="(max-width: 768px) 100vw, 620px"
-                              className="h-auto w-full"
-                            />
-                            {/* The film's scanlines, static. */}
-                            <span
-                              aria-hidden
-                              className="pointer-events-none absolute inset-0"
-                              style={{
-                                backgroundImage:
-                                  "repeating-linear-gradient(180deg, rgba(0,0,0,0) 0 2px, rgba(0,0,0,0.16) 2px 3px)",
-                              }}
-                            />
-                          </div>
-                          {g.caption && <figcaption className="micro mt-3">{g.caption}</figcaption>}
-                        </figure>
-                      ))}
-                    </div>
-                  </section>
-                ) : null}
-
-                {prev && next && (
-                  <nav className="mt-20 grid gap-3 border-t border-line pt-8 sm:grid-cols-2">
-                    {[
-                      { p: prev, label: t.caseFile.prev, Icon: IconArrowLeft, align: "text-left" },
-                      { p: next, label: t.caseFile.next, Icon: IconArrowRight, align: "sm:text-right" },
-                    ].map(({ p, label, Icon, align }) => (
-                      <button
-                        key={label}
-                        type="button"
-                        onClick={() => onGo(p)}
-                        /* The curtain and the HUD corners of a secondary
-                           control, at panel size. */
-                        className={`cta cta-secondary group !h-auto flex-col !items-stretch gap-2 p-5 normal-case tracking-normal ${align}`}
-                      >
-                        <span aria-hidden className="cta-curtain" />
-                        <span className={`micro flex items-center gap-2 ${align === "sm:text-right" ? "sm:justify-end" : ""}`}>
-                          {Icon === IconArrowLeft && <Icon size={14} />}
-                          {label}
-                          {Icon === IconArrowRight && <Icon size={14} />}
-                        </span>
-                        <span className="display-caps text-lg text-fg md:text-xl">{p.title}</span>
-                      </button>
-                    ))}
+                {/* The file as an editorial sequence: numbered chapters, a
+                    reading rail that follows you down the panel (lg+), and
+                    the next file waiting at the foot. Every word is the
+                    project's own fields; nothing is written for the layout. */}
+                <div className="mt-14 grid gap-12 lg:grid-cols-[11rem_minmax(0,1fr)] lg:gap-16">
+                  <nav aria-label={t.caseFile.contents} className="hidden lg:block">
+                    <ol className="sticky top-8 flex flex-col border-l border-line">
+                      {chapters.map((ch, n) => {
+                        const on = active === ch.id;
+                        return (
+                          <li key={ch.id}>
+                            <button
+                              type="button"
+                              onClick={() => jump(ch.id)}
+                              aria-current={on ? "true" : undefined}
+                              className={`relative -ml-px flex min-h-10 w-full items-baseline gap-3 border-l px-4 text-left font-mono text-xs uppercase tracking-[0.18em] transition-colors ${on ? "border-[var(--color-holo)] text-fg" : "border-transparent text-muted hover:text-fg"}`}
+                            >
+                              <span className={`tabular ${on ? "text-[var(--color-holo)]" : "text-faint"}`}>0{n + 1}</span>
+                              {ch.label}
+                            </button>
+                          </li>
+                        );
+                      })}
+                    </ol>
                   </nav>
-                )}
+
+                  <div className="min-w-0">
+                    <Chapter id="cf-overview" n={1} title={t.caseFile.overview}>
+                      <p className="max-w-3xl text-base leading-relaxed text-fg/90 md:text-lg">{project.description}</p>
+                    </Chapter>
+
+                    <Chapter id="cf-stack" n={2} title={t.caseFile.stack}>
+                      {/* The stack as a system listing, not a cloud of pills. */}
+                      <ol className="grid border-t border-line sm:grid-cols-2 sm:gap-x-10">
+                        {project.stack.map((s, n) => (
+                          <li
+                            key={s}
+                            className="flex items-baseline gap-4 border-b border-line py-3 font-mono text-sm uppercase tracking-[0.12em] text-fg"
+                          >
+                            <span aria-hidden className="tabular text-xs text-[var(--color-holo)]">
+                              {String(n + 1).padStart(2, "0")}
+                            </span>
+                            {s}
+                          </li>
+                        ))}
+                      </ol>
+                    </Chapter>
+
+                    <Chapter id="cf-outcomes" n={3} title={t.caseFile.outcomes}>
+                      {project.metrics.length > 0 && (
+                        <dl className="mb-8 grid grid-cols-3 gap-4">
+                          {project.metrics.map((m) => (
+                            <div key={m.label} className="flex flex-col gap-2 border-l border-line pl-4">
+                              <dt className="micro order-2">{m.label}</dt>
+                              {/* The results as lit numerals: each strikes on
+                                  the first time it scrolls into view. */}
+                              <dd className="tabular order-1 font-display text-3xl md:text-5xl">
+                                <NeonSign text={m.value} lit="view" />
+                              </dd>
+                            </div>
+                          ))}
+                        </dl>
+                      )}
+                      <ul className="max-w-3xl">
+                        {project.highlights.map((h) => (
+                          <li key={h} className="flex items-start gap-4 border-b border-line py-4 text-base text-muted">
+                            <span className="mt-2.5 h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: color }} />
+                            {h}
+                          </li>
+                        ))}
+                      </ul>
+                    </Chapter>
+
+                    {project.gallery?.length ? (
+                      <Chapter id="cf-gallery" n={4} title={t.caseFile.gallery}>
+                        <div className="grid gap-x-6 gap-y-10 md:grid-cols-2">
+                          {project.gallery.map((g) => (
+                            <figure key={g.src}>
+                              <div className="notch-card relative overflow-hidden bg-surface ring-1 ring-inset ring-line">
+                                <Image
+                                  src={g.src}
+                                  alt={g.alt}
+                                  width={2000}
+                                  height={1250}
+                                  sizes="(max-width: 768px) 100vw, 620px"
+                                  className="h-auto w-full"
+                                />
+                                {/* The film's scanlines, static. */}
+                                <span
+                                  aria-hidden
+                                  className="pointer-events-none absolute inset-0"
+                                  style={{
+                                    backgroundImage:
+                                      "repeating-linear-gradient(180deg, rgba(0,0,0,0) 0 2px, rgba(0,0,0,0.16) 2px 3px)",
+                                  }}
+                                />
+                              </div>
+                              {g.caption && <figcaption className="micro mt-3">{g.caption}</figcaption>}
+                            </figure>
+                          ))}
+                        </div>
+                      </Chapter>
+                    ) : null}
+
+                    {prev && next && (
+                      <nav
+                        aria-label={`${t.caseFile.prev} / ${t.caseFile.next}`}
+                        className="mt-4 flex flex-col gap-4 border-t border-line pt-8"
+                      >
+                        {/* The next file, waiting: its shot, its name. */}
+                        <button
+                          type="button"
+                          onClick={() => onGo(next)}
+                          className="cta cta-secondary group !h-auto !items-stretch !justify-start gap-0 p-0 normal-case tracking-normal"
+                        >
+                          <span aria-hidden className="cta-curtain" />
+                          <span className="grid w-full items-center gap-6 p-5 text-left sm:grid-cols-[minmax(0,1fr)_14rem] md:p-6">
+                            <span className="flex flex-col gap-3">
+                              <span className="micro flex items-center gap-2">
+                                {t.caseFile.nextFile} <IconArrowRight size={14} />
+                              </span>
+                              <span className="flex items-baseline gap-4">
+                                <span className="font-mono text-sm tabular text-[var(--color-holo)]">{next.index}</span>
+                                <span className="display-caps text-2xl text-fg md:text-4xl">{next.title}</span>
+                              </span>
+                              <span className="font-mono text-xs uppercase tracking-[0.16em] text-muted">{next.category}</span>
+                            </span>
+                            <span aria-hidden className="relative hidden aspect-[16/10] overflow-hidden ring-1 ring-inset ring-line sm:block">
+                              <ShotImage
+                                project={next}
+                                sizes="224px"
+                                className="object-cover object-top transition-transform duration-500 group-hover:scale-105"
+                              />
+                            </span>
+                          </span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => onGo(prev)}
+                          className="micro flex min-h-11 items-center gap-2 self-start transition-colors hover:text-fg"
+                        >
+                          <IconArrowLeft size={14} />
+                          {t.caseFile.prev} · {prev.title}
+                        </button>
+                      </nav>
+                    )}
+                  </div>
+                </div>
               </motion.article>
             </div>
           </motion.div>
@@ -377,5 +455,19 @@ function CaseFile({
       )}
     </AnimatePresence>,
     document.body
+  );
+}
+
+/** One numbered chapter of a case file. */
+function Chapter({ id, n, title, children }: { id: string; n: number; title: string; children: React.ReactNode }) {
+  return (
+    <section id={id} data-chapter-id="" aria-labelledby={`${id}-h`} className="scroll-mt-6 pb-16">
+      <h3 id={`${id}-h`} className="mb-6 flex items-baseline gap-4">
+        <span className="font-mono text-sm tabular text-[var(--color-holo)]">0{n}</span>
+        <span className="micro !text-fg">{title}</span>
+        <span aria-hidden className="h-px flex-1 -translate-y-[0.25em] bg-line" />
+      </h3>
+      {children}
+    </section>
   );
 }

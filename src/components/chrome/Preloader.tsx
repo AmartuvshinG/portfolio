@@ -131,7 +131,10 @@ function Curtain({ replay }: { replay: boolean }) {
   }, [focus]);
 
   useEffect(() => {
-    if (reduced) return;
+    /* `done` too: this component outlives its curtain (AnimatePresence
+       inside it), so the listeners must come off when the curtain does —
+       or every key on the page would be swallowed for the whole visit. */
+    if (reduced || done) return;
     const ceiling = setTimeout(lift, CEILING_MS * timeScale);
     let skipped = false;
     const onSkip = () => {
@@ -139,13 +142,31 @@ function Curtain({ replay }: { replay: boolean }) {
       skipped = true;
       setSkip(true);
     };
-    const SKIP_EVENTS = ["keydown", "pointerdown", "wheel", "touchstart"] as const;
+    const SKIP_EVENTS = ["pointerdown", "wheel", "touchstart"] as const;
     for (const ev of SKIP_EVENTS) window.addEventListener(ev, onSkip, { passive: true });
+    /* A key behind the curtain is only ever a skip. A deep link to a case
+       file opens it under the curtain with focus on its Close button, so a
+       Space pressed to skip would also have closed the file (and Esc fired
+       the dialog's own Esc). Taken in the capture phase and stopped here. */
+    const onKey = (e: KeyboardEvent) => {
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      onSkip();
+    };
+    const swallow = (e: KeyboardEvent) => {
+      e.preventDefault();
+      e.stopImmediatePropagation();
+    };
+    window.addEventListener("keydown", onKey, true);
+    window.addEventListener("keyup", swallow, true);
     return () => {
       clearTimeout(ceiling);
       for (const ev of SKIP_EVENTS) window.removeEventListener(ev, onSkip);
+      window.removeEventListener("keydown", onKey, true);
+      // The keyup of the skipping key lands after the curtain: let it go.
+      window.setTimeout(() => window.removeEventListener("keyup", swallow, true), 400);
     };
-  }, [reduced, timeScale, lift]);
+  }, [reduced, done, timeScale, lift]);
 
   const status = ready ? t.preloader.ready : writing ? t.preloader.writing : t.preloader.loading;
 

@@ -133,6 +133,9 @@ const en = {
     prev: "Previous",
     next: "Next",
     esc: "Esc to close",
+    /** The case file's reading rail, and the card at its foot. */
+    contents: "Contents",
+    nextFile: "Next file",
   },
   contact: {
     aria: "Contact",
@@ -387,6 +390,8 @@ const mn: UiStrings = {
     prev: "Өмнөх",
     next: "Дараах",
     esc: "Esc — хаах",
+    contents: "Агуулга",
+    nextFile: "Дараагийн төсөл",
   },
   contact: {
     aria: "Холбогдох",
