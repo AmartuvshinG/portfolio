@@ -74,7 +74,6 @@ export function Contact() {
       <InkSign
         tone="neon"
         lit="write"
-        idle
         className="pointer-events-none absolute right-[1.5%] top-[14%] hidden h-[min(64vh,40rem)] opacity-45 md:block"
       />
 
@@ -182,7 +181,9 @@ export function Contact() {
                       {row.lamp && (
                         <span
                           aria-hidden
-                          className="h-1.5 w-1.5 shrink-0 -translate-y-px animate-blink rounded-full bg-[var(--color-hazard)] shadow-[0_0_8px_var(--color-hazard)]"
+                          /* Steady, not blinking: an infinite animation keeps
+                             the page producing frames even off screen. */
+                          className="h-1.5 w-1.5 shrink-0 -translate-y-px rounded-full bg-[var(--color-hazard)] shadow-[0_0_8px_var(--color-hazard)]"
                         />
                       )}
                       {row.v}

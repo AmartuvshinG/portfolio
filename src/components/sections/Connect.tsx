@@ -480,7 +480,7 @@ function ChannelPanel({
                 className="shrink-0 text-muted transition-transform duration-300 group-hover/panel:-translate-y-1 group-hover/panel:translate-x-1 group-hover/panel:text-fg"
               />
             </div>
-            <Readout kind={kind} github={github} expanded={expanded} />
+            <Readout kind={kind} github={github} expanded={expanded} live={live} />
             {kind === "github" && github && (
               <div
                 className="hidden max-w-[30rem] flex-col gap-5 transition-opacity duration-300 md:flex"
@@ -612,10 +612,13 @@ function Readout({
   kind,
   github,
   expanded,
+  live,
 }: {
   kind: Kind;
   github: GitHubSummary | null;
   expanded: boolean;
+  /** The section is near the screen: only then does the lamp blink. */
+  live: boolean;
 }) {
   const { c, t, locale } = useI18n();
   let lines: string[] = [];
@@ -633,7 +636,7 @@ function Readout({
   if (kind === "live") {
     return (
       <span className="flex w-fit items-center gap-2 rounded-md bg-[#05060d]/55 px-2.5 py-1.5 font-mono text-xs uppercase tracking-[0.14em] text-[var(--color-holo)]">
-        <span className="h-1.5 w-1.5 animate-blink rounded-full bg-[var(--color-holo)]" />
+        <span className={`h-1.5 w-1.5 rounded-full bg-[var(--color-holo)] ${live ? "animate-blink" : ""}`} />
         {t.connect.live}
       </span>
     );
