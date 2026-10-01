@@ -8,7 +8,8 @@ import { useEffect, useRef } from "react";
  * next section settles — the frame tightening for a cut, then breathing out.
  *
  * The intro opens at a full 2.39:1 (the preloader draws its own bars); here,
- * at rest, the page is full frame. A crossing peaks at BAR_VH per bar.
+ * at rest, the page is full frame. A crossing peaks at BAR_VH per bar, and the
+ * matte closes for good over the last frame of the page, as a film ends.
  *
  * Desktop with a fine pointer only (a phone's frame is too small to give
  * any of it up), and never under reduced motion. Transform-only: the bars
@@ -61,6 +62,11 @@ export function Letterbox() {
           k = Math.max(k, b * b);
         }
       }
+      /* The last frame: the matte closes as the page runs out, the way a
+         film ends (the footer leaves room at its foot for it). */
+      const max = document.documentElement.scrollHeight - vh;
+      const toEnd = max - window.scrollY;
+      if (toEnd < vh * 0.6) k = Math.max(k, 1 - Math.max(0, toEnd) / (vh * 0.6));
       if (Math.abs(k - last) < 0.002) return;
       last = k;
       top.style.transform = `scaleY(${k.toFixed(4)})`;

@@ -45,15 +45,18 @@ export function ChapterFrame() {
         trigger: el,
         start: "top 50%",
         end: "bottom 50%",
-        /* Nothing but the signage reads this. There used to be a
-           `chapter-change` event dispatched here for the lens overlay to
-           stutter on; it was the source of the horizontal cyan/magenta bars
-           reported on every scroll, and it is gone rather than tuned: an effect
-           that looks like a rendering fault cannot fire at every boundary. */
-        onToggle: (self) => {
-          if (!self.isActive) return;
-          setActive(i);
-        },
+        /* Enter / enter-back rather than onToggle: a jump (a deep link,
+           the footer's index, End) passes several triggers in one update,
+           and a section skipped over never toggles active — the frame kept
+           reading INDEX at the foot of the page. ScrollTrigger fires the
+           skipped callbacks in order, so the last one standing is right.
+           The last chapter also claims leaving past its end (the footer).
+           There used to be a `chapter-change` event dispatched here for a
+           lens overlay; it was the source of the horizontal cyan/magenta bars
+           reported on every scroll, and it is gone rather than tuned. */
+        onEnter: () => setActive(i),
+        onEnterBack: () => setActive(i),
+        onLeave: i === sections.length - 1 ? () => setActive(i) : undefined,
       })
     );
 

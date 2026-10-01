@@ -144,6 +144,17 @@ const en = {
     index: "Contents",
     elsewhere: "Elsewhere",
     top: "Top",
+    /** The end credits. Every name here is a fact about how the site was made. */
+    credits: {
+      title: "Credits",
+      design: "Design & code",
+      type: "Type",
+      built: "Built with",
+      city: "City reel",
+      station: "Station reel",
+      base: "Made in",
+      via: "via",
+    },
     /** Trademark credit for the marks on the Signal panels (see BrandMarks). */
     credit:
       "GitHub and the Invertocat logo are trademarks of GitHub, Inc. LinkedIn and the IN logo are registered trademarks of LinkedIn Corporation.",
@@ -326,6 +337,16 @@ const mn: UiStrings = {
     index: "Агуулга",
     elsewhere: "Бусад",
     top: "Дээш",
+    credits: {
+      title: "Титр",
+      design: "Дизайн ба код",
+      type: "Үсгийн хэв",
+      built: "Ашигласан технологи",
+      city: "Хотын бичлэг",
+      station: "Станцын бичлэг",
+      base: "Бүтээсэн газар",
+      via: "эх сурвалж",
+    },
     credit:
       "GitHub болон Invertocat лого нь GitHub, Inc.-ийн барааны тэмдэг. LinkedIn болон IN лого нь LinkedIn Corporation-ийн бүртгэлтэй барааны тэмдэг.",
   },

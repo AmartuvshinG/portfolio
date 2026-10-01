@@ -1,49 +1,106 @@
 "use client";
 
-import { ArrowUp } from "lucide-react";
 import { useI18n } from "@/lib/i18n";
 import { useSmoothScroll } from "@/components/chrome/SmoothScroll";
 import { UbClock } from "@/components/chrome/Navbar";
 import { LedTicker } from "@/components/chrome/LedTicker";
+import { Reveal } from "@/components/motion/Reveal";
+import { Cta } from "@/components/ui/Cta";
+import { InkSign } from "@/components/ui/InkSign";
+import { Seal } from "@/components/ui/Seal";
+import { IconArrowUp } from "@/components/ui/HudIcons";
+
+/** The footage's makers, as their own components name them. */
+const CITY = { name: "Guglielmo Giannattasio", via: "21st.dev", href: "https://www.guglielmogiannattasio.it" };
+const STATION = { name: "yuraoak", via: "GitHub", href: "https://github.com/yuraoak/airlock-hero-assets" };
 
 /**
- * Footer, continuing the dark closing act — it carries `data-act="void"` so the
- * chrome above it stays inverted all the way to the bottom of the document
- * instead of snapping a step lighter over a black background.
+ * The end of the reel.
+ *
+ * The site opened like a film — a slate, a scroll being written — so it ends
+ * like one: the LED sign running the name as the house lights come up, then
+ * end credits, set the way a film sets them, roles right-aligned against names
+ * on a centre line. Every credit is a fact about how the site was made: who
+ * designed and built it, the faces, the stack, and — owed since the film went
+ * in — who made the two reels the backdrop is cut from. Then the seal, the
+ * brushed name, and the house index for anyone who wants to go back in.
+ *
+ * Carries `data-act="void"` so the chrome above stays inverted to the bottom.
  */
 export function Footer() {
   const { c, t } = useI18n();
   const { navLinks, socials, profile, contact } = c;
   const { scrollTo } = useSmoothScroll();
   const year = new Date().getFullYear();
+  const cr = t.footer.credits;
+
+  const credits: { role: string; value: React.ReactNode }[] = [
+    { role: cr.design, value: profile.fullName },
+    { role: cr.type, value: "Michroma · Chakra Petch · Archivo · Rajdhani · JetBrains Mono · Noto Sans Mongolian" },
+    { role: cr.built, value: "Next.js · React · Tailwind CSS · Framer Motion · GSAP · Lenis · WebGL" },
+    {
+      role: cr.city,
+      value: (
+        <a href={CITY.href} target="_blank" rel="noopener noreferrer" className="spectrum-underline">
+          {CITY.name}
+          <span className="text-muted"> — {cr.via} {CITY.via}</span>
+          <span className="sr-only">{t.common.newTab}</span>
+        </a>
+      ),
+    },
+    {
+      role: cr.station,
+      value: (
+        <a href={STATION.href} target="_blank" rel="noopener noreferrer" className="spectrum-underline">
+          {STATION.name}
+          <span className="text-muted"> — {cr.via} {STATION.via}</span>
+          <span className="sr-only">{t.common.newTab}</span>
+        </a>
+      ),
+    },
+    { role: cr.base, value: profile.location },
+  ];
 
   return (
-    <footer
-      data-act="void"
-      className="relative z-10 text-fg"
-      aria-label={t.footer.aria}
-    >
-      {/* The intro's LED sign again, as the closing ticker: his name in Mongol
-          bichig running through a dot-matrix band (LedTicker). It replaced an
-          outlined-wordmark marquee. It steps only while on screen. */}
+    <footer data-act="void" className="relative z-10 overflow-hidden text-fg" aria-label={t.footer.aria}>
+      {/* The intro's name again, as a lit street sign: his name in Mongol
+          bichig running through a dot-matrix band (LedTicker). It steps only
+          while on screen. */}
       <div className="border-y border-line py-6">
         <LedTicker />
       </div>
 
-      <div className="mx-auto grid max-w-[1800px] gap-10 px-5 py-14 md:grid-cols-[2fr_1fr_1fr] md:px-8">
-        <div>
-          <p className="font-tech text-4xl text-fg">{profile.fullName}</p>
-          <p className="mt-4 max-w-sm text-sm leading-relaxed text-muted">
-            {profile.role} — {profile.discipline}.
-          </p>
-          <a
-            href={`mailto:${contact.email}`}
-            className="spectrum-underline mt-6 inline-block font-mono text-sm text-fg"
-          >
+      {/* ---- the credits --------------------------------------------- */}
+      <div className="relative mx-auto max-w-[1800px] px-5 pb-10 pt-24 md:px-8 md:pt-32">
+        <InkSign
+          tone="ghost"
+          className="pointer-events-none absolute left-[4%] top-16 hidden h-[min(80%,34rem)] lg:block"
+        />
+        <Reveal className="flex flex-col items-center">
+          <h2 className="micro tracking-[0.5em] !text-[var(--color-hazard)]">{cr.title}</h2>
+          <span aria-hidden className="mt-4 h-10 w-px bg-gradient-to-b from-[var(--color-hazard)] to-transparent" />
+        </Reveal>
+
+        <dl className="mx-auto mt-10 grid max-w-4xl gap-y-6">
+          {credits.map((row) => (
+            <Reveal key={row.role} className="grid grid-cols-1 gap-1 text-center md:grid-cols-[1fr_1fr] md:gap-x-10 md:text-left">
+              <dt className="micro md:text-right">{row.role}</dt>
+              <dd className="font-tech text-base text-fg md:text-lg">{row.value}</dd>
+            </Reveal>
+          ))}
+        </dl>
+
+        <Reveal className="mt-20 flex flex-col items-center gap-6">
+          <Seal className="h-12 w-12 opacity-90" />
+          <p className="font-tech text-3xl text-fg md:text-4xl">{profile.fullName}</p>
+          <a href={`mailto:${contact.email}`} className="spectrum-underline font-mono text-sm text-fg">
             {contact.email}
           </a>
-        </div>
+        </Reveal>
+      </div>
 
+      {/* ---- the house index ------------------------------------------- */}
+      <div className="mx-auto grid max-w-[1800px] gap-10 px-5 pb-12 pt-8 md:grid-cols-2 md:px-8">
         <FooterCol title={t.footer.index}>
           {navLinks.map((l) => (
             <li key={l.href}>
@@ -53,8 +110,9 @@ export function Footer() {
                   e.preventDefault();
                   scrollTo(l.href);
                 }}
-                className="inline-flex min-h-11 items-center font-mono text-xs uppercase tracking-widest text-muted transition-colors hover:text-fg md:min-h-0"
+                className="group inline-flex min-h-11 items-center gap-3 font-mono text-xs uppercase tracking-widest text-muted transition-colors hover:text-fg md:min-h-0"
               >
+                <span className="tabular text-faint transition-colors group-hover:text-[var(--color-hazard)]">{l.code}</span>
                 {l.label}
               </a>
             </li>
@@ -82,10 +140,10 @@ export function Footer() {
         </FooterCol>
       </div>
 
-      <div className="flex flex-col items-start justify-between gap-3 border-t border-line px-5 py-5 font-mono text-xs uppercase tracking-[0.2em] text-faint md:flex-row md:items-center md:px-8">
+      {/* The last frame: room at the foot for the letterbox to close over
+          without covering anything (lg+, where the matte exists). */}
+      <div className="flex flex-col items-start justify-between gap-3 border-t border-line px-5 py-5 font-mono text-xs uppercase tracking-[0.2em] text-faint md:flex-row md:items-center md:px-8 lg:pb-[calc(1.25rem+5vh)]">
         <div className="flex flex-col gap-2">
-          {/* The closing status line: the site signs off the way the nav
-              opened it — the lamp, the local time, the name in its script. */}
           <span className="flex flex-wrap items-center gap-x-4 gap-y-2">
             <span>
               © {year} {profile.fullName}
@@ -106,32 +164,13 @@ export function Footer() {
             {t.footer.credit}
           </span>
         </div>
-        <button
-          type="button"
-          onClick={() => scrollTo(0)}
-          /* `h-11`, not `py-2` — the padded box came out at ~34px. The border
-             is the visible shape, so the height goes on the box and the
-             padding stays where it was. */
-          className="group relative flex h-11 items-center gap-2 rounded-full border border-line px-4 transition-colors hover:border-current hover:text-fg"
-        >
-          <span
-            aria-hidden
-            className="hud-brackets pointer-events-none absolute -inset-1.5 scale-110 opacity-0 transition-[opacity,transform] duration-200 [--hud-c:var(--color-hazard)] group-hover:scale-100 group-hover:opacity-100 group-focus-visible:scale-100 group-focus-visible:opacity-100"
-          />
-          <ArrowUp size={12} /> {t.footer.top}
-        </button>
+        <Cta variant="secondary" onClick={() => scrollTo(0)} icon={<IconArrowUp size={14} />} label={t.footer.top} arrow={null} />
       </div>
     </footer>
   );
 }
 
-function FooterCol({
-  title,
-  children,
-}: {
-  title: string;
-  children: React.ReactNode;
-}) {
+function FooterCol({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div>
       <p className="micro mb-4">{title}</p>

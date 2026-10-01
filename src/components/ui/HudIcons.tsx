@@ -81,3 +81,10 @@ export const IconClose = (p: IconProps) => (
     <path pathLength={1} d="M15 5L5 15" />
   </Svg>
 );
+
+export const IconArrowUp = (p: IconProps) => (
+  <Svg {...p}>
+    <path pathLength={1} d="M10 17V4" />
+    <path pathLength={1} d="M5 9l5-5 5 5" />
+  </Svg>
+);
