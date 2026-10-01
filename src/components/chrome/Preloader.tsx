@@ -39,7 +39,7 @@ import { InkScroll } from "@/components/chrome/InkScroll";
 
 const SEEN_KEY = "ink-intro-seen";
 /** Lift no matter what after this long (× timeScale). */
-const CEILING_MS = 9000;
+const CEILING_MS = 13000;
 
 const QUERY = "(prefers-reduced-motion: reduce)";
 function subscribeReduced(onChange: () => void) {

@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { animate, motion, type MotionValue } from "framer-motion";
 import { createInkRenderer, inkLayout, type InkLayout } from "@/lib/inkShader";
 import { INK_NAME } from "@/lib/inkName";
+import { brushAt } from "@/lib/inkPath";
 import { pointerEnabled, retainPointer, stepPointer } from "@/lib/pointer";
 import { Seal } from "@/components/ui/Seal";
 
@@ -18,11 +19,15 @@ import { Seal } from "@/components/ui/Seal";
  *    150   the lamp catches: two stutters, then it warms up to full
  *    200   the scroll unrolls; the roller drops and settles
  *    300   the neon in the window comes up
- *   1000   the brush lands at the crown and writes down the stem
- *   2500   a spinner passes outside; its light crosses the wall
- *   2900   the neon stutters once
- *   4200   the last stroke; the seal stamps — the paper dips, the lamp jolts
- *   4950   done: the preloader racks focus and lifts
+ *    900   the brush's shadow comes over the paper
+ *   1000   the brush lands at the crown and writes down the stem, one
+ *          stroke at a time: each tooth and tail as it reaches it, a lift
+ *          and a beat in the air back to the stem, on (the bake's route)
+ *   4300   a spinner passes outside; its light crosses the wall
+ *   5600   the neon stutters once
+ *   8000   the last stroke; the brush leaves; the seal stamps — the paper
+ *          dips, the lamp jolts
+ *   8750   done: the preloader racks focus and lifts
  *
  * The preloader owns the story around it (the letterbox, the slate, when to
  * lift, `markBooted`). It hands in `skip` and `focus`, and hears back through
@@ -39,10 +44,11 @@ const UNROLL_AT = 200;
 const UNROLL_MS = 800;
 const NEON_AT = 300;
 const WRITE_AT = 1000;
-const WRITE_MS = 3200;
-const SWEEP_AT = 2500;
+/** Slow enough to watch a hand: ~19 strokes, a quarter of it in the air. */
+const WRITE_MS = 7000;
+const SWEEP_AT = 4300;
 const SWEEP_MS = 1100;
-const FLICKER_AT = 2900;
+const FLICKER_AT = 5600;
 const WRITTEN = WRITE_AT + WRITE_MS;
 /** The seal lands this long after the last stroke… */
 const STAMP_DELAY = 120;
@@ -54,6 +60,10 @@ const SKIP_MS = 260;
 const IMAGE_TIMEOUT = 1500;
 
 const clamp01 = (x: number) => (x < 0 ? 0 : x > 1 ? 1 : x);
+const smooth = (e0: number, e1: number, x: number) => {
+  const t = clamp01((x - e0) / (e1 - e0));
+  return t * t * (3 - 2 * t);
+};
 const easeOut = (x: number) => 1 - (1 - x) * (1 - x) * (1 - x);
 /** The roller drops, overshoots a hair and settles. */
 const settle = (x: number) => {
@@ -192,6 +202,7 @@ export function InkScroll({
         progress.set(clamp01(writeT));
         const lookNow = look ? stepPointer(now) : { x: 0, y: 0 };
         const f = focus.get();
+        const brush = brushAt(writeT);
         r.draw({
           time: ((now - t0) % 600000) / 1000,
           t: Math.max(-0.1, writeT),
@@ -205,6 +216,13 @@ export function InkScroll({
           unroll: settle(clamp01((t - UNROLL_AT) / UNROLL_MS)),
           lookX: lookNow.x,
           lookY: lookNow.y,
+          tipX: brush.x,
+          tipY: brush.y,
+          tipLift: brush.lift,
+          tipR: brush.r,
+          // The hand comes over the paper just before the first stroke and
+          // leaves after the last.
+          tipVis: smooth(-0.03, -0.004, writeT) * (1 - smooth(1.0, 1.05, writeT)),
         });
         if (sealRef.current) {
           // The seal is printed on the paper: it follows the scroll's look and

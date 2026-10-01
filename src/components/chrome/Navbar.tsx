@@ -161,11 +161,11 @@ export function Navbar() {
     const ro = new ResizeObserver(settle);
     ro.observe(document.body);
     /* One last landing after the curtain has lifted, then hands off. The ink
-       intro runs ~5s on a first view, so this waits longer than it used to. */
+       intro runs ~9.5s on a first view, so this waits that long and a beat. */
     const giveUp = window.setTimeout(() => {
       land();
       finish();
-    }, 6500);
+    }, 10500);
     const opts = { once: true, passive: true } as const;
     window.addEventListener("wheel", finish, opts);
     window.addEventListener("touchstart", finish, opts);

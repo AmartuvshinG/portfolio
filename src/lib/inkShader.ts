@@ -10,7 +10,8 @@
  *
  * The brush comes from a bake (scripts/bake-ink-name.mjs → /intro/ink-name.png):
  * R is the signed distance to the stroke edge, G when the brush reaches each
- * pixel. Everything a brush does to paper is drawn from those two:
+ * pixel, B where a stroke has just landed. Everything a brush does to paper
+ * is drawn from those:
  *
  *   front    ink appears where the brush has been (G < uT), feathered by the
  *            paper's fibre so the leading edge is soaked in, not wiped on
@@ -22,6 +23,12 @@
  *   wet      fresh ink stands proud of the paper and is glossy: its rim
  *            catches the lamp and the neon, then dries matte. The genre's
  *            wet street, in ink
+ *   pool     where a stroke lands the brush presses, the ink pools darker
+ *            and stays wet longer (B)
+ *   brush    the brush itself is never drawn, only what it does: a bead of
+ *            wet ink at its tip, and its shadow from the lamp, which slides
+ *            off and softens as the hand lifts between strokes (the tip's
+ *            route is the bake's INK_PATH, read in lib/inkPath)
  *   focus    a procedural defocus — every edge widens, the fibres smooth —
  *            for the rack focus past the scroll at the end, without a blur
  *            filter on a fullscreen layer
@@ -62,6 +69,9 @@ uniform float uZoom;
 uniform float uDip;         // buffer px
 uniform float uSweep;       // −1 = none, else 0…1 across the window
 uniform vec2 uLook;
+uniform vec3 uTip;          // brush tip: x, y (0…1 of the ink box), lift 0…1
+uniform float uTipR;        // stroke half-width at the tip, texture px
+uniform float uTipVis;      // the brush is over the paper, 0…1
 uniform vec3 uSodium;
 uniform vec3 uMagenta;
 uniform vec3 uTeal;
@@ -96,6 +106,14 @@ float sdBox(vec2 p, vec2 lo, vec2 hi) {
   vec2 h = (hi - lo) * 0.5;
   vec2 d = abs(p - c) - h;
   return length(max(d, 0.0)) + min(max(d.x, d.y), 0.0);
+}
+
+/* Distance to a segment, and how far along it (0…1). */
+vec2 sdSeg(vec2 p, vec2 a, vec2 b) {
+  vec2 pa = p - a;
+  vec2 ba = b - a;
+  float h = clamp(dot(pa, ba) / max(dot(ba, ba), 1e-4), 0.0, 1.0);
+  return vec2(length(pa - ba * h), h);
 }
 
 /* Rain on the window glass, as the shadow it throws: soft vertical runs. */
@@ -189,6 +207,27 @@ void main() {
     vec3 surf = silk;
     vec3 extra = vec3(0.0);
 
+    /* The brush's shadow. The lamp is up and to the left, so the shadow of
+       the hairs and the handle falls away from it, down and to the right:
+       a short dark wedge at the tip and a long soft stalk behind. Lifting,
+       the brush rises off its shadow — it slides further off and blurs. */
+    float pxT = uInkBox.w / uTexSize.y;
+    vec2 tipP = uInkBox.xy + uTip.xy * uInkBox.zw;
+    float tipR = max(uTipR * pxT, 2.0 * u);
+    float brushSh = 0.0;
+    if (uTipVis > 0.0) {
+      vec2 away = normalize(tipP - lampPos);
+      vec2 o = away * (3.0 * u + uTip.z * 22.0 * u);
+      float soft = 1.0 + uTip.z * 2.2;
+      vec2 hair = sdSeg(ps, tipP + o, tipP + o + away * tipR * 4.0);
+      float hairW = tipR * mix(0.9, 1.25, hair.y);
+      float hairSh = 1.0 - smoothstep(hairW - 2.0 * u * soft, hairW + 5.0 * u * soft, hair.x);
+      vec2 stalk = sdSeg(ps, tipP + o + away * tipR * 4.0, tipP + o + away * tipR * 26.0);
+      float stalkW = tipR * 0.55;
+      float stalkSh = (1.0 - smoothstep(stalkW - 3.0 * u * soft, stalkW + 9.0 * u * soft, stalk.x)) * (1.0 - stalk.y * 0.6);
+      brushSh = max(hairSh, stalkSh * 0.75) * uTipVis * (1.0 - uTip.z * 0.45) * (1.0 - uFocus);
+    }
+
     bool onPaper = ps.x > uPaper.x && ps.x < uPaper.z && ps.y > uPaper.y && ps.y < uPaper.w;
     if (onPaper) {
       // Paper: long, faint fibres and a fine tooth.
@@ -208,11 +247,14 @@ void main() {
         float sdfT = (s0.r - 0.5) * 2.0 * uSpread;   // texture px, ink > 0
         float d = sdfT * pxPerTex;                     // buffer px
         float a = s0.g;
+        float pool = s0.b;                             // 1 where a stroke just landed
         float lt = (uT - a) * uWriteSecs;              // s since the brush passed
+        // The bead at the tip: the wettest, darkest ink on the paper.
+        float bead = (1.0 - smoothstep(tipR * 0.6, tipR * 2.2, length(ps - tipP))) * (1.0 - uTip.z) * uTipVis;
 
         float fibN = vnoise(ps / (4.0 * u));
         float reveal = smoothstep(-0.015, 0.04, lt + (fibN - 0.5) * 0.06);
-        float bleed = (0.35 + 1.5 * fibN) * u * smoothstep(0.0, 0.5, lt) * (1.0 - uFocus);
+        float bleed = (0.35 + 1.5 * fibN) * (1.0 + 0.9 * pool) * u * smoothstep(0.0, 0.5 + 0.7 * pool, lt) * (1.0 - uFocus);
         float edgeN = (vnoise(ps / (2.0 * u)) - 0.5) * 1.1 * u;
         float aa = 0.75 * u + uFocus * 18.0 * u;
         float cov = smoothstep(-aa, aa, d + bleed + edgeN) * reveal;
@@ -238,11 +280,12 @@ void main() {
 
           // Sumi: blue-black, darkest where it pooled at the stroke's edge.
           float centre = smoothstep(1.5 * u, 8.0 * u, d);
-          vec3 inkCol = mix(vec3(0.016, 0.018, 0.028), vec3(0.075, 0.075, 0.09), centre * 0.55);
+          vec3 inkCol = mix(vec3(0.016, 0.018, 0.028), vec3(0.075, 0.075, 0.09), centre * 0.55 * (1.0 - pool) * (1.0 - bead));
+          dens = max(dens, max(pool * 0.9, bead));
 
           // Wet: the bead's rim tilts the surface; the lamp and the neon
           // catch it, then it dries matte.
-          float wet = (1.0 - smoothstep(0.0, 1.2, lt)) * (1.0 - uFocus);
+          float wet = max(1.0 - smoothstep(0.0, 1.2 + 1.6 * pool, lt), bead) * (1.0 - uFocus);
           float sx = texture2D(uInk, iuv + vec2(tx.x, 0.0)).r - texture2D(uInk, iuv - vec2(tx.x, 0.0)).r;
           float sy = texture2D(uInk, iuv + vec2(0.0, tx.y)).r - texture2D(uInk, iuv - vec2(0.0, tx.y)).r;
           vec2 sg = vec2(sx, sy);
@@ -261,7 +304,7 @@ void main() {
         }
       }
     }
-    col = surf * sLight * shade + extra;
+    col = surf * sLight * shade * (1.0 - 0.42 * brushSh) + extra * (1.0 - 0.6 * brushSh);
   }
 
   /* ---- the roller (jiku) ---------------------------------------------- */
@@ -370,6 +413,13 @@ export interface InkFrame {
   unroll: number;
   lookX: number;
   lookY: number;
+  /** The brush: 0…1 of the ink box, its lift, its stroke half-width (texture
+   *  px), and how present it is over the paper (0 = gone). */
+  tipX: number;
+  tipY: number;
+  tipLift: number;
+  tipR: number;
+  tipVis: number;
 }
 
 function hexToRgb(hex: string, fallback: [number, number, number]): [number, number, number] {
@@ -446,6 +496,9 @@ export function createInkRenderer(
     dip: U("uDip"),
     sweep: U("uSweep"),
     look: U("uLook"),
+    tip: U("uTip"),
+    tipR: U("uTipR"),
+    tipVis: U("uTipVis"),
   };
 
   const css = getComputedStyle(document.documentElement);
@@ -509,6 +562,9 @@ export function createInkRenderer(
       gl.uniform1f(u.dip, f.dip * k);
       gl.uniform1f(u.sweep, f.sweep);
       gl.uniform2f(u.look, f.lookX, f.lookY);
+      gl.uniform3f(u.tip, f.tipX, f.tipY, f.tipLift);
+      gl.uniform1f(u.tipR, f.tipR);
+      gl.uniform1f(u.tipVis, f.tipVis);
       gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
     },
   };

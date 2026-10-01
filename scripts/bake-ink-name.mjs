@@ -1,7 +1,7 @@
 /**
  * Bake the intro's calligraphy: the Mongol-script name as a brush stroke.
  *
- *   node scripts/bake-ink-name.mjs [--preview out.png]
+ *   node scripts/bake-ink-name.mjs [--preview out.png [--frames 0.1,0.2,…]]
  *
  * Renders `profile.nameScript` in Noto Sans Mongolian (the same Google
  * `text=` subset the layout loads), turns it the way `writing-mode:
@@ -11,20 +11,28 @@
  *   R    signed distance to the glyph edge (128 = on the edge, inside > 128),
  *        so the ink can be drawn crisp at any size and its edge can bleed.
  *   G    when the brush reaches the pixel, 0…1 of the writing (255 = never).
- *        8 bits is plenty: 256 steps over ~3.4 s is one step a frame, and
- *        bilinear filtering smooths the front between texels. A 16-bit
- *        split made the file 600 KB of incompressible low bytes.
- *   B    unused (0), so it compresses to nothing.
+ *        8 bits is plenty: 256 steps over ~7 s is one step every frame
+ *        or two, and only one stroke is wet at a time, so the front is a
+ *        short run of texels. A 16-bit split made the file 600 KB of
+ *        incompressible low bytes.
+ *   B    pooling: 1 where a stroke has just landed, fading over 30 px.
+ *        Zero almost everywhere, so it compresses to nothing.
  *
  * **How the brush travels.** Mongol script hangs every letter off one
  * continuous vertical stem, and it is written as one: top to bottom, the
  * teeth, loops and tails flicked out of the stem as the brush passes them.
- * So the timing is a shortest-path flood over the glyph's skeleton from the
- * top of the stem (the same idea as the LED sign's wiring, lib/ledSign):
- * the stem conducts fastest, branches lag, and thick places — where a brush
- * presses — are slow. Each ink pixel then takes the time of the skeleton
- * nearest it plus a little for the distance, so ink spreads outward from
- * the brush's centre line instead of wiping across.
+ * So a shortest-path tree over the glyph's skeleton from the top of the stem
+ * gives the route, and the time is walked along it *serially*, by one brush:
+ * each part as the brush reaches it, a lift and a beat in the air back to
+ * the stem, and a pace of its own for every stroke (see step 6). Each ink
+ * pixel then takes the time of the skeleton nearest it plus a little for the
+ * distance, so ink spreads outward from the brush's centre line instead of
+ * wiping across.
+ *
+ * The route itself is exported too (`INK_PATH` in src/lib/inkName.ts): where
+ * the brush is at every moment and whether it is on the paper, so the scene
+ * can draw its shadow and the neon signs their spark without reading the
+ * texture back.
  *
  * It also writes `ink-name-mask.png` — the finished ink as alpha, with the
  * dry-brush streaks of the slow, late strokes baked in — for the static signs
@@ -42,6 +50,10 @@ import { chromium } from "playwright-core";
 const ROOT = new URL("..", import.meta.url);
 const args = process.argv.slice(2);
 const previewAt = args.includes("--preview") ? args[args.indexOf("--preview") + 1] : null;
+/** `--frames 0.05,0.1,…`: the preview's moments of the writing (default quarters). */
+const frames = args.includes("--frames")
+  ? args[args.indexOf("--frames") + 1].split(",").map(Number)
+  : [0.25, 0.5, 0.75, 1];
 
 /** The vertical name's length in texture pixels. */
 const TARGET_LEN = 1400;
@@ -387,27 +399,31 @@ for (const i of skIdx) {
   if (dc < 30) r *= 1 + 0.25 * (1 - dc / 30);
   radius[i] = r;
 }
-/* Sweep: the ink field is how far inside the nearest brush disc a pixel is. */
-const field = new Float32Array(N).fill(-1e9);
-for (const i of skIdx) {
-  const cx = i % W, cy = (i / W) | 0, r = radius[i];
-  const R = Math.ceil(r + 2);
-  for (let dy = -R; dy <= R; dy++)
-    for (let dx = -R; dx <= R; dx++) {
-      const x = cx + dx, y = cy + dy;
-      if (x < 0 || y < 0 || x >= W || y >= H) continue;
-      const v = r - Math.hypot(dx, dy);
-      const j = y * W + x;
-      if (v > field[j]) field[j] = v;
-    }
+/* Sweep: the ink field is how far inside the nearest brush disc a pixel is.
+   Run again after the timing pass, once the landings are known. */
+function sweep() {
+  const field = new Float32Array(N).fill(-1e9);
+  for (const i of skIdx) {
+    const cx = i % W, cy = (i / W) | 0, r = radius[i];
+    const R = Math.ceil(r + 2);
+    for (let dy = -R; dy <= R; dy++)
+      for (let dx = -R; dx <= R; dx++) {
+        const x = cx + dx, y = cy + dy;
+        if (x < 0 || y < 0 || x >= W || y >= H) continue;
+        const v = r - Math.hypot(dx, dy);
+        const j = y * W + x;
+        if (v > field[j]) field[j] = v;
+      }
+  }
+  for (let i = 0; i < N; i++) {
+    cov[i] = Math.max(0, Math.min(1, field[i] + 0.5));
+    inside[i] = cov[i] >= 0.5 ? 1 : 0;
+  }
+  dOut = edt((i) => inside[i]);
+  dIn = edt((i) => !inside[i]);
+  signDistance();
 }
-for (let i = 0; i < N; i++) {
-  cov[i] = Math.max(0, Math.min(1, field[i] + 0.5));
-  inside[i] = cov[i] >= 0.5 ? 1 : 0;
-}
-dOut = edt((i) => inside[i]);
-dIn = edt((i) => !inside[i]);
-signDistance();
+sweep();
 console.log(`brush: base r ${baseR.toFixed(1)}px, nib ${((NIB * 180) / Math.PI).toFixed(0)}°`);
 
 /* ---- 5. the stem -------------------------------------------------------- */
@@ -464,16 +480,30 @@ class Heap {
 let rMax = 1;
 for (const i of skIdx) rMax = Math.max(rMax, dIn[i]);
 
-const skT = new Float64Array(N).fill(Infinity);
+/*
+ * **One hand, one brush.** The flood below only builds the *route*: a
+ * shortest-path tree over the skeleton from the top of the stem. The time
+ * is then walked along that tree serially, the way a hand writes it — down
+ * the stem, out along each tooth or tail as the brush reaches it, lift,
+ * back to the stem, on. Only one place is ever wet at the front, the brush
+ * pauses in the air between strokes, and each stroke has its own pace: a
+ * slow press where it lands, a steady body, a quick flick into the taper.
+ * (A plain flood fills every branch at once, which reads as ink spreading
+ * through the paper rather than as a hand.)
+ */
+const parent = new Int32Array(N).fill(-1);
+const roots = [];
 {
+  const dist = new Float64Array(N).fill(Infinity);
   let start = -1;
   for (const i of skIdx) if (onStem(i) && (start < 0 || i < start)) start = i; // topmost (row-major)
   if (start < 0) start = skIdx[0];
   const heap = new Heap();
-  skT[start] = 0;
-  heap.push(0, start);
   const done = new Uint8Array(N);
-  const relax = () => {
+  const flood = (root) => {
+    roots.push(root);
+    dist[root] = 0;
+    heap.push(0, root);
     while (heap.size) {
       const [d, u] = heap.pop();
       if (done[u]) continue;
@@ -484,72 +514,224 @@ const skT = new Float64Array(N).fill(Infinity);
         if (x < 0 || y < 0 || x >= W || y >= H) continue;
         const w = y * W + x;
         if (!sk[w] || done[w]) continue;
-        const branch = onStem(u) && onStem(w) ? 1 : 2.4;
-        const press = 0.75 + 0.6 * (dIn[w] / rMax);
-        // Going *up* a branch is slower still: the brush flicks down and out.
-        const climb = dy < 0 && !onStem(w) ? 1.6 : 1;
-        const nd = d + Math.hypot(dx, dy) * branch * press * climb;
-        if (nd < skT[w]) {
-          skT[w] = nd;
+        // The stem is the cheap road, so the tree follows the spine and
+        // hangs the letters' parts off it.
+        const nd = d + Math.hypot(dx, dy) * (onStem(u) && onStem(w) ? 1 : 2.4);
+        if (nd < dist[w]) {
+          dist[w] = nd;
+          parent[w] = u;
           heap.push(nd, w);
         }
       }
     }
   };
-  relax();
-  /* Islands the skeleton never reaches (a detached dot or stroke): they are
-     written when the brush passes nearest them, a beat late. */
-  for (;;) {
-    let island = -1;
-    for (const i of skIdx) if (skT[i] === Infinity) { island = i; break; }
-    if (island < 0) break;
-    const ix = island % W, iy = (island / W) | 0;
-    let best = Infinity;
-    for (const j of skIdx) {
-      if (skT[j] === Infinity) continue;
-      const d = skT[j] + Math.hypot(ix - (j % W), iy - ((j / W) | 0)) * 1.5;
-      if (d < best) best = d;
+  flood(start);
+  /* Islands the skeleton never reaches (a detached dot or stroke): each is
+     its own stroke, after a lift, top to bottom (row-major = topmost first). */
+  for (const i of skIdx) if (!done[i]) flood(i);
+}
+
+const kids = new Map();
+for (const i of skIdx) {
+  const p = parent[i];
+  if (p < 0) continue;
+  if (!kids.has(p)) kids.set(p, []);
+  kids.get(p).push(i);
+}
+/* Length of each subtree, for ordering and for skipping lifts on stubs. */
+const subLen = new Float64Array(N);
+{
+  const order = [];
+  const stack = [...roots];
+  while (stack.length) {
+    const u = stack.pop();
+    order.push(u);
+    for (const c of kids.get(u) ?? []) stack.push(c);
+  }
+  for (let k = order.length - 1; k >= 0; k--) {
+    const u = order[k];
+    const p = parent[u];
+    if (p >= 0) subLen[p] += subLen[u] + Math.hypot((u % W) - (p % W), ((u / W) | 0) - ((p / W) | 0));
+  }
+}
+/* The trunk at a junction is the child carrying the most of what is left —
+   not "the child on the stem's column": at the bowls the skeleton swings off
+   the column, and that test sent the brush down the whole stem first and
+   back up for the parts it had passed. */
+const trunkOf = (u) => {
+  let best = -1;
+  for (const c of kids.get(u) ?? []) if (best < 0 || subLen[c] > subLen[best]) best = c;
+  return best;
+};
+/* At a junction: the letter's parts first, top to bottom, then on down the
+   trunk. */
+const orderKids = (u) => {
+  const trunk = trunkOf(u);
+  return (kids.get(u) ?? [])
+    .filter((c) => c !== trunk)
+    .sort((a, b) => ((a / W) | 0) - ((b / W) | 0) || (a % W) - (b % W))
+    .concat(trunk >= 0 ? [trunk] : []);
+};
+
+/** Pen-lift: a beat in the air, plus the travel back, in px-of-stroke time. */
+const LIFT_BEAT = 46;
+const LIFT_TRAVEL = 0.55;
+/** A subtree shorter than this is a bump in the stroke, not a stroke. */
+const MIN_STROKE = 24;
+/** The slow press where the brush lands, px. */
+const ATTACK = 26;
+
+const skT = new Float64Array(N).fill(Infinity);
+/** Distance along its own stroke, for the pooling where it landed. */
+const strokeAt = new Float64Array(N);
+const landing = new Float32Array(N); // 0 none, else how hard it pressed
+/** How hard the stroke each skeleton pixel belongs to landed (for pooling). */
+const strokeLand = new Float32Array(N);
+/** The brush's route in time: [t, x, y, down, r] per visited node. */
+const route = [];
+let clock = 0;
+let lifted = 0;
+let strokes = 0;
+{
+  const clampS = (x) => (x < 0 ? 0 : x > 1 ? 1 : x);
+  const smoothS = (e0, e1, x) => {
+    const t = clampS((x - e0) / (e1 - e0));
+    return t * t * (3 - 2 * t);
+  };
+  let tip = -1;
+  const lift = (to) => {
+    const tx = tip % W, ty = (tip / W) | 0;
+    route.push([clock, tx, ty, 0, radius[tip]]);
+    const travel = Math.hypot((to % W) - tx, ((to / W) | 0) - ty);
+    const dt = LIFT_BEAT + travel * LIFT_TRAVEL;
+    clock += dt;
+    lifted += dt;
+  };
+  const visit = (u, sLen, land, sLand) => {
+    skT[u] = clock;
+    strokeAt[u] = sLen;
+    strokeLand[u] = sLand;
+    if (land) landing[u] = land;
+    route.push([clock, u % W, (u / W) | 0, 1, radius[u]]);
+    tip = u;
+  };
+  for (let r = 0; r < roots.length; r++) {
+    const root = roots[r];
+    if (r > 0) lift(root);
+    strokes++;
+    // The crown has its own landing already (step 4b), but it pools too.
+    visit(root, 0, r > 0 ? 1.18 : 0, 1.18);
+    // Explicit stack: the stem is thousands of px deep.
+    const stack = [{ u: root, list: orderKids(root), k: 0, sLen: 0, sLand: 1.18 }];
+    while (stack.length) {
+      const f = stack[stack.length - 1];
+      if (f.k >= f.list.length) {
+        stack.pop();
+        continue;
+      }
+      const c = f.list[f.k];
+      let sLen = f.sLen;
+      let sLand = f.sLand;
+      let land = 0;
+      if (f.k > 0) {
+        // Back to this junction for the next part. A real stroke lifts;
+        // a stub is just the brush's wobble.
+        const prev = f.list[f.k - 1];
+        if (subLen[prev] >= MIN_STROKE) {
+          lift(f.u);
+          strokes++;
+          sLen = 0;
+          land = c === f.list[f.list.length - 1] ? 1.06 : 1.18;
+          sLand = land;
+        } else {
+          clock += Math.hypot((tip % W) - (f.u % W), ((tip / W) | 0) - ((f.u / W) | 0));
+        }
+      }
+      f.k++;
+      const ux = f.u % W, uy = (f.u / W) | 0, cx = c % W, cy = (c / W) | 0;
+      const len = Math.hypot(cx - ux, cy - uy);
+      const press = 0.75 + 0.6 * (dIn[c] / rMax);
+      const climb = cy < uy && !onStem(c) ? 1.35 : 1; // up-strokes are pushed, not pulled
+      const attack = 1 + 1.3 * (1 - smoothS(0, ATTACK, sLen)); // the landing
+      const flick = 0.55 + 0.45 * smoothS(0, TAPER, toEnd[c]); // out into the taper
+      const body = onStem(c) ? 1 : 0.9;
+      clock += len * press * climb * attack * flick * body;
+      sLen += len;
+      visit(c, sLen, land, sLand);
+      stack.push({ u: c, list: orderKids(c), k: 0, sLen, sLand });
     }
-    skT[island] = best;
-    heap.push(best, island);
-    relax();
+  }
+  console.log(`strokes ${strokes}, ${((100 * lifted) / clock).toFixed(0)}% of the writing in the air`);
+}
+
+/* Landings: where a stroke begins after a lift, the brush presses and the
+   ink pools. Widen the brush there and sweep again. */
+{
+  const starts = skIdx.filter((i) => landing[i] > 0);
+  if (starts.length) {
+    for (const i of skIdx) {
+      const ix = i % W, iy = (i / W) | 0;
+      let k = 1;
+      for (const s of starts) {
+        const dc = Math.hypot(ix - (s % W), iy - ((s / W) | 0));
+        if (dc < 22) k = Math.max(k, 1 + (landing[s] - 1) * (1 - dc / 22));
+      }
+      radius[i] *= k;
+    }
+    sweep();
   }
 }
 
-/* Spread from the skeleton to every pixel in reach (ink + the bleed ring). */
-const SPREAD_COST = 1.4;
+/* Spread from the skeleton to every pixel in reach (ink + the bleed ring):
+   each pixel takes the earliest skeleton point whose brush covers it, plus a
+   little for the distance, so the ink spreads out from the brush's centre
+   line. Only from a point whose disc reaches it — a flood through the ink
+   would run down the stem faster than the brush and outrun the writing. */
+const SPREAD_COST = 0.35;
 const T = new Float64Array(N).fill(Infinity);
 /** The skeleton pixel each ink pixel was reached from: its stroke direction. */
 const src = new Int32Array(N).fill(-1);
-{
-  const heap = new Heap();
-  for (const i of skIdx) {
-    T[i] = skT[i];
-    src[i] = i;
-    heap.push(T[i], i);
-  }
-  const done = new Uint8Array(N);
-  while (heap.size) {
-    const [d, u] = heap.pop();
-    if (done[u]) continue;
-    done[u] = 1;
-    const ux = u % W, uy = (u / W) | 0;
-    for (const [dx, dy] of NB) {
-      const x = ux + dx, y = uy + dy;
+for (const i of skIdx) {
+  const cx = i % W, cy = (i / W) | 0;
+  const R = Math.ceil(radius[i] + SPREAD);
+  for (let dy = -R; dy <= R; dy++)
+    for (let dx = -R; dx <= R; dx++) {
+      const x = cx + dx, y = cy + dy;
       if (x < 0 || y < 0 || x >= W || y >= H) continue;
+      const d = Math.hypot(dx, dy);
+      if (d > R) continue;
       const w = y * W + x;
-      if (done[w] || sdf[w] < -SPREAD) continue;
-      const nd = d + Math.hypot(dx, dy) * SPREAD_COST;
-      if (nd < T[w]) {
-        T[w] = nd;
-        src[w] = src[u];
-        heap.push(nd, w);
+      if (sdf[w] < -SPREAD) continue;
+      const t = skT[i] + d * SPREAD_COST;
+      if (t < T[w]) {
+        T[w] = t;
+        src[w] = i;
       }
     }
-  }
 }
 let tMax = 0;
 for (let i = 0; i < N; i++) if (inside[i] && T[i] < Infinity) tMax = Math.max(tMax, T[i]);
+
+/* The route, thinned: a point every few px, every lift kept exactly. Times
+   share G's scale (÷ tMax), positions are 0…1 of the texture. */
+const pathOut = [];
+{
+  let last = null;
+  for (let k = 0; k < route.length; k++) {
+    const p = route[k];
+    const edge = k === 0 || k === route.length - 1 || p[3] === 0 || route[k - 1][3] === 0 || route[k + 1]?.[3] === 0;
+    if (!edge && last && Math.hypot(p[1] - last[1], p[2] - last[2]) < 5) continue;
+    pathOut.push(
+      +(p[0] / tMax).toFixed(4),
+      +(p[1] / W).toFixed(4),
+      +(p[2] / H).toFixed(4),
+      p[3],
+      +p[4].toFixed(1)
+    );
+    last = p;
+  }
+  console.log(`path ${pathOut.length / 5} points`);
+}
 
 /* ---- 7. pack ------------------------------------------------------------ */
 
@@ -559,7 +741,14 @@ for (let i = 0; i < N; i++) {
   rgb[i * 3] = Math.round(127.5 + s * 127.5);
   const a = T[i] === Infinity ? 1 : Math.min(1, T[i] / tMax);
   rgb[i * 3 + 1] = Math.round(a * 255);
-  rgb[i * 3 + 2] = 0;
+  /* B: how freshly the stroke landed — the ink pools there and stays wet
+     longer. Zero almost everywhere, so it costs nothing to store. */
+  const k = src[i];
+  // A fresh stroke pools; picking the stem back up after a tooth barely does.
+  const pool = k >= 0 && T[i] !== Infinity
+    ? (strokeLand[k] >= 1.15 ? 1 : 0.25) * Math.max(0, 1 - strokeAt[k] / 30)
+    : 0;
+  rgb[i * 3 + 2] = Math.round(pool * 255);
 }
 
 /* The finished ink as alpha: the dry streaks of the late strokes baked in. */
@@ -685,6 +874,14 @@ export const INK_NAME = {
   /** The stem's centre, 0…1 across the texture. */
   stemX: ${(stemC / W).toFixed(4)},
 } as const;
+
+/**
+ * The brush's route, flattened 5 to a point: [t, x, y, down, r].
+ * t on G's scale (0…1), x/y 0…1 of the texture, down 1 on the paper and 0
+ * in the air (between a 0 and the next 1 the brush is travelling), r the
+ * brush's half-width there in texture px.
+ */
+export const INK_PATH: readonly number[] = [${pathOut.join(",")}];
 `;
 await writeFile(new URL("src/lib/inkName.ts", ROOT), ts);
 console.log("wrote public/intro/ink-name.png, ink-name-mask.png, src/lib/inkName.ts");
@@ -692,7 +889,7 @@ console.log("wrote public/intro/ink-name.png, ink-name-mask.png, src/lib/inkName
 /* ---- preview: the arrival field and four moments of the writing --------- */
 
 if (previewAt) {
-  const panels = 6;
+  const panels = 2 + frames.length;
   const PW = W * panels + 10 * (panels - 1);
   const out = Buffer.alloc(PW * H * 3, 20);
   const put = (p, x, y, r, g, b) => {
@@ -706,7 +903,7 @@ if (previewAt) {
       if (inside[i]) put(0, x, y, Math.round(255 * a), Math.round(80 + 100 * (1 - a)), Math.round(255 * (1 - a)));
       if (sk[i]) put(1, x, y, 255, 255, 255);
       else if (inside[i]) put(1, x, y, 60, 60, 70);
-      [0.25, 0.5, 0.75, 1].forEach((t, k) => {
+      frames.forEach((t, k) => {
         const ink = rgba[i * 4 + 3] / 255;
         const on = a <= t ? ink : 0;
         const v = Math.round(232 - on * 220);
