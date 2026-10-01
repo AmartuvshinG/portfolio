@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
 import { ArrowUp } from "lucide-react";
 import { useI18n } from "@/lib/i18n";
 import { useSmoothScroll } from "@/components/chrome/SmoothScroll";
 import { UbClock } from "@/components/chrome/Navbar";
+import { LedTicker } from "@/components/chrome/LedTicker";
 
 /**
  * Footer, continuing the dark closing act — it carries `data-act="void"` so the
@@ -16,18 +16,6 @@ export function Footer() {
   const { navLinks, socials, profile, contact } = c;
   const { scrollTo } = useSmoothScroll();
   const year = new Date().getFullYear();
-  const marqueeRef = useRef<HTMLDivElement>(null);
-  const [marqueeLive, setMarqueeLive] = useState(false);
-
-  useEffect(() => {
-    const el = marqueeRef.current;
-    if (!el) return;
-    const io = new IntersectionObserver(([e]) => setMarqueeLive(e.isIntersecting), {
-      rootMargin: "200px 0px",
-    });
-    io.observe(el);
-    return () => io.disconnect();
-  }, []);
 
   return (
     <footer
@@ -35,34 +23,11 @@ export function Footer() {
       className="relative z-10 text-fg"
       aria-label={t.footer.aria}
     >
-      {/* Marquee wordmark. Set in the outline weight rather than solid: at 8rem
-          a filled wordmark is heavier than the closing headline above it and
-          steals the last word of the page. */}
-      <div ref={marqueeRef} className="overflow-hidden border-y border-line py-6">
-        {/* Paused while off screen: an infinite animation keeps the compositor
-            busy on every frame of every visit, seen or not. */}
-        <div
-          className="animate-marquee flex shrink-0 items-center gap-10 whitespace-nowrap"
-          style={{ animationPlayState: marqueeLive ? "running" : "paused" }}
-        >
-          {Array.from({ length: 8 }).map((_, i) => (
-            <span
-              key={i}
-              className="display-caps text-4xl text-transparent md:text-6xl"
-              /* Hard-coded, and the one place on the site that is. This used to
-                 read `var(--color-faint)`, and when that token was lifted for
-                 contrast (2.59:1 → 5.08:1) the stroke came with it — nearly
-                 double the luminance on a 6rem wordmark, which is exactly the
-                 "steals the last word of the page" failure the comment above
-                 describes. The contrast rule does not apply here: this is
-                 decorative repetition of the wordmark, not text anyone reads.
-                 The old faint value, frozen. */
-              style={{ WebkitTextStroke: "1px #4d5166" }}
-            >
-              {profile.wordmark} —
-            </span>
-          ))}
-        </div>
+      {/* The intro's LED sign again, as the closing ticker: his name in Mongol
+          bichig running through a dot-matrix band (LedTicker). It replaced an
+          outlined-wordmark marquee. It steps only while on screen. */}
+      <div className="border-y border-line py-6">
+        <LedTicker />
       </div>
 
       <div className="mx-auto grid max-w-[1800px] gap-10 px-5 py-14 md:grid-cols-[2fr_1fr_1fr] md:px-8">

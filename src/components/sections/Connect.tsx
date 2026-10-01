@@ -88,7 +88,7 @@ export function Connect({ github }: { github: GitHubSummary | null }) {
   /* The channel art only animates while the section is near the screen. On a
      phone every panel is expanded, so without this all three fields — ~150
      SVG loops, none of them compositable — restyled every frame of every
-     visit, from the hero to the footer. Same gate as the footer marquee. */
+     visit, from the hero to the footer. Same gate as the footer ticker. */
   const [inView, setInView] = useState(false);
   useEffect(() => {
     const el = ref.current;

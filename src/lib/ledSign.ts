@@ -398,3 +398,34 @@ export function createPainter(
     },
   };
 }
+
+/* ---- the name, set horizontally ----------------------------------------- */
+
+export interface LedGrid {
+  cols: number;
+  rows: number;
+  /** Gain per cell (0 = no diode), row-major. */
+  gain: Float32Array;
+}
+
+/**
+ * The baked name turned for horizontal reading. LED_NAME is the vertical-lr
+ * form, which is the font's horizontal drawing turned 90° clockwise; set
+ * horizontally, Mongolian reads as the font draws it, so this turns it back
+ * 90° counter-clockwise: vertical row r becomes column r, and vertical column
+ * c becomes row (cols − 1 − c).
+ */
+export function horizontalName(): LedGrid {
+  const { cells } = LED_NAME;
+  const vRows = cells.length;
+  const vCols = cells[0].length;
+  const gain = new Float32Array(vRows * vCols);
+  for (let r = 0; r < vRows; r++)
+    for (let c = 0; c < vCols; c++) {
+      const ch = cells[r][c];
+      if (ch === ".") continue;
+      const lvl = Number(ch);
+      gain[(vCols - 1 - c) * vRows + r] = lvl === 3 ? 1 : lvl === 2 ? 0.72 : 0.42;
+    }
+  return { cols: vRows, rows: vCols, gain };
+}
