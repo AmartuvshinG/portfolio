@@ -1125,3 +1125,23 @@ html.hud-cursor * {
   .cta:hover .cta-curtain, .cta:focus-visible .cta-curtain,
   .group:hover .hud-ico path, .group:focus-visible .hud-ico path { animation: none; }
 }
+
+/* The hero name's strike flare (sections/Hero): a long horizontal smear of
+   light with a hot core, screened over the name once as its tube catches. */
+.hero-streak {
+  position: absolute;
+  left: -10%;
+  right: -10%;
+  top: 50%;
+  height: 120px;
+  margin-top: -60px;
+  pointer-events: none;
+  mix-blend-mode: screen;
+  background:
+    linear-gradient(90deg, transparent 0%, rgba(255, 244, 228, 0.95) 50%, transparent 100%) center / 100% 2px no-repeat,
+    linear-gradient(90deg, transparent 10%, color-mix(in srgb, var(--color-hazard) 55%, transparent) 50%, transparent 90%) center / 100% 10px no-repeat,
+    radial-gradient(45% 50% at 50% 50%, color-mix(in srgb, var(--color-hazard) 30%, transparent), transparent 70%);
+}
+@media (prefers-reduced-motion: reduce) {
+  .hero-streak { display: none; }
+}

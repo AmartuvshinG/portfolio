@@ -15,6 +15,7 @@ import { cn } from "@/lib/utils";
 import { Monogram } from "@/components/chrome/NavGlyphs";
 import { InkSign } from "@/components/ui/InkSign";
 import { useScramble } from "@/hooks/useScramble";
+import { playInkWipe } from "@/lib/inkWipe";
 
 /** UB's coordinates: the HUD's one piece of standing telemetry. */
 const COORDS = "47.92°N 106.92°E";
@@ -282,7 +283,9 @@ export function Navbar() {
             <button
               ref={toggleRef}
               type="button"
-              onClick={() => setOpen((v) => !v)}
+              /* Opening inks the screen first and the sheet arrives under
+                 the ink (lib/inkWipe); closing is the sheet's own exit. */
+              onClick={() => (open ? setOpen(false) : playInkWipe({ onCovered: () => setOpen(true) }))}
               aria-label={open ? t.nav.closeMenu : t.nav.openMenu}
               aria-expanded={open}
               aria-controls="mobile-nav"

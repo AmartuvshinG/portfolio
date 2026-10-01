@@ -144,7 +144,9 @@ export function Hero() {
                 <motion.span
                   initial={reduced ? false : { y: "110%" }}
                   animate={{ y: play || reduced ? "0%" : "110%" }}
-                  transition={{ duration: 1, ease: [0.16, 1, 0.3, 1], delay: 0.2 }}
+                  /* Weight: a heavy spring that overshoots a hair and settles,
+                     so the name lands rather than slides. */
+                  transition={{ type: "spring", stiffness: 62, damping: 13, mass: 1.5, delay: 0.2 }}
                   className="pointer-events-auto block"
                   style={{ paddingBottom: "0.08em" }}
                 >
@@ -152,6 +154,18 @@ export function Hero() {
                 </motion.span>
               </h1>
             </Focus>
+            {/* The strike's flare: one anamorphic streak across the name as
+                the tube catches, the way a lens smears a light that comes on
+                in frame. Once; transform and opacity only. */}
+            {play && (
+              <motion.span
+                aria-hidden
+                className="hero-streak"
+                initial={{ x: "-55%", opacity: 0, scaleY: 0.6 }}
+                animate={struck ? { x: "55%", opacity: [0, 1, 0.9, 0], scaleY: [0.6, 1, 1, 0.8] } : { x: "-55%", opacity: 0 }}
+                transition={{ duration: 1.1, ease: [0.3, 0, 0.2, 1], times: [0, 0.18, 0.6, 1] }}
+              />
+            )}
           </div>
         </motion.div>
 
