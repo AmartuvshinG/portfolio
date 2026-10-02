@@ -424,8 +424,8 @@ export const projects: Project[] = [
       },
       {
         src: "/work/portfolio-path.webp",
-        alt: "This site's ledger section: four headline figures above a career timeline with a glowing rail.",
-        caption: "The ledger",
+        alt: "This site's path section: an LED globe zoomed onto the Great Lakes, a lit route arriving at Erie from over the pole, and a route log with the 2022 entry open.",
+        caption: "The route",
       },
     ],
   },

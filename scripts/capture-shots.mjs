@@ -81,7 +81,8 @@ const TARGETS = [
     shots: [
       { file: "portfolio.webp", at: 0, settle: 6500 },
       { file: "portfolio-work.webp", at: "#work", offset: 0.12, settle: 3500 },
-      { file: "portfolio-path.webp", at: "#timeline" },
+      // The route arriving over the Great Lakes, its first Erie entry open.
+      { file: "portfolio-path.webp", at: "#timeline", offset: 0.24, settle: 3500 },
     ],
   },
 ];
