@@ -177,7 +177,8 @@ export const profile = {
  * The section map.
  *
  * Seven chapters, ordered for a recruiter with a minute to spare: who, where to
- * find him, what he built, what he can do, where he's been, how to reach him.
+ * find him, what he built, what he can do, how the capstone works inside,
+ * where he's been, how to reach him.
  * Work sits ahead of Craft on purpose — the evidence before the claims.
  */
 /*
@@ -186,7 +187,7 @@ export const profile = {
  * (MVS) is written as an escape before a detached final ᠠ.
  *
  *   Profile  танилцуулга   Signal   дохио   Work  ажил   Craft  ур чадвар
- *   Path     зам          Contact  холбоо
+ *   Inside   бүтэц         Path     зам     Contact  холбоо
  */
 export const navLinks: NavLink[] = [
   { label: "Index", href: "#hero", code: "00" },
@@ -194,8 +195,9 @@ export const navLinks: NavLink[] = [
   { label: "Signal", href: "#connect", code: "02", script: "ᠳᠣᠬᠢᠶ\u180Eᠠ" },
   { label: "Work", href: "#work", code: "03", script: "ᠠᠵᠢᠯ" },
   { label: "Craft", href: "#capabilities", code: "04", script: "ᠤᠷ ᠴᠢᠳᠠᠪᠤᠷᠢ" },
-  { label: "Path", href: "#timeline", code: "05", script: "ᠵᠠᠮ" },
-  { label: "Contact", href: "#contact", code: "06", script: "ᠬᠣᠯᠪᠣᠭ\u180Eᠠ" },
+  { label: "Inside", href: "#anatomy", code: "05", script: "ᠪᠦᠲᠦᠴᠡ" },
+  { label: "Path", href: "#timeline", code: "06", script: "ᠵᠠᠮ" },
+  { label: "Contact", href: "#contact", code: "07", script: "ᠬᠣᠯᠪᠣᠭ\u180Eᠠ" },
 ];
 
 /**
