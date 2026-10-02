@@ -39,9 +39,8 @@
  */
 
 /**
- * The room's shared GLSL: noise, shapes and the rain on the window. The intro
- * (below) and the Studio (lib/studioBrush) both draw the same room, so they
- * share these lines rather than keeping two copies that could drift.
+ * The room's GLSL helpers: noise, shapes and the rain on the window, kept
+ * apart from the intro's main shader (below) so they read on their own.
  */
 export const INK_GLSL_LIB = `
 float hash(vec2 p) {

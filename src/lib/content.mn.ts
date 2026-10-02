@@ -219,7 +219,6 @@ const nav: Record<string, string> = {
   "#connect": "Холбоо",
   "#work": "Төслүүд",
   "#capabilities": "Ур чадвар",
-  "#studio": "Бийр",
   "#timeline": "Замнал",
   "#contact": "Холбогдох",
 };

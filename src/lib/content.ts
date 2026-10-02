@@ -186,7 +186,7 @@ export const profile = {
  * (MVS) is written as an escape before a detached final ᠠ.
  *
  *   Profile  танилцуулга   Signal   дохио   Work  ажил   Craft  ур чадвар
- *   Studio   бийр          Path     зам     Contact  холбоо
+ *   Path     зам          Contact  холбоо
  */
 export const navLinks: NavLink[] = [
   { label: "Index", href: "#hero", code: "00" },
@@ -194,9 +194,8 @@ export const navLinks: NavLink[] = [
   { label: "Signal", href: "#connect", code: "02", script: "ᠳᠣᠬᠢᠶ\u180Eᠠ" },
   { label: "Work", href: "#work", code: "03", script: "ᠠᠵᠢᠯ" },
   { label: "Craft", href: "#capabilities", code: "04", script: "ᠤᠷ ᠴᠢᠳᠠᠪᠤᠷᠢ" },
-  { label: "Studio", href: "#studio", code: "05", script: "ᠪᠢᠷ" },
-  { label: "Path", href: "#timeline", code: "06", script: "ᠵᠠᠮ" },
-  { label: "Contact", href: "#contact", code: "07", script: "ᠬᠣᠯᠪᠣᠭ\u180Eᠠ" },
+  { label: "Path", href: "#timeline", code: "05", script: "ᠵᠠᠮ" },
+  { label: "Contact", href: "#contact", code: "06", script: "ᠬᠣᠯᠪᠣᠭ\u180Eᠠ" },
 ];
 
 /**
