@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   AnimatePresence,
   animate,
@@ -17,6 +17,8 @@ import { useI18n } from "@/lib/i18n";
 import { openCase } from "@/lib/caseFile";
 import { isInteractive, modalOpen } from "@/lib/keys";
 import { distanceKm, type StopKey } from "@/lib/routeGeo";
+import { shotAt, WHOLE_ROUTE, type FlightPlan } from "@/lib/routeFlight";
+import type { GlobeFrame } from "@/lib/globeShader";
 import { EASE_DEVELOP } from "@/lib/motion";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
 import { useSmoothScroll } from "@/components/chrome/SmoothScroll";
@@ -24,7 +26,7 @@ import { ChapterSeam } from "@/components/chrome/ChapterSeam";
 import { SectionHeader } from "@/components/ui/SectionHeader";
 import { IconArrowRight } from "@/components/ui/HudIcons";
 import { ScrambleText } from "@/components/motion/ScrambleText";
-import { RouteMap, type RouteProgress } from "@/components/path/RouteMap";
+import { RouteGlobe } from "@/components/path/RouteGlobe";
 import { DateStamp, yearNeon, type PathWords } from "@/components/path/NeonStamp";
 import { ScriptLabel } from "@/components/ui/ScriptLabel";
 import { cn } from "@/lib/utils";
@@ -33,24 +35,28 @@ import { cn } from "@/lib/utils";
    Path: the route.
 
    His record is a journey with a shape — Ulaanbaatar, then Erie, then home —
-   so the chapter flies it. A pinned stage: the LED globe across the top, the
-   entry on screen below it on the left, and the whole route as a log on the
-   right. Scrolling moves through the entries in the order they happened; at
-   each change of city the stage stops to fly the leg, the line lighting across
-   the Arctic on the way out and a packet running it back on the way home. The
-   last entry's tail runs the freight between Ulaanbaatar and the mine, which
-   is what that job was.
+   so the chapter flies it. A pinned stage with the LED globe across all of it
+   and one board on the right. Scrolling moves through the entries in the order
+   they happened while the camera (lib/routeFlight) holds over each city, and
+   at each change of city it climbs and flies the leg: the line lighting
+   across the top of the world on the way out, a packet running it home. Over
+   the long Erie stay the camera keeps drifting in, so the map never sits
+   dead. The last entry's tail runs the freight between Ulaanbaatar and the
+   mine, which is what that job was.
 
-   The neon date stamps are the old ledger's, unchanged (path/NeonStamp).
+   The board says each thing once: every entry is a row, and the one on screen
+   opens in place with its neon stamp (the old ledger's, path/NeonStamp), what
+   it was, and its figures. The flights are rows too.
 
-   Phones and reduced motion get the same globe, drawn once, over the record as
-   a list grouped by city — no pin.
+   Phones and reduced motion get the whole route as one still view of the
+   globe, drawn once, over the record grouped by city — no pin. Without WebGL
+   the record alone carries the route, as text.
    --------------------------------------------------------------------------- */
 
 /** Scroll per entry, in viewport heights. */
 const STEP_VH = 46;
 /** Length of a flight, in entries. */
-const LEG = 1.3;
+const LEG = 1.6;
 /** Rest before the first entry. */
 const EDGE = 0.3;
 /** The last entry's stay, through which the freight runs. */
@@ -92,6 +98,13 @@ function plan(entries: Pick<TimelineEntry, "stop">[]) {
 const BEATS = plan(baseTimeline);
 const OUT = BEATS.legs.find((l) => l.from === "ub" && l.to === "erie");
 const BACK = BEATS.legs.find((l) => l.from === "erie" && l.to === "ub");
+
+const FLIGHT: FlightPlan = {
+  from: -EDGE,
+  to: BEATS.span,
+  out: OUT ?? { start: 0, end: 0 },
+  back: BACK ?? { start: BEATS.span, end: BEATS.span },
+};
 
 type Moment = { kind: "entry"; i: number } | { kind: "leg"; k: number };
 
@@ -158,10 +171,24 @@ function Stage({ sectionRef: ref }: { sectionRef: React.RefObject<HTMLElement | 
 
   const { scrollYProgress } = useScroll({ target: ref, offset: ["start start", "end end"] });
   const pos = useTransform(scrollYProgress, (p) => p * (BEATS.span + EDGE) - EDGE);
-  const out = useTransform(pos, (v) => (OUT ? span(v, OUT.start, OUT.end) : 1));
-  const back = useTransform(pos, (v) => (BACK ? span(v, BACK.start, BACK.end) : 0));
-  const freight = useTransform(pos, (v) => span(v, BEATS.freight[0], BEATS.freight[1]));
-  const progress = useMemo<RouteProgress>(() => ({ out, back, freight }), [out, back, freight]);
+
+  /* The subject sits left of the board: further left when the board is
+     proportionally wider. */
+  const fx = useMotionValue(0.33);
+  useEffect(() => {
+    const mq = window.matchMedia("(min-width: 1024px)");
+    const update = () => fx.set(mq.matches ? 0.33 : 0.27);
+    update();
+    mq.addEventListener("change", update);
+    return () => mq.removeEventListener("change", update);
+  }, [fx]);
+
+  const frame = useTransform<number, GlobeFrame>([pos, fx], ([p, x]) => ({
+    ...shotAt(p, FLIGHT, x, 0.56),
+    out: OUT ? span(p, OUT.start, OUT.end) : 1,
+    back: BACK ? span(p, BACK.start, BACK.end) : 0,
+    freight: span(p, BEATS.freight[0], BEATS.freight[1]),
+  }));
 
   const [moment, setMoment] = useState<Moment>(() => momentAt(pos.get()));
   useMotionValueEvent(pos, "change", (v) => {
@@ -203,115 +230,39 @@ function Stage({ sectionRef: ref }: { sectionRef: React.RefObject<HTMLElement | 
   }, [moment, goTo, ref]);
 
   const here: StopKey | null = moment.kind === "entry" ? entries[moment.i].stop : null;
-  /** Entries before this are behind us. */
-  const reached = moment.kind === "entry" ? moment.i : BEATS.legs[moment.k].after;
 
   return (
     <div className="sticky top-0 h-dvh w-full overflow-hidden">
-      <div className="relative mx-auto flex h-full max-w-[1800px] flex-col px-5 pb-6 pt-20 md:px-8 lg:px-16">
-        {/* The globe, with the masthead over its dark upper corner. */}
-        <div className="relative min-h-0 flex-[1.05] [@media(max-height:820px)]:flex-[0.8]">
-          <RouteMap
-            className="absolute inset-0"
-            progress={progress}
-            here={here}
-            labels={P.places}
-            distance={P.distance(KM)}
+      <RouteGlobe className="absolute inset-0" frame={frame} here={here} labels={P.places} distance={P.distance(KM)} />
+      {/* The page falls off behind the board, so its text sits on dark. */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-y-0 right-0 w-[58%] bg-[linear-gradient(to_right,transparent,color-mix(in_srgb,var(--color-bg)_70%,transparent)_38%)]"
+      />
+      <div className="pointer-events-none relative mx-auto flex h-full max-w-[1800px] flex-col px-5 pb-6 pt-20 md:px-8 lg:px-16">
+        <div className="pointer-events-auto relative flex items-start justify-between gap-6 pt-3">
+          <div className="relative">
+            <ScriptLabel href="#timeline" />
+            <span className="eyebrow kicker-plate">
+              {sectionIndex("#timeline")} — {P.eyebrow}
+            </span>
+            <h2 className="display-caps mt-3 text-[clamp(1.6rem,3.4vw,3.25rem)] text-fg [@media(max-height:820px)]:text-[clamp(1.4rem,2.6vw,2.4rem)]">
+              {P.title}
+            </h2>
+          </div>
+          <span className="micro tabular hidden pt-2 lg:block">{P.hint}</span>
+        </div>
+
+        <div className="flex min-h-0 flex-1 justify-end pt-4">
+          <Board
+            entries={entries}
+            moment={moment}
+            words={P}
+            goTo={goTo}
+            className="pointer-events-auto w-[min(56%,620px)] lg:w-[min(46%,660px)]"
           />
-          <div className="relative flex items-start justify-between gap-6 pt-3">
-            <div className="relative">
-              <ScriptLabel href="#timeline" />
-              <span className="eyebrow kicker-plate">
-                {sectionIndex("#timeline")} — {P.eyebrow}
-              </span>
-              <h2 className="display-caps mt-3 text-[clamp(1.6rem,3.4vw,3.25rem)] text-fg">{P.title}</h2>
-            </div>
-            <span className="micro tabular hidden pt-2 lg:block">{P.hint}</span>
-          </div>
-        </div>
-
-        <div className="grid min-h-0 flex-1 grid-cols-[minmax(0,5fr)_minmax(0,7fr)] gap-8 pt-2 lg:gap-14">
-          {/* The entry on screen. Decoration: the log beside it carries the
-              same words, and more, for assistive tech. */}
-          <div aria-hidden className="relative min-h-0">
-            <AnimatePresence mode="wait" initial={false}>
-              <motion.div
-                key={moment.kind === "entry" ? `e${moment.i}` : `l${moment.k}`}
-                className="absolute inset-0"
-                initial={{ opacity: 0, clipPath: "inset(0% 0% 100% 0%)" }}
-                animate={{ opacity: 1, clipPath: "inset(0% 0% 0% 0%)" }}
-                exit={{ opacity: 0, transition: { duration: 0.14 } }}
-                transition={{ duration: 0.45, ease: EASE_DEVELOP }}
-              >
-                {moment.kind === "entry" ? (
-                  <EntryCard entry={entries[moment.i]} words={P} />
-                ) : (
-                  <TransitCard leg={BEATS.legs[moment.k]} words={P} />
-                )}
-              </motion.div>
-            </AnimatePresence>
-          </div>
-
-          <Log entries={entries} moment={moment} reached={reached} words={P} goTo={goTo} />
         </div>
       </div>
-    </div>
-  );
-}
-
-/** The entry on screen: the neon stamp beside what it was. */
-function EntryCard({ entry, words }: { entry: TimelineEntry; words: PathWords }) {
-  /* The stamp strikes when it arrives: flip `play` on the frame after mount
-     (framer's `initial={false}` would otherwise land on the end state). */
-  const [play, setPlay] = useState(false);
-  useEffect(() => {
-    const id = requestAnimationFrame(() => setPlay(true));
-    return () => cancelAnimationFrame(id);
-  }, []);
-
-  return (
-    <div className="grid grid-cols-[auto_minmax(0,1fr)] gap-6 lg:gap-9">
-      <DateStamp entry={entry} play={play} instant={false} words={words} size="md" />
-      <div className="min-w-0">
-        <KindTag kind={entry.kind} words={words} />
-        {/* A long title steps down a size rather than pushing the card off
-            the stage: the stage is one screen tall and does not scroll. */}
-        <h3
-          className={cn(
-            "mt-3 font-tech font-bold uppercase leading-[1.08] text-balance text-fg",
-            entry.title.length > 40
-              ? "text-xl lg:text-2xl [@media(max-height:820px)]:text-lg"
-              : "text-2xl lg:text-[2rem] [@media(max-height:820px)]:text-2xl"
-          )}
-        >
-          {entry.title}
-        </h3>
-        <p className="mt-2 font-mono text-sm uppercase tracking-[0.18em] text-fg/70">{entry.org}</p>
-        <p className="mt-3 line-clamp-5 max-w-2xl text-base leading-relaxed text-fg/80 lg:text-[1.0625rem] [@media(max-height:820px)]:text-[0.9375rem] [@media(max-height:820px)]:leading-snug">
-          {entry.description}
-        </p>
-        <Extra entry={entry} words={words} className="mt-4" />
-      </div>
-    </div>
-  );
-}
-
-/** Between cities: where from, where to, how far. */
-function TransitCard({ leg, words }: { leg: Leg; words: PathWords }) {
-  return (
-    <div>
-      <span className="micro !text-[var(--color-holo)]">{words.transit}</span>
-      <p className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 font-tech text-2xl font-bold uppercase leading-tight text-fg lg:text-[2rem]">
-        <span>{words.placesLong[leg.from]}</span>
-        <IconArrowRight size={22} className="text-[var(--color-hazard)]" />
-        <span>{words.placesLong[leg.to]}</span>
-      </p>
-      <p
-        className="display-caps tabular mt-5 text-[clamp(1.5rem,2.6vw,2.5rem)] leading-none"
-        style={{ color: "var(--color-holo)", textShadow: "0 0 18px color-mix(in srgb, var(--color-holo) 45%, transparent)" }}
-      >
-        {words.distance(KM)}
-      </p>
     </div>
   );
 }
@@ -327,12 +278,23 @@ function KindTag({ kind, words }: { kind: TimelineEntry["kind"]; words: PathWord
 }
 
 /** The figures an entry carries: the GPA on the degree, the capstone's measurements. */
-function Extra({ entry, words, className }: { entry: TimelineEntry; words: PathWords; className?: string }) {
+function Extra({
+  entry,
+  words,
+  compact,
+  className,
+}: {
+  entry: TimelineEntry;
+  words: PathWords;
+  /** Set smaller, for the board. */
+  compact?: boolean;
+  className?: string;
+}) {
   const { c } = useI18n();
   if (entry.extra === "gpa") {
     return (
       <div className={cn("flex items-baseline gap-3", className)}>
-        <span className="display-caps tabular text-2xl text-fg">
+        <span className={cn("display-caps tabular text-fg", compact ? "text-xl" : "text-2xl")}>
           3.68<span className="text-base text-muted">/4</span>
         </span>
         <span className="micro">{words.gpa}</span>
@@ -342,11 +304,11 @@ function Extra({ entry, words, className }: { entry: TimelineEntry; words: PathW
   if (entry.extra === "spotfixes") {
     const metrics = c.projects.find((p) => p.slug === "spotfixes")?.metrics ?? [];
     return (
-      <dl className={cn("flex flex-wrap gap-x-7 gap-y-2", className)}>
+      <dl className={cn("flex flex-wrap gap-y-2", compact ? "gap-x-5" : "gap-x-7", className)}>
         {metrics.map((m) => (
           <div key={m.label} className="flex flex-col-reverse">
-            <dt className="micro">{m.label}</dt>
-            <dd className="display-caps tabular text-xl text-fg">{m.value}</dd>
+            <dt className={cn("micro", compact && "!text-[0.625rem]")}>{m.label}</dt>
+            <dd className={cn("display-caps tabular text-fg", compact ? "text-base" : "text-xl")}>{m.value}</dd>
           </div>
         ))}
       </dl>
@@ -356,29 +318,35 @@ function Extra({ entry, words, className }: { entry: TimelineEntry; words: PathW
 }
 
 /**
- * The route log: every entry, in order, with the flights between them. Each
- * row takes you to its entry. Rows ahead of you are dim; the one on screen
- * decodes its title like a departures board turning over.
+ * The board: every entry, in order, with the flights between them. Each row
+ * takes you to its entry; the one on screen opens in place, and a flight's row
+ * opens while it is flown. Rows ahead of you are dim.
  *
  * This is also the chapter's text for assistive tech: each row's button is
  * named by its year, title and city, and the period, organisation and
- * description follow it as hidden text.
+ * description follow it as hidden text (the opened detail is decoration).
  */
-function Log({
+function Board({
   entries,
   moment,
-  reached,
   words,
   goTo,
+  className,
 }: {
   entries: TimelineEntry[];
   moment: Moment;
-  reached: number;
   words: PathWords;
   goTo: (i: number) => void;
+  className?: string;
 }) {
+  const reached = moment.kind === "entry" ? moment.i : BEATS.legs[moment.k].after;
   return (
-    <div className="flex min-h-0 flex-col">
+    <div
+      className={cn(
+        "flex min-h-0 flex-col self-start border border-line bg-[color-mix(in_srgb,var(--color-bg)_80%,transparent)] px-4 pb-2 pt-3 shadow-[0_30px_80px_-30px_rgba(0,0,0,0.8)] lg:px-5",
+        className
+      )}
+    >
       <div className="flex items-center justify-between gap-4 border-b border-line-strong pb-2">
         <span className="micro">{words.board}</span>
         <button
@@ -393,30 +361,17 @@ function Log({
         {entries.map((e, i) => {
           const on = moment.kind === "entry" && moment.i === i;
           const leg = BEATS.legs.find((l) => l.after === i);
-          const legOn = leg && moment.kind === "leg" && BEATS.legs[moment.k] === leg;
+          const legOn = !!leg && moment.kind === "leg" && BEATS.legs[moment.k] === leg;
           return (
             <li key={`${e.title}-${i}`}>
-              {leg && (
-                <div
-                  aria-hidden
-                  className={cn(
-                    "flex items-center gap-3 border-b border-line px-3 py-1.5 font-mono text-[0.6875rem] uppercase tracking-[0.2em] transition-colors duration-300 [@media(max-height:820px)]:py-1",
-                    legOn ? "text-[var(--color-holo)]" : i <= reached ? "text-faint" : "text-faint/60"
-                  )}
-                >
-                  <span>{words.places[leg.from]}</span>
-                  <IconArrowRight size={11} />
-                  <span>{words.places[leg.to]}</span>
-                  <span className="tabular ml-auto">{words.distance(KM)}</span>
-                </div>
-              )}
+              {leg && <LegRow leg={leg} on={legOn} done={i <= reached} words={words} />}
               <div className="relative">
                 <button
                   type="button"
                   onClick={() => goTo(i)}
                   aria-current={on ? "step" : undefined}
                   className={cn(
-                    "grid w-full grid-cols-[3.25rem_minmax(0,1fr)_auto] items-center gap-4 border-b border-line px-3 py-2 text-left transition-[opacity,background-color] duration-300 [@media(max-height:820px)]:py-1.5",
+                    "grid w-full grid-cols-[3.25rem_minmax(0,1fr)_auto] items-center gap-4 border-b border-line px-2 py-2 text-left transition-[opacity,background-color] duration-300 [@media(max-height:820px)]:py-[5px]",
                     on
                       ? "bg-[color-mix(in_srgb,var(--color-hazard)_9%,transparent)]"
                       : "hover:bg-[color-mix(in_srgb,var(--color-fg)_4%,transparent)]",
@@ -439,11 +394,95 @@ function Log({
                 <span className="sr-only">
                   {e.period}. {e.org}. {e.description}
                 </span>
+                <AnimatePresence initial={false}>
+                  {on && (
+                    <motion.div
+                      key="open"
+                      aria-hidden
+                      className="overflow-hidden"
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: "auto", opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.42, ease: EASE_DEVELOP }}
+                    >
+                      <Opened entry={e} words={words} />
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
             </li>
           );
         })}
       </ol>
+    </div>
+  );
+}
+
+/** A flight between cities, as a board row; while it is flown, it opens. */
+function LegRow({ leg, on, done, words }: { leg: Leg; on: boolean; done: boolean; words: PathWords }) {
+  return (
+    <div aria-hidden className="border-b border-line">
+      <div
+        className={cn(
+          "flex items-center gap-3 px-2 py-1.5 font-mono text-[0.6875rem] uppercase tracking-[0.2em] transition-colors duration-300 [@media(max-height:820px)]:py-1",
+          on ? "text-[var(--color-holo)]" : done ? "text-faint" : "text-faint/60"
+        )}
+      >
+        <span>{words.places[leg.from]}</span>
+        <IconArrowRight size={11} />
+        <span>{words.places[leg.to]}</span>
+        <span className="tabular ml-auto">{words.distance(KM)}</span>
+      </div>
+      <AnimatePresence initial={false}>
+        {on && (
+          <motion.div
+            key="open"
+            className="overflow-hidden"
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.42, ease: EASE_DEVELOP }}
+          >
+            <div className="px-2 pb-4 pt-1">
+              <span className="micro !text-[var(--color-holo)]">{words.transit}</span>
+              <p className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 font-tech text-xl font-bold uppercase leading-tight text-fg">
+                <span>{words.placesLong[leg.from]}</span>
+                <IconArrowRight size={18} className="text-[var(--color-hazard)]" />
+                <span>{words.placesLong[leg.to]}</span>
+              </p>
+              <p
+                className="display-caps tabular mt-3 text-[clamp(1.4rem,2.2vw,2.1rem)] leading-none"
+                style={{ color: "var(--color-holo)", textShadow: "0 0 18px color-mix(in srgb, var(--color-holo) 45%, transparent)" }}
+              >
+                {words.distance(KM)}
+              </p>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+/** The entry on screen, opened: its neon stamp beside what it was. */
+function Opened({ entry, words }: { entry: TimelineEntry; words: PathWords }) {
+  /* The stamp strikes when it arrives: flip `play` on the frame after mount
+     (framer's `initial={false}` would otherwise land on the end state). */
+  const [play, setPlay] = useState(false);
+  useEffect(() => {
+    const id = requestAnimationFrame(() => setPlay(true));
+    return () => cancelAnimationFrame(id);
+  }, []);
+
+  return (
+    <div className="grid grid-cols-[auto_minmax(0,1fr)] gap-5 px-2 pb-3 pt-3 lg:gap-6">
+      <DateStamp entry={entry} play={play} instant={false} words={words} size="md" />
+      <div className="min-w-0">
+        <KindTag kind={entry.kind} words={words} />
+        <p className="mt-2.5 font-mono text-[0.6875rem] uppercase tracking-[0.16em] text-fg/70">{entry.org}</p>
+        <p className="mt-1.5 line-clamp-3 text-[0.9375rem] leading-snug text-fg/80">{entry.description}</p>
+        <Extra entry={entry} words={words} compact className="mt-2.5" />
+      </div>
     </div>
   );
 }
@@ -456,15 +495,34 @@ function Record({ reduced }: { reduced: boolean }) {
   const { c, t } = useI18n();
   const P = t.path;
   const entries = c.timeline;
+  const [noGlobe, setNoGlobe] = useState(false);
 
   /* The route draws once, the first time the globe is seen — out, home, then
      the freight — and stays drawn. Under reduced motion it is simply there. */
   const out = useMotionValue(reduced ? 1 : 0);
   const back = useMotionValue(reduced ? 1 : 0);
   const freight = useMotionValue(reduced ? 1 : 0);
-  const progress = useMemo<RouteProgress>(() => ({ out, back, freight }), [out, back, freight]);
+  /* The whole route is wider than it is tall: on a narrow box the camera
+     stands further off, so both ends stay in frame. */
+  const aspect = useMotionValue(1);
+  const frame = useTransform<number, GlobeFrame>([out, back, freight, aspect], ([o, b, f, a]) => ({
+    ...WHOLE_ROUTE,
+    h: WHOLE_ROUTE.h * Math.max(1, a * 1.25),
+    fx: 0.5,
+    fy: 0.74,
+    out: o,
+    back: b,
+    freight: f,
+  }));
   const mapRef = useRef<HTMLDivElement>(null);
   const seen = useInView(mapRef, { once: true, amount: 0.4 });
+  useEffect(() => {
+    const el = mapRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver(() => aspect.set(el.clientHeight / Math.max(1, el.clientWidth)));
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [aspect, noGlobe]);
   useEffect(() => {
     if (!seen) return;
     if (reduced) {
@@ -500,15 +558,21 @@ function Record({ reduced }: { reduced: boolean }) {
     <div className="mx-auto max-w-[1800px] px-5 pb-24 pt-24 md:px-8 md:pb-36 md:pt-36 lg:px-16">
       <SectionHeader index={sectionIndex("#timeline")} label={P.eyebrow} title={P.title} chapter="#timeline" />
 
-      <div ref={mapRef} className="relative mt-8 h-[min(48vw,440px)] w-full">
-        <RouteMap
-          className="absolute inset-0"
-          progress={progress}
-          here={null}
-          labels={P.places}
-          distance={P.distance(KM)}
-        />
-      </div>
+      {!noGlobe && (
+        <div ref={mapRef} className="relative mt-8 h-[min(82vw,460px)] w-full">
+          {/* The southern half is open sea: it falls away into the page. */}
+          <RouteGlobe
+            className="absolute inset-0 [mask-image:linear-gradient(to_bottom,black_72%,transparent)]"
+            frame={frame}
+            here={null}
+            labels={P.places}
+            distance={P.distance(KM)}
+            mask="small"
+            pitch={4}
+            onUnavailable={() => setNoGlobe(true)}
+          />
+        </div>
+      )}
 
       {groups.map((g, k) => (
         <div key={k} className="mt-10 first-of-type:mt-6">

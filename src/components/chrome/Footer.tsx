@@ -15,7 +15,7 @@ import { useReducedMotion } from "@/hooks/useReducedMotion";
 /** The footage's makers, as their own components name them. */
 const CITY = { name: "Guglielmo Giannattasio", via: "21st.dev", href: "https://www.guglielmogiannattasio.it" };
 const STATION = { name: "yuraoak", via: "GitHub", href: "https://github.com/yuraoak/airlock-hero-assets" };
-/** The Path's globe is Natural Earth's land, baked (scripts/bake-land-dots). */
+/** The Path's globe is Natural Earth's land, lakes and borders, baked (scripts/bake-globe-mask). */
 const MAP = { name: "Natural Earth", href: "https://www.naturalearthdata.com" };
 
 /**
