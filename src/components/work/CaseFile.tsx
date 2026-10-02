@@ -13,6 +13,7 @@ import { playInkWipe } from "@/lib/inkWipe";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
 import { useOverlay } from "@/hooks/useOverlay";
 import { EASE_EXPO } from "@/lib/motion";
+import { Olzii } from "@/components/ui/Olzii";
 import { ShotImage } from "@/components/work/ShotImage";
 import { NeonSign } from "@/components/ui/NeonSign";
 
@@ -403,6 +404,9 @@ function CaseFile({
                         </div>
                       </Chapter>
                     ) : null}
+
+                    {/* The end of the file: the endless knot, drawn once. */}
+                    <Olzii className="mx-auto my-6 h-12 w-12" />
 
                     {prev && next && (
                       <nav
