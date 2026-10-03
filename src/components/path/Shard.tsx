@@ -16,14 +16,14 @@ import type { PathWords } from "@/components/path/NeonStamp";
    on the Path is one: its type is the shard's class, and opening a row slots
    that shard into the board's reader, which reads it.
 
-     EDU  Education  holo     a credential is data
-     WRK  Work       sodium   the physical city: shifts, halls, freight
-     PRJ  Project    spectrum something built
+     Education  holo     a credential is data
+     Work       sodium   the physical city: shifts, halls, freight
+     Project    spectrum something built
 
-   The shard carries only what the record already says: the class, the plain
-   type word (so a recruiter still reads "Education"), the degree's
-   "Graduated", and a serial made of the organisation's initials and the
-   start date — "GU · 2026.05". Nothing on it is invented.
+   The shard carries only the plain type word, so a recruiter reads
+   "Education", "Work" or "Project", and the degree's "Graduated". It used to
+   add a three-letter class code and a serial of the organisation's initials
+   ("GAS · 2022.S"); both read as noise, and both are gone.
 
    On open, once, settling and never looping (transform and opacity only):
    the shard slides into the slot and seats with a one-pixel knock; the slot's
@@ -47,30 +47,6 @@ export function shardLamp(kind: Kind): React.CSSProperties {
   return lamp.includes("gradient") ? { backgroundImage: lamp } : { background: lamp };
 }
 
-/** Legal forms carry no identity: Oyu Tolgoi LLC is "OT". */
-const LEGAL = new Set(["LLC", "ХХК", "Inc", "Inc.", "Ltd"]);
-
-/**
- * The organisation's initials: the capitalised words of its name, before
- * any "·". "Mongolian University of Science and Technology" → MUST,
- * "Шинжлэх Ухаан, Технологийн Их Сургууль" → ШУТИС — the names they go by.
- */
-export function initials(org: string): string {
-  return org
-    .split("·")[0]
-    .split(/[\s,]+/)
-    .filter((w) => w && !LEGAL.has(w) && /^\p{Lu}/u.test(w))
-    .map((w) => w.charAt(0))
-    .join("");
-}
-
-/** "2026.05", "2022.S" for a summer, "2020" for a bare year. */
-function stamp(s: TimelineEntry["start"]): string {
-  if (s.month) return `${s.year}.${String(s.month).padStart(2, "0")}`;
-  if (s.season === "summer") return `${s.year}.S`;
-  return String(s.year);
-}
-
 /** When the shard is seated, s after `play`: the read starts from here. */
 export const SEAT_AT = 0.42;
 
@@ -89,8 +65,6 @@ export function Shard({
 }) {
   const cls = CLASS[entry.kind];
   const label = words[cls.code];
-  const code = words.shardCodes[entry.kind];
-  const serial = `${initials(entry.org)} · ${stamp(entry.start)}`;
   const still = instant || !play;
   const t = (delay: number, duration: number) =>
     instant ? { duration: 0 } : { duration, delay, ease: EASE_EXPO };
@@ -108,7 +82,7 @@ export function Shard({
       />
 
       <motion.div
-        className="relative flex h-[3.25rem] items-stretch overflow-hidden [clip-path:polygon(0_0,calc(100%-12px)_0,100%_12px,100%_100%,0_100%)]"
+        className="relative flex h-10 items-stretch overflow-hidden [clip-path:polygon(0_0,calc(100%-12px)_0,100%_12px,100%_100%,0_100%)]"
         style={{
           /* A chip's face: the class tint, a fine diagonal etch, and a lit
              top edge. */
@@ -144,22 +118,16 @@ export function Shard({
           ))}
         </span>
 
-        <span className="flex flex-col justify-center gap-[3px] pl-3 pr-4">
-          <span className="display-caps text-[1.25rem] leading-none text-fg">{code}</span>
+        <span className="flex items-center gap-2 whitespace-nowrap pl-3 pr-4">
           <span
-            className={cn(
-              "tag leading-none",
-              entry.kind === "project" && "spectrum-text"
-            )}
+            className={cn("display-caps text-[1rem] leading-none xl:text-[1.1rem]", entry.kind === "project" && "spectrum-text")}
             style={entry.kind === "project" ? undefined : { color: cls.ink }}
           >
             {label}
-            {entry.note === "graduated" && <span className="text-fg/80"> · {words.graduated}</span>}
           </span>
-        </span>
-
-        <span aria-hidden className="tag tabular ml-auto flex items-end pb-[7px] pr-4 normal-case text-muted">
-          {serial}
+          {entry.note === "graduated" && (
+            <span className="tag leading-none text-fg/85">· {words.graduated}</span>
+          )}
         </span>
       </motion.div>
     </div>

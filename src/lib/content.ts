@@ -40,6 +40,8 @@ export interface Capability {
   shot?: string;
   /** Tools named in the description or tags, shown as marks. Locale-free. */
   stack: TechKey[];
+  /** Transcript course codes behind this skill (see `courses`). Locale-free. */
+  courses?: string[];
 }
 
 export interface Project {
@@ -92,6 +94,9 @@ export interface TimelineEntry {
   end?: Stamp;
   /** A word that qualifies the date, set beside it: "Graduated". */
   note?: "graduated";
+  /** The same season in two separate years ("Summers 2022 & 2023"), not a
+      span: the stamp joins the years with "·" rather than an arrow. */
+  repeat?: boolean;
   /** The dates as a phrase — what a screen reader announces in place of the
       animated stamp: "May 2025 – Apr 2026". */
   period: string;
@@ -200,17 +205,20 @@ export const profile = {
  * still Claude's spelling. U+180E (MVS) is written as an escape before a
  * detached final ᠠ.
  *
- *   Profile  танилцуулга   Signal   дохио   Work  ажил   Craft  ур чадвар
- *   Inside   бүтэц         Path     зам     Contact  холбоо
+ *   About    танилцуулга   Projects ажил    Skills ур чадвар
+ *   Capstone бүтэц         Journey  зам     Contact  холбоо
+ *
+ * Links has none: Signal's дохио no longer fits the name, and a new spelling
+ * waits for Amartuvshin's screenshot rather than a guess.
  */
 export const navLinks: NavLink[] = [
-  { label: "Index", href: "#hero", code: "00" },
-  { label: "Profile", href: "#about", code: "01", script: "ᠲᠠᠨᠢᠯᠴᠠᠭᠤᠯᠭ\u180Eᠠ" },
-  { label: "Signal", href: "#connect", code: "02", script: "ᠳᠣᠬᠢᠶ\u180Eᠠ" },
-  { label: "Work", href: "#work", code: "03", script: "ᠠᠵᠢᠯ" },
-  { label: "Craft", href: "#capabilities", code: "04", script: "ᠤᠷ᠎ᠠ ᠴᠢᠳᠠᠪᠤᠷᠢ" },
-  { label: "Inside", href: "#anatomy", code: "05", script: "ᠪᠦᠲᠦᠴᠡ" },
-  { label: "Path", href: "#timeline", code: "06", script: "ᠵᠠᠮ" },
+  { label: "Home", href: "#hero", code: "00" },
+  { label: "About", href: "#about", code: "01", script: "ᠲᠠᠨᠢᠯᠴᠠᠭᠤᠯᠭ\u180Eᠠ" },
+  { label: "Links", href: "#connect", code: "02" },
+  { label: "Projects", href: "#work", code: "03", script: "ᠠᠵᠢᠯ" },
+  { label: "Skills", href: "#capabilities", code: "04", script: "ᠤᠷ᠎ᠠ ᠴᠢᠳᠠᠪᠤᠷᠢ" },
+  { label: "Capstone", href: "#anatomy", code: "05", script: "ᠪᠦᠲᠦᠴᠡ" },
+  { label: "Journey", href: "#timeline", code: "06", script: "ᠵᠠᠮ" },
   { label: "Contact", href: "#contact", code: "07", script: "ᠬᠣᠯᠪᠣᠭ\u180Eᠠ" },
 ];
 
@@ -238,6 +246,7 @@ export const about = {
   signature: [
     { k: "FOCUS", v: "Full-stack · ML" },
     { k: "STACK", v: "Java · Python · React" },
+    { k: "DEGREE", v: "B.S. SE · Dean's List ×3" },
     { k: "BASE", v: "Ulaanbaatar, MN" },
   ],
 };
@@ -251,6 +260,7 @@ export const capabilities: Capability[] = [
       "React frontends on FastAPI backends with PostgreSQL (Supabase), REST APIs, and multi-tenant data isolation.",
     tags: ["React", "FastAPI", "PostgreSQL"],
     stack: ["react", "fastapi", "postgresql", "supabase"],
+    courses: ["CIS 255", "CIS 390", "CIS 240"],
     icon: "layers",
     proof: "spotfixes",
     shot: "/work/spotfixes-stack.webp",
@@ -263,6 +273,7 @@ export const capabilities: Capability[] = [
       "Text classification with scikit-learn (TF-IDF + Random Forest) and retrieval-augmented similarity search with ChromaDB.",
     tags: ["scikit-learn", "RAG", "ChromaDB"],
     stack: ["scikitlearn", "python", "chromadb"],
+    courses: ["CIS 457", "CIS 458"],
     icon: "brain",
     proof: "spotfixes",
     shot: "/work/spotfixes-accuracy.webp",
@@ -275,6 +286,7 @@ export const capabilities: Capability[] = [
       "Java as my strongest language, plus Python, JavaScript, SQL and C++; Android apps in Android Studio.",
     tags: ["Java", "Python", "C++"],
     stack: ["java", "python", "javascript", "cpp", "androidstudio"],
+    courses: ["CIS 182", "CSC 220", "CIS 377"],
     icon: "braces",
   },
   {
@@ -284,6 +296,7 @@ export const capabilities: Capability[] = [
       "Led UI/UX for Spotfixes; planned and ran usability tests, logged findings, and turned them into fixes.",
     tags: ["UI/UX", "Usability testing", "Accessibility"],
     stack: ["usability", "accessibility"],
+    courses: ["CIS 239", "CIS 240"],
     icon: "pen",
     proof: "spotfixes",
     shot: "/work/spotfixes-capabilities.webp",
@@ -295,6 +308,7 @@ export const capabilities: Capability[] = [
       "Test case design, defect tracking and QA reporting across the software development lifecycle.",
     tags: ["QA", "Test cases", "SDLC"],
     stack: ["testcases", "defects", "sdlc"],
+    courses: ["SOFT 310", "CIS 326", "CIS 350"],
     icon: "checks",
     proof: "spotfixes",
   },
@@ -305,9 +319,24 @@ export const capabilities: Capability[] = [
       "Docker on Ubuntu, GitHub Actions CI/CD, and authentication with OAuth2, JWT, MFA and row-level security.",
     tags: ["Docker", "CI/CD", "OAuth2"],
     stack: ["docker", "ubuntu", "githubactions", "jwt"],
+    courses: ["CIS 387", "SOFT 410", "CIS 219", "CSC 330"],
     icon: "shield",
     proof: "spotfixes",
   },
+];
+
+/**
+ * Everything in the Skills dock, in reading order: languages, front end, back
+ * end and data, ML, infrastructure, tools. Each is named in the resume or in a
+ * project's own stack on this page.
+ */
+export const techStack: TechKey[] = [
+  "java", "python", "javascript", "typescript", "cpp", "html5", "css",
+  "react", "nextjs", "tailwind", "gsap", "threejs",
+  "fastapi", "postgresql", "mysql", "supabase", "chromadb",
+  "scikitlearn",
+  "docker", "ubuntu", "linux", "githubactions", "jwt",
+  "git", "github", "androidstudio", "intellij", "claude",
 ];
 
 export const projects: Project[] = [
@@ -451,8 +480,10 @@ export const projects: Project[] = [
  * The journey, in the order it happened: the Path reads forward. Each entry
  * says where it was (`stop`); the Path flies the route between them.
  *
- * Gannon's start date is in none of the sources, so the flight to Erie
- * carries no date. Ask before adding one.
+ * Dates from the Gannon transcript (docs/private/Transcript.pdf): classes
+ * began 10 Jan 2022, so the flight to Erie lands in January 2022. The two 2024
+ * coursework rows are the resume's, dated by the terms the transcript gives
+ * those courses (CIS 377 Spring 2024, SOFT 310 Fall 2024).
  */
 export const timeline: TimelineEntry[] = [
   {
@@ -463,21 +494,36 @@ export const timeline: TimelineEntry[] = [
     stop: "ub",
     mark: "must",
     photo: "must",
-    title: "University studies · 21 credits",
-    org: "Mongolian University of Science and Technology",
-    description: "Ulaanbaatar, Mongolia. 21 credits completed.",
+    title: "Mongolian University of Science and Technology",
+    org: "MUST · Ulaanbaatar",
+    description:
+      "Started university in Ulaanbaatar and completed 21 credits before moving to the US to study software engineering.",
+  },
+  {
+    start: { year: 2022, month: 1 },
+    period: "January 2022",
+    kind: "education",
+    stop: "erie",
+    mark: "gannon",
+    photo: "gannon",
+    title: "Began B.S. Software Engineering",
+    org: "Gannon University · Erie, PA",
+    description:
+      "First semester in Erie: problem solving and programming, an introduction to networks, and Calculus 1.",
   },
   {
     start: { year: 2022, season: "summer" },
     end: { year: 2023, season: "summer" },
+    repeat: true,
     period: "Summers 2022 & 2023",
     kind: "work",
     stop: "erie",
     mark: "gannon",
     photo: "gannon",
+    crop: { x: 0.48, y: 0.6, scale: 1.3 },
     title: "Summer Student Conference Assistant",
-    org: "Gannon Auxiliary Services",
-    description: "Prepared residence halls and supported conference guests.",
+    org: "Auxiliary Services · Gannon University",
+    description: "Prepared residence halls and supported conference guests, tracking workflows in Excel and Word.",
   },
   {
     start: { year: 2023, month: 8 },
@@ -489,8 +535,35 @@ export const timeline: TimelineEntry[] = [
     photo: "gannon",
     crop: { x: 0.6, y: 0.36, scale: 1.6 },
     title: "Front Desk Student Attendant",
-    org: "Gannon Residence Life",
-    description: "Maintained student housing records in StarRez and resolved resident inquiries.",
+    org: "Office of Residence Life · Gannon University",
+    description:
+      "Maintained student housing records in StarRez and resolved resident inquiries by phone, email and in person.",
+  },
+  {
+    start: { year: 2024, month: 1 },
+    end: { year: 2024, month: 5 },
+    period: "Spring 2024",
+    kind: "project",
+    stop: "erie",
+    mark: "gannon",
+    photo: "zurn",
+    title: "Android Apps · Mobile App Development II",
+    org: "Gannon University · Coursework",
+    description: "Built Android apps in Android Studio with real-time device simulations and APIs.",
+  },
+  {
+    start: { year: 2024, month: 8 },
+    end: { year: 2024, month: 12 },
+    period: "Fall 2024",
+    kind: "project",
+    stop: "erie",
+    mark: "gannon",
+    photo: "zurn",
+    crop: { x: 0.35, y: 0.5, scale: 1.45 },
+    title: "Test Suite · Software Testing & QA",
+    org: "Gannon University · Coursework",
+    description:
+      "Designed and ran test cases for a Java calculator app, resolving the bugs they found through GitHub collaboration.",
   },
   {
     start: { year: 2025, month: 5 },
@@ -501,8 +574,8 @@ export const timeline: TimelineEntry[] = [
     mark: "chickfila",
     photo: "chickfila",
     title: "Foodservice Student Worker",
-    org: "Metz Culinary · Chick-fil-A",
-    description: "High-volume food preparation and inventory during peak campus hours.",
+    org: "Metz Culinary Management · Chick-fil-A",
+    description: "High-volume food preparation and inventory restocking at peak hours, to food safety standards.",
   },
   {
     start: { year: 2025, month: 8 },
@@ -530,7 +603,7 @@ export const timeline: TimelineEntry[] = [
     title: "B.S. Software Engineering",
     org: "Gannon University",
     description:
-      "Erie, Pennsylvania, USA. Dean's List, College of Engineering and Business (Fall 2024, Spring 2025).",
+      "137 credits. Dean's List, College of Engineering and Business, in Fall 2024, Spring 2025 and Spring 2026.",
   },
   {
     start: { year: 2026, month: 6 },
@@ -540,12 +613,66 @@ export const timeline: TimelineEntry[] = [
     stop: "ub",
     mark: "oyutolgoi",
     photo: "monnis",
-    title: "Corporate Logistics Coordinator (Contractor, Khanbogd Khurd)",
-    org: "Oyu Tolgoi LLC",
+    title: "Corporate Logistics Coordinator",
+    org: "Oyu Tolgoi LLC · Contractor, Khanbogd Khurd",
     description:
-      "Coordinated freight and transportation between the Ulaanbaatar headquarters and the mine site, and monitored logistics data to find routing inefficiencies.",
+      "Central contact for freight and transport between the Ulaanbaatar headquarters and the mine site, across teams and contractors; monitored logistics data for routing inefficiencies under strict safety standards.",
   },
 ];
+
+/**
+ * The degree, as the transcript prints it. `gpaRecent` is the final four
+ * semesters (Fall 2024 – Spring 2026: 218.0 grade points over 59 credits =
+ * 3.69); `gpaOverall` is the transcript's cumulative 3.3241. Per-course grades
+ * are never shown.
+ */
+export const education = {
+  gpaRecent: 3.69,
+  gpaOverall: 3.32,
+  credits: 137,
+  deansList: 3,
+};
+
+export interface Course {
+  code: string;
+  title: string;
+  /** The term it was taken, from the transcript. */
+  term: { season: "spring" | "fall"; year: number };
+  /** Tools the course worked in, shown as small marks. Only where obvious. */
+  tools?: TechKey[];
+}
+
+/** Upper-level and relevant courses from the transcript. Names only, no grades. */
+export const courses: Course[] = [
+  { code: "CIS 182", title: "Object-Oriented Programming", term: { season: "fall", year: 2022 }, tools: ["java"] },
+  { code: "CIS 219", title: "Linux Programming", term: { season: "spring", year: 2023 }, tools: ["linux"] },
+  { code: "CIS 255", title: "Database Management Systems", term: { season: "spring", year: 2023 }, tools: ["mysql"] },
+  { code: "CSC 220", title: "Data Structures & Algorithms", term: { season: "fall", year: 2023 }, tools: ["java"] },
+  { code: "CIS 239", title: "The User Experience", term: { season: "fall", year: 2023 } },
+  { code: "CIS 277", title: "Mobile App Development I", term: { season: "fall", year: 2023 }, tools: ["androidstudio"] },
+  { code: "CIS 377", title: "Mobile App Development II", term: { season: "spring", year: 2024 }, tools: ["androidstudio"] },
+  { code: "SOFT 320", title: "Software Architecture", term: { season: "spring", year: 2024 } },
+  { code: "ECE 337", title: "Computer Architecture", term: { season: "spring", year: 2024 } },
+  { code: "SOFT 310", title: "Software Testing & QA", term: { season: "fall", year: 2024 }, tools: ["java", "github"] },
+  { code: "CIS 326", title: "Formal Methods in Software Development", term: { season: "fall", year: 2024 } },
+  { code: "CIS 387", title: "System & Network Security", term: { season: "fall", year: 2024 }, tools: ["linux"] },
+  { code: "SPCH 111", title: "Public Speaking", term: { season: "fall", year: 2024 } },
+  { code: "LHES 240", title: "Leadership Seminar", term: { season: "spring", year: 2025 } },
+  { code: "CIS 350", title: "Requirements & Project Management", term: { season: "fall", year: 2025 } },
+  { code: "CIS 457", title: "Senior Design 1", term: { season: "fall", year: 2025 } },
+  { code: "CSC 330", title: "Operating Systems", term: { season: "fall", year: 2025 }, tools: ["linux"] },
+  { code: "SOFT 410", title: "Software Maintenance & Deployment", term: { season: "fall", year: 2025 }, tools: ["docker"] },
+  { code: "CIS 240", title: "Web Design", term: { season: "spring", year: 2026 }, tools: ["html5", "css"] },
+  { code: "CIS 390", title: "Distributed Programming", term: { season: "spring", year: 2026 } },
+  { code: "CIS 458", title: "Senior Design 2", term: { season: "spring", year: 2026 } },
+];
+
+/** The degree's headline courses, shown on its Journey row. */
+export const degreeCourses = ["SOFT 320", "SOFT 310", "CIS 387", "CSC 330", "CIS 390", "SOFT 410", "CIS 350", "CSC 220", "CIS 255", "CIS 239"];
+
+export function getCourse(code: string): Course | undefined {
+  return courses.find((c) => c.code === code);
+}
 
 export const contact = {
   heading: "CONTACT",

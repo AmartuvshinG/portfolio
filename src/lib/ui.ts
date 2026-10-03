@@ -57,7 +57,7 @@ const en = {
   connect: {
     aria: "Find me elsewhere",
     eyebrow: "Find me elsewhere",
-    title: "Signal",
+    title: "Links",
     lead: "The code, the career history, and the live product.",
     openProfile: "Open profile",
     openSite: "Open live site",
@@ -66,11 +66,10 @@ const en = {
     /** The live product's lamp in its panel readout. */
     live: "Live",
     recent: "Recently pushed",
-    /** The tuner band over the three channels. */
-    tuner: "Channel tuner",
-    scanning: "Scanning",
-    tuned: "Tuned",
-    tuneHint: "← → to tune",
+    /** The copy-link button on each panel. */
+    copy: (label: string) => `Copy ${label} link`,
+    copied: "Copied",
+    copyShort: "Copy link",
     langMix: "Language mix",
     repoLog: "Repo log",
     started: (name: string, when: string) => `${name}, started ${when}`,
@@ -93,12 +92,17 @@ const en = {
     preview: (title: string) => `${title} — open case file`,
   },
   craft: {
-    aria: "Capabilities",
+    aria: "Skills",
     eyebrow: "What I do",
-    title: "Craft",
+    title: "Skills",
     lead: "What I reach for, and where each one has been put to work.",
     proven: "Proven in",
     stack: "Tools",
+    /** The master logo dock under the header. */
+    dock: "Tech stack",
+    studied: "Studied at Gannon",
+    degree: (credits: number, deans: number) =>
+      `B.S. Software Engineering · ${credits} credits · Dean's List ×${deans}`,
     hint: "Keep scrolling",
     tools: {
       usability: "Usability testing",
@@ -329,26 +333,30 @@ const en = {
     openCase: "Spotfixes case file",
   },
   path: {
-    aria: "Path: where I've studied and worked",
+    aria: "Journey: where I've studied and worked",
     eyebrow: "Where I've been",
-    title: "Path",
+    title: "Journey",
     work: "Work",
     education: "Education",
     project: "Project",
-    /** The route log's data shards (path/Shard): each type's class code. */
-    shardCodes: { education: "EDU", work: "WRK", project: "PRJ" },
     months: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
     summer: "Summer",
+    summers: "Summers",
     graduated: "Graduated",
     /** City names on the globe (short) and over the record (long). */
     places: { ub: "Ulaanbaatar", erie: "Erie, PA", khanbogd: "Khanbogd" },
     placesLong: { ub: "Ulaanbaatar, Mongolia", erie: "Erie, Pennsylvania, USA" },
     transit: "In transit",
     distance: (km: number) => `≈ ${km.toLocaleString("en-US")} km`,
-    board: "Route log",
+    board: "Journey log",
     hint: "Scroll or ← → to travel",
     goTo: (title: string) => `Show ${title}`,
-    gpa: "GPA, final four semesters",
+    gpaRecent: "GPA · final 4 terms",
+    gpaOverall: "GPA · overall",
+    coursework: "Coursework",
+    moreCourses: (n: number) => `+${n} more`,
+    /** The flight row's date: the month the next entry begins. */
+    flightDate: (month: string, year: number) => `${month} ${year}`,
     openCase: "Spotfixes case file",
     freight: "Freight between the Ulaanbaatar HQ and the mine site",
     now: "Now",
@@ -438,7 +446,7 @@ const en = {
     },
     /** Trademark credit for the marks on the Signal panels (see BrandMarks) and the Path (see OrgMark). */
     credit:
-      "GitHub and the Invertocat logo are trademarks of GitHub, Inc. LinkedIn and the IN logo are registered trademarks of LinkedIn Corporation. The Gannon University, Mongolian University of Science and Technology, Chick-fil-A and Oyu Tolgoi logos belong to their owners and mark where I studied and worked; no endorsement is implied. The photographs on the Path belong to their owners.",
+      "GitHub and the Invertocat logo are trademarks of GitHub, Inc. LinkedIn and the IN logo are registered trademarks of LinkedIn Corporation. The Gannon University, Mongolian University of Science and Technology, Chick-fil-A and Oyu Tolgoi logos belong to their owners and mark where I studied and worked; no endorsement is implied. The photographs on the Journey belong to their owners. Tool logos in the Skills dock are trademarks of their owners.",
   },
   diagnostics: {
     title: "Diagnostics",
@@ -533,7 +541,7 @@ const mn: UiStrings = {
   connect: {
     aria: "Бусад сувгууд",
     eyebrow: "Бусад сувгууд",
-    title: "Холбоо",
+    title: "Холбоосууд",
     lead: "Код, ажлын туршлага, ажиллаж буй бүтээгдэхүүн.",
     openProfile: "Профайл нээх",
     openSite: "Сайт нээх",
@@ -541,10 +549,9 @@ const mn: UiStrings = {
     lastPush: "Сүүлд шинэчилсэн",
     live: "Ажиллаж байна",
     recent: "Сүүлд шинэчилсэн",
-    tuner: "Суваг тааруулагч",
-    scanning: "Хайж байна",
-    tuned: "Тааруулсан",
-    tuneHint: "← → сонгох",
+    copy: (label: string) => `${label} холбоосыг хуулах`,
+    copied: "Хуулсан",
+    copyShort: "Холбоос хуулах",
     langMix: "Хэлний харьцаа",
     repoLog: "Репогийн түүх",
     started: (name: string, when: string) => `${name}, ${when}-д эхэлсэн`,
@@ -572,6 +579,10 @@ const mn: UiStrings = {
     lead: "Миний ашигладаг хэрэгслүүд, тус бүрийг хаана хэрэгжүүлснийг харуулав.",
     proven: "Хэрэгжүүлсэн",
     stack: "Хэрэгсэл",
+    dock: "Технологийн стек",
+    studied: "Ганнонд судалсан",
+    degree: (credits: number, deans: number) =>
+      `Програм хангамжийн инженерчлэлийн бакалавр · ${credits} кредит · Деканы жагсаалт ×${deans}`,
     hint: "Үргэлжлүүлэн гүйлгэнэ үү",
     tools: {
       usability: "Хэрэглэгчийн туршилт",
@@ -808,22 +819,24 @@ const mn: UiStrings = {
     work: "Ажил",
     education: "Боловсрол",
     project: "Төсөл",
-    /* Latin on purpose, like a part number; the type word under it is
-       Mongolian. Awaiting Amartuvshin's OK. */
-    shardCodes: { education: "EDU", work: "WRK", project: "PRJ" },
     /* Mongolian months are ordinal ("6-р сар", "the 6th month"); the ordinal
        suffix is the same for all twelve. */
     months: Array.from({ length: 12 }, (_, i) => `${i + 1}-р сар`),
     summer: "Зун",
+    summers: "Зун",
     graduated: "Төгссөн",
     places: { ub: "Улаанбаатар", erie: "Эри, Пенсильвани", khanbogd: "Ханбогд" },
     placesLong: { ub: "Улаанбаатар, Монгол", erie: "Эри, Пенсильвани, АНУ" },
     transit: "Замд",
     distance: (km: number) => `≈ ${km.toLocaleString("mn-MN")} км`,
-    board: "Замын бүртгэл",
+    board: "Замналын бүртгэл",
     hint: "Гүйлгэх эсвэл ← → товчоор аялах",
     goTo: (title: string) => `${title} — харах`,
-    gpa: "Сүүлийн 4 улирлын голч дүн",
+    gpaRecent: "Голч · сүүлийн 4 улирал",
+    gpaOverall: "Голч · нийт",
+    coursework: "Судалсан хичээлүүд",
+    moreCourses: (n: number) => `+${n} хичээл`,
+    flightDate: (month: string, year: number) => `${year} оны ${month}`,
     openCase: "Spotfixes — дэлгэрэнгүй",
     freight: "Төв оффис болон уурхайн хоорондын ачаа тээвэр",
     now: "Одоо",
@@ -907,7 +920,7 @@ const mn: UiStrings = {
       via: "эх сурвалж",
     },
     credit:
-      "GitHub болон Invertocat лого нь GitHub, Inc.-ийн барааны тэмдэг. LinkedIn болон IN лого нь LinkedIn Corporation-ийн бүртгэлтэй барааны тэмдэг. Gannon University, ШУТИС, Chick-fil-A, Оюу Толгойн лого нь эзэмшигчдийнх бөгөөд миний суралцаж, ажилласан газрыг заана; ямар нэг дэмжлэг илэрхийлээгүй. Замнал хэсгийн гэрэл зургууд эзэмшигчдийнх.",
+      "GitHub болон Invertocat лого нь GitHub, Inc.-ийн барааны тэмдэг. LinkedIn болон IN лого нь LinkedIn Corporation-ийн бүртгэлтэй барааны тэмдэг. Gannon University, ШУТИС, Chick-fil-A, Оюу Толгойн лого нь эзэмшигчдийнх бөгөөд миний суралцаж, ажилласан газрыг заана; ямар нэг дэмжлэг илэрхийлээгүй. Замнал хэсгийн гэрэл зургууд эзэмшигчдийнх. Ур чадвар хэсгийн хэрэгслийн логонууд эзэмшигчдийнх нь барааны тэмдэг.",
   },
   diagnostics: {
     title: "Оношилгоо",

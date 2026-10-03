@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { motion, useScroll, useTransform, type MotionValue } from "framer-motion";
+import { motion, useScroll, useSpring, useTransform, type MotionValue } from "framer-motion";
 import { ArrowUpRight } from "lucide-react";
 import { GlareCard } from "@/components/motion/GlareCard";
 import { sectionIndex, type SocialLink } from "@/lib/content";
@@ -12,19 +12,24 @@ import { ChapterSeam } from "@/components/chrome/ChapterSeam";
 import { ChannelField } from "@/components/ui/ChannelField";
 import { GitHubMark, LinkedInMark } from "@/components/ui/BrandMarks";
 import { ScriptLabel } from "@/components/ui/ScriptLabel";
+import { brandTile, TechMark, type TechKey } from "@/components/ui/TechMarks";
 import type { GitHubSummary } from "@/lib/github";
 
 /**
- * Signal: the three places to find him, as a bank of terminals.
+ * Links (was Signal): the three places to find him, as a bank of terminals.
  *
  * Three full-height panels fill the frame edge to edge. The panel under the
  * pointer takes two and a half times its share of the row and the other two
- * give way, so the row is always exactly full. Above them a **tuner** tracks
- * the accordion: three stations sit over the panels' centres and slide with
- * them, a needle locks onto the open channel (or sweeps, scanning, when none
- * is), and a small scope draws that channel's carrier — a square wave for the
- * code, a sine for the network, a heartbeat for the live product. Structured,
- * never noise: a trace that wandered at random would read as a fault.
+ * give way, so the row is always exactly full.
+ *
+ * **Motion signature: power-on.** As the section scrolls in, each terminal
+ * switches on as a CRT does: one bright line across the dark, which opens top
+ * and bottom into the picture under a flash of white that fades as it
+ * settles. Staggered across the three and scrubbed by the scroll, so it is
+ * reversible and still when the scroll is; at rest nothing is scaled. The
+ * corner arrow is magnetic, leaning toward the pointer, and each panel has a
+ * copy-link button beside it. (A tuner band with a needle and a scope used to
+ * sit over the row; it repeated what the accordion says, and it went.)
  *
  * Every panel is a terminal now rather than a lit slab: a dark CRT ground,
  * the channel's mark kept small, and the data up front in holo (the colour
@@ -63,18 +68,6 @@ const PANEL_SPRING = { type: "spring", stiffness: 210, damping: 30 } as const;
 
 type Kind = "github" | "linkedin" | "live";
 const kindOf = (s: SocialLink): Kind => s.mark ?? "live";
-
-/** Each panel's centre across the row, 0…1, for the tuner's stations. */
-function stationsFor(count: number, open: number | null): number[] {
-  const shares = Array.from({ length: count }, (_, i) => (open === null ? REST : open === i ? OPEN : SHUT));
-  const total = shares.reduce((a, b) => a + b, 0);
-  let acc = 0;
-  return shares.map((s) => {
-    const c = (acc + s / 2) / total;
-    acc += s;
-    return c;
-  });
-}
 
 export function Connect({ github }: { github: GitHubSummary | null }) {
   const { c, t } = useI18n();
@@ -133,13 +126,12 @@ export function Connect({ github }: { github: GitHubSummary | null }) {
     const next = (at + (e.key === "ArrowRight" ? 1 : -1) + links.length) % links.length;
     links[next].focus();
   };
-  const tuneTo = useCallback((i: number) => panelLinks()[i]?.focus(), [panelLinks]);
 
   return (
     <section
       id="connect"
       data-act="deck"
-      data-chapter="SIGNAL"
+      data-chapter="LINKS"
       ref={ref}
       className="relative flex min-h-[92vh] flex-col justify-center overflow-hidden py-24 md:py-32"
       aria-label={t.connect.aria}
@@ -162,18 +154,9 @@ export function Connect({ github }: { github: GitHubSummary | null }) {
           <p className="max-w-md text-base leading-relaxed text-muted md:pb-3 md:text-right">{t.connect.lead}</p>
         </div>
 
-        {accordion && (
-          <Tuner
-            socials={socials}
-            tuned={tuned}
-            live={inView}
-            onPick={tuneTo}
-          />
-        )}
-
         <ul
           ref={listRef}
-          className={`flex flex-col gap-2 md:h-[64vh] md:min-h-[500px] md:flex-row ${accordion ? "mt-4" : "mt-12 md:mt-16"}`}
+          className="mt-12 flex flex-col gap-2 md:mt-16 md:h-[64vh] md:min-h-[500px] md:flex-row"
           onMouseLeave={() => setTuned(null)}
           onKeyDown={onKeyDown}
           onBlur={(e) => {
@@ -203,191 +186,6 @@ export function Connect({ github }: { github: GitHubSummary | null }) {
       </div>
     </section>
   );
-}
-
-/* ------------------------------------------------------------------------ */
-/* The tuner                                                                 */
-/* ------------------------------------------------------------------------ */
-
-/**
- * A band over the row. Stations sit over each panel's centre and travel with
- * the accordion on the panels' own spring; the needle locks to the open one,
- * or sweeps the band while nothing is tuned. Pointer-only and decorative:
- * the same channels are links below, reached by Tab and the arrow keys, so
- * the band is hidden from assistive tech and out of the tab order.
- */
-function Tuner({
-  socials,
-  tuned,
-  live,
-  onPick,
-}: {
-  socials: SocialLink[];
-  tuned: number | null;
-  live: boolean;
-  onPick: (i: number) => void;
-}) {
-  const { t } = useI18n();
-  const xs = stationsFor(socials.length, tuned);
-  const code = (i: number) => `CH-${String(i + 1).padStart(2, "0")}`;
-
-  return (
-    <div aria-hidden className="mt-12 flex h-14 items-stretch gap-4 md:mt-14">
-      {/* Status: what the band is doing. */}
-      <div className="flex w-44 shrink-0 flex-col justify-center gap-1 border-l border-[color-mix(in_srgb,var(--color-holo)_45%,transparent)] pl-3 tag">
-        <span className="text-muted">{t.connect.tuner}</span>
-        <span className="flex items-center gap-2 text-[var(--color-holo)]">
-          <span
-            className={`h-1.5 w-1.5 rounded-full bg-[var(--color-holo)] shadow-[0_0_8px_var(--color-holo)] ${tuned === null && live ? "animate-blink" : ""}`}
-          />
-          {tuned === null ? t.connect.scanning : `${t.connect.tuned} · ${code(tuned)}`}
-        </span>
-      </div>
-
-      {/* The band: a ruler of ticks, the stations, the needle. */}
-      <div className="tuner-band relative min-w-0 flex-1">
-        {xs.map((x, i) => (
-          <motion.button
-            key={socials[i].label}
-            type="button"
-            tabIndex={-1}
-            onClick={() => onPick(i)}
-            className="group/st absolute top-0 flex h-full -translate-x-1/2 flex-col items-center justify-between py-1"
-            initial={false}
-            animate={{ left: `${x * 100}%` }}
-            transition={PANEL_SPRING}
-          >
-            <span
-              className={`tag transition-colors duration-300 ${tuned === i ? "text-[var(--color-holo)]" : "text-faint group-hover/st:text-fg"}`}
-            >
-              {code(i)}
-            </span>
-            <span className={`h-3 w-px transition-colors duration-300 ${tuned === i ? "bg-[var(--color-holo)]" : "bg-line-strong"}`} />
-            <span
-              className={`tag normal-case transition-colors duration-300 ${tuned === i ? "text-fg" : "text-muted"}`}
-            >
-              {socials[i].label}
-            </span>
-          </motion.button>
-        ))}
-        {/* The needle: locked over a station, or sweeping. */}
-        {tuned === null ? (
-          <span
-            className="tuner-needle tuner-sweep"
-            style={{ animationPlayState: live ? "running" : "paused" }}
-          />
-        ) : (
-          <motion.span
-            className="tuner-needle"
-            initial={false}
-            animate={{ left: `${xs[tuned] * 100}%` }}
-            transition={PANEL_SPRING}
-          />
-        )}
-      </div>
-
-      {/* The scope. */}
-      <div className="hidden w-48 shrink-0 flex-col justify-center gap-1 lg:flex">
-        <Scope kind={tuned === null ? null : kindOf(socials[tuned])} live={live} />
-        <span className="tag text-right normal-case text-muted">{t.connect.tuneHint}</span>
-      </div>
-    </div>
-  );
-}
-
-/**
- * The carrier of the tuned channel, drawn on a small canvas at most 30
- * times a second, only while the section is near the screen. A shape per
- * channel; switching channel eases one shape into the next rather than
- * cutting, and scanning is a low, slow sum of two sines.
- */
-function Scope({ kind, live }: { kind: Kind | null; live: boolean }) {
-  const ref = useRef<HTMLCanvasElement>(null);
-  const kindRef = useRef(kind);
-  useEffect(() => {
-    kindRef.current = kind;
-  }, [kind]);
-  const reduced = useReducedMotion();
-
-  useEffect(() => {
-    const canvas = ref.current;
-    if (!canvas || !live) return;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-    const dpr = Math.min(window.devicePixelRatio || 1, 2);
-    const W = 192;
-    const H = 28;
-    canvas.width = W * dpr;
-    canvas.height = H * dpr;
-    ctx.scale(dpr, dpr);
-    const holo = getComputedStyle(document.documentElement).getPropertyValue("--color-holo").trim() || "#8fe9f0";
-
-    const shape = (k: Kind | null, x: number) => {
-      switch (k) {
-        case "github": // a square wave: on, off, the code's clock
-          return Math.sin(x * 0.34) > 0 ? 0.75 : -0.75;
-        case "linkedin": // a sine: the network's hum
-          return Math.sin(x * 0.22) * 0.8;
-        case "live": {
-          // a heartbeat every ~60px: the service is up
-          const p = ((x % 60) + 60) % 60;
-          if (p < 4) return -0.3 * (p / 4);
-          if (p < 7) return -0.3 + 1.3 * ((p - 4) / 3);
-          if (p < 11) return 1 - 1.6 * ((p - 7) / 4);
-          if (p < 15) return -0.6 + 0.6 * ((p - 11) / 4);
-          return 0;
-        }
-        default: // scanning
-          return Math.sin(x * 0.09) * 0.22 + Math.sin(x * 0.31 + 1.3) * 0.12;
-      }
-    };
-
-    let raf = 0;
-    let last = 0;
-    let from: Kind | null = kindRef.current;
-    let to: Kind | null = kindRef.current;
-    let mix = 1;
-    const draw = (now: number) => {
-      raf = requestAnimationFrame(draw);
-      if (now - last < 33) return;
-      const dt = last ? (now - last) / 1000 : 0;
-      last = now;
-      if (kindRef.current !== to) {
-        from = to;
-        to = kindRef.current;
-        mix = 0;
-      }
-      mix = Math.min(1, mix + dt * 4);
-      const phase = reduced ? 0 : now * 0.06;
-      ctx.clearRect(0, 0, W, H);
-      // The graticule.
-      ctx.strokeStyle = "rgba(228,241,243,0.10)";
-      ctx.lineWidth = 1;
-      ctx.beginPath();
-      ctx.moveTo(0, H / 2 + 0.5);
-      ctx.lineTo(W, H / 2 + 0.5);
-      ctx.stroke();
-      // The trace.
-      ctx.strokeStyle = holo;
-      ctx.shadowColor = holo;
-      ctx.shadowBlur = 6;
-      ctx.lineWidth = 1.25;
-      ctx.beginPath();
-      for (let x = 0; x <= W; x += 1) {
-        const v = shape(from, x + phase) * (1 - mix) + shape(to, x + phase) * mix;
-        // Fade the trace in from the left edge, like a phosphor sweep.
-        const y = H / 2 - v * (H / 2 - 3);
-        if (x === 0) ctx.moveTo(x, y);
-        else ctx.lineTo(x, y);
-      }
-      ctx.stroke();
-      ctx.shadowBlur = 0;
-    };
-    raf = requestAnimationFrame(draw);
-    return () => cancelAnimationFrame(raf);
-  }, [live, reduced]);
-
-  return <canvas ref={ref} className="h-7 w-48" />;
 }
 
 /* ------------------------------------------------------------------------ */
@@ -422,19 +220,48 @@ function ChannelPanel({
   const { t } = useI18n();
   const kind = kindOf(social);
   const openLabel = social.shot ? t.connect.openSite : t.connect.openProfile;
-  /* The arrival: the panels rise and settle in sequence as the section enters. */
-  const rise = useTransform(open, [0, 1], [70 + index * 26, 0]);
-  const fade = useTransform(open, [0, 0.55 + (index / count) * 0.35], [0, 1]);
+  /* The arrival, per panel: its own window of the section's progress. */
+  const a = (index / count) * 0.32;
+  const p = useTransform(open, (v) => Math.min(1, Math.max(0, (v - a) / 0.62)));
+  /* A line first, drawn out from the centre … */
+  const sx = useTransform(p, (v) => 0.04 + 0.96 * easeOut(Math.min(1, v / 0.32)));
+  /* … then opening into the picture. */
+  const sy = useTransform(p, (v) => 0.008 + 0.992 * easeOut(Math.min(1, Math.max(0, (v - 0.26) / 0.5))));
+  const flash = useTransform(p, [0, 0.2, 0.42, 0.85], [0, 0.95, 0.55, 0]);
+  const shown = useTransform(p, [0, 0.06], [0, 1]);
+
+  /* The magnetic arrow: it leans toward the pointer, at most a few px. */
+  const ax = useSpring(0, { stiffness: 260, damping: 18 });
+  const ay = useSpring(0, { stiffness: 260, damping: 18 });
+  const arrowRef = useRef<HTMLSpanElement>(null);
+  const lean = (e: React.PointerEvent) => {
+    const r = arrowRef.current?.getBoundingClientRect();
+    if (!r || reduced || e.pointerType !== "mouse") return;
+    const dx = e.clientX - (r.left + r.width / 2);
+    const dy = e.clientY - (r.top + r.height / 2);
+    const d = Math.hypot(dx, dy) || 1;
+    const pull = Math.min(12, d * 0.08);
+    ax.set((dx / d) * pull);
+    ay.set((dy / d) * pull);
+  };
 
   return (
     <motion.li
       className="relative min-w-0 md:h-full"
-      style={reduced ? undefined : { y: rise, opacity: fade }}
       animate={accordion ? { flexGrow: grow } : undefined}
       transition={PANEL_SPRING}
       onMouseEnter={onEnter}
       onFocus={onEnter}
+      onPointerMove={lean}
+      onPointerLeave={() => {
+        ax.set(0);
+        ay.set(0);
+      }}
     >
+      <motion.div
+        className="relative h-full"
+        style={reduced ? undefined : { scaleX: sx, scaleY: sy, opacity: shown }}
+      >
       {/* `mode="flat"`: the panel is already growing; a tilt on top of that
           reads as wobble rather than as depth. The glare still tracks. */}
       <GlareCard
@@ -477,10 +304,12 @@ function ChannelPanel({
               <span className="font-mono text-xs tracking-[0.24em] text-fg">
                 <span className="text-[var(--color-holo)]">CH-{String(index + 1).padStart(2, "0")}</span> · {social.code}
               </span>
-              <ArrowUpRight
-                size={20}
-                className="shrink-0 text-muted transition-transform duration-300 group-hover/panel:-translate-y-1 group-hover/panel:translate-x-1 group-hover/panel:text-fg"
-              />
+              <motion.span ref={arrowRef} style={{ x: ax, y: ay }} className="shrink-0">
+                <ArrowUpRight
+                  size={22}
+                  className="text-muted transition-colors duration-300 group-hover/panel:text-fg"
+                />
+              </motion.span>
             </div>
             <Readout kind={kind} github={github} expanded={expanded} live={live} />
             {kind === "github" && github && (
@@ -530,8 +359,79 @@ function ChannelPanel({
             </div>
           </div>
         </div>
+        {/* The power-on flash: white over everything, fading as it settles. */}
+        {!reduced && (
+          <motion.span
+            aria-hidden
+            className="pointer-events-none absolute inset-0 z-20 bg-[#eafcff] mix-blend-screen"
+            style={{ opacity: flash }}
+          />
+        )}
       </GlareCard>
+      <CopyLink href={social.href} label={social.label} expanded={expanded} />
+      </motion.div>
     </motion.li>
+  );
+}
+
+const easeOut = (x: number) => 1 - (1 - x) ** 3;
+
+/**
+ * Copy the channel's address. A sibling of the panel's link, never inside it
+ * (a button in a link is invalid HTML). The icon morphs from two sheets to a
+ * tick, and back after a moment.
+ */
+function CopyLink({ href, label, expanded }: { href: string; label: string; expanded: boolean }) {
+  const { t } = useI18n();
+  const [done, setDone] = useState(false);
+  useEffect(() => {
+    if (!done) return;
+    const id = window.setTimeout(() => setDone(false), 1600);
+    return () => window.clearTimeout(id);
+  }, [done]);
+  return (
+    <button
+      type="button"
+      onClick={async () => {
+        try {
+          await navigator.clipboard.writeText(href);
+          setDone(true);
+        } catch {
+          /* No clipboard here (an insecure origin): the link itself still works. */
+        }
+      }}
+      aria-label={t.connect.copy(label)}
+      className="tag absolute right-12 top-2 z-30 inline-flex min-h-11 items-center gap-2 rounded-md px-2.5 text-fg/80 transition-[opacity,color,background-color] duration-300 hover:bg-white/5 hover:text-fg focus-visible:!opacity-100 md:right-14 md:top-3"
+      style={{ opacity: expanded ? 1 : 0 }}
+    >
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden className="shrink-0">
+        <motion.path
+          d="M5.5 5.5h7v7h-7z M3.5 10.5v-7h7"
+          stroke="currentColor"
+          strokeWidth="1.4"
+          strokeLinejoin="round"
+          initial={false}
+          animate={{ pathLength: done ? 0 : 1, opacity: done ? 0 : 1 }}
+          transition={{ duration: 0.25 }}
+        />
+        <motion.path
+          d="M3 8.5l3.2 3L13 4.5"
+          stroke="var(--color-holo)"
+          strokeWidth="1.8"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          initial={false}
+          animate={{ pathLength: done ? 1 : 0, opacity: done ? 1 : 0 }}
+          transition={{ duration: 0.3, delay: done ? 0.12 : 0 }}
+        />
+      </svg>
+      <span aria-hidden className={done ? "text-[var(--color-holo)]" : undefined}>
+        {done ? t.connect.copied : t.connect.copyShort}
+      </span>
+      <span role="status" className="sr-only">
+        {done ? t.connect.copied : ""}
+      </span>
+    </button>
   );
 }
 
@@ -682,6 +582,17 @@ function ReadoutLine({ text, order, expanded }: { text: string; order: number; e
   );
 }
 
+/** GitHub's language names, as the dock's marks. */
+const LANG_MARKS: Record<string, TechKey | undefined> = {
+  Python: "python",
+  JavaScript: "javascript",
+  TypeScript: "typescript",
+  Java: "java",
+  HTML: "html5",
+  CSS: "css",
+  "C++": "cpp",
+};
+
 /**
  * The languages of his own repos, as one bar cut into shares. Each share is
  * its slice of the spectrum ramp (one gradient laid across the whole bar and
@@ -713,12 +624,30 @@ function LanguageMix({ languages }: { languages: GitHubSummary["languages"] }) {
           />
         ))}
       </div>
-      <ul className="tag flex flex-wrap gap-x-4 gap-y-1 text-fg/85">
-        {segs.map((s) => (
-          <li key={s.name}>
-            {s.name} <span className="tabular text-[var(--color-holo)]">{Math.round(s.share * 100)}%</span>
-          </li>
-        ))}
+      <ul className="tag flex flex-wrap gap-x-4 gap-y-1.5 text-fg/85">
+        {segs.map((s, i) => {
+          const mark = LANG_MARKS[s.name];
+          return (
+            <motion.li
+              key={s.name}
+              className="flex items-center gap-1.5"
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3, delay: 0.15 + i * 0.06 }}
+            >
+              {mark && (
+                <span
+                  aria-hidden
+                  className="flex h-5 w-5 items-center justify-center rounded-[5px]"
+                  style={{ background: brandTile(mark).tile, color: brandTile(mark).ink }}
+                >
+                  <TechMark name={mark} size={12} />
+                </span>
+              )}
+              {s.name} <span className="tabular text-[var(--color-holo)]">{Math.round(s.share * 100)}%</span>
+            </motion.li>
+          );
+        })}
       </ul>
     </figure>
   );

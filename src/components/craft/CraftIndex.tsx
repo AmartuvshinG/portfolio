@@ -8,7 +8,9 @@ import type { Capability } from "@/lib/content";
 import { useI18n } from "@/lib/i18n";
 import { caseHash, openCase } from "@/lib/caseFile";
 import { ICONS } from "@/components/ui/CapabilityCard";
-import { TechMark, TechStrip, techLabel } from "@/components/ui/TechMarks";
+import { TechMark, techLabel } from "@/components/ui/TechMarks";
+import { LogoDock } from "@/components/ui/LogoDock";
+import { CourseChips } from "@/components/ui/CourseChips";
 import {
   HoverSlider,
   HoverSliderImageWrap,
@@ -177,7 +179,7 @@ function Slide({ item, index, live }: { item: Capability; index: number; live: b
 
   return (
     <article className="flex h-full flex-col overflow-hidden rounded-[4px] bg-[#08181c] ring-1 ring-inset ring-line-strong">
-      <div className="relative aspect-[16/9] max-h-[42svh] w-full overflow-hidden border-b border-line">
+      <div className="relative aspect-[16/9] max-h-[34svh] w-full overflow-hidden border-b border-line">
         {item.shot ? (
           <Image
             src={item.shot}
@@ -196,7 +198,7 @@ function Slide({ item, index, live }: { item: Capability; index: number; live: b
         </span>
       </div>
 
-      <div className="flex flex-col gap-4 p-6 lg:p-8">
+      <div className="flex flex-col gap-4 p-6 lg:px-8 lg:py-6">
         <h3 className="relative font-tech text-[clamp(1.4rem,1.9vw,2rem)] font-bold uppercase leading-tight text-fg">
           {/* The change lands with a split: the two ramp ends pull in onto
               the title and vanish. Once, on the incoming slide only. Generated
@@ -220,8 +222,14 @@ function Slide({ item, index, live }: { item: Capability; index: number; live: b
           <span className="relative">{item.title}</span>
         </h3>
         <p className="max-w-[60ch] text-base leading-relaxed text-fg/85 lg:text-lg">{item.description}</p>
+        {item.courses && item.courses.length > 0 && (
+          <div>
+            <p className="micro mb-2">{t.craft.studied}</p>
+            <CourseChips codes={item.courses} play={live} delay={0.25} compact />
+          </div>
+        )}
         <div className="flex flex-wrap items-end justify-between gap-4">
-          <TechStrip stack={item.stack} labels={t.craft.tools} />
+          <LogoDock keys={item.stack} labels={t.craft.tools} size="sm" align="start" />
           {proof && (
             <a
               href={caseHash(proof.slug)}

@@ -12,7 +12,9 @@ import type { Capability } from "@/lib/content";
 import { useI18n } from "@/lib/i18n";
 import { caseHash, openCase } from "@/lib/caseFile";
 import { ICONS } from "@/components/ui/CapabilityCard";
-import { TechStrip, techLabel } from "@/components/ui/TechMarks";
+import { techLabel } from "@/components/ui/TechMarks";
+import { LogoDock } from "@/components/ui/LogoDock";
+import { CourseChips } from "@/components/ui/CourseChips";
 import { cn, pad } from "@/lib/utils";
 
 /*
@@ -91,8 +93,14 @@ export function CardBody({
       )}
 
       <motion.div style={{ x: stripX }} className="relative mt-auto pt-8">
-        <p className="micro mb-3">{t.craft.stack}</p>
-        <TechStrip stack={item.stack} labels={t.craft.tools} />
+        {item.courses && item.courses.length > 0 && (
+          <div className="mb-5">
+            <p className="micro mb-2">{t.craft.studied}</p>
+            <CourseChips codes={item.courses} compact />
+          </div>
+        )}
+        <p className="micro">{t.craft.stack}</p>
+        <LogoDock keys={item.stack} labels={t.craft.tools} size="md" align="start" />
       </motion.div>
 
       {proof && (

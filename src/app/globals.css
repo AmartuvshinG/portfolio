@@ -655,6 +655,32 @@ html.hud-cursor * {
   .neon-tube[data-lit][data-idle]::before { animation: none; }
 }
 
+/* A split-flap cell turning over (motion/SplitFlap): the new character
+   drops in from the top half, as a flap falls. Transform and opacity only. */
+.flap-tick {
+  animation: flap-tick 0.11s cubic-bezier(0.3, 0, 0.2, 1) both;
+  transform-origin: 50% 50%;
+  backface-visibility: hidden;
+}
+@keyframes flap-tick {
+  0% { transform: rotateX(-82deg); opacity: 0.35; }
+  100% { transform: rotateX(0deg); opacity: 1; }
+}
+
+/* A logo-dock tile's tooltip pointer (ui/LogoDock). */
+.dock-tip::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 100%;
+  width: 8px;
+  height: 8px;
+  background: inherit;
+  transform: translate(-50%, -50%) rotate(45deg);
+  border-right: inherit;
+  border-bottom: inherit;
+}
+
 /* The ink intro (Preloader). Its curtain is in the server HTML so that first
    paint is the dark room; visitors who prefer reduced motion must never see
    it, and this hides it before any script has run. (No-JS visitors get the

@@ -16,7 +16,8 @@ import { useI18n } from "@/lib/i18n";
 import { caseHash, openCase } from "@/lib/caseFile";
 import { scaleIn } from "@/lib/motion";
 import { GlareCard } from "@/components/motion/GlareCard";
-import { TechStrip } from "@/components/ui/TechMarks";
+import { LogoDock } from "@/components/ui/LogoDock";
+import { CourseChips } from "@/components/ui/CourseChips";
 import { cn } from "@/lib/utils";
 
 export const ICONS: Record<Capability["icon"], LucideIcon> = {
@@ -79,7 +80,13 @@ export function CapabilityCard({ item }: { item: Capability }) {
         {item.description}
       </p>
 
-      <TechStrip stack={item.stack} labels={t.craft.tools} className="mt-6" />
+      {item.courses && item.courses.length > 0 && (
+        <div className="mt-6">
+          <p className="micro mb-2">{t.craft.studied}</p>
+          <CourseChips codes={item.courses} compact instant />
+        </div>
+      )}
+      <LogoDock keys={item.stack} labels={t.craft.tools} size="sm" align="start" className="mt-2" />
 
       {proof && (
         <a

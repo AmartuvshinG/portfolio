@@ -17,8 +17,8 @@ interface AnimatedCounterProps {
  * curve and tabular figures so width never shifts. Reduced-motion users see
  * the final value immediately.
  *
- * Counts at the value's own precision, so a GPA of 3.68 ticks through
- * hundredths and lands on 3.68 rather than rounding to 4.
+ * Counts at the value's own precision, so a GPA of 3.69 ticks through
+ * hundredths and lands on 3.69 rather than rounding to 4.
  */
 export function AnimatedCounter({
   value,

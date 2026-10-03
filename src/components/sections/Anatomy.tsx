@@ -78,7 +78,7 @@ export function Anatomy() {
       ref={ref}
       id="anatomy"
       data-act="void"
-      data-chapter="INSIDE"
+      data-chapter="CAPSTONE"
       aria-label={t.anatomy.aria}
       className="relative overflow-x-clip"
       style={pinned ? { height: `${(n - 1 + 2 * EDGE) * STEP_VH + 100}vh` } : undefined}

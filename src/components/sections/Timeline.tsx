@@ -9,10 +9,11 @@ import {
   useMotionValue,
   useMotionValueEvent,
   useScroll,
+  useSpring,
   useTransform,
   type MotionValue,
 } from "framer-motion";
-import { sectionIndex, timeline as baseTimeline, type TimelineEntry } from "@/lib/content";
+import { degreeCourses, education, sectionIndex, timeline as baseTimeline, type TimelineEntry } from "@/lib/content";
 import { useI18n } from "@/lib/i18n";
 import { openCase } from "@/lib/caseFile";
 import { isInteractive, modalOpen } from "@/lib/keys";
@@ -25,7 +26,9 @@ import { useSmoothScroll } from "@/components/chrome/SmoothScroll";
 import { ChapterSeam } from "@/components/chrome/ChapterSeam";
 import { SectionHeader } from "@/components/ui/SectionHeader";
 import { IconArrowRight } from "@/components/ui/HudIcons";
-import { ScrambleText } from "@/components/motion/ScrambleText";
+import { SplitFlap } from "@/components/motion/SplitFlap";
+import { AnimatedCounter } from "@/components/motion/AnimatedCounter";
+import { CourseChips } from "@/components/ui/CourseChips";
 import { RouteGlobe } from "@/components/path/RouteGlobe";
 import { DateStamp, yearNeon, type PathWords } from "@/components/path/NeonStamp";
 import { ScriptLabel } from "@/components/ui/ScriptLabel";
@@ -166,7 +169,7 @@ export function Timeline() {
       ref={ref}
       id="timeline"
       data-act="deck"
-      data-chapter="ROUTE"
+      data-chapter="JOURNEY"
       aria-label={t.path.aria}
       /* `clip`, not `hidden`: it trims the title card's streak at the edge of
          a phone without making a scroll container, so the stage still sticks. */
@@ -208,6 +211,9 @@ function Stage({ sectionRef: ref }: { sectionRef: React.RefObject<HTMLElement | 
     out: OUT ? span(p, OUT.start, OUT.end) : 1,
     back: BACK ? span(p, BACK.start, BACK.end) : 0,
     freight: span(p, BEATS.freight[0], BEATS.freight[1]),
+    /* The shockwave runs as the camera settles over the city it landed at. */
+    landErie: OUT ? span(p, OUT.end - 0.2, OUT.end + 0.85) : 0,
+    landUb: BACK ? span(p, BACK.end - 0.2, BACK.end + 0.85) : 0,
   }));
 
   const [moment, setMoment] = useState<Moment>(() => momentAt(pos.get()));
@@ -311,13 +317,26 @@ function Extra({
 }) {
   const { c } = useI18n();
   if (entry.extra === "gpa") {
+    /* Both, as the transcript prints them: the recent run first, because it
+       is the trend, and the cumulative beside it, so nothing is hidden. */
+    const figs = [
+      { v: education.gpaRecent, label: words.gpaRecent, lead: true },
+      { v: education.gpaOverall, label: words.gpaOverall, lead: false },
+    ];
     return (
-      <div className={cn("flex items-baseline gap-3", className)}>
-        <span className={cn("display-caps tabular text-fg", compact ? "text-xl" : "text-2xl")}>
-          3.68<span className="text-base text-muted">/4</span>
-        </span>
-        <span className="micro">{words.gpa}</span>
-      </div>
+      <dl className={cn("flex gap-y-2", compact ? "flex-nowrap gap-x-5" : "flex-wrap gap-x-8", className)}>
+        {figs.map((f) => (
+          <div key={f.label} className="flex flex-col">
+            <dt className={cn("micro order-2", compact && "max-w-[9.5rem] leading-snug")}>{f.label}</dt>
+            <dd
+              className={cn("display-caps tabular", compact ? "text-xl" : "text-2xl", f.lead ? "text-fg" : "text-fg/75")}
+            >
+              <AnimatedCounter value={f.v} duration={1100} />
+              <span className="text-base text-muted">/4</span>
+            </dd>
+          </div>
+        ))}
+      </dl>
     );
   }
   if (entry.extra === "spotfixes") {
@@ -362,6 +381,33 @@ function Board({
   className?: string;
 }) {
   const reached = moment.kind === "entry" ? moment.i : BEATS.legs[moment.k].after;
+
+  /* Eleven rows and two flights are taller than the board on a laptop, so
+     the list follows the journey: whichever row is open is brought to the
+     upper third of the board. The list is a clipped box scrolled from here,
+     never by the reader, and its edges fade where rows run on. */
+  const listRef = useRef<HTMLOListElement>(null);
+  const focus = moment.kind === "entry" ? `e${moment.i}` : `l${moment.k}`;
+  useEffect(() => {
+    const ol = listRef.current;
+    const row = ol?.querySelector<HTMLElement>(`[data-row="${focus}"]`);
+    if (!ol || !row) return;
+    /* Upper third if it fits; otherwise as much of the row as fits, never
+       losing its top. */
+    const bring = () => {
+      const top = row.offsetTop;
+      const end = top + row.offsetHeight;
+      let to = top - ol.clientHeight * 0.28;
+      if (end > to + ol.clientHeight) to = end - ol.clientHeight + 6;
+      ol.scrollTo({ top: Math.max(0, Math.min(to, top - 4)), behavior: "smooth" });
+    };
+    bring();
+    /* Again once the row has opened: before that the list may not overflow
+       yet, and the scroll clamps short of the row. */
+    const id = window.setTimeout(bring, 460);
+    return () => window.clearTimeout(id);
+  }, [focus]);
+
   return (
     <div
       className={cn(
@@ -379,21 +425,34 @@ function Board({
           {words.openCase} <IconArrowRight size={13} />
         </button>
       </div>
-      <ol className="min-h-0 overflow-hidden">
+      <ol
+        ref={listRef}
+        className="relative min-h-0 overflow-hidden [mask-image:linear-gradient(to_bottom,transparent,black_18px,black_calc(100%-28px),transparent)]"
+      >
         {entries.map((e, i) => {
           const on = moment.kind === "entry" && moment.i === i;
           const leg = BEATS.legs.find((l) => l.after === i);
           const legOn = !!leg && moment.kind === "leg" && BEATS.legs[moment.k] === leg;
           return (
             <li key={`${e.title}-${i}`}>
-              {leg && <LegRow leg={leg} on={legOn} done={i <= reached} words={words} pos={pos} />}
-              <div className="relative">
+              {leg && (
+                <LegRow
+                  leg={leg}
+                  on={legOn}
+                  done={i <= reached}
+                  words={words}
+                  pos={pos}
+                  arrives={e.start}
+                  row={`l${BEATS.legs.indexOf(leg)}`}
+                />
+              )}
+              <div className="relative" data-row={`e${i}`}>
                 <button
                   type="button"
                   onClick={() => goTo(i)}
                   aria-current={on ? "step" : undefined}
                   className={cn(
-                    "grid w-full grid-cols-[3.75rem_minmax(0,1fr)] items-center gap-4 border-b border-line px-2 py-2.5 text-left transition-[opacity,background-color] duration-300 [@media(max-height:820px)]:py-1",
+                    "grid w-full grid-cols-[3.75rem_minmax(0,1fr)_auto] items-center gap-4 border-b border-line px-2 py-2 text-left transition-[opacity,background-color] duration-300 [@media(max-height:820px)]:py-1",
                     on
                       ? "bg-[color-mix(in_srgb,var(--color-hazard)_9%,transparent)]"
                       : "hover:bg-[color-mix(in_srgb,var(--color-fg)_4%,transparent)]",
@@ -412,15 +471,28 @@ function Board({
                     style={shardLamp(e.kind)}
                   />
                   <span className="display-caps tabular text-base" style={{ color: yearNeon(e.start.year) }}>
-                    {e.start.year}
+                    {on ? <SplitFlap key={`y${i}`} text={String(e.start.year)} flips={6} stagger={0.05} /> : e.start.year}
                   </span>
-                  <span className="line-clamp-2 min-w-0 font-tech text-base font-semibold uppercase leading-tight tracking-wide text-fg lg:text-lg lg:leading-tight">
-                    {on ? <ScrambleText key={`s${i}-${e.title}`} text={e.title} immediate speed={28} /> : e.title}
+                  <span className="line-clamp-2 min-w-0 font-tech text-base font-semibold uppercase leading-tight tracking-wide text-fg lg:text-[1.0625rem] lg:leading-tight">
+                    {on ? <SplitFlap key={`t${i}`} text={e.title} delay={0.08} /> : e.title}
                   </span>
+                  {/* The place's logo, small, so the log reads by organisation
+                      at a glance; the open row carries it large. */}
+                  {e.mark ? (
+                    <OrgMark
+                      mark={e.mark}
+                      height={16}
+                      className={cn("transition-opacity duration-300", on ? "opacity-0" : "opacity-60")}
+                    />
+                  ) : (
+                    <span />
+                  )}
                   <span className="sr-only">, {words.places[e.stop]}</span>
                 </button>
                 <span className="sr-only">
                   {e.period}. {e.org}. {e.description}
+                  {e.extra === "gpa" &&
+                    ` ${words.gpaRecent}: ${education.gpaRecent}. ${words.gpaOverall}: ${education.gpaOverall}.`}
                 </span>
                 <AnimatePresence initial={false}>
                   {on && (
@@ -453,15 +525,21 @@ function LegRow({
   done,
   words,
   pos,
+  arrives,
+  row,
 }: {
   leg: Leg;
   on: boolean;
   done: boolean;
   words: PathWords;
   pos: MotionValue<number>;
+  /** When the entry the flight lands on begins: the flight's date. */
+  arrives: TimelineEntry["start"];
+  row: string;
 }) {
+  const date = arrives.month ? words.flightDate(words.months[arrives.month - 1], arrives.year) : String(arrives.year);
   return (
-    <div aria-hidden className="border-b border-line">
+    <div aria-hidden className="border-b border-line" data-row={row}>
       <div
         className={cn(
           "tag flex items-center gap-3 px-2 py-1.5 transition-colors duration-300 [@media(max-height:820px)]:py-1",
@@ -471,7 +549,9 @@ function LegRow({
         <span>{words.places[leg.from]}</span>
         <IconArrowRight size={13} />
         <span>{words.places[leg.to]}</span>
-        <span className="tabular ml-auto">{words.distance(KM)}</span>
+        <span className="tabular ml-auto">{date}</span>
+        <span className="tabular text-faint">·</span>
+        <span className="tabular">{words.distance(KM)}</span>
       </div>
       <AnimatePresence initial={false}>
         {on && (
@@ -484,7 +564,9 @@ function LegRow({
             transition={{ duration: 0.42, ease: EASE_DEVELOP }}
           >
             <div className="px-2 pb-4 pt-1">
-              <span className="micro !text-[var(--color-holo)]">{words.transit}</span>
+              <span className="micro !text-[var(--color-holo)]">
+                {words.transit} · {date}
+              </span>
               <p className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 font-tech text-xl font-bold uppercase leading-tight text-fg">
                 <span>{words.placesLong[leg.from]}</span>
                 <IconArrowRight size={18} className="text-[var(--color-hazard)]" />
@@ -549,12 +631,12 @@ function Opened({ entry, words }: { entry: TimelineEntry; words: PathWords }) {
   }, []);
 
   return (
-    <div className="grid grid-cols-[auto_minmax(0,1fr)] gap-5 px-2 pb-3 pt-3 lg:gap-6">
+    <div className="grid grid-cols-[auto_minmax(0,1fr)] gap-5 px-2 pb-3 pt-3 lg:gap-6 [@media(max-height:820px)]:pt-2">
       <DateStamp entry={entry} play={play} instant={false} words={words} size="md" noNote />
       <div className="min-w-0">
         <div className="flex items-start justify-between gap-4">
           <Shard entry={entry} words={words} play={play} instant={false} className="ml-[5px] mt-[5px]" />
-          {entry.mark && <OrgMark mark={entry.mark} height={44} className="mt-1" />}
+          {entry.mark && <OrgMark mark={entry.mark} height={40} className="mt-1 [@media(max-height:820px)]:h-8" />}
         </div>
         <div className="relative mt-3.5">
           <ReadLine play={play} instant={false} />
@@ -563,6 +645,17 @@ function Opened({ entry, words }: { entry: TimelineEntry; words: PathWords }) {
           </p>
           <p className="mt-1.5 text-base leading-snug text-fg/85">{entry.description}</p>
           <Extra entry={entry} words={words} compact className="mt-2.5" />
+          {entry.extra === "gpa" && (
+            <CourseChips
+              codes={degreeCourses}
+              max={3}
+              more={words.moreCourses}
+              play={play}
+              delay={0.6}
+              compact
+              className="mt-3"
+            />
+          )}
         </div>
       </div>
     </div>
@@ -584,18 +677,30 @@ function Record({ reduced }: { reduced: boolean }) {
   const out = useMotionValue(reduced ? 1 : 0);
   const back = useMotionValue(reduced ? 1 : 0);
   const freight = useMotionValue(reduced ? 1 : 0);
+  const landE = useMotionValue(0);
+  const landU = useMotionValue(0);
+  /* Drag sideways to turn the globe; let go and it springs back to the
+     whole route. Vertical drags stay the page's (touch-action: pan-y). */
+  const spin = useSpring(0, { stiffness: 120, damping: 16 });
+  const drag = useRef<{ x: number; at: number } | null>(null);
   /* The whole route is wider than it is tall: on a narrow box the camera
      stands further off, so both ends stay in frame. */
   const aspect = useMotionValue(1);
-  const frame = useTransform<number, GlobeFrame>([out, back, freight, aspect], ([o, b, f, a]) => ({
-    ...WHOLE_ROUTE,
-    h: WHOLE_ROUTE.h * Math.max(1, a * 1.25),
-    fx: 0.5,
-    fy: 0.74,
-    out: o,
-    back: b,
-    freight: f,
-  }));
+  const frame = useTransform<number, GlobeFrame>(
+    [out, back, freight, aspect, landE, landU, spin],
+    ([o, b, f, a, le, lu, sp]) => ({
+      ...WHOLE_ROUTE,
+      lon: WHOLE_ROUTE.lon - sp,
+      h: WHOLE_ROUTE.h * Math.max(1, a * 1.25),
+      fx: 0.5,
+      fy: 0.74,
+      out: o,
+      back: b,
+      freight: f,
+      landErie: le,
+      landUb: lu,
+    })
+  );
   const mapRef = useRef<HTMLDivElement>(null);
   const seen = useInView(mapRef, { once: true, amount: 0.4 });
   useEffect(() => {
@@ -617,7 +722,10 @@ function Record({ reduced }: { reduced: boolean }) {
     const run = async () => {
       await animate(out, 1, { duration: 1.6, ease: [0.4, 0, 0.2, 1] });
       if (stopped) return;
+      void animate(landE, 0.999, { duration: 1.2, ease: "easeOut" });
       await animate(back, 1, { duration: 1.1, ease: "linear" });
+      if (stopped) return;
+      void animate(landU, 0.999, { duration: 1.2, ease: "easeOut" });
       if (stopped) return;
       await animate(freight, 0.999, { duration: 1.4, ease: "linear" });
       if (!stopped) freight.set(1);
@@ -626,7 +734,7 @@ function Record({ reduced }: { reduced: boolean }) {
     return () => {
       stopped = true;
     };
-  }, [seen, reduced, out, back, freight]);
+  }, [seen, reduced, out, back, freight, landE, landU]);
 
   /* The record in runs of one city, with the flight that led to each run. */
   const groups: { stop: StopKey; leg?: Leg; items: { entry: TimelineEntry; i: number }[] }[] = [];
@@ -641,7 +749,30 @@ function Record({ reduced }: { reduced: boolean }) {
       <SectionHeader index={sectionIndex("#timeline")} label={P.eyebrow} title={P.title} chapter="#timeline" />
 
       {!noGlobe && (
-        <div ref={mapRef} className="relative mt-8 h-[min(82vw,460px)] w-full">
+        <div
+          ref={mapRef}
+          className="relative mt-8 h-[min(82vw,460px)] w-full cursor-grab touch-pan-y active:cursor-grabbing"
+          onPointerDown={(e) => {
+            if (reduced) return;
+            drag.current = { x: e.clientX, at: spin.get() };
+            e.currentTarget.setPointerCapture(e.pointerId);
+          }}
+          onPointerMove={(e) => {
+            const d = drag.current;
+            if (!d) return;
+            /* Resisting further out, so it can't be flung off the route. */
+            const raw = d.at + (e.clientX - d.x) * 0.35;
+            spin.jump(Math.sign(raw) * 70 * Math.tanh(Math.abs(raw) / 70));
+          }}
+          onPointerUp={() => {
+            drag.current = null;
+            spin.set(0);
+          }}
+          onPointerCancel={() => {
+            drag.current = null;
+            spin.set(0);
+          }}
+        >
           {/* The southern half is open sea: it falls away into the page. */}
           <RouteGlobe
             className="absolute inset-0 [mask-image:linear-gradient(to_bottom,black_72%,transparent)]"
@@ -663,7 +794,14 @@ function Record({ reduced }: { reduced: boolean }) {
               <span>{P.places[g.leg.from]}</span>
               <IconArrowRight size={12} />
               <span>{P.places[g.leg.to]}</span>
-              <span className="tabular text-muted">· {P.distance(KM)}</span>
+              <span className="tabular text-muted">
+                ·{" "}
+                {(() => {
+                  const s0 = g.items[0].entry.start;
+                  return s0.month ? P.flightDate(P.months[s0.month - 1], s0.year) : s0.year;
+                })()}{" "}
+                · {P.distance(KM)}
+              </span>
             </p>
           )}
           <h3 className="flex items-center gap-3 font-mono text-base uppercase tracking-[0.1em] text-fg">
@@ -720,6 +858,12 @@ function Row({ entry, reduced, words }: { entry: TimelineEntry; reduced: boolean
           />
         )}
         <Extra entry={entry} words={words} className="mt-5" />
+        {entry.extra === "gpa" && (
+          <div className="mt-6">
+            <span className="micro">{words.coursework}</span>
+            <CourseChips codes={degreeCourses} play={play} instant={reduced} className="mt-2.5" />
+          </div>
+        )}
         {entry.extra === "spotfixes" && (
           <button
             type="button"

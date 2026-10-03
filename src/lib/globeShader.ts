@@ -30,6 +30,11 @@
  * picks whichever of two wrapped coordinates is continuous there. Without the
  * extension the mask is sampled unmipmapped.
  *
+ * **Extras (2026-10-03).** An atmosphere: rays that just miss the sphere
+ * light a holo halo of diodes past the limb. A graticule on the sea, every
+ * 15°. A shockwave at each landing — two rings running out from the city,
+ * scrubbed by the scroll. All analytic, in the same two passes.
+ *
  * GLSL traps (memory): highp where available, no pow() of a signed base.
  */
 
@@ -68,8 +73,13 @@ uniform float uTh2;
 uniform float uOut;
 uniform float uBack;
 uniform float uFreight;
+uniform vec3 uErie;
+uniform float uLandE;
+uniform float uLandU;
 
 const float PI = 3.14159265;
+/* The sea's graticule, every 15 degrees. */
+const float GRAT = 0.2617994;
 const float TRAIL = 16.0;
 const float PACKET = 5.0;
 
@@ -80,6 +90,18 @@ vec2 onArc(vec3 p, vec3 a, vec3 n) {
   vec3 q = p - n * dot(p, n);
   float along = atan(dot(q, cross(n, a)), dot(q, a));
   return vec2(along, off);
+}
+
+/* A landing's shockwave: two rings running out from the city, fading as they
+   go. prog 0..1 is scrubbed by the scroll, so it plays back as well. */
+float ring(vec3 p, vec3 c, float prog, float cellAng) {
+  if (prog <= 0.0 || prog >= 1.0) return 0.0;
+  float ang = acos(clamp(dot(p, c), -1.0, 1.0));
+  float w = max(cellAng * 0.75, 0.002);
+  float k1 = 1.0 - smoothstep(0.0, w, abs(ang - prog * 0.17));
+  float p2 = prog - 0.22;
+  float k2 = p2 > 0.0 ? 1.0 - smoothstep(0.0, w, abs(ang - p2 * 0.17)) : 0.0;
+  return max(k1 * (1.0 - prog) * 1.3, k2 * (1.0 - prog) * 0.8);
 }
 
 void main() {
@@ -108,7 +130,11 @@ void main() {
 #endif
   vec3 m = texture2D(uMask, vec2(u, v)).rgb;
   if (disc < 0.0) {
-    gl_FragColor = vec4(0.0);
+    /* The atmosphere: a miss close past the limb glows, faintest furthest
+       out. |C|^2 - b^2 = 1 - disc is the ray's closest approach, squared. */
+    float above = sqrt(1.0 - disc) - 1.0;
+    float halo = b < 0.0 ? 1.0 - smoothstep(0.0, 0.085, above) : 0.0;
+    gl_FragColor = vec4(0.0, halo * halo, 0.0, 0.0);
     return;
   }
 
@@ -148,7 +174,16 @@ void main() {
       drive = max(drive, k);
     }
   }
-  gl_FragColor = vec4(m.r, m.g, drive / 1.5, max(shade, 2.0 / 255.0));
+  drive = max(drive, max(ring(p, uErie, uLandE, cellAng), ring(p, uA, uLandU, cellAng)));
+
+  /* The graticule, carried in the border channel under the border's own
+     threshold (the panel tells them apart): one diode wide at any zoom. */
+  float dLat = abs(mod(lat + GRAT * 0.5, GRAT) - GRAT * 0.5);
+  /* Meridians stop short of the poles, where they would crowd into a star. */
+  float dLon = abs(lat) < 1.13 ? abs(mod(lon + GRAT * 0.5, GRAT) - GRAT * 0.5) * cos(lat) : 1.0;
+  float grat = min(dLat, dLon) < cellAng * 0.3 ? 0.035 : 0.0;
+
+  gl_FragColor = vec4(m.r, max(m.g, grat), drive / 1.5, max(shade, 2.0 / 255.0));
 }
 `;
 
@@ -185,6 +220,11 @@ void main() {
 
   vec3 col = vec3(0.0);
   float a = 0.0;
+  if (c.a <= 0.0 && c.g > 0.0) {
+    /* The atmosphere's diodes: holo, dim, never driven. */
+    col = vec3(126.0, 234.0, 255.0) / 255.0 * (0.25 + 0.6 * c.g);
+    a = lens * c.g * 0.8;
+  }
   if (c.a > 0.0) {
     float shade = c.a;
     /* A dark backing, so the page behind does not show between the lenses
@@ -201,6 +241,9 @@ void main() {
        so far out the mip averages it thin: any trace of it counts. */
     float border = smoothstep(0.05, 0.22, c.g) * land;
     base = mix(base, vec3(205.0, 128.0, 52.0) / 255.0 * (0.6 + 0.4 * shade), border * 0.85);
+    // The graticule: faint holo lenses, on the sea only.
+    float grid = smoothstep(0.016, 0.03, c.g) * (1.0 - smoothstep(0.045, 0.06, c.g)) * (1.0 - land);
+    base = mix(base, vec3(126.0, 234.0, 255.0) / 255.0 * (0.14 + 0.1 * shade), grid * 0.5);
     // The limb: the outermost ring faintly holo, so the disc reads as a sphere.
     base = mix(base, vec3(126.0, 234.0, 255.0) / 255.0 * 0.5, (1.0 - smoothstep(0.04, 0.16, shade)) * 0.6);
     col = mix(col, base, lens);
@@ -237,6 +280,9 @@ export interface GlobeFrame extends Shot {
   out: number;
   back: number;
   freight: number;
+  /** Landing shockwaves at Erie and at Ulaanbaatar, 0..1 while they run. */
+  landErie?: number;
+  landUb?: number;
 }
 
 export interface GlobeOptions {
@@ -323,11 +369,13 @@ export function createGlobe(canvas: HTMLCanvasElement, mask: HTMLImageElement, o
   const uc = loc(cellsProg, [
     "uMask", "uGrid", "uPitch", "uC", "uF", "uR", "uU", "uFocal", "uFocus",
     "uA", "uN1", "uTh1", "uN2", "uTh2", "uOut", "uBack", "uFreight",
+    "uErie", "uLandE", "uLandU",
   ]);
   const up = loc(panelProg, ["uCells", "uGrid", "uPitch"]);
 
   /* The route, once: UB → Erie and UB → Khanbogd as plane normals and spans. */
   const a = toVec(PLACES.ub.lat, PLACES.ub.lon);
+  const erie = toVec(PLACES.erie.lat, PLACES.erie.lon);
   const n1 = normalize(cross(a, toVec(PLACES.erie.lat, PLACES.erie.lon)));
   const n2 = normalize(cross(a, toVec(PLACES.khanbogd.lat, PLACES.khanbogd.lon)));
   const th1 = arcAngle("ub", "erie");
@@ -395,6 +443,9 @@ export function createGlobe(canvas: HTMLCanvasElement, mask: HTMLImageElement, o
     gl.uniform1f(uc.uOut, fr.out);
     gl.uniform1f(uc.uBack, fr.back);
     gl.uniform1f(uc.uFreight, fr.freight);
+    v3(uc.uErie, erie);
+    gl.uniform1f(uc.uLandE, fr.landErie ?? 0);
+    gl.uniform1f(uc.uLandU, fr.landUb ?? 0);
     gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
 
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);

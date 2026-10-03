@@ -42,7 +42,8 @@ export function yearNeon(year: number): string {
 }
 
 /**
- * The start as month-over-year, the end beside an arrow. The end drops
+ * The start as month-over-year, the end beside an arrow (or an ampersand,
+ * for the same season in two years). The end drops
  * whatever it shares with the start: the year when it is the same year
  * ("JUN 2026 → SEP"), the season when it is the same season ("SUMMER 2022 →
  * 2023").
@@ -67,10 +68,13 @@ export function DateStamp({
   /** Leave the "Graduated" pill off: the entry's shard carries it. */
   noNote?: boolean;
 }) {
-  const { start, end, note } = entry;
-  const startLabel = stampLabel(start, words);
+  const { start, end, note, repeat } = entry;
+  /* The same season twice ("Summers 2022 & 2023") is not a span: the label
+     goes plural and the years are joined, not arrowed. */
+  const startLabel = repeat && start.season === "summer" ? words.summers : stampLabel(start, words);
   const endLabel = end ? stampLabel(end, words) : null;
-  const endShowsLabel = !!end && !!endLabel && (endLabel !== startLabel || end.year === start.year);
+  const endShowsLabel =
+    !!end && !!endLabel && !repeat && (endLabel !== startLabel || end.year === start.year);
   const endShowsYear = !!end && end.year !== start.year;
   const neon = yearNeon(start.year);
   const md = size === "md";
@@ -99,7 +103,13 @@ export function DateStamp({
 
       {end && (endShowsLabel || endShowsYear) && (
         <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1">
-          <Arrow play={play} instant={instant} delay={0.7} />
+          {repeat ? (
+            <Ignite play={play} instant={instant} delay={0.7}>
+              <span className={cn("block font-tech font-bold leading-none text-muted", md ? "text-xl" : "text-2xl")}>&amp;</span>
+            </Ignite>
+          ) : (
+            <Arrow play={play} instant={instant} delay={0.7} />
+          )}
           {endShowsLabel && (
             <Ignite play={play} instant={instant} delay={0.8}>
               <span
