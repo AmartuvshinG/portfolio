@@ -244,7 +244,6 @@ function Rail({
               <button
                 type="button"
                 onClick={() => goTo(i)}
-                aria-label={words.goTo(s.title)}
                 aria-current={on ? "step" : undefined}
                 className="group flex min-h-11 flex-col items-center gap-2"
               >
@@ -266,6 +265,9 @@ function Rail({
                 >
                   <span className="tabular mr-1.5 text-[var(--color-holo)]">{String(i + 1).padStart(2, "0")}</span>
                   {s.station}
+                  {/* The name starts with what is on screen (WCAG 2.5.3), then
+                      says where it goes. */}
+                  <span className="sr-only">: {s.title}</span>
                 </span>
               </button>
             </li>

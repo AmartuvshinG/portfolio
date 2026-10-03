@@ -117,7 +117,6 @@ const en = {
     source: "Based on our final capstone report, spring 2026",
     hint: "Scroll or use ← → keys",
     step: (i: number, n: number) => `${String(i).padStart(2, "0")} / ${String(n).padStart(2, "0")}`,
-    goTo: (title: string) => `Show: ${title}`,
     illustrative: "Example",
     exampleLabel: "Example report",
     beats: [
@@ -235,7 +234,6 @@ const en = {
     distance: (km: number) => `≈ ${km.toLocaleString("en-US")} km`,
     board: "Journey log",
     hint: "Scroll or use ← → keys",
-    goTo: (title: string) => `Show ${title}`,
     gpaRecent: "GPA · final 4 terms",
     gpaOverall: "GPA · overall",
     coursework: "Coursework",
@@ -474,7 +472,6 @@ const mn: UiStrings = {
     source: "Төслийн эцсийн тайлан дээр үндэслэв, 2026 оны хавар",
     hint: "Гүйлгэх эсвэл ← → товч",
     step: (i: number, n: number) => `${String(i).padStart(2, "0")} / ${String(n).padStart(2, "0")}`,
-    goTo: (title: string) => `Харах: ${title}`,
     illustrative: "Жишээ",
     exampleLabel: "Жишээ тайлан",
     beats: [
@@ -592,7 +589,6 @@ const mn: UiStrings = {
     distance: (km: number) => `≈ ${km.toLocaleString("mn-MN")} км`,
     board: "Замналын бүртгэл",
     hint: "Гүйлгэх эсвэл ← → товч",
-    goTo: (title: string) => `${title} — харах`,
     gpaRecent: "Голч · сүүлийн 4 улирал",
     gpaOverall: "Голч · нийт",
     coursework: "Судалсан хичээлүүд",
