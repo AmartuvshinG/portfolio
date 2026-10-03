@@ -48,8 +48,7 @@ import { cn } from "@/lib/utils";
    at each change of city it climbs and flies the leg: the line lighting
    across the top of the world on the way out, a packet running it home. Over
    the long Erie stay the camera keeps drifting in, so the map never sits
-   dead. The last entry's tail runs the freight between Ulaanbaatar and the
-   mine, which is what that job was.
+   dead.
 
    At each city the place itself lands out of its lamp: a photo on a plate,
    tethered to the lamp, each with its own reveal (path/LandingPhotos). The
@@ -70,7 +69,7 @@ const STEP_VH = 46;
 const LEG = 1.6;
 /** Rest before the first entry. */
 const EDGE = 0.3;
-/** The last entry's stay, through which the freight runs. */
+/** The last entry's stay. */
 const TAIL = 1.1;
 
 /** Locale-free: both languages list the same entries in the same places. */
@@ -104,11 +103,39 @@ function plan(entries: Pick<TimelineEntry, "stop">[]) {
   });
   const last = at[at.length - 1];
   const end = last + TAIL;
-  return { at, legs, freight: [last - 0.3, end - 0.15] as const, span: end + EDGE };
+  return { at, legs, span: end + EDGE };
 }
 const BEATS = plan(baseTimeline);
 const OUT = BEATS.legs.find((l) => l.from === "ub" && l.to === "erie");
 const BACK = BEATS.legs.find((l) => l.from === "erie" && l.to === "ub");
+
+/* ---- The time ribbon: every entry on one shared calendar ---------------- */
+
+type Stamp = TimelineEntry["start"];
+/** A stamp as a month count. Seasons sit mid-season; a bare year is its January. */
+const monthOf = (s: Stamp) => s.year * 12 + ((s.month ?? (s.season === "summer" ? 6 : 1)) - 1);
+/** The end of a span: a bare end year runs through its December; no end is one month. */
+const endOf = (e: Pick<TimelineEntry, "start" | "end">) =>
+  e.end ? (e.end.month || e.end.season ? monthOf(e.end) : e.end.year * 12 + 11) + 1 : monthOf(e.start) + 1;
+const T0 = Math.min(...baseTimeline.map((e) => e.start.year)) * 12;
+const T1 = (Math.max(...baseTimeline.map((e) => e.end?.year ?? e.start.year)) + 1) * 12;
+const AXIS_YEARS = Array.from({ length: (T1 - T0) / 12 }, (_, k) => T0 / 12 + k);
+/** A month count as a share of the axis. */
+const along = (m: number) => (m - T0) / (T1 - T0);
+const STARTS = baseTimeline.map((e) => monthOf(e.start));
+
+/** Where the stage is, as a date: each entry's start on its plateau, the
+ *  scroll between entries walking the calendar between them, and the last
+ *  stay running out to the last entry's end. */
+function dateAt(pos: number): number {
+  const at = BEATS.at;
+  if (pos <= at[0]) return STARTS[0];
+  for (let k = 0; k < at.length - 1; k++) {
+    if (pos < at[k + 1]) return STARTS[k] + (STARTS[k + 1] - STARTS[k]) * span(pos, at[k], at[k + 1]);
+  }
+  const last = at.length - 1;
+  return STARTS[last] + (endOf(baseTimeline[last]) - STARTS[last]) * span(pos, at[last], at[last] + TAIL);
+}
 
 /** Each entry's stretch of the stage: up to the next entry or flight. The
     first begins where the stage does; the last runs to its end. */
@@ -210,7 +237,6 @@ function Stage({ sectionRef: ref }: { sectionRef: React.RefObject<HTMLElement | 
     ...shotAt(p, FLIGHT, x, FY_GROUND + (FY_AIR - FY_GROUND) * airAt(p, FLIGHT)),
     out: OUT ? span(p, OUT.start, OUT.end) : 1,
     back: BACK ? span(p, BACK.start, BACK.end) : 0,
-    freight: span(p, BEATS.freight[0], BEATS.freight[1]),
     /* The shockwave runs as the camera settles over the city it landed at. */
     landErie: OUT ? span(p, OUT.end - 0.2, OUT.end + 0.85) : 0,
     landUb: BACK ? span(p, BACK.end - 0.2, BACK.end + 0.85) : 0,
@@ -425,6 +451,19 @@ function Board({
           {words.openCase} <IconArrowRight size={13} />
         </button>
       </div>
+      {/* The calendar every row's bar is drawn against. */}
+      <div aria-hidden className="relative mx-2 mb-1 mt-2 h-5">
+        {AXIS_YEARS.map((y) => (
+          <span
+            key={y}
+            className="tag tabular absolute top-0 -translate-x-1/2 text-muted"
+            style={{ left: `${along(y * 12) * 100}%` }}
+          >
+            {`'${String(y).slice(2)}`}
+          </span>
+        ))}
+      </div>
+      <div className="relative flex min-h-0 flex-col">
       <ol
         ref={listRef}
         className="relative min-h-0 overflow-hidden [mask-image:linear-gradient(to_bottom,transparent,black_18px,black_calc(100%-28px),transparent)]"
@@ -452,7 +491,7 @@ function Board({
                   onClick={() => goTo(i)}
                   aria-current={on ? "step" : undefined}
                   className={cn(
-                    "grid w-full grid-cols-[3.75rem_minmax(0,1fr)_auto] items-center gap-4 border-b border-line px-2 py-2 text-left transition-[opacity,background-color] duration-300 [@media(max-height:820px)]:py-1",
+                    "relative grid w-full grid-cols-[3.75rem_minmax(0,1fr)_auto] items-center gap-4 border-b border-line px-2 py-2 text-left transition-[opacity,background-color] duration-300 [@media(max-height:820px)]:py-1",
                     on
                       ? "bg-[color-mix(in_srgb,var(--color-hazard)_9%,transparent)]"
                       : "hover:bg-[color-mix(in_srgb,var(--color-fg)_4%,transparent)]",
@@ -488,6 +527,7 @@ function Board({
                     <span />
                   )}
                   <span className="sr-only">, {words.places[e.stop]}</span>
+                  <SpanBar entry={e} on={on} />
                 </button>
                 <span className="sr-only">
                   {e.period}. {e.org}. {e.description}
@@ -514,7 +554,50 @@ function Board({
           );
         })}
       </ol>
+      <NowLine pos={pos} />
+      </div>
     </div>
+  );
+}
+
+/** The ribbon's "now": one hairline down every row at the date the stage
+ *  has reached, driven by the same scroll as the globe. */
+function NowLine({ pos }: { pos: MotionValue<number> }) {
+  const x = useTransform(pos, (p) => `${along(dateAt(p)) * 100}%`);
+  return (
+    <div aria-hidden className="pointer-events-none absolute inset-y-0 left-2 right-2">
+      <motion.span className="absolute inset-0" style={{ x }}>
+        <span className="absolute inset-y-0 left-0 w-px bg-[linear-gradient(to_bottom,transparent,var(--color-hazard)_12%,var(--color-hazard)_88%,transparent)] opacity-70" />
+        <span className="absolute -left-[3px] top-0 h-[7px] w-[7px] rotate-45 bg-[var(--color-hazard)] shadow-[0_0_10px_var(--color-hazard)]" />
+      </motion.span>
+    </div>
+  );
+}
+
+/** One entry's span on the shared calendar, under its row. Open, it fills
+ *  from its start to its end and glows. */
+function SpanBar({ entry, on }: { entry: TimelineEntry; on: boolean }) {
+  const a = along(monthOf(entry.start));
+  const b = along(endOf(entry));
+  return (
+    <span aria-hidden className="pointer-events-none absolute inset-x-2 bottom-[-1px] h-[3px]">
+      <span
+        className="absolute inset-y-0 rounded-full opacity-35"
+        style={{ left: `${a * 100}%`, width: `${Math.max(0.6, (b - a) * 100)}%`, ...shardLamp(entry.kind) }}
+      />
+      <motion.span
+        className="absolute inset-y-0 origin-left rounded-full"
+        style={{
+          left: `${a * 100}%`,
+          width: `${Math.max(0.6, (b - a) * 100)}%`,
+          ...shardLamp(entry.kind),
+          boxShadow: on ? "0 0 12px 1px color-mix(in srgb, var(--color-fg) 35%, transparent)" : undefined,
+        }}
+        initial={false}
+        animate={{ scaleX: on ? 1 : 0, opacity: on ? 1 : 0 }}
+        transition={{ duration: on ? 0.9 : 0.3, ease: EASE_DEVELOP }}
+      />
+    </span>
   );
 }
 
@@ -672,11 +755,10 @@ function Record({ reduced }: { reduced: boolean }) {
   const entries = c.timeline;
   const [noGlobe, setNoGlobe] = useState(false);
 
-  /* The route draws once, the first time the globe is seen — out, home, then
-     the freight — and stays drawn. Under reduced motion it is simply there. */
+  /* The route draws once, the first time the globe is seen — out, then
+     home — and stays drawn. Under reduced motion it is simply there. */
   const out = useMotionValue(reduced ? 1 : 0);
   const back = useMotionValue(reduced ? 1 : 0);
-  const freight = useMotionValue(reduced ? 1 : 0);
   const landE = useMotionValue(0);
   const landU = useMotionValue(0);
   /* Drag sideways to turn the globe; let go and it springs back to the
@@ -687,8 +769,8 @@ function Record({ reduced }: { reduced: boolean }) {
      stands further off, so both ends stay in frame. */
   const aspect = useMotionValue(1);
   const frame = useTransform<number, GlobeFrame>(
-    [out, back, freight, aspect, landE, landU, spin],
-    ([o, b, f, a, le, lu, sp]) => ({
+    [out, back, aspect, landE, landU, spin],
+    ([o, b, a, le, lu, sp]) => ({
       ...WHOLE_ROUTE,
       lon: WHOLE_ROUTE.lon - sp,
       h: WHOLE_ROUTE.h * Math.max(1, a * 1.25),
@@ -696,7 +778,6 @@ function Record({ reduced }: { reduced: boolean }) {
       fy: 0.74,
       out: o,
       back: b,
-      freight: f,
       landErie: le,
       landUb: lu,
     })
@@ -715,7 +796,6 @@ function Record({ reduced }: { reduced: boolean }) {
     if (reduced) {
       out.set(1);
       back.set(1);
-      freight.set(1);
       return;
     }
     let stopped = false;
@@ -726,15 +806,12 @@ function Record({ reduced }: { reduced: boolean }) {
       await animate(back, 1, { duration: 1.1, ease: "linear" });
       if (stopped) return;
       void animate(landU, 0.999, { duration: 1.2, ease: "easeOut" });
-      if (stopped) return;
-      await animate(freight, 0.999, { duration: 1.4, ease: "linear" });
-      if (!stopped) freight.set(1);
     };
     void run();
     return () => {
       stopped = true;
     };
-  }, [seen, reduced, out, back, freight, landE, landU]);
+  }, [seen, reduced, out, back, landE, landU]);
 
   /* The record in runs of one city, with the flight that led to each run. */
   const groups: { stop: StopKey; leg?: Leg; items: { entry: TimelineEntry; i: number }[] }[] = [];

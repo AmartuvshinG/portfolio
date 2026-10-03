@@ -236,7 +236,7 @@ const en = {
     summers: "Summers",
     graduated: "Graduated",
     /** City names on the globe (short) and over the record (long). */
-    places: { ub: "Ulaanbaatar", erie: "Erie, PA", khanbogd: "Khanbogd" },
+    places: { ub: "Ulaanbaatar", erie: "Erie, PA" },
     placesLong: { ub: "Ulaanbaatar, Mongolia", erie: "Erie, Pennsylvania, USA" },
     transit: "In transit",
     distance: (km: number) => `≈ ${km.toLocaleString("en-US")} km`,
@@ -250,7 +250,6 @@ const en = {
     /** The flight row's date: the month the next entry begins. */
     flightDate: (month: string, year: number) => `${month} ${year}`,
     openCase: "Spotfixes case file",
-    freight: "Freight between the Ulaanbaatar HQ and the mine site",
     now: "Now",
     /** The landing photos (lib/pathPhotos). Captions name only what the
         picture itself shows. */
@@ -604,7 +603,7 @@ const mn: UiStrings = {
     summer: "Зун",
     summers: "Зун",
     graduated: "Төгссөн",
-    places: { ub: "Улаанбаатар", erie: "Эри, Пенсильвани", khanbogd: "Ханбогд" },
+    places: { ub: "Улаанбаатар", erie: "Эри, Пенсильвани" },
     placesLong: { ub: "Улаанбаатар, Монгол", erie: "Эри, Пенсильвани, АНУ" },
     transit: "Замд",
     distance: (km: number) => `≈ ${km.toLocaleString("mn-MN")} км`,
@@ -617,7 +616,6 @@ const mn: UiStrings = {
     moreCourses: (n: number) => `+${n} хичээл`,
     flightDate: (month: string, year: number) => `${year} оны ${month}`,
     openCase: "Spotfixes — дэлгэрэнгүй",
-    freight: "Төв оффис болон уурхайн хоорондын ачаа тээвэр",
     now: "Одоо",
     /* Drafts: awaiting Amartuvshin's proofread. */
     photos: {

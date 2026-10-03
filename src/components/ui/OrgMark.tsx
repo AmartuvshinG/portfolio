@@ -14,7 +14,7 @@ const MARKS: Record<OrgMarkKey, { src: string; aspect: number; name: string }> =
   must: { src: "/marks/must.png", aspect: 643 / 1152, name: "Mongolian University of Science and Technology" },
   gannon: { src: "/marks/gannon.png", aspect: 442 / 432, name: "Gannon University" },
   chickfila: { src: "/marks/chickfila.svg", aspect: 582 / 263, name: "Chick-fil-A" },
-  oyutolgoi: { src: "/marks/oyutolgoi.svg", aspect: 162 / 94, name: "Oyu Tolgoi" },
+  oyutolgoi: { src: "/marks/oyutolgoi.svg", aspect: 158 / 104, name: "Oyu Tolgoi" },
 };
 
 export function OrgMark({ mark, height, className }: { mark: OrgMarkKey; height: number; className?: string }) {
@@ -24,8 +24,10 @@ export function OrgMark({ mark, height, className }: { mark: OrgMarkKey; height:
     <span
       role="img"
       aria-label={m.name}
-      className={cn("inline-block shrink-0 bg-[#f4fbfc]", className)}
-      style={{ height, width: Math.round(height * m.aspect), mask, WebkitMask: mask }}
+      /* Height through a variable, so a class (`h-8` on a short screen) can
+         still override it; width follows from the ratio at any height. */
+      className={cn("inline-block h-[var(--mark-h)] w-auto shrink-0 bg-[#f4fbfc]", className)}
+      style={{ ["--mark-h" as string]: `${height}px`, aspectRatio: m.aspect, mask, WebkitMask: mask }}
     />
   );
 }

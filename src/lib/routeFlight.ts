@@ -5,7 +5,7 @@ import type { Shot } from "@/lib/routeGeo";
  *
  * Four places and two flights:
  *
- *   UB      close over Mongolia: Ulaanbaatar and Khanbogd, the Gobi below.
+ *   UB      close over Mongolia: Ulaanbaatar, the Gobi below.
  *   → out   the camera climbs and pans east along the latitudes, over the
  *           Bering Strait, high enough to see the whole arc cross the top of
  *           the world as it lights; then comes down on the Great Lakes.
@@ -13,8 +13,7 @@ import type { Shot } from "@/lib/routeGeo";
  *           entries) the camera drifts south-east and closes on Erie, so the
  *           map moves through the long stretch where the route itself is still.
  *   ← back  the same climb in reverse, west over the Strait.
- *   Gobi    down between Ulaanbaatar and the mine, closer each step, for the
- *           freight runs.
+ *   Home    back over Ulaanbaatar, closing in on the city each step.
  *
  * North stays up throughout (see lib/routeGeo for why the camera never flies
  * over the pole itself). Every number below was set by eye on the stage.
@@ -30,9 +29,9 @@ const ERIE: [Spot, Spot] = [
   { lat: 44.6, lon: -84.8, h: 0.62 },
   { lat: 42.8, lon: -81.2, h: 0.38 },
 ];
-const GOBI: [Spot, Spot] = [
-  { lat: 46.0, lon: 106.2, h: 0.5 },
-  { lat: 45.5, lon: 106.8, h: 0.36 },
+const HOME: [Spot, Spot] = [
+  { lat: 47.3, lon: 106.3, h: 0.52 },
+  { lat: 47.6, lon: 106.8, h: 0.38 },
 ];
 /** How far the camera climbs mid-flight, Earth radii, and how far north it bows. */
 const CLIMB = 2.9;
@@ -89,8 +88,8 @@ export function shotAt(pos: number, plan: FlightPlan, fx: number, fy: number): S
   if (pos < out.start) s = hold(UB, span(pos, plan.from, out.start));
   else if (pos < out.end) s = fly(UB[1], ERIE[0], 1, span(pos, out.start, out.end));
   else if (pos < back.start) s = hold(ERIE, span(pos, out.end, back.start));
-  else if (pos < back.end) s = fly(ERIE[1], GOBI[0], -1, span(pos, back.start, back.end));
-  else s = hold(GOBI, span(pos, back.end, plan.to));
+  else if (pos < back.end) s = fly(ERIE[1], HOME[0], -1, span(pos, back.start, back.end));
+  else s = hold(HOME, span(pos, back.end, plan.to));
   return { ...s, fx: fx - SLIDE * airAt(pos, plan), fy };
 }
 

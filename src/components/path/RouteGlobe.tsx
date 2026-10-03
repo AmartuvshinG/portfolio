@@ -29,7 +29,7 @@ function loadMask(src: string) {
 
 /** The arc's crown, where the distance is read out. */
 const APEX = greatCircle("ub", "erie", 2)[1];
-const MARKS: PlaceKey[] = ["ub", "erie", "khanbogd"];
+const MARKS: PlaceKey[] = ["ub", "erie"];
 
 /**
  * The Path's globe: the shader (lib/globeShader) on a canvas, with the cities
@@ -67,7 +67,7 @@ export function RouteGlobe({
 }) {
   const boxRef = useRef<HTMLDivElement>(null);
   const markRefs = useRef<Partial<Record<PlaceKey | "apex", HTMLDivElement | null>>>({});
-  const [lit, setLit] = useState({ erie: false, khanbogd: false, apex: false });
+  const [lit, setLit] = useState({ erie: false, apex: false });
   const [near, setNear] = useState(false);
   /* Bumped when the GPU drops the context: the globe is rebuilt on a fresh
      canvas. A few times at most — a GPU that keeps failing gets the text. */
@@ -119,15 +119,12 @@ export function RouteGlobe({
         }
         return p;
       };
-      const ub = at("ub", PLACES.ub.lat, PLACES.ub.lon);
+      at("ub", PLACES.ub.lat, PLACES.ub.lon);
       at("erie", PLACES.erie.lat, PLACES.erie.lon);
-      /* From far out the mine sits on top of the capital: one name, not two. */
-      const kb = projectTo(fr, size.w, size.h, PLACES.khanbogd.lat, PLACES.khanbogd.lon);
-      at("khanbogd", PLACES.khanbogd.lat, PLACES.khanbogd.lon, !!ub && !!kb && Math.hypot(ub.x - kb.x, ub.y - kb.y) < 36);
       at("apex", APEX[0], APEX[1]);
       setLit((s) => {
-        const next = { erie: fr.out >= 1, khanbogd: fr.freight > 0, apex: fr.out >= 0.98 };
-        return s.erie === next.erie && s.khanbogd === next.khanbogd && s.apex === next.apex ? s : next;
+        const next = { erie: fr.out >= 1, apex: fr.out >= 0.98 };
+        return s.erie === next.erie && s.apex === next.apex ? s : next;
       });
     };
 
@@ -200,9 +197,8 @@ export function RouteGlobe({
         >
           <City
             label={labels[k]}
-            on={k === "ub" || (k === "erie" ? lit.erie : lit.khanbogd)}
+            on={k === "ub" || lit.erie}
             here={here === k}
-            small={k === "khanbogd"}
           />
         </div>
       ))}

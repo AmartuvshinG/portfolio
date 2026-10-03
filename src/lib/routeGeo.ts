@@ -20,14 +20,12 @@
  */
 
 export type StopKey = "ub" | "erie";
-export type PlaceKey = StopKey | "khanbogd";
+export type PlaceKey = StopKey;
 
 /** Degrees. Public geography, not personal data. */
 export const PLACES: Record<PlaceKey, { lat: number; lon: number }> = {
   ub: { lat: 47.92, lon: 106.92 },
   erie: { lat: 42.13, lon: -80.09 },
-  /** Oyu Tolgoi, by Khanbogd: the mine site the logistics role served. */
-  khanbogd: { lat: 43.0, lon: 106.9 },
 };
 
 const RAD = Math.PI / 180;

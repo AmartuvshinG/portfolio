@@ -68,11 +68,8 @@ uniform vec2 uFocus;
 uniform vec3 uA;
 uniform vec3 uN1;
 uniform float uTh1;
-uniform vec3 uN2;
-uniform float uTh2;
 uniform float uOut;
 uniform float uBack;
-uniform float uFreight;
 uniform vec3 uErie;
 uniform float uLandE;
 uniform float uLandU;
@@ -159,19 +156,6 @@ void main() {
         }
       }
       drive = k;
-    }
-  }
-  if (uFreight > 0.0) {
-    vec2 r2 = onArc(p, uA, uN2);
-    if (r2.y < halfW && r2.x >= -cellAng * 0.5 && r2.x <= uTh2 + cellAng * 0.5) {
-      float k = 0.6;
-      if (uFreight < 1.0) {
-        // A triangle wave: out to the mine and back, twice over the beat.
-        float w = fract(uFreight * 2.0);
-        float at = (w < 0.5 ? w * 2.0 : 2.0 - w * 2.0) * uTh2;
-        if (abs(r2.x - at) < cellAng * 1.2) k = 1.25;
-      }
-      drive = max(drive, k);
     }
   }
   drive = max(drive, max(ring(p, uErie, uLandE, cellAng), ring(p, uA, uLandU, cellAng)));
@@ -279,7 +263,6 @@ void main() {
 export interface GlobeFrame extends Shot {
   out: number;
   back: number;
-  freight: number;
   /** Landing shockwaves at Erie and at Ulaanbaatar, 0..1 while they run. */
   landErie?: number;
   landUb?: number;
@@ -368,18 +351,16 @@ export function createGlobe(canvas: HTMLCanvasElement, mask: HTMLImageElement, o
     Object.fromEntries(names.map((n) => [n, gl.getUniformLocation(p, n)])) as Record<string, WebGLUniformLocation | null>;
   const uc = loc(cellsProg, [
     "uMask", "uGrid", "uPitch", "uC", "uF", "uR", "uU", "uFocal", "uFocus",
-    "uA", "uN1", "uTh1", "uN2", "uTh2", "uOut", "uBack", "uFreight",
+    "uA", "uN1", "uTh1", "uOut", "uBack",
     "uErie", "uLandE", "uLandU",
   ]);
   const up = loc(panelProg, ["uCells", "uGrid", "uPitch"]);
 
-  /* The route, once: UB → Erie and UB → Khanbogd as plane normals and spans. */
+  /* The route, once: UB → Erie as a plane normal and a span. */
   const a = toVec(PLACES.ub.lat, PLACES.ub.lon);
   const erie = toVec(PLACES.erie.lat, PLACES.erie.lon);
   const n1 = normalize(cross(a, toVec(PLACES.erie.lat, PLACES.erie.lon)));
-  const n2 = normalize(cross(a, toVec(PLACES.khanbogd.lat, PLACES.khanbogd.lon)));
   const th1 = arcAngle("ub", "erie");
-  const th2 = arcAngle("ub", "khanbogd");
 
   let cols = 0;
   let rows = 0;
@@ -438,11 +419,8 @@ export function createGlobe(canvas: HTMLCanvasElement, mask: HTMLImageElement, o
     v3(uc.uA, a);
     v3(uc.uN1, n1);
     gl.uniform1f(uc.uTh1, th1);
-    v3(uc.uN2, n2);
-    gl.uniform1f(uc.uTh2, th2);
     gl.uniform1f(uc.uOut, fr.out);
     gl.uniform1f(uc.uBack, fr.back);
-    gl.uniform1f(uc.uFreight, fr.freight);
     v3(uc.uErie, erie);
     gl.uniform1f(uc.uLandE, fr.landErie ?? 0);
     gl.uniform1f(uc.uLandU, fr.landUb ?? 0);

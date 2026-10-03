@@ -612,7 +612,7 @@ export const timeline: TimelineEntry[] = [
     mark: "oyutolgoi",
     photo: "monnis",
     title: "Corporate Logistics Coordinator",
-    org: "Oyu Tolgoi LLC · Contractor, Khanbogd Khurd",
+    org: "Oyu Tolgoi LLC · Contractor, Ulaanbaatar",
     description:
       "Central contact for freight and transport between the Ulaanbaatar headquarters and the mine site, across teams and contractors; monitored logistics data for routing inefficiencies under strict safety standards.",
   },
