@@ -17,7 +17,7 @@ import { useI18n } from "@/lib/i18n";
 import { openCase } from "@/lib/caseFile";
 import { isInteractive, modalOpen } from "@/lib/keys";
 import { distanceKm, type StopKey } from "@/lib/routeGeo";
-import { shotAt, WHOLE_ROUTE, type FlightPlan } from "@/lib/routeFlight";
+import { airAt, shotAt, WHOLE_ROUTE, type FlightPlan } from "@/lib/routeFlight";
 import type { GlobeFrame } from "@/lib/globeShader";
 import { EASE_DEVELOP } from "@/lib/motion";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
@@ -31,6 +31,8 @@ import { DateStamp, yearNeon, type PathWords } from "@/components/path/NeonStamp
 import { ScriptLabel } from "@/components/ui/ScriptLabel";
 import { OrgMark } from "@/components/ui/OrgMark";
 import { DecodeText, ReadLine, Shard, shardLamp } from "@/components/path/Shard";
+import { LandingPhotos } from "@/components/path/LandingPhotos";
+import { PhotoFigure } from "@/components/path/PhotoPlate";
 import { cn } from "@/lib/utils";
 
 /* ---------------------------------------------------------------------------
@@ -45,6 +47,10 @@ import { cn } from "@/lib/utils";
    the long Erie stay the camera keeps drifting in, so the map never sits
    dead. The last entry's tail runs the freight between Ulaanbaatar and the
    mine, which is what that job was.
+
+   At each city the place itself lands out of its lamp: a photo on a plate,
+   tethered to the lamp, each with its own reveal (path/LandingPhotos). The
+   camera lifts the city while one is up, so the plate sits under it.
 
    The board says each thing once: every entry is a row, and the one on screen
    opens in place with its neon stamp (the old ledger's, path/NeonStamp), what
@@ -100,6 +106,18 @@ function plan(entries: Pick<TimelineEntry, "stop">[]) {
 const BEATS = plan(baseTimeline);
 const OUT = BEATS.legs.find((l) => l.from === "ub" && l.to === "erie");
 const BACK = BEATS.legs.find((l) => l.from === "erie" && l.to === "ub");
+
+/** Each entry's stretch of the stage: up to the next entry or flight. The
+    first begins where the stage does; the last runs to its end. */
+const WINDOWS: [number, number][] = BEATS.at.map((a, i, all) => [
+  i === 0 ? -EDGE : a - 0.5,
+  i === all.length - 1 ? BEATS.span : a + 0.5,
+]);
+
+/** Where the subject sits, 0–1 down the stage: higher over a city, so the
+    landing photo fits under it; back to the middle in flight. */
+const FY_GROUND = 0.38;
+const FY_AIR = 0.56;
 
 const FLIGHT: FlightPlan = {
   from: -EDGE,
@@ -186,7 +204,7 @@ function Stage({ sectionRef: ref }: { sectionRef: React.RefObject<HTMLElement | 
   }, [fx]);
 
   const frame = useTransform<number, GlobeFrame>([pos, fx], ([p, x]) => ({
-    ...shotAt(p, FLIGHT, x, 0.56),
+    ...shotAt(p, FLIGHT, x, FY_GROUND + (FY_AIR - FY_GROUND) * airAt(p, FLIGHT)),
     out: OUT ? span(p, OUT.start, OUT.end) : 1,
     back: BACK ? span(p, BACK.start, BACK.end) : 0,
     freight: span(p, BEATS.freight[0], BEATS.freight[1]),
@@ -232,10 +250,19 @@ function Stage({ sectionRef: ref }: { sectionRef: React.RefObject<HTMLElement | 
   }, [moment, goTo, ref]);
 
   const here: StopKey | null = moment.kind === "entry" ? entries[moment.i].stop : null;
+  const [noGlobe, setNoGlobe] = useState(false);
 
   return (
     <div className="sticky top-0 h-dvh w-full overflow-hidden">
-      <RouteGlobe className="absolute inset-0" frame={frame} here={here} labels={P.places} distance={P.distance(KM)} />
+      <RouteGlobe
+        className="absolute inset-0"
+        frame={frame}
+        here={here}
+        labels={P.places}
+        distance={P.distance(KM)}
+        onUnavailable={() => setNoGlobe(true)}
+      />
+      <LandingPhotos entries={entries} windows={WINDOWS} pos={pos} frame={frame} words={P} tether={!noGlobe} />
       {/* The page falls off behind the board, so its text sits on dark. */}
       <div
         aria-hidden
@@ -682,6 +709,16 @@ function Row({ entry, reduced, words }: { entry: TimelineEntry; reduced: boolean
           <DecodeText text={entry.org} play={play} instant={reduced} />
         </p>
         <p className="mt-5 max-w-3xl text-lg leading-relaxed text-fg/85">{entry.description}</p>
+        {entry.photo && (
+          <PhotoFigure
+            photo={entry.photo}
+            caption={words.photos[entry.photo].caption}
+            alt={words.photos[entry.photo].alt}
+            crop={entry.crop}
+            reduced={reduced}
+            className="mt-6 max-w-2xl"
+          />
+        )}
         <Extra entry={entry} words={words} className="mt-5" />
         {entry.extra === "spotfixes" && (
           <button

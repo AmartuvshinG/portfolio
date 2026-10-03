@@ -12,6 +12,7 @@
 
 import type { TechKey } from "@/components/ui/TechMarks";
 import type { StopKey } from "@/lib/routeGeo";
+import type { PhotoCrop, PhotoKey } from "@/lib/pathPhotos";
 
 export type AccentKey = "accent" | "accent-2" | "alert";
 
@@ -104,6 +105,11 @@ export interface TimelineEntry {
       role through a contractor it is the place worked at, which is the name
       people know; the org line still says who the employer was. */
   mark?: OrgMarkKey;
+  /** The photo that lands from the city's lamp on the Path (lib/pathPhotos):
+      the place itself, not a logo. Locale-free. */
+  photo?: PhotoKey;
+  /** The same photo as the entry before, reframed: the camera walks on. */
+  crop?: PhotoCrop;
   title: string;
   org: string;
   description: string;
@@ -456,6 +462,7 @@ export const timeline: TimelineEntry[] = [
     kind: "education",
     stop: "ub",
     mark: "must",
+    photo: "must",
     title: "University studies · 21 credits",
     org: "Mongolian University of Science and Technology",
     description: "Ulaanbaatar, Mongolia. 21 credits completed.",
@@ -467,6 +474,7 @@ export const timeline: TimelineEntry[] = [
     kind: "work",
     stop: "erie",
     mark: "gannon",
+    photo: "gannon",
     title: "Summer Student Conference Assistant",
     org: "Gannon Auxiliary Services",
     description: "Prepared residence halls and supported conference guests.",
@@ -478,6 +486,8 @@ export const timeline: TimelineEntry[] = [
     kind: "work",
     stop: "erie",
     mark: "gannon",
+    photo: "gannon",
+    crop: { x: 0.6, y: 0.36, scale: 1.6 },
     title: "Front Desk Student Attendant",
     org: "Gannon Residence Life",
     description: "Maintained student housing records in StarRez and resolved resident inquiries.",
@@ -489,6 +499,7 @@ export const timeline: TimelineEntry[] = [
     kind: "work",
     stop: "erie",
     mark: "chickfila",
+    photo: "chickfila",
     title: "Foodservice Student Worker",
     org: "Metz Culinary · Chick-fil-A",
     description: "High-volume food preparation and inventory during peak campus hours.",
@@ -501,6 +512,7 @@ export const timeline: TimelineEntry[] = [
     stop: "erie",
     extra: "spotfixes",
     mark: "gannon",
+    photo: "zurn",
     title: "Spotfixes · Senior Design Capstone",
     org: "Gannon University · Team of 3",
     description:
@@ -514,6 +526,7 @@ export const timeline: TimelineEntry[] = [
     stop: "erie",
     extra: "gpa",
     mark: "gannon",
+    photo: "victor",
     title: "B.S. Software Engineering",
     org: "Gannon University",
     description:
@@ -526,6 +539,7 @@ export const timeline: TimelineEntry[] = [
     kind: "work",
     stop: "ub",
     mark: "oyutolgoi",
+    photo: "monnis",
     title: "Corporate Logistics Coordinator (Contractor, Khanbogd Khurd)",
     org: "Oyu Tolgoi LLC",
     description:

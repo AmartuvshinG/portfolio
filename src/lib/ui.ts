@@ -352,6 +352,34 @@ const en = {
     openCase: "Spotfixes case file",
     freight: "Freight between the Ulaanbaatar HQ and the mine site",
     now: "Now",
+    /** The landing photos (lib/pathPhotos). Captions name only what the
+        picture itself shows. */
+    photos: {
+      must: {
+        caption: "MUST · Building VI",
+        alt: "The orange-and-white Building VI of the Mongolian University of Science and Technology under a blue sky in Ulaanbaatar.",
+      },
+      gannon: {
+        caption: "Gannon University · Erie",
+        alt: "A red-stone Gannon University building behind the GANNON sign and three flags in Erie.",
+      },
+      chickfila: {
+        caption: "Chick-fil-A · on campus",
+        alt: "The Chick-fil-A cow in a red jersey outside the campus Chick-fil-A in the snow.",
+      },
+      zurn: {
+        caption: "Zurn Science Center · Gannon",
+        alt: "Zurn Science Center at Gannon University, with an autumn tree in front.",
+      },
+      victor: {
+        caption: "Victor · Gannon's mascot",
+        alt: "Victor, Gannon's golden-knight mascot, holding a sword and a pom-pom on the football field.",
+      },
+      monnis: {
+        caption: "Monnis Tower · Ulaanbaatar",
+        alt: "The glass Monnis Tower in Ulaanbaatar against a blue sky.",
+      },
+    },
   },
   caseFile: {
     label: "Case file",
@@ -410,7 +438,7 @@ const en = {
     },
     /** Trademark credit for the marks on the Signal panels (see BrandMarks) and the Path (see OrgMark). */
     credit:
-      "GitHub and the Invertocat logo are trademarks of GitHub, Inc. LinkedIn and the IN logo are registered trademarks of LinkedIn Corporation. The Gannon University, Mongolian University of Science and Technology, Chick-fil-A and Oyu Tolgoi logos belong to their owners and mark where I studied and worked; no endorsement is implied.",
+      "GitHub and the Invertocat logo are trademarks of GitHub, Inc. LinkedIn and the IN logo are registered trademarks of LinkedIn Corporation. The Gannon University, Mongolian University of Science and Technology, Chick-fil-A and Oyu Tolgoi logos belong to their owners and mark where I studied and worked; no endorsement is implied. The photographs on the Path belong to their owners.",
   },
   diagnostics: {
     title: "Diagnostics",
@@ -799,6 +827,33 @@ const mn: UiStrings = {
     openCase: "Spotfixes — дэлгэрэнгүй",
     freight: "Төв оффис болон уурхайн хоорондын ачаа тээвэр",
     now: "Одоо",
+    /* Drafts: awaiting Amartuvshin's proofread. */
+    photos: {
+      must: {
+        caption: "ШУТИС · VI байр",
+        alt: "Цэнхэр тэнгэрийн дор ШУТИС-ийн улбар шар, цагаан өнгөтэй VI байр, Улаанбаатар.",
+      },
+      gannon: {
+        caption: "Gannon их сургууль · Эри",
+        alt: "GANNON самбар, гурван тугны ард Gannon их сургуулийн улаан чулуун барилга, Эри.",
+      },
+      chickfila: {
+        caption: "Chick-fil-A · оюутны хотхонд",
+        alt: "Цасан дунд, оюутны хотхоны Chick-fil-A-ийн үүдэнд улаан өмсгөлтэй Chick-fil-A үнээ.",
+      },
+      zurn: {
+        caption: "Zurn Science Center · Gannon",
+        alt: "Gannon их сургуулийн Zurn Science Center, урд нь намрын мод.",
+      },
+      victor: {
+        caption: "Victor · Gannon-ий сахиус",
+        alt: "Gannon-ий алтан баатар сахиус Victor хөлбөмбөгийн талбай дээр сэлэм, помпон барьж байна.",
+      },
+      monnis: {
+        caption: "Monnis Tower · Улаанбаатар",
+        alt: "Цэнхэр тэнгэрийн дор Улаанбаатар дахь шилэн Monnis Tower.",
+      },
+    },
   },
   caseFile: {
     label: "Төслийн дэлгэрэнгүй",
@@ -852,7 +907,7 @@ const mn: UiStrings = {
       via: "эх сурвалж",
     },
     credit:
-      "GitHub болон Invertocat лого нь GitHub, Inc.-ийн барааны тэмдэг. LinkedIn болон IN лого нь LinkedIn Corporation-ийн бүртгэлтэй барааны тэмдэг. Gannon University, ШУТИС, Chick-fil-A, Оюу Толгойн лого нь эзэмшигчдийнх бөгөөд миний суралцаж, ажилласан газрыг заана; ямар нэг дэмжлэг илэрхийлээгүй.",
+      "GitHub болон Invertocat лого нь GitHub, Inc.-ийн барааны тэмдэг. LinkedIn болон IN лого нь LinkedIn Corporation-ийн бүртгэлтэй барааны тэмдэг. Gannon University, ШУТИС, Chick-fil-A, Оюу Толгойн лого нь эзэмшигчдийнх бөгөөд миний суралцаж, ажилласан газрыг заана; ямар нэг дэмжлэг илэрхийлээгүй. Замнал хэсгийн гэрэл зургууд эзэмшигчдийнх.",
   },
   diagnostics: {
     title: "Оношилгоо",

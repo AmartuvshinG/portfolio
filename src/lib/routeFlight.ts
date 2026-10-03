@@ -74,23 +74,24 @@ function fly(a: Spot, b: Spot, dir: 1 | -1, t: number): Spot {
   };
 }
 
+/** How far into the air the camera is at `pos`: 0 on the ground over a
+    city, 1 at the top of a flight. */
+export function airAt(pos: number, { out, back }: FlightPlan): number {
+  if (pos >= out.start && pos < out.end) return Math.sin(Math.PI * smooth(span(pos, out.start, out.end)));
+  if (pos >= back.start && pos < back.end) return Math.sin(Math.PI * smooth(span(pos, back.start, back.end)));
+  return 0;
+}
+
 /** The shot at `pos`, framed with the subject at (fx, fy). */
 export function shotAt(pos: number, plan: FlightPlan, fx: number, fy: number): Shot {
   const { out, back } = plan;
   let s: Spot;
-  let air = 0;
   if (pos < out.start) s = hold(UB, span(pos, plan.from, out.start));
-  else if (pos < out.end) {
-    const t = span(pos, out.start, out.end);
-    s = fly(UB[1], ERIE[0], 1, t);
-    air = Math.sin(Math.PI * smooth(t));
-  } else if (pos < back.start) s = hold(ERIE, span(pos, out.end, back.start));
-  else if (pos < back.end) {
-    const t = span(pos, back.start, back.end);
-    s = fly(ERIE[1], GOBI[0], -1, t);
-    air = Math.sin(Math.PI * smooth(t));
-  } else s = hold(GOBI, span(pos, back.end, plan.to));
-  return { ...s, fx: fx - SLIDE * air, fy };
+  else if (pos < out.end) s = fly(UB[1], ERIE[0], 1, span(pos, out.start, out.end));
+  else if (pos < back.start) s = hold(ERIE, span(pos, out.end, back.start));
+  else if (pos < back.end) s = fly(ERIE[1], GOBI[0], -1, span(pos, back.start, back.end));
+  else s = hold(GOBI, span(pos, back.end, plan.to));
+  return { ...s, fx: fx - SLIDE * airAt(pos, plan), fy };
 }
 
 /** The still shot for phones and reduced motion: the whole route at once. */
