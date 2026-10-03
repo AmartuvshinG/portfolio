@@ -9,7 +9,7 @@ import { IconArrowLeft, IconArrowRight, IconClose } from "@/components/ui/HudIco
 import { accentColor, readable, type Project } from "@/lib/content";
 import { useI18n } from "@/lib/i18n";
 import { CASE_EVENT, clearCase, readCase, replaceCase } from "@/lib/caseFile";
-import { playInkWipe } from "@/lib/inkWipe";
+import { playWindowShut } from "@/lib/neonGate";
 import { setGroundCovered } from "@/lib/groundBus";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
 import { useOverlay } from "@/hooks/useOverlay";
@@ -68,10 +68,11 @@ export function CaseFileHost() {
     return () => setGroundCovered("case-file", false);
   }, [slug]);
 
-  /* Closing is the same cut in reverse: ink floods over the dossier, and the
-     page it was opened from is what drains back into view. */
+  /* Closing is the window it opened through, shutting: the dark closes in
+     to a slit of light over the file, the slit closes, and the dark lifts
+     off the page it was opened from (lib/neonGate). */
   const close = useCallback(() => {
-    playInkWipe({
+    playWindowShut({
       onCovered: () => {
         if (pushed.current) {
           pushed.current = false;

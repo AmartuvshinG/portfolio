@@ -19,6 +19,7 @@ import { LocaleProvider } from "@/lib/i18n";
 import { ActTheme } from "@/components/chrome/ActTheme";
 import { SiteBackdrop } from "@/components/backdrop/SiteBackdrop";
 import { Preloader } from "@/components/chrome/Preloader";
+import { NeonGateHost } from "@/components/chrome/NeonGateHost";
 import { Letterbox } from "@/components/chrome/Letterbox";
 import { ChapterFrame } from "@/components/chrome/ChapterFrame";
 import { HudCursor } from "@/components/chrome/HudCursor";
@@ -206,6 +207,8 @@ export default function RootLayout({
             <LiquidGlassFilter />
 
             <Preloader />
+            {/* Case files open through it (lib/neonGate). */}
+            <NeonGateHost />
             <Letterbox />
             <HudCursor />
             <Diagnostics />

@@ -13,7 +13,7 @@
  * jump the smooth-scroll layer never hears about.
  */
 
-import { playInkWipe } from "@/lib/inkWipe";
+import { playNeonGate } from "@/lib/neonGate";
 
 export const CASE_EVENT = "casefile:change";
 
@@ -45,10 +45,12 @@ export function isCaseHash(hash: string): boolean {
  * section hash back on the next scroll anyway.
  */
 export function openCase(slug: string) {
-  /* The dossier opens under the ink wipe, at the moment the screen is fully
-     covered, so it is revealed as the ink drains (lib/inkWipe). Without
-     WebGL or under reduced motion the wipe calls straight through. */
-  playInkWipe({
+  /* The file opens through the neon gate: its name condenses while its
+     pictures load, and the file is mounted the moment the name locks, so
+     the window tears open onto it (lib/neonGate). Under reduced motion the
+     gate calls straight through. */
+  playNeonGate({
+    slug,
     onCovered: () => {
       const { pathname, search } = window.location;
       window.history.replaceState(window.history.state, "", pathname + search);
