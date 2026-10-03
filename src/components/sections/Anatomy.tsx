@@ -1,10 +1,11 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from "react";
 import {
   AnimatePresence,
   motion,
   useInView,
+  useMotionValue,
   useMotionValueEvent,
   useScroll,
   useTransform,
@@ -51,8 +52,9 @@ import { cn } from "@/lib/utils";
 const HOLD = 0.26;
 /** Extra rest before the first beat and after the last. */
 const EDGE = 0.3;
-/** Scroll per beat, in viewport heights. */
-const STEP_VH = 60;
+/** Scroll per beat, in viewport heights. Long enough that a step taller than
+ *  the stage reads through at about the speed of the scroll (see StepCard). */
+const STEP_VH = 75;
 
 export function Anatomy() {
   const { t } = useI18n();
@@ -144,6 +146,7 @@ function Stage({ sectionRef: ref }: { sectionRef: React.RefObject<HTMLElement | 
     return (i + t * t * (3 - 2 * t)) / (n - 1);
   });
   const b = A.beats[beat];
+  const boxRef = useRef<HTMLDivElement>(null);
 
   return (
     <div className="sticky top-0 h-dvh w-full overflow-hidden">
@@ -167,22 +170,13 @@ function Stage({ sectionRef: ref }: { sectionRef: React.RefObject<HTMLElement | 
         <Rail words={A} along={along} beat={beat} goTo={goTo} />
 
         {/* The step on screen. Decoration for assistive tech, which reads the
-            full sequence below instead. On a short screen a long step
-            scrolls inside itself (Lenis leaves it alone). */}
-        <div
-          aria-hidden
-          data-lenis-prevent
-          className="relative mt-6 min-h-0 flex-1 overflow-y-auto overflow-x-hidden overscroll-contain [scrollbar-width:thin]"
-        >
+            full sequence below instead. Never a scroll box of its own: the
+            wheel over it must move the page, or the stage stalls under the
+            pointer. A step taller than the box is carried up through it by
+            the page scroll instead (StepCard). */}
+        <div ref={boxRef} aria-hidden className="relative mt-6 min-h-0 flex-1 overflow-hidden">
           <AnimatePresence mode="popLayout" initial={false}>
-            <motion.article
-              key={beat}
-              className="liquid-glass absolute inset-x-0 top-0 grid grid-cols-[minmax(0,5fr)_minmax(0,6fr)] gap-10 rounded-[20px] p-7 lg:gap-14 lg:p-9"
-              initial={{ clipPath: "inset(0 100% 0 0 round 20px)", x: 24 }}
-              animate={{ clipPath: "inset(0 0% 0 0 round 20px)", x: 0 }}
-              exit={{ clipPath: "inset(0 0 0 100% round 20px)", x: -24, transition: { duration: 0.35, ease: EASE_EXPO } }}
-              transition={{ duration: 0.7, ease: EASE_EXPO }}
-            >
+            <StepCard key={beat} i={beat} n={n} pos={pos} boxRef={boxRef}>
               <div className="min-w-0">
                 <span className="display-caps tabular text-[clamp(3rem,5vw,5.5rem)] leading-none text-[var(--color-holo)] [text-shadow:0_0_28px_color-mix(in_srgb,var(--color-holo)_45%,transparent)]">
                   {String(beat + 1).padStart(2, "0")}
@@ -197,7 +191,7 @@ function Stage({ sectionRef: ref }: { sectionRef: React.RefObject<HTMLElement | 
               <div className="min-w-0 self-center">
                 <BeatDetail i={beat} words={A} animate />
               </div>
-            </motion.article>
+            </StepCard>
           </AnimatePresence>
         </div>
 
@@ -207,6 +201,59 @@ function Stage({ sectionRef: ref }: { sectionRef: React.RefObject<HTMLElement | 
     </div>
   );
 }
+
+/**
+ * One step's card. When it is taller than the stage's box, the page scroll
+ * carries it up through the box across the step's stretch of the scroll —
+ * top showing as the step arrives, foot showing as it leaves — so the whole
+ * step is read without the card ever capturing the wheel.
+ */
+const StepCard = forwardRef<
+  HTMLElement,
+  {
+    i: number;
+    n: number;
+    pos: MotionValue<number>;
+    boxRef: React.RefObject<HTMLDivElement | null>;
+    children: React.ReactNode;
+  }
+>(function StepCard({ i, n, pos, boxRef, children }, outer) {
+  const ref = useRef<HTMLElement>(null);
+  useImperativeHandle(outer, () => ref.current as HTMLElement);
+  const over = useMotionValue(0);
+  useEffect(() => {
+    const el = ref.current;
+    const box = boxRef.current;
+    if (!el || !box) return;
+    const measure = () => over.set(Math.max(0, el.offsetHeight - box.clientHeight));
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    ro.observe(box);
+    return () => ro.disconnect();
+  }, [boxRef, over]);
+  /* The read runs from just after the previous wipe to just before the next;
+     the first and last steps use their edge rests too. */
+  const lo = i === 0 ? -EDGE + 0.05 : -0.4;
+  const hi = i === n - 1 ? EDGE - 0.05 : 0.4;
+  const y = useTransform([pos, over], ([p, o]: number[]) => {
+    const t = Math.min(1, Math.max(0, (p - i - lo) / (hi - lo)));
+    return -o * t;
+  });
+  return (
+    <motion.article
+      ref={ref}
+      className="liquid-glass absolute inset-x-0 top-0 grid grid-cols-[minmax(0,5fr)_minmax(0,6fr)] gap-10 rounded-[20px] p-7 lg:gap-14 lg:p-9"
+      style={{ y }}
+      initial={{ clipPath: "inset(0 100% 0 0 round 20px)", x: 24 }}
+      animate={{ clipPath: "inset(0 0% 0 0 round 20px)", x: 0 }}
+      exit={{ clipPath: "inset(0 0 0 100% round 20px)", x: -24, transition: { duration: 0.35, ease: EASE_EXPO } }}
+      transition={{ duration: 0.7, ease: EASE_EXPO }}
+    >
+      {children}
+    </motion.article>
+  );
+});
 
 /**
  * The pipeline: six stations on one line, a lit track that fills behind the
