@@ -452,8 +452,9 @@ function Board({
           {words.openCase} <IconArrowRight size={13} />
         </button>
       </div>
-      {/* The calendar every row's bar is drawn against. */}
-      <div aria-hidden className="relative mx-2 mb-1 mt-2 h-5">
+      {/* The calendar every row's bar is drawn against, and the date the
+          stage has reached riding along it. */}
+      <div aria-hidden className="relative mx-2 mb-1 mt-2 h-7">
         {AXIS_YEARS.map((y) => (
           <span
             key={y}
@@ -463,6 +464,7 @@ function Board({
             {`'${String(y).slice(2)}`}
           </span>
         ))}
+        <NowMark pos={pos} />
       </div>
       <div className="relative flex min-h-0 flex-col">
       <ol
@@ -555,21 +557,21 @@ function Board({
           );
         })}
       </ol>
-      <NowLine pos={pos} />
       </div>
     </div>
   );
 }
 
-/** The ribbon's "now": one hairline down every row at the date the stage
- *  has reached, driven by the same scroll as the globe. */
-function NowLine({ pos }: { pos: MotionValue<number> }) {
+/** The ribbon's "now": a marker on the year axis at the date the stage has
+ *  reached, driven by the same scroll as the globe. It stays on the axis,
+ *  under the year labels — never across the rows being read. */
+function NowMark({ pos }: { pos: MotionValue<number> }) {
   const x = useTransform(pos, (p) => `${along(dateAt(p)) * 100}%`);
   return (
-    <div aria-hidden className="pointer-events-none absolute inset-y-0 left-2 right-2">
+    <div className="pointer-events-none absolute inset-x-0 bottom-0 h-2">
+      <span className="absolute inset-x-0 bottom-[3px] h-px bg-line" />
       <motion.span className="absolute inset-0" style={{ x }}>
-        <span className="absolute inset-y-0 left-0 w-px bg-[linear-gradient(to_bottom,transparent,var(--color-hazard)_12%,var(--color-hazard)_88%,transparent)] opacity-70" />
-        <span className="absolute -left-[3px] top-0 h-[7px] w-[7px] rotate-45 bg-[var(--color-hazard)] shadow-[0_0_10px_var(--color-hazard)]" />
+        <span className="absolute -left-[4px] bottom-0 h-[7px] w-[7px] rotate-45 bg-[var(--color-hazard)] shadow-[0_0_10px_var(--color-hazard)]" />
       </motion.span>
     </div>
   );
