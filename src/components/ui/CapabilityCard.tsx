@@ -64,7 +64,7 @@ export function CapabilityCard({ item }: { item: Capability }) {
         >
           <Icon size={22} strokeWidth={1.6} aria-hidden />
         </span>
-        <span className="micro tabular">{item.code}</span>
+        <span className="micro tabular">{item.code.slice(-2)}</span>
       </div>
 
       <h3

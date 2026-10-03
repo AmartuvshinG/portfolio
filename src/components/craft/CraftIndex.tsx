@@ -1,8 +1,16 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
-import { motion, useMotionValueEvent, useScroll, useTransform } from "framer-motion";
+import {
+  animate,
+  motion,
+  useMotionValue,
+  useMotionValueEvent,
+  useScroll,
+  useTransform,
+  type MotionValue,
+} from "framer-motion";
 import { ArrowRight } from "lucide-react";
 import type { Capability } from "@/lib/content";
 import { useI18n } from "@/lib/i18n";
@@ -11,39 +19,48 @@ import { ICONS } from "@/components/ui/CapabilityCard";
 import { TechMark, techLabel } from "@/components/ui/TechMarks";
 import { LogoDock } from "@/components/ui/LogoDock";
 import { CourseChips } from "@/components/ui/CourseChips";
-import {
-  HoverSlider,
-  HoverSliderImageWrap,
-  HoverSliderPanel,
-  TextStaggerHover,
-} from "@/components/ui/animated-slideshow";
+import { HoverSlider, TextStaggerHover } from "@/components/ui/animated-slideshow";
 import { useSmoothScroll } from "@/components/chrome/SmoothScroll";
+import { EASE_EXPO } from "@/lib/motion";
 import { cn, pad } from "@/lib/utils";
 
 /** Scroll per capability, in viewport heights. */
-const STEP_VH = 55;
+const STEP_VH = 60;
+/** Degrees between neighbouring faces of the drum. */
+const FACE_DEG = 42;
+/** Share of each step the drum holds still, so a face can be read at rest. */
+const HOLD = 0.45;
+
+/** Scroll position (0…n-1, continuous) → drum position: whole numbers held,
+ *  the turns between them eased. */
+function stepped(v: number): number {
+  const i = Math.floor(v);
+  const f = v - i;
+  const a = HOLD / 2;
+  const t = Math.min(1, Math.max(0, (f - a) / (1 - HOLD)));
+  return i + t * t * (3 - 2 * t);
+}
 
 /**
- * Craft, as an index.
+ * Skills, as a drum.
  *
- * The section pins; the six capabilities are a column of titles on the left
- * and one evidence panel on the right. The active title's letters roll over
- * and its panel wipes down over the last one (ui/animated-slideshow).
+ * The section pins. The six skills are a column of titles on the left and,
+ * on the right, six panels set round a drum that the page scroll turns: the
+ * face in front is the one being read, the next waits below, tipped back,
+ * and the last one rolls away over the top. Each turn is eased and each face
+ * holds still for a moment, so a reader who stops scrolling always stops on
+ * a flat, sharp panel — at rest a face's transform is exactly `none`.
  *
- * **Three ways to drive it, one index.** The page scroll steps through the six
- * in order — so a reader who only scrolls sees every one — while hovering or
- * focusing a title jumps straight to it. The pointer wins until the scroll
- * reaches the next step, which hands control back. Clicking a title glides the
- * page to that title's step, so the scroll and the picture agree again.
+ * A large outlined numeral rolls with the drum like an odometer, and each
+ * title's underline fills as its face comes round, so the scroll position is
+ * always readable.
  *
- * **Evidence, not decoration.** A capability with a `shot` shows the real
- * screenshot from the project that proves it. The rest get a schematic: their
- * glyph and their tools, drawn large. Nothing on either is invented.
+ * **Three ways to drive it, one drum.** Scroll turns it; hovering or focusing
+ * a title turns it straight to that face until the scroll moves on to the
+ * next step; clicking a title glides the page to that face's step.
  *
- * **Sharp at rest.** Nothing that carries text is scaled or rotated; the wipe
- * is a clip-path, which never resamples what it reveals.
- *
- * Replaced the sideways CraftTrack on wide screens. Phones keep the stack.
+ * Transform and opacity only, from one scroll value — no React render per
+ * frame. Phones keep the stack (CraftTrack); reduced motion keeps the grid.
  */
 export function CraftIndex({ items }: { items: Capability[] }) {
   const { t } = useI18n();
@@ -56,18 +73,34 @@ export function CraftIndex({ items }: { items: Capability[] }) {
 
   const { scrollYProgress } = useScroll({ target: pinRef, offset: ["start start", "end end"] });
   const rail = useTransform(scrollYProgress, [0, 1], [0.02, 1]);
-  const ghostX = useTransform(scrollYProgress, [0, 1], ["2%", "-14%"]);
+  /** Where the drum is turned to: the scroll, unless a title has the pointer. */
+  const view = useMotionValue(0);
+  const pointerRef = useRef<number | null>(null);
 
   useMotionValueEvent(scrollYProgress, "change", (v) => {
-    const i = Math.min(n - 1, Math.max(0, Math.round(v * (n - 1))));
+    const raw = v * (n - 1);
+    const i = Math.min(n - 1, Math.max(0, Math.round(raw)));
     if (i !== step) {
       setStep(i);
-      setPointer(null);
+      if (pointerRef.current !== null) {
+        pointerRef.current = null;
+        setPointer(null);
+        animate(view, stepped(raw), { duration: 0.5, ease: EASE_EXPO });
+        return;
+      }
     }
+    if (pointerRef.current === null && !view.isAnimating()) view.set(stepped(raw));
   });
+
+  useEffect(() => {
+    if (pointer === null) return;
+    const c = animate(view, pointer, { duration: 0.7, ease: EASE_EXPO });
+    return () => c.stop();
+  }, [pointer, view]);
 
   const choose = (i: number) => {
     if (i === active) return;
+    pointerRef.current = i;
     setPointer(i);
   };
 
@@ -80,17 +113,11 @@ export function CraftIndex({ items }: { items: Capability[] }) {
     scrollTo(top + (travel * i) / (n - 1));
   };
 
+  const counterY = useTransform(view, (v) => `${-v}em`);
+
   return (
     <div ref={pinRef} className="relative" style={{ height: `calc(100svh + ${(n - 1) * STEP_VH}svh)` }}>
       <div className="sticky top-0 flex h-svh flex-col justify-center overflow-clip pt-20">
-        <motion.span
-          aria-hidden
-          style={{ x: ghostX }}
-          className="outline-text pointer-events-none absolute bottom-[4%] left-0 whitespace-nowrap font-display text-[clamp(7rem,20vw,22rem)] leading-none opacity-50"
-        >
-          {t.craft.title}
-        </motion.span>
-
         <HoverSlider
           active={active}
           onActiveChange={choose}
@@ -101,11 +128,11 @@ export function CraftIndex({ items }: { items: Capability[] }) {
               <li key={item.code} className="flex items-start gap-4 lg:gap-6">
                 <span
                   className={cn(
-                    "micro tabular mt-[clamp(0.3rem,0.75vw,0.95rem)] w-14 shrink-0 transition-colors duration-300",
+                    "micro tabular mt-[clamp(0.3rem,0.75vw,0.95rem)] w-8 shrink-0 transition-colors duration-300",
                     i === active ? "text-fg" : "text-muted"
                   )}
                 >
-                  {item.code}
+                  {pad(i + 1)}
                 </span>
                 <span className="relative min-w-0">
                   <TextStaggerHover
@@ -115,35 +142,45 @@ export function CraftIndex({ items }: { items: Capability[] }) {
                     dim={0.5}
                     className="font-display text-[clamp(1.2rem,2.05vw,2.6rem)] uppercase leading-[1.2] tracking-tight text-fg"
                   />
-                  {/* The ramp underline: a gradient, never a flat fill. */}
-                  <motion.span
-                    aria-hidden
-                    className="spectrum-rule absolute -bottom-1 left-0 h-[2px] w-full origin-left"
-                    initial={false}
-                    animate={{ scaleX: i === active ? 1 : 0, opacity: i === active ? 1 : 0 }}
-                    transition={{ duration: 0.5, ease: [0.33, 1, 0.68, 1] }}
-                  />
+                  <Fill view={view} i={i} />
                 </span>
               </li>
             ))}
           </ol>
 
-          <div className="relative">
+          <div className="relative" style={{ perspective: "1600px" }}>
             <Brackets />
-            <HoverSliderImageWrap className="rounded-[4px]">
+            <div className="grid [transform-style:preserve-3d]">
               {items.map((item, i) => (
-                <HoverSliderPanel key={item.code} index={i}>
+                <Face key={item.code} view={view} i={i} live={i === active}>
                   <Slide item={item} index={i} live={i === active} />
-                </HoverSliderPanel>
+                </Face>
               ))}
-            </HoverSliderImageWrap>
+            </div>
           </div>
         </HoverSlider>
 
         <div className="relative mx-auto mt-8 flex w-full max-w-[1800px] items-center gap-5 px-8 lg:px-16">
-          <span className="font-mono text-sm tabular text-fg">
-            {pad(active + 1)}
-            <span className="text-muted"> / {pad(n)}</span>
+          {/* The odometer: the step number on a strip that rolls with the drum. */}
+          <span className="flex items-baseline gap-2 tabular">
+            <span className="sr-only">
+              {pad(active + 1)} / {pad(n)}
+            </span>
+            <span
+              aria-hidden
+              className="block h-[1em] overflow-hidden font-display text-[clamp(2.25rem,3.4vw,3.5rem)] leading-none text-fg"
+            >
+              <motion.span className="flex flex-col" style={{ y: counterY }}>
+                {items.map((item, i) => (
+                  <span key={item.code} className="block h-[1em]">
+                    {pad(i + 1)}
+                  </span>
+                ))}
+              </motion.span>
+            </span>
+            <span aria-hidden className="font-mono text-sm text-muted">
+              / {pad(n)}
+            </span>
           </span>
           <span aria-hidden className="relative h-px flex-1 bg-line">
             <motion.span className="spectrum-rule absolute inset-0 origin-left" style={{ scaleX: rail }} />
@@ -152,6 +189,54 @@ export function CraftIndex({ items }: { items: Capability[] }) {
         </div>
       </div>
     </div>
+  );
+}
+
+/** One face of the drum, turned about an axis one radius behind the panel
+ *  (radius ≈ panel height / 2·sin(FACE_DEG/2), so neighbouring faces meet
+ *  edge to edge instead of cutting through each other),
+ *  so the faces travel round a cylinder rather than hinging. */
+function Face({
+  view,
+  i,
+  live,
+  children,
+}: {
+  view: MotionValue<number>;
+  i: number;
+  live: boolean;
+  children: React.ReactNode;
+}) {
+  const transform = useTransform(view, (v) => {
+    const d = Math.max(-2, Math.min(2, v - i));
+    if (Math.abs(d) < 1e-3) return "none";
+    return `translateZ(calc(var(--drum-r) * -1)) rotateX(${(d * FACE_DEG).toFixed(2)}deg) translateZ(var(--drum-r))`;
+  });
+  /* Solid near the front, gone well before a face could sit beside the one
+     being read: two half-faded faces overlapping is noise, not depth. */
+  const opacity = useTransform(view, (v) => Math.min(1, Math.max(0, (0.92 - Math.abs(v - i)) / 0.55)));
+  const visibility = useTransform(view, (v) => (Math.abs(v - i) >= 0.92 ? "hidden" : "visible"));
+  return (
+    <motion.div
+      aria-hidden={!live}
+      inert={!live}
+      className="[grid-area:1/1] [backface-visibility:hidden] [--drum-r:104svh]"
+      style={{ transform, opacity, visibility, zIndex: live ? 2 : 1 }}
+    >
+      {children}
+    </motion.div>
+  );
+}
+
+/** A title's underline: fills as its face comes round to the front. */
+function Fill({ view, i }: { view: MotionValue<number>; i: number }) {
+  const scaleX = useTransform(view, (v) => Math.max(0, 1 - Math.abs(v - i)));
+  return (
+    <motion.span
+      aria-hidden
+      className="spectrum-rule absolute -bottom-1 left-0 h-[2px] w-full origin-left"
+      style={{ scaleX, opacity: scaleX }}
+    />
   );
 }
 
@@ -193,7 +278,7 @@ function Slide({ item, index, live }: { item: Capability; index: number; live: b
         )}
         <span aria-hidden className="pointer-events-none absolute inset-0" style={{ backgroundImage: SCANLINES }} />
         <span className="micro absolute left-4 top-3 rounded-sm bg-[#061317]/80 px-2 py-1 tabular text-fg">
-          {item.code}
+          {pad(index + 1)}
           {proof && item.shot ? ` · ${proof.title}` : ""}
         </span>
       </div>
@@ -229,7 +314,7 @@ function Slide({ item, index, live }: { item: Capability; index: number; live: b
           </div>
         )}
         <div className="flex flex-wrap items-end justify-between gap-4">
-          <LogoDock keys={item.stack} labels={t.craft.tools} size="sm" align="start" />
+          <LogoDock keys={item.stack} labels={t.craft.tools} size="sm" align="start" play={live} />
           {proof && (
             <a
               href={caseHash(proof.slug)}
