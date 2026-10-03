@@ -267,6 +267,8 @@ const en = {
     work: "Work",
     education: "Education",
     project: "Project",
+    /** The route log's data shards (path/Shard): each type's class code. */
+    shardCodes: { education: "EDU", work: "WRK", project: "PRJ" },
     months: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
     summer: "Summer",
     graduated: "Graduated",
@@ -644,6 +646,9 @@ const mn: UiStrings = {
     work: "Ажил",
     education: "Боловсрол",
     project: "Төсөл",
+    /* Latin on purpose, like a part number; the type word under it is
+       Mongolian. Awaiting Amartuvshin's OK. */
+    shardCodes: { education: "EDU", work: "WRK", project: "PRJ" },
     /* Mongolian months are ordinal ("6-р сар", "the 6th month"); the ordinal
        suffix is the same for all twelve. */
     months: Array.from({ length: 12 }, (_, i) => `${i + 1}-р сар`),

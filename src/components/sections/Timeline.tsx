@@ -11,7 +11,6 @@ import {
   useScroll,
   useTransform,
 } from "framer-motion";
-import { BriefcaseBusiness, GraduationCap, Layers } from "lucide-react";
 import { sectionIndex, timeline as baseTimeline, type TimelineEntry } from "@/lib/content";
 import { useI18n } from "@/lib/i18n";
 import { openCase } from "@/lib/caseFile";
@@ -29,6 +28,7 @@ import { ScrambleText } from "@/components/motion/ScrambleText";
 import { RouteGlobe } from "@/components/path/RouteGlobe";
 import { DateStamp, yearNeon, type PathWords } from "@/components/path/NeonStamp";
 import { ScriptLabel } from "@/components/ui/ScriptLabel";
+import { DecodeText, ReadLine, Shard, shardLamp } from "@/components/path/Shard";
 import { cn } from "@/lib/utils";
 
 /* ---------------------------------------------------------------------------
@@ -267,16 +267,6 @@ function Stage({ sectionRef: ref }: { sectionRef: React.RefObject<HTMLElement | 
   );
 }
 
-function KindTag({ kind, words }: { kind: TimelineEntry["kind"]; words: PathWords }) {
-  const Icon = kind === "education" ? GraduationCap : kind === "project" ? Layers : BriefcaseBusiness;
-  return (
-    <span className="hud-brackets inline-flex items-center gap-1.5 px-3 py-1 font-mono text-sm uppercase tracking-wider text-muted [--hud-c:color-mix(in_srgb,var(--color-hazard)_80%,transparent)] [--hud-l:6px]">
-      <Icon size={14} aria-hidden />
-      {kind === "education" ? words.education : kind === "project" ? words.project : words.work}
-    </span>
-  );
-}
-
 /** The figures an entry carries: the GPA on the degree, the capstone's measurements. */
 function Extra({
   entry,
@@ -378,10 +368,16 @@ function Board({
                     !on && i > reached && "opacity-45"
                   )}
                 >
+                  {/* The row's lamp, in its shard's class colour: a notch while
+                      closed, so the type reads down the list, the full bar
+                      when open. */}
                   <span
                     aria-hidden
-                    className="absolute inset-y-1 left-0 w-[2px] transition-colors duration-300"
-                    style={{ background: on ? "var(--color-hazard)" : "transparent" }}
+                    className={cn(
+                      "absolute left-0 top-1/2 w-[2px] -translate-y-1/2 transition-[height,opacity] duration-300",
+                      on ? "h-[calc(100%-8px)] opacity-100" : "h-2 opacity-60"
+                    )}
+                    style={shardLamp(e.kind)}
                   />
                   <span className="display-caps tabular text-sm" style={{ color: yearNeon(e.start.year) }}>
                     {e.start.year}
@@ -476,12 +472,17 @@ function Opened({ entry, words }: { entry: TimelineEntry; words: PathWords }) {
 
   return (
     <div className="grid grid-cols-[auto_minmax(0,1fr)] gap-5 px-2 pb-3 pt-3 lg:gap-6">
-      <DateStamp entry={entry} play={play} instant={false} words={words} size="md" />
+      <DateStamp entry={entry} play={play} instant={false} words={words} size="md" noNote />
       <div className="min-w-0">
-        <KindTag kind={entry.kind} words={words} />
-        <p className="mt-2.5 font-mono text-[0.6875rem] uppercase tracking-[0.16em] text-fg/70">{entry.org}</p>
-        <p className="mt-1.5 line-clamp-3 text-[0.9375rem] leading-snug text-fg/80">{entry.description}</p>
-        <Extra entry={entry} words={words} compact className="mt-2.5" />
+        <Shard entry={entry} words={words} play={play} instant={false} className="ml-[5px] mt-[5px]" />
+        <div className="relative mt-3.5">
+          <ReadLine play={play} instant={false} />
+          <p className="font-mono text-[0.6875rem] uppercase tracking-[0.16em] text-fg/70">
+            <DecodeText text={entry.org} play={play} instant={false} />
+          </p>
+          <p className="mt-1.5 line-clamp-3 text-[0.9375rem] leading-snug text-fg/80">{entry.description}</p>
+          <Extra entry={entry} words={words} compact className="mt-2.5" />
+        </div>
       </div>
     </div>
   );
@@ -613,14 +614,16 @@ function Row({ entry, reduced, words }: { entry: TimelineEntry; reduced: boolean
     >
       <div>
         <span className="sr-only">{entry.period}</span>
-        <DateStamp entry={entry} play={play} instant={reduced} words={words} />
+        <DateStamp entry={entry} play={play} instant={reduced} words={words} noNote />
       </div>
       <div>
-        <KindTag kind={entry.kind} words={words} />
-        <h4 className="mt-4 font-tech text-3xl font-bold uppercase leading-[1.08] text-balance text-fg md:text-4xl">
+        <Shard entry={entry} words={words} play={play} instant={reduced} className="ml-[5px] mt-[5px]" />
+        <h4 className="mt-5 font-tech text-3xl font-bold uppercase leading-[1.08] text-balance text-fg md:text-4xl">
           {entry.title}
         </h4>
-        <p className="mt-3 font-mono text-sm uppercase tracking-[0.18em] text-fg/70 md:text-base">{entry.org}</p>
+        <p className="mt-3 font-mono text-sm uppercase tracking-[0.18em] text-fg/70 md:text-base">
+          <DecodeText text={entry.org} play={play} instant={reduced} />
+        </p>
         <p className="mt-5 max-w-3xl text-lg leading-relaxed text-fg/80">{entry.description}</p>
         <Extra entry={entry} words={words} className="mt-5" />
         {entry.extra === "spotfixes" && (

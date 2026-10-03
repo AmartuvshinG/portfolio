@@ -57,12 +57,15 @@ export function DateStamp({
   instant,
   words,
   size = "lg",
+  noNote = false,
 }: {
   entry: TimelineEntry;
   play: boolean;
   instant: boolean;
   words: PathWords;
   size?: "lg" | "md";
+  /** Leave the "Graduated" pill off: the entry's shard carries it. */
+  noNote?: boolean;
 }) {
   const { start, end, note } = entry;
   const startLabel = stampLabel(start, words);
@@ -122,7 +125,7 @@ export function DateStamp({
         </div>
       )}
 
-      {note === "graduated" && (
+      {note === "graduated" && !noNote && (
         <Ignite play={play} instant={instant} delay={0.7} className="mt-4">
           <span
             className="inline-flex rounded-full border px-3 py-1 font-mono text-sm font-semibold uppercase tracking-[0.16em] text-fg"

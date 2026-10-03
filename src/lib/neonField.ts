@@ -66,7 +66,7 @@ export function hash(n: number) {
 }
 
 const CYRILLIC_POOL = "АБВГДЕЖЗИЙКЛМНОӨПРСТУҮФХЦЧШЭЮЯ";
-const LATIN_POOL = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789#$%&@";
+const LATIN_POOL = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
 const IS_CYRILLIC = /[Ѐ-ӿ]/;
 
 /**
