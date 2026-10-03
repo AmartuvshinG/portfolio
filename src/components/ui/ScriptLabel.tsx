@@ -45,8 +45,13 @@ export function ScriptLabel({ href, className }: { href: string; className?: str
         animate={{ clipPath: reduced || seen ? "inset(0% 0% 0% 0%)" : "inset(0% 0% 100% 0%)" }}
         transition={reduced ? { duration: 0 } : { duration: 1.1, ease: [0.45, 0, 0.25, 1] }}
       >
-        {/* The unlit tube: what the reveal writes. */}
-        <span className={cn(GLYPHS, "text-[color-mix(in_srgb,var(--color-hazard)_30%,transparent)]")}>{text}</span>
+        {/* The unlit tube: what the reveal writes. Generated content, not a
+            text node: it is a dim copy for effect, and axe would measure its
+            contrast as if it were the label. */}
+        <span
+          data-text={text}
+          className={cn(GLYPHS, "text-[color-mix(in_srgb,var(--color-hazard)_30%,transparent)] before:content-[attr(data-text)]")}
+        />
         {/* The lit tube over it, struck once the word is written. */}
         <motion.span
           className={cn(GLYPHS, "absolute inset-0 text-[var(--color-hazard)]")}

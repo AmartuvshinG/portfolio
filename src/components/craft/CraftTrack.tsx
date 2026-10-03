@@ -153,13 +153,15 @@ function StackCard({ item, index }: { item: Capability; index: number }) {
   const ghostY = useTransform(scrollYProgress, [0, 1], [70, 0]);
   const iconX = useTransform(scrollYProgress, [0, 1], [-18, 0]);
   const stripX = useTransform(scrollYProgress, [0, 1], [28, 0]);
-  /* The card tips up off the page as it rises: the drum's turn, on a phone. */
+  /* The card stands up as it rises, the drum's turn on a phone. Pivoted at
+     its foot with the top tipped away, so perspective only ever narrows it:
+     tipped toward the reader, its foot would widen past a 390px screen. */
   const rotateX = useTransform(scrollYProgress, [0, 1], [24, 0]);
 
   return (
     <motion.article
       ref={ref}
-      style={{ y, opacity, rotateX, transformPerspective: 1100, transformOrigin: "50% 0%", ["--live" as string]: focus }}
+      style={{ y, opacity, rotateX, transformPerspective: 1100, transformOrigin: "50% 100%", ["--live" as string]: focus }}
       className={cn("liquid-glass live-rim relative flex flex-col overflow-hidden rounded-[24px] p-6")}
     >
       <CardBody item={item} index={index} ghostY={ghostY} iconX={iconX} stripX={stripX} />
