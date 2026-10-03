@@ -1,0 +1,1184 @@
+You are given a task to integrate an existing React component in the codebase
+
+The codebase should support:
+- shadcn project structure  
+- Tailwind CSS
+- Typescript
+
+If it doesn't, provide instructions on how to setup project via shadcn CLI, install Tailwind or Typescript.
+
+Determine the default path for components and styles. 
+If default path for components is not /components/ui, provide instructions on why it's important to create this folder
+Copy-paste this component to /components/ui folder:
+```tsx
+neon-katakana-preloader.tsx
+"use client"
+
+// Neon Katakana Preloader — a cyberpunk title-card loading gate. On black,
+// with a blood-red haze rising from the floor, dotted data-rain falls in
+// vertical streams and condenses, grain by grain, into a glowing katakana
+// word: ウィンドウ, "window". A red dot-matrix label decodes above it and the
+// load counts up below. At 100% the word surges, a scan bar sweeps it, and —
+// because it is a window — a slit of light tears across the screen and opens
+// into whatever the gate was guarding.
+//
+// One file, React only. Everything is drawn on one <canvas> from the word you
+// pass, eroded into a brushed, drippy texture; the chrome is a scoped <style>
+// where every rule is .nkp- prefixed. No fonts or images are fetched.
+
+import * as React from "react"
+
+export interface NeonKatakanaPalette {
+  /** Stage colour. */
+  background: string
+  /** The word, the rain and every glow. */
+  glow: string
+  /** Hot core of the word and the rain heads. */
+  core: string
+  /** Dot-matrix labels and the glitch ghost. */
+  accent: string
+  /** The haze rising from the bottom edge. */
+  haze: string
+}
+
+export interface NeonKatakanaPreloaderProps {
+  /** Content revealed once the window opens. Ignored while `loop` is set. */
+  children?: React.ReactNode
+  /** Run forever as a showcase: children are never revealed, onComplete never fires. */
+  loop?: boolean
+  /**
+   * Real loading progress, 0–100. Leave undefined to run the built-in
+   * simulated load over `durationMs`. The word holds until this hits 100.
+   */
+  progress?: number
+  /** Length of the simulated load. Defaults to 4200ms. */
+  durationMs?: number
+  /** The big word. Any script works; katakana is what it was drawn for. */
+  word?: string
+  /** Dot-matrix label above the word. Decodes as the load runs. */
+  label?: string
+  /** Dot-matrix line below the word once loaded (the percentage shows until then). */
+  caption?: string
+  /** Small mark in the top-left corner of the HUD. */
+  kicker?: string
+  /** Show the four HUD corners. Defaults to true. */
+  hud?: boolean
+  /** Rain density multiplier, 0 (none) to 2. Defaults to 1. */
+  density?: number
+  /** Let the pointer push the word's grain around and stir the rain. Defaults to true. */
+  interactive?: boolean
+  /** Colour overrides, merged over the defaults. */
+  palette?: Partial<NeonKatakanaPalette>
+  /** Face the word is drawn in. The default stack never fetches anything. */
+  fontFamily?: string
+  /** Root height. A definite length, never a percentage. */
+  height?: string
+  /** Fired once, after the window has opened. */
+  onComplete?: () => void
+  /** Extra root class names. */
+  className?: string
+}
+
+const DEFAULT_PALETTE: NeonKatakanaPalette = {
+  background: "#040306",
+  glow: "#22c8ff",
+  core: "#cdf6ff",
+  accent: "#ff2742",
+  haze: "#5c0820",
+}
+
+const WORD_STACK =
+  '"Yuji Syuku", "Zen Antique", "Hiragino Mincho ProN", "Yu Mincho", "Noto Serif JP", "Noto Sans JP", "Hiragino Sans", "Yu Gothic", Meiryo, "IPAGothic", "WenQuanYi Zen Hei", sans-serif'
+const MONO_STACK = '"JetBrains Mono", "IBM Plex Mono", "SFMono-Regular", Menlo, Consolas, "Liberation Mono", monospace'
+
+// Half-width katakana and digits: the classic falling-code alphabet.
+const RAIN_GLYPHS = "ｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄﾅﾆﾇﾈﾉﾊﾋﾌﾍﾎﾏﾐﾑﾒﾓﾔﾕﾖﾗﾘﾙﾚﾛﾜｦﾝ0123456789"
+
+// #region timeline
+// Pure helpers, lifted out and executed by tests/neon-katakana-preloader.test.mjs.
+
+const clamp01 = (x: number) => (x <= 0 ? 0 : x >= 1 ? 1 : x)
+
+// Three eased surges separated by two stalls, so the simulated load reads like
+// a real one instead of a linear tween. [time, progress] knots.
+const KNOTS = [
+  [0, 0],
+  [0.3, 0.38],
+  [0.4, 0.41],
+  [0.68, 0.77],
+  [0.78, 0.8],
+  [1, 1],
+]
+
+export function nkpSimulated(t: number) {
+  if (t <= 0) return 0
+  if (t >= 1) return 1
+  for (let i = 0; i < KNOTS.length - 1; i++) {
+    const a = KNOTS[i]
+    const b = KNOTS[i + 1]
+    if (t <= b[0]) {
+      const local = (t - a[0]) / (b[0] - a[0])
+      const eased = 1 - Math.pow(1 - local, 3)
+      return a[1] + (b[1] - a[1]) * eased
+    }
+  }
+  return 1
+}
+
+// Deterministic noise in [0, 1): the same seed always gives the same grain.
+export function nkpHash(n: number) {
+  const s = Math.sin(n * 127.1 + 311.7) * 43758.5453
+  return s - Math.floor(s)
+}
+
+const KATA_POOL = "アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲン"
+const LATIN_POOL = "abcdefghijklmnopqrstuvwxyz0123456789#$%&@"
+
+// Decodes `target` left to right: the first p of its characters are settled,
+// the rest cycle through look-alikes picked by `tick`. Spaces never scramble.
+export function nkpDecode(target: string, p: number, tick: number) {
+  const chars = Array.from(target)
+  const settled = Math.floor(clamp01(p) * chars.length + 1e-9)
+  return chars
+    .map((c, i) => {
+      if (i < settled || c === " ") return c
+      const pool = /[぀-ヿ一-鿿]/.test(c) ? KATA_POOL : LATIN_POOL
+      const pick = pool.charAt(Math.floor(nkpHash(i * 31 + tick * 7.13) * pool.length))
+      return /[A-Z]/.test(c) ? pick.toUpperCase() : pick
+    })
+    .join("")
+}
+
+// 0–100 as a fixed-width counter: 7 -> "007".
+export function nkpCounter(pct: number) {
+  const v = Math.round(Math.min(100, Math.max(0, pct)))
+  return String(v).padStart(3, "0")
+}
+
+// Size the word for the stage. Landscape sets it in one line; a tall, narrow
+// stage stacks it vertically (tategaki) when that buys a much bigger word.
+export function nkpLayout(count: number, unitWidth: number, w: number, h: number) {
+  const horiz = Math.min((w * 0.84 * 100) / Math.max(1, unitWidth), h * 0.32)
+  const vert = Math.min((h * 0.6) / Math.max(1, count), w * 0.42)
+  const vertical = count > 1 && h > w * 1.15 && vert > horiz * 1.25
+  return { size: Math.max(18, Math.round(vertical ? vert : horiz)), vertical }
+}
+// #endregion
+
+// ---------------------------------------------------------------------------
+// The field: the word sampled into grains, plus the rain columns around it.
+// ---------------------------------------------------------------------------
+
+interface Field {
+  n: number
+  hotFrom: number
+  hx: Float32Array
+  hy: Float32Array
+  size: Float32Array
+  alpha: Float32Array
+  rank: Float32Array
+  fall: Float32Array
+  seed: Float32Array
+  act: Float32Array
+  ox: Float32Array
+  oy: Float32Array
+  dx: Float32Array
+  dy: Float32Array
+  box: { x: number; y: number; w: number; h: number }
+  reach: number
+  cols: { x: number; head: number; speed: number; len: number; weight: number; glyph: boolean }[]
+  strands: { x: number; top: number; bottom: number; seed: number }[]
+}
+
+// Smooth value noise on the hashed lattice.
+function vnoise(x: number, y: number) {
+  const xi = Math.floor(x)
+  const yi = Math.floor(y)
+  const xf = x - xi
+  const yf = y - yi
+  const u = xf * xf * (3 - 2 * xf)
+  const v = yf * yf * (3 - 2 * yf)
+  const h = (a: number, b: number) => nkpHash(a * 57 + b * 113)
+  const top = h(xi, yi) + (h(xi + 1, yi) - h(xi, yi)) * u
+  const bot = h(xi, yi + 1) + (h(xi + 1, yi + 1) - h(xi, yi + 1)) * u
+  return top + (bot - top) * v
+}
+
+function buildField(w: number, h: number, word: string, font: string, density: number): Field {
+  const W = Math.max(1, Math.ceil(w))
+  const H = Math.max(1, Math.ceil(h))
+  const chars = Array.from(word.trim() || " ")
+  const off = document.createElement("canvas")
+  off.width = W
+  off.height = H
+  const c = off.getContext("2d", { willReadFrequently: true })!
+  c.font = "900 100px " + font
+  const { size, vertical } = nkpLayout(chars.length, c.measureText(chars.join("")).width, W, H)
+
+  c.font = "900 " + size + "px " + font
+  c.fillStyle = "#fff"
+  c.textAlign = "center"
+  c.textBaseline = "middle"
+  const cy = H * 0.5
+  if (vertical) {
+    chars.forEach((ch, i) => c.fillText(ch, W / 2, cy + (i - (chars.length - 1) / 2) * size * 1.02))
+  } else {
+    c.fillText(chars.join(""), W / 2, cy)
+  }
+  const data = c.getImageData(0, 0, W, H).data
+  const inside = (x: number, y: number) =>
+    x >= 0 && y >= 0 && x < W && y < H && data[(Math.round(y) * W + Math.round(x)) * 4 + 3] > 110
+
+  const step = Math.max(2, Math.round(size / 68))
+  const grit = size * 0.2
+  const cool: number[][] = []
+  const hot: number[][] = []
+  let x0 = W
+  let x1 = 0
+  let y0 = H
+  let y1 = 0
+
+  for (let y = 0; y < H; y += step) {
+    for (let x = 0; x < W; x += step) {
+      if (!inside(x, y)) continue
+      const id = x * 7.31 + y * 1.97
+      // brushed erosion: blotches plus long vertical scratches
+      const g = 0.6 * vnoise(x / grit, y / grit) + 0.4 * vnoise(x / (step * 2.4), y / (size * 0.9))
+      const keep = 0.98 - 0.7 * Math.min(1, Math.max(0, (g - 0.52) / 0.3))
+      if (nkpHash(id) > keep) continue
+      x0 = Math.min(x0, x)
+      x1 = Math.max(x1, x)
+      y0 = Math.min(y0, y)
+      y1 = Math.max(y1, y)
+      const r = nkpHash(id + 11)
+      const edge = !(inside(x - step * 2, y) && inside(x + step * 2, y) && inside(x, y - step * 2) && inside(x, y + step * 2))
+      // [x, y, size, alpha, order, fall, seed]
+      // jittered off the sampling grid so the strokes read as brushed, not tiled
+      const gx = x + (nkpHash(id + 13) - 0.5) * step * 0.7
+      const grain = [gx, y, step * (0.55 + 0.6 * r), (edge ? 0.45 : 0.62) + 0.38 * nkpHash(id + 3), 0, 30 + 170 * nkpHash(id + 5), nkpHash(id + 9)]
+      if (!edge && nkpHash(id + 21) < 0.55) hot.push(grain)
+      else cool.push(grain)
+
+      // drips: dotted runs leaking off the bottoms (and a few tops) of strokes
+      const below = !inside(x, y + step)
+      const above = !inside(x, y - step)
+      if ((below && nkpHash(id + 31) < 0.2) || (above && nkpHash(id + 37) < 0.08)) {
+        const dir = below ? 1 : -1
+        const len = 2 + Math.floor(Math.pow(nkpHash(id + 41), 2) * 30)
+        for (let j = 1; j <= len; j++) {
+          const fade = 1 - j / (len + 1)
+          cool.push([x, y + dir * j * step * 1.7, step * 0.55, 0.55 * fade * fade, 0, 30 + 170 * nkpHash(id + j), nkpHash(id + j * 3)])
+        }
+      }
+    }
+  }
+  if (x1 < x0) {
+    x0 = x1 = W / 2
+    y0 = y1 = H / 2
+  }
+  const bw = Math.max(1, x1 - x0)
+  const bh = Math.max(1, y1 - y0)
+  // reveal order: sweeps along the reading direction, scattered by noise
+  const order = (g: number[]) => {
+    const along = vertical ? (g[1] - y0) / bh : (g[0] - x0) / bw
+    return Math.min(1, 0.55 * clamp01(along) + 0.45 * g[6])
+  }
+  const all = cool.concat(hot)
+  const n = all.length
+  const f: Field = {
+    n,
+    hotFrom: cool.length,
+    hx: new Float32Array(n),
+    hy: new Float32Array(n),
+    size: new Float32Array(n),
+    alpha: new Float32Array(n),
+    rank: new Float32Array(n),
+    fall: new Float32Array(n),
+    seed: new Float32Array(n),
+    act: new Float32Array(n).fill(-1),
+    ox: new Float32Array(n),
+    oy: new Float32Array(n),
+    dx: new Float32Array(n),
+    dy: new Float32Array(n),
+    box: { x: x0, y: y0, w: bw, h: bh },
+    reach: Math.max(50, size * 0.42),
+    cols: [],
+    strands: [],
+  }
+  all.forEach((g, i) => {
+    f.hx[i] = g[0]
+    f.hy[i] = g[1]
+    f.size[i] = g[2]
+    f.alpha[i] = g[3]
+    f.rank[i] = order(g)
+    f.fall[i] = g[5]
+    f.seed[i] = g[6]
+  })
+
+  // rain columns, densest over the word
+  const gap = 11 / Math.max(0.05, density)
+  const mid = W / 2
+  const spread = Math.max(bw, W * 0.3) * 0.62
+  if (density > 0) {
+    for (let x = gap * 0.5, k = 0; x < W; x += gap, k++) {
+      const jitter = (nkpHash(k + 0.5) - 0.5) * gap * 0.6
+      const dxn = (x - mid) / spread
+      const weight = 0.12 + 0.88 * Math.exp(-dxn * dxn)
+      f.cols.push({
+        x: Math.round(x + jitter) + 0.5,
+        head: nkpHash(k + 1.7) * H * 1.4 - H * 0.2,
+        speed: (50 + 190 * nkpHash(k + 2.9)) * (0.6 + weight),
+        len: 30 + (H * 0.55) * nkpHash(k + 4.1) * (0.35 + weight),
+        weight,
+        glyph: nkpHash(k + 6.3) < 0.28,
+      })
+    }
+  }
+  // static strands: faint dotted threads hanging through the word
+  const strandCount = Math.round(10 + bw / 60)
+  for (let i = 0; i < strandCount; i++) {
+    const s = nkpHash(i + 90.1)
+    f.strands.push({
+      x: Math.round(x0 + bw * nkpHash(i + 77.7)) + 0.5,
+      top: y0 - (0.2 + 0.9 * s) * Math.min(H * 0.35, bh * 1.2),
+      bottom: y1 + (0.2 + 0.9 * nkpHash(i + 55.5)) * Math.min(H * 0.35, bh * 1.2),
+      seed: s,
+    })
+  }
+  return f
+}
+
+// "#22c8ff" / "rgb(…)" / any CSS colour -> [r, g, b], via the canvas parser.
+function toRgb(color: string, scratch: CanvasRenderingContext2D): [number, number, number] {
+  scratch.fillStyle = "#000"
+  scratch.fillStyle = color
+  const v = String(scratch.fillStyle)
+  if (v.charAt(0) === "#") {
+    const hex = v.slice(1)
+    return [parseInt(hex.slice(0, 2), 16), parseInt(hex.slice(2, 4), 16), parseInt(hex.slice(4, 6), 16)]
+  }
+  const m = v.match(/[\d.]+/g)
+  return m ? [Number(m[0]), Number(m[1]), Number(m[2])] : [255, 255, 255]
+}
+
+const NKP_CSS = `
+.nkp-root {
+  --nkp-p: 0;
+  --nkp-bx: 0px;
+  --nkp-by: 0px;
+  --nkp-bw: 0px;
+  --nkp-bh: 0px;
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+  isolation: isolate;
+  container-type: size;
+  background: var(--nkp-bg);
+  color: var(--nkp-glow);
+  font-family: var(--nkp-mono);
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.nkp-root canvas { max-width: none; }
+
+.nkp-dest {
+  position: absolute;
+  inset: 0;
+  overflow-y: auto;
+  visibility: hidden;
+}
+.nkp-root[data-phase="open"] .nkp-dest,
+.nkp-root[data-phase="done"] .nkp-dest { visibility: visible; }
+
+.nkp-gate {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  overflow: hidden;
+  cursor: pointer;
+  outline: none;
+  background: var(--nkp-bg);
+}
+.nkp-gate:focus-visible { box-shadow: inset 0 0 0 2px var(--nkp-accent); }
+.nkp-root[data-phase="open"] .nkp-gate { animation: nkp-open 1.2s cubic-bezier(0.7, 0, 0.2, 1) forwards; }
+
+.nkp-haze {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse 110% 70% at 50% 115%, var(--nkp-haze) 0%, transparent 72%),
+    radial-gradient(ellipse 70% 34% at 50% 102%, var(--nkp-haze) 0%, transparent 80%),
+    radial-gradient(ellipse 40% 60% at 0% 100%, var(--nkp-haze) 0%, transparent 70%),
+    radial-gradient(ellipse 40% 60% at 100% 100%, var(--nkp-haze) 0%, transparent 70%);
+  animation: nkp-breathe 6s ease-in-out infinite;
+}
+.nkp-halo {
+  position: absolute;
+  left: var(--nkp-bx);
+  top: var(--nkp-by);
+  width: var(--nkp-bw);
+  height: var(--nkp-bh);
+  pointer-events: none;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, var(--nkp-glow), transparent);
+  opacity: calc(0.03 + var(--nkp-p) * 0.11);
+  filter: blur(40px);
+  transform: scale(1.35, 2.2);
+}
+.nkp-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  filter: drop-shadow(0 0 2px var(--nkp-glow)) drop-shadow(0 0 14px var(--nkp-glow));
+}
+.nkp-root[data-phase="lock"] .nkp-canvas { animation: nkp-surge 1.3s ease-out both; }
+
+.nkp-sweep {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: var(--nkp-by);
+  height: 2px;
+  opacity: 0;
+  pointer-events: none;
+  background: linear-gradient(90deg, transparent, var(--nkp-core) 30%, var(--nkp-core) 70%, transparent);
+  box-shadow: 0 0 18px 3px var(--nkp-glow);
+}
+.nkp-root[data-phase="lock"] .nkp-sweep { animation: nkp-sweep 0.95s cubic-bezier(0.6, 0, 0.3, 1) 0.15s both; }
+
+.nkp-scanlines {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(to bottom, rgba(255, 255, 255, 0.04) 0 1px, transparent 1px 3px);
+  mix-blend-mode: overlay;
+}
+.nkp-roll {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 18%;
+  pointer-events: none;
+  background: linear-gradient(to bottom, transparent, rgba(255, 255, 255, 0.025), transparent);
+  animation: nkp-roll 7s linear infinite;
+}
+.nkp-vignette {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(ellipse at 50% 46%, transparent 42%, rgba(0, 0, 0, 0.78) 100%);
+}
+.nkp-grain {
+  position: absolute;
+  inset: -50%;
+  pointer-events: none;
+  opacity: 0.1;
+  mix-blend-mode: screen;
+  animation: nkp-grain 0.8s steps(5) infinite;
+}
+
+/* ---- dot-matrix labels -------------------------------------------------- */
+.nkp-label {
+  position: absolute;
+  left: 0;
+  right: 0;
+  text-align: center;
+  color: var(--nkp-accent);
+  font-size: clamp(12px, 2.3cqmin, 26px);
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: 0.6em;
+  text-indent: 0.6em;
+  white-space: pre;
+  pointer-events: none;
+  filter: drop-shadow(0 0 5px var(--nkp-accent));
+  transition: opacity 0.5s ease;
+}
+.nkp-label-top { top: var(--nkp-by); transform: translateY(calc(-100% - max(18px, 4.5cqmin))); }
+.nkp-label-bottom { top: calc(var(--nkp-by) + var(--nkp-bh)); transform: translateY(max(18px, 4.5cqmin)); }
+.nkp-dots {
+  display: inline-block;
+  -webkit-mask-image: radial-gradient(circle, #000 0 48%, transparent 58%);
+  mask-image: radial-gradient(circle, #000 0 48%, transparent 58%);
+  -webkit-mask-size: 0.16em 0.16em;
+  mask-size: 0.16em 0.16em;
+}
+.nkp-flip { display: inline-block; animation: nkp-flip 3.8s steps(1) infinite; }
+.nkp-root[data-phase="release"] .nkp-label,
+.nkp-root[data-phase="open"] .nkp-label { opacity: 0; }
+
+/* ---- HUD corners -------------------------------------------------------- */
+.nkp-hud {
+  position: absolute;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 10px;
+  line-height: 1;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--nkp-glow);
+  opacity: 0.6;
+  pointer-events: none;
+  white-space: nowrap;
+}
+.nkp-tl { top: 18px; left: 20px; }
+.nkp-tr { top: 18px; right: 20px; }
+.nkp-bl { bottom: 18px; left: 20px; }
+.nkp-br { bottom: 18px; right: 20px; }
+.nkp-led {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--nkp-accent);
+  box-shadow: 0 0 8px var(--nkp-accent);
+  animation: nkp-blink 1.2s steps(2) infinite;
+}
+.nkp-track {
+  position: relative;
+  width: clamp(56px, 16cqw, 200px);
+  height: 1px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.14);
+}
+.nkp-fill {
+  position: absolute;
+  inset: 0;
+  transform-origin: left center;
+  transform: scaleX(var(--nkp-p));
+  background: var(--nkp-glow);
+  box-shadow: 0 0 8px var(--nkp-glow);
+}
+.nkp-hint { animation: nkp-blink 1.4s steps(2) infinite; }
+
+/* ---- the window opening ------------------------------------------------- */
+.nkp-frame {
+  position: absolute;
+  z-index: 3;
+  pointer-events: none;
+  border: 1px solid var(--nkp-core);
+  box-shadow: 0 0 24px 2px var(--nkp-glow), inset 0 0 24px 2px var(--nkp-glow);
+  animation: nkp-frame 1.2s cubic-bezier(0.7, 0, 0.2, 1) forwards;
+}
+.nkp-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+@keyframes nkp-open {
+  0% { clip-path: polygon(evenodd, 0% 0%, 100% 0%, 100% 100%, 0% 100%, 0% 0%, 50% 50%, 50% 50%, 50% 50%, 50% 50%, 50% 50%); }
+  40% { clip-path: polygon(evenodd, 0% 0%, 100% 0%, 100% 100%, 0% 100%, 0% 0%, 5% 49.6%, 95% 49.6%, 95% 50.4%, 5% 50.4%, 5% 49.6%); }
+  100% { clip-path: polygon(evenodd, 0% 0%, 100% 0%, 100% 100%, 0% 100%, 0% 0%, -2% -2%, 102% -2%, 102% 102%, -2% 102%, -2% -2%); }
+}
+@keyframes nkp-frame {
+  0% { inset: 50% 50%; opacity: 1; }
+  40% { inset: 49.6% 5%; opacity: 1; }
+  85% { inset: 0%; opacity: 0.8; }
+  100% { inset: 0%; opacity: 0; }
+}
+@keyframes nkp-surge {
+  0% { filter: brightness(2.8) drop-shadow(0 0 4px var(--nkp-glow)) drop-shadow(0 0 26px var(--nkp-glow)); }
+  100% { filter: brightness(1) drop-shadow(0 0 2px var(--nkp-glow)) drop-shadow(0 0 14px var(--nkp-glow)); }
+}
+@keyframes nkp-sweep {
+  0% { opacity: 0; transform: translateY(-8px); }
+  15% { opacity: 1; }
+  85% { opacity: 1; }
+  100% { opacity: 0; transform: translateY(calc(var(--nkp-bh) + 8px)); }
+}
+@keyframes nkp-flip {
+  0% { transform: none; }
+  84% { transform: scaleY(-1); }
+  87% { transform: scaleY(-1) translateX(3px); }
+  89% { transform: none; }
+  94% { transform: scaleY(-1); }
+  96% { transform: none; }
+}
+@keyframes nkp-blink { 50% { opacity: 0.25; } }
+@keyframes nkp-breathe { 50% { opacity: 0.75; } }
+@keyframes nkp-roll {
+  from { transform: translateY(-100%); }
+  to { transform: translateY(560%); }
+}
+@keyframes nkp-grain {
+  0% { transform: translate(0, 0); }
+  20% { transform: translate(-6%, 4%); }
+  40% { transform: translate(5%, -7%); }
+  60% { transform: translate(-3%, 8%); }
+  80% { transform: translate(7%, 2%); }
+  100% { transform: translate(0, 0); }
+}
+@keyframes nkp-fade { to { opacity: 0; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .nkp-grain { animation: none; }
+  .nkp-roll { display: none; }
+  .nkp-haze { animation: none; }
+  .nkp-flip, .nkp-led, .nkp-hint { animation: none; }
+  .nkp-root[data-phase="lock"] .nkp-canvas { animation: none; }
+  .nkp-root[data-phase="lock"] .nkp-sweep { animation: none; }
+  .nkp-root[data-phase="open"] .nkp-gate { animation: nkp-fade 0.6s ease forwards; }
+  .nkp-frame { display: none; }
+}
+`
+
+type Phase = "boot" | "lock" | "open" | "release" | "done"
+
+const LOCK_MS = 1700
+const LOCK_LOOP_MS = 2600
+const OPEN_MS = 1200
+const RELEASE_MS = 1500
+
+export default function NeonKatakanaPreloader({
+  children,
+  loop = false,
+  progress,
+  durationMs = 4200,
+  word = "ウィンドウ",
+  label = "window",
+  caption = "open",
+  kicker = "窓 / mado-os",
+  hud = true,
+  density = 1,
+  interactive = true,
+  palette,
+  fontFamily = WORD_STACK,
+  height = "100svh",
+  onComplete,
+  className = "",
+}: NeonKatakanaPreloaderProps) {
+  const [phase, setPhase] = React.useState<Phase>("boot")
+  const [cycle, setCycle] = React.useState(0)
+  const [pct, setPct] = React.useState(0)
+  const [tick, setTick] = React.useState(0)
+  const [reduced, setReduced] = React.useState(false)
+
+  const rootRef = React.useRef<HTMLDivElement>(null)
+  const canvasRef = React.useRef<HTMLCanvasElement>(null)
+  const grainRef = React.useRef<HTMLDivElement>(null)
+  const phaseRef = React.useRef<Phase>(phase)
+  phaseRef.current = phase
+  const phaseAtRef = React.useRef(0)
+  const resetRef = React.useRef(true)
+  const rushRef = React.useRef(false)
+  const glitchRef = React.useRef({ until: 0, next: 0 })
+  const pointerRef = React.useRef({ x: 0, y: 0, on: false })
+  const progressRef = React.useRef(progress)
+  progressRef.current = progress
+  const onCompleteRef = React.useRef(onComplete)
+  onCompleteRef.current = onComplete
+
+  const colors = { ...DEFAULT_PALETTE, ...palette }
+  const dens = Math.max(0, Math.min(2, density))
+
+  React.useEffect(() => {
+    const mq = window.matchMedia("(prefers-reduced-motion: reduce)")
+    const sync = () => setReduced(mq.matches)
+    sync()
+    mq.addEventListener("change", sync)
+    return () => mq.removeEventListener("change", sync)
+  }, [])
+
+  // film grain: one noise tile, painted once
+  React.useEffect(() => {
+    const el = grainRef.current
+    if (!el) return
+    const tile = document.createElement("canvas")
+    tile.width = tile.height = 128
+    const t = tile.getContext("2d")
+    if (!t) return
+    const img = t.createImageData(128, 128)
+    for (let i = 0; i < img.data.length; i += 4) {
+      const v = Math.random() * 255
+      img.data[i] = img.data[i + 1] = img.data[i + 2] = v
+      img.data[i + 3] = 255
+    }
+    t.putImageData(img, 0, 0)
+    el.style.backgroundImage = "url(" + tile.toDataURL() + ")"
+  }, [])
+
+  // every phase change is timestamped; entering boot starts a fresh load
+  React.useEffect(() => {
+    phaseAtRef.current = performance.now()
+    if (phase === "boot") {
+      resetRef.current = true
+      rushRef.current = false
+    }
+    if (phase === "lock") glitchRef.current.until = performance.now() + 280
+  }, [phase, cycle])
+
+  // ---- holds between phases ------------------------------------------------
+  React.useEffect(() => {
+    let t: ReturnType<typeof setTimeout> | undefined
+    if (phase === "lock") t = setTimeout(() => setPhase(loop ? "release" : "open"), loop ? LOCK_LOOP_MS : LOCK_MS)
+    if (phase === "open") {
+      t = setTimeout(() => {
+        setPhase("done")
+        onCompleteRef.current?.()
+      }, OPEN_MS)
+    }
+    if (phase === "release") {
+      t = setTimeout(() => {
+        setPhase("boot")
+        setCycle((c) => c + 1)
+      }, RELEASE_MS)
+    }
+    return () => clearTimeout(t)
+  }, [phase, loop])
+
+  // ---- the canvas: one frame loop for the whole life of the gate -----------
+  React.useEffect(() => {
+    const root = rootRef.current
+    const canvas = canvasRef.current
+    const ctx = canvas?.getContext("2d")
+    if (!root || !canvas || !ctx) return
+
+    const scratch = document.createElement("canvas")
+    const sctx = scratch.getContext("2d")!
+    const glow = toRgb(colors.glow, sctx)
+    const rgba = (a: number) => "rgba(" + glow[0] + "," + glow[1] + "," + glow[2] + "," + a.toFixed(3) + ")"
+
+    let field: Field | null = null
+    let W = 0
+    let H = 0
+    let dpr = 1
+    let shown = 0
+    let bootAt = performance.now()
+    let last = performance.now()
+    let raf = 0
+    let lastPct = -1
+    let lastTick = -1
+    let stopped = false
+
+    const build = () => {
+      const r = root.getBoundingClientRect()
+      if (r.width < 2 || r.height < 2) return
+      W = r.width
+      H = r.height
+      dpr = Math.min(2, window.devicePixelRatio || 1)
+      canvas.width = Math.round(W * dpr)
+      canvas.height = Math.round(H * dpr)
+      scratch.width = canvas.width
+      scratch.height = canvas.height
+      field = buildField(W, H, word, fontFamily, reduced ? 0 : dens)
+      // grains already revealed stay revealed across a rebuild
+      const now = performance.now()
+      const ph = phaseRef.current
+      for (let i = 0; i < field.n; i++) {
+        if (ph !== "boot" || field.rank[i] <= shown) field.act[i] = now - 5000
+      }
+      const b = field.box
+      root.style.setProperty("--nkp-bx", b.x + "px")
+      root.style.setProperty("--nkp-by", b.y + "px")
+      root.style.setProperty("--nkp-bw", b.w + "px")
+      root.style.setProperty("--nkp-bh", b.h + "px")
+    }
+
+    const frame = (now: number) => {
+      if (stopped) return
+      const dt = Math.min(64, now - last)
+      last = now
+      const ph = phaseRef.current
+      if (ph === "done") return
+      const f = field
+
+      if (resetRef.current) {
+        resetRef.current = false
+        shown = 0
+        bootAt = now
+        if (f) f.act.fill(-1)
+      }
+
+      // ---- progress ----
+      if (ph === "boot") {
+        const external = progressRef.current
+        let target =
+          external !== undefined ? clamp01(external / 100) : nkpSimulated((now - bootAt) / Math.max(600, durationMs))
+        if (rushRef.current) target = 1
+        const rate = rushRef.current ? 0.12 : external !== undefined ? 0.08 : 1
+        shown += (target - shown) * Math.min(1, rate * (dt / 16.7))
+        if (target - shown < 0.002) shown = target
+        const p = Math.round(shown * 100)
+        if (p !== lastPct) {
+          lastPct = p
+          setPct(p)
+        }
+        const tk = Math.floor(now / 85)
+        if (tk !== lastTick) {
+          lastTick = tk
+          setTick(tk)
+        }
+        if (shown >= 1) {
+          phaseRef.current = "lock"
+          setPhase("lock")
+        }
+      } else {
+        shown = 1
+      }
+      root.style.setProperty("--nkp-p", shown.toFixed(4))
+
+      if (!f) {
+        raf = requestAnimationFrame(frame)
+        return
+      }
+
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
+      ctx.clearRect(0, 0, W, H)
+      const pt = pointerRef.current
+      const pon = pt.on && interactive && !reduced
+      const since = now - phaseAtRef.current
+      const releasing = ph === "release" || ph === "open"
+      const b = f.box
+      const overWord = pon && pt.x > b.x - 20 && pt.x < b.x + b.w + 20 && pt.y > b.y - 20 && pt.y < b.y + b.h + 20
+
+      // ---- rain ----
+      if (f.cols.length) {
+        const level = ph === "boot" ? 0.45 + 0.55 * shown : ph === "open" ? Math.max(0, 1 - since / 700) : 1
+        ctx.lineWidth = 1.3
+        ctx.setLineDash([1.4, 2.8])
+        ctx.font = "11px " + MONO_STACK
+        ctx.textAlign = "center"
+        for (let c = 0; c < f.cols.length; c++) {
+          const col = f.cols[c]
+          const near = pon && Math.abs(col.x - pt.x) < 70 ? 1 - Math.abs(col.x - pt.x) / 70 : 0
+          col.head += (col.speed * (1 + near * 2.2) * (releasing ? 1.6 : 1) * dt) / 1000
+          if (col.head - col.len > H) {
+            col.head = -Math.random() * H * 0.4
+            col.len = 30 + H * 0.55 * Math.random() * (0.35 + col.weight)
+          }
+          const top = col.head - col.len
+          const a = Math.min(1, (col.weight * 0.6 + near * 0.4) * level)
+          if (a < 0.01) continue
+          const grad = ctx.createLinearGradient(0, top, 0, col.head)
+          grad.addColorStop(0, rgba(0))
+          grad.addColorStop(1, rgba(a))
+          ctx.strokeStyle = grad
+          ctx.beginPath()
+          ctx.moveTo(col.x, top)
+          ctx.lineTo(col.x, col.head)
+          ctx.stroke()
+          ctx.fillStyle = colors.core
+          ctx.globalAlpha = Math.min(1, a * 1.4)
+          if (col.glyph) {
+            const g = RAIN_GLYPHS.charAt(Math.floor(now / 110 + c * 7) % RAIN_GLYPHS.length)
+            ctx.fillText(g, col.x, col.head + 4)
+          } else {
+            ctx.fillRect(col.x - 1.1, col.head - 1.1, 2.2, 2.2)
+          }
+          ctx.globalAlpha = 1
+        }
+        // threads hanging through the word
+        const sa = 0.24 * shown * level
+        if (sa > 0.01) {
+          ctx.lineWidth = 1
+          ctx.setLineDash([1.2, 3.6])
+          for (const s of f.strands) {
+            ctx.strokeStyle = rgba(sa * (0.5 + 0.5 * Math.sin(now * 0.002 + s.seed * 40)))
+            ctx.lineDashOffset = -now * 0.02 * (0.5 + s.seed)
+            ctx.beginPath()
+            ctx.moveTo(s.x, s.top)
+            ctx.lineTo(s.x, s.bottom)
+            ctx.stroke()
+          }
+          ctx.lineDashOffset = 0
+        }
+        ctx.setLineDash([])
+      }
+
+      // ---- the word ----
+      const reveal = ph === "boot" ? shown : 1
+      const R = f.reach
+      for (let i = 0; i < f.n; i++) {
+        if (ph === "boot" && f.act[i] < 0 && f.rank[i] <= reveal) f.act[i] = now
+        let tx = 0
+        let ty = 0
+        if (pon) {
+          const ddx = f.hx[i] - pt.x
+          const ddy = f.hy[i] - pt.y
+          if (ddx > -R && ddx < R && ddy > -R && ddy < R) {
+            const d = Math.sqrt(ddx * ddx + ddy * ddy) || 1
+            if (d < R) {
+              const k = 1 - d / R
+              const push = k * k * R * 0.5
+              tx = (ddx / d) * push
+              ty = (ddy / d) * push
+            }
+          }
+        }
+        f.ox[i] += (tx - f.ox[i]) * 0.16
+        f.oy[i] += (ty - f.oy[i]) * 0.16
+      }
+
+      const drawGrains = (from: number, to: number) => {
+        for (let i = from; i < to; i++) {
+          let a = f.alpha[i]
+          const s = f.size[i]
+          let x = f.hx[i] + f.ox[i]
+          let y = f.hy[i] + f.oy[i]
+          let len = s
+          if (releasing) {
+            if (reduced) a *= Math.max(0, 1 - since / 700)
+            else {
+              const t = Math.max(0, since - f.rank[i] * 420) / 1000
+              const drop = 0.5 * 1100 * t * t * (0.5 + f.seed[i])
+              y += drop
+              len += Math.min(48, drop * 0.3)
+              a *= Math.max(0, 1 - t * 1.5)
+              if (ph === "open") x += (x - W / 2) * t * 0.35
+            }
+          } else {
+            const at = f.act[i]
+            if (at < 0) {
+              f.dx[i] = -1e5
+              continue
+            }
+            const k = reduced ? 1 : Math.min(1, (now - at) / 640)
+            if (k < 1) {
+              const e = 1 - (1 - k) * (1 - k) * (1 - k)
+              y -= f.fall[i] * (1 - e)
+              len += (1 - e) * f.fall[i] * 0.32
+              a *= 0.3 + 0.7 * k
+            }
+            if (ph === "lock" && !reduced) a *= 0.84 + 0.16 * Math.sin(now * 0.006 + f.seed[i] * 60)
+            if (!reduced && f.seed[i] > 0.985) x += (nkpHash(Math.floor(now / 90) + i) - 0.5) * s * 3
+          }
+          if (a <= 0.01) {
+            f.dx[i] = -1e5
+            continue
+          }
+          f.dx[i] = x
+          f.dy[i] = y
+          ctx.globalAlpha = a > 1 ? 1 : a
+          ctx.fillRect(x - s * 0.4, y - s * 0.7 - (len - s), s * 0.8, len + s * 0.4)
+        }
+      }
+      ctx.fillStyle = colors.glow
+      drawGrains(0, f.hotFrom)
+      ctx.fillStyle = colors.core
+      drawGrains(f.hotFrom, f.n)
+      ctx.globalAlpha = 1
+
+      // ---- glitch: a red ghost and torn scanline bands ----
+      const gl = glitchRef.current
+      if (!reduced) {
+        if (now > gl.next) {
+          if (gl.next > 0) gl.until = Math.max(gl.until, now + 80 + Math.random() * 190)
+          gl.next = now + (overWord ? 450 : 1700) + Math.random() * (overWord ? 900 : 2800)
+        }
+        if (now < gl.until) {
+          const shift = 3 + Math.random() * 7
+          ctx.fillStyle = colors.accent
+          ctx.globalAlpha = 0.38
+          for (let i = (Math.random() * 3) | 0; i < f.n; i += 3) {
+            if (f.dx[i] < -1e4) continue
+            ctx.fillRect(f.dx[i] + shift, f.dy[i] - f.size[i] * 0.5, f.size[i], f.size[i])
+          }
+          ctx.globalAlpha = 1
+          ctx.setTransform(1, 0, 0, 1, 0, 0)
+          sctx.clearRect(0, 0, scratch.width, scratch.height)
+          sctx.drawImage(canvas, 0, 0)
+          const bands = 2 + ((Math.random() * 4) | 0)
+          for (let k = 0; k < bands; k++) {
+            const by = (b.y - b.h * 0.3 + Math.random() * b.h * 1.6) * dpr
+            const bh = (2 + Math.random() * b.h * 0.12) * dpr
+            const off = (Math.random() - 0.5) * 70 * dpr
+            ctx.clearRect(0, by, canvas.width, bh)
+            ctx.drawImage(scratch, 0, by, scratch.width, bh, off, by, scratch.width, bh)
+          }
+        }
+      }
+
+      raf = requestAnimationFrame(frame)
+    }
+
+    build()
+    const ro = new ResizeObserver(() => build())
+    ro.observe(root)
+    // a web font that lands late changes the word's shape: sample it again
+    document.fonts?.ready.then(() => {
+      if (!stopped) build()
+    })
+    raf = requestAnimationFrame(frame)
+    return () => {
+      stopped = true
+      cancelAnimationFrame(raf)
+      ro.disconnect()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [word, fontFamily, dens, reduced, interactive, colors.glow, colors.core, colors.accent, durationMs])
+
+  // ---- input ------------------------------------------------------------------
+  const onActivate = () => {
+    const ph = phaseRef.current
+    if (ph === "boot") rushRef.current = true
+    else if (ph === "lock") setPhase(loop ? "release" : "open")
+  }
+  const onPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    const r = rootRef.current?.getBoundingClientRect()
+    if (!r) return
+    pointerRef.current = { x: e.clientX - r.left, y: e.clientY - r.top, on: e.pointerType !== "touch" || e.buttons > 0 }
+  }
+  const onPointerLeave = () => {
+    pointerRef.current.on = false
+  }
+  const onPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    onPointerMove(e)
+    if (e.pointerType === "touch") pointerRef.current.on = true
+    glitchRef.current.until = performance.now() + 200
+  }
+  const onPointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (e.pointerType === "touch") pointerRef.current.on = false
+  }
+
+  const loading = phase === "boot"
+  const status = loading ? "decoding" : phase === "lock" ? "signal locked" : phase === "open" ? "opening" : "release"
+  const hint = loop ? (loading ? "tap to rush" : "tap to cycle") : loading ? "tap to skip" : "tap to open"
+  const top = loading ? nkpDecode(label, clamp01(pct / 70), tick) : label
+  const bottom = loading ? nkpCounter(pct) + "%" : caption
+
+  return (
+    <div
+      ref={rootRef}
+      className={"nkp-root " + className}
+      data-phase={phase}
+      style={
+        {
+          height,
+          "--nkp-bg": colors.background,
+          "--nkp-glow": colors.glow,
+          "--nkp-core": colors.core,
+          "--nkp-accent": colors.accent,
+          "--nkp-haze": colors.haze,
+          "--nkp-mono": MONO_STACK,
+        } as React.CSSProperties
+      }
+    >
+      <style>{NKP_CSS}</style>
+
+      {!loop && children ? (
+        <div className="nkp-dest" aria-hidden={phase !== "open" && phase !== "done"}>
+          {children}
+        </div>
+      ) : null}
+
+      {phase !== "done" ? (
+        <div
+          className="nkp-gate"
+          role="progressbar"
+          aria-label={label + " — " + word}
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-valuenow={pct}
+          aria-valuetext={loading ? pct + "%" : "Loaded. Press Enter to open."}
+          tabIndex={0}
+          onClick={onActivate}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault()
+              onActivate()
+            }
+          }}
+          onPointerMove={onPointerMove}
+          onPointerDown={onPointerDown}
+          onPointerUp={onPointerUp}
+          onPointerLeave={onPointerLeave}
+        >
+          <div className="nkp-haze" aria-hidden="true" />
+          <div className="nkp-halo" aria-hidden="true" />
+          <canvas ref={canvasRef} className="nkp-canvas" aria-hidden="true" />
+          <div className="nkp-sweep" aria-hidden="true" />
+
+          <div className="nkp-label nkp-label-top" aria-hidden="true">
+            <span className="nkp-dots">{top}</span>
+          </div>
+          <div className="nkp-label nkp-label-bottom" aria-hidden="true">
+            <span className={loading ? "nkp-dots" : "nkp-dots nkp-flip"}>{bottom}</span>
+          </div>
+
+          <div className="nkp-scanlines" aria-hidden="true" />
+          <div className="nkp-roll" aria-hidden="true" />
+          <div className="nkp-vignette" aria-hidden="true" />
+          <div ref={grainRef} className="nkp-grain" aria-hidden="true" />
+
+          {hud ? (
+            <>
+              <div className="nkp-hud nkp-tl" aria-hidden="true">
+                {kicker}
+              </div>
+              <div className="nkp-hud nkp-tr" aria-hidden="true">
+                <span className="nkp-led" />
+                {status}
+              </div>
+              <div className="nkp-hud nkp-bl" aria-hidden="true">
+                <span>{nkpCounter(pct)}</span>
+                <span className="nkp-track">
+                  <span className="nkp-fill" />
+                </span>
+                <span>100</span>
+              </div>
+              <div className="nkp-hud nkp-br" aria-hidden="true">
+                <span className="nkp-hint">{hint}</span>
+              </div>
+            </>
+          ) : null}
+
+          <span className="nkp-sr" aria-live="polite">
+            {loading ? "" : label + " ready"}
+          </span>
+        </div>
+      ) : null}
+
+      {phase === "open" ? <div className="nkp-frame" aria-hidden="true" /> : null}
+    </div>
+  )
+}
+
+
+demo.tsx
+"use client"
+
+import NeonKatakanaPreloader from "@/components/ui/neon-katakana-preloader"
+
+// Same engine, another sign: ネオン ("neon") in hot magenta over a violet haze.
+export default function Demo() {
+  return (
+    <NeonKatakanaPreloader
+      loop
+      word="ネオン"
+      label="neon"
+      caption="online"
+      kicker="ネオン / sector 7"
+      density={1.4}
+      palette={{ glow: "#ff3df2", core: "#ffe1fb", accent: "#3dffb0", haze: "#2a0a5c", background: "#06030a" }}
+    />
+  )
+}
+
+```
+
+Implementation Guidelines
+ 1. Analyze the component structure and identify all required dependencies
+ 2. Review the component's argumens and state
+ 3. Identify any required context providers or hooks and install them
+ 4. Questions to Ask
+ - What data/props will be passed to this component?
+ - Are there any specific state management requirements?
+ - Are there any required assets (images, icons, etc.)?
+ - What is the expected responsive behavior?
+ - What is the best place to use this component in the app?
+
+Steps to integrate
+ 0. Copy paste all the code above in the correct directories
+ 1. Install external dependencies
+ 2. Fill image assets with Unsplash stock images you know exist
+ 3. Use lucide-react icons for svgs or logos if component requires them

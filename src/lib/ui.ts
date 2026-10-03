@@ -241,7 +241,6 @@ const en = {
     /** The flight row's date: the month the next entry begins. */
     flightDate: (month: string, year: number) => `${month} ${year}`,
     openCase: "See the Spotfixes project",
-    now: "Now",
     /** The landing photos (lib/pathPhotos). Captions name only what the
         picture itself shows. */
     photos: {
@@ -295,9 +294,6 @@ const en = {
     aria: "Contact",
     title: "Get in touch",
     email: "Email",
-    availability: "Availability",
-    based: "Based",
-    response: "Response",
     responseTime: "Replies within 48 hours",
     emailMe: "Email me",
     copy: "Copy",
@@ -595,7 +591,6 @@ const mn: UiStrings = {
     moreCourses: (n: number) => `+${n} хичээл`,
     flightDate: (month: string, year: number) => `${year} оны ${month}`,
     openCase: "Spotfixes төслийг үзэх",
-    now: "Одоо",
     /* Drafts: awaiting Amartuvshin's proofread. */
     photos: {
       must: {
@@ -647,9 +642,6 @@ const mn: UiStrings = {
     aria: "Холбогдох",
     title: "Холбоо барих",
     email: "И-мэйл",
-    availability: "Боломж",
-    based: "Байршил",
-    response: "Хариу",
     responseTime: "48 цагийн дотор хариулна",
     emailMe: "И-мэйл бичих",
     copy: "Хуулах",

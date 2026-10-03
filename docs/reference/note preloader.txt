@@ -1,0 +1,1369 @@
+You are given a task to integrate an existing React component in the codebase
+
+The codebase should support:
+- shadcn project structure  
+- Tailwind CSS
+- Typescript
+
+If it doesn't, provide instructions on how to setup project via shadcn CLI, install Tailwind or Typescript.
+
+Determine the default path for components and styles. 
+If default path for components is not /components/ui, provide instructions on why it's important to create this folder
+Copy-paste this component to /components/ui folder:
+```tsx
+onyx-glyph-preloader.tsx
+"use client"
+
+// Onyx Glyph Preloader — a cinematic loading gate in sandblasted black metal.
+// Five thick, glitter-flecked tiles orbit a dark stage, each with its glyph
+// pressed into the face. They ignite one by one as the load climbs, then
+// converge on the centre, where a single hero tile turns over in the
+// spotlight with its mark cut clean through, the wordmark racks into focus
+// beneath it, and the whole thing flies through the camera.
+//
+// One file, React only. The metal, the glitter and the debossed glyphs are
+// painted procedurally onto canvas once on mount; the thickness is a stack
+// of CSS 3D layers; the light follows the pointer. Every rule in the scoped
+// <style> is .ogp- prefixed and nothing is fetched.
+
+import * as React from "react"
+
+export interface OnyxGlyph {
+  /** SVG path data, drawn in a 100 × 100 box. */
+  d: string
+  /** Stroke width in that box. Leave it out to fill the path (even-odd, so inner subpaths punch back out). */
+  stroke?: number
+  /** Name read out as the tile lights. */
+  label?: string
+}
+
+export interface OnyxPalette {
+  /** Stage background, and what shows through the hero mark's cut. */
+  stage: string
+  /** Face colour where the key light lands. */
+  metal: string
+  /** Face colour on the far side. */
+  shade: string
+  /** Edge highlight down the tile's thickness. */
+  rim: string
+  /** Glitter specks. */
+  glitter: string
+  /** HUD and wordmark. */
+  ink: string
+}
+
+export interface OnyxGlyphPreloaderProps {
+  /** Content revealed once the gate lifts. Ignored while `loop` is set. */
+  children?: React.ReactNode
+  /** Run forever as a showcase: children are never revealed, onComplete never fires. */
+  loop?: boolean
+  /**
+   * Real loading progress, 0–100. Leave undefined to run the built-in
+   * simulated load over `durationMs`. The orbit holds until this hits 100.
+   */
+  progress?: number
+  /** Length of the simulated load. Defaults to 4200ms. */
+  durationMs?: number
+  /** The orbiting tiles, one per glyph. Three to eight read best. */
+  glyphs?: OnyxGlyph[]
+  /** The hero tile's mark. */
+  mark?: OnyxGlyph
+  /** "cut" punches the mark through the tile; "deboss" presses it in like the rest. */
+  markStyle?: "cut" | "deboss"
+  /** Wordmark set under the hero tile. */
+  word?: string
+  /** Line under the wordmark. */
+  caption?: string
+  /** Colour overrides, merged over the defaults. */
+  palette?: Partial<OnyxPalette>
+  /** Glitter density multiplier. 0 is plain sandblasted metal, 2 is disco. */
+  glitter?: number
+  /** Tile thickness as a fraction of its width. Defaults to 0.12. */
+  depth?: number
+  /** Seconds per orbit. Defaults to 48. */
+  spin?: number
+  /** Letterbox bars with the status read-out and progress track. Defaults to false. */
+  hud?: boolean
+  /** Face for the wordmark and HUD. The default stack never fetches anything. */
+  fontFamily?: string
+  /** Root height. A definite length, never a percentage. */
+  height?: string
+  /** Fired once, after the gate has lifted. */
+  onComplete?: () => void
+  /** Extra root class names. */
+  className?: string
+}
+
+const DEFAULT_PALETTE: OnyxPalette = {
+  stage: "#030303",
+  metal: "#2e2e32",
+  shade: "#0a0a0b",
+  rim: "#6a6a72",
+  glitter: "#f4f4f7",
+  ink: "#e9e9ee",
+}
+
+// Original marks, nobody's logo: a bolt, a shield with a check, a currency
+// sign, a chevron and a four-point spark. The hero is a four-pill pinwheel.
+const DEFAULT_GLYPHS: OnyxGlyph[] = [
+  { d: "M57 11 L26 55 H47 L41 89 L74 42 H53 Z", label: "Bolt" },
+  {
+    d: "M50 11 L81 22 V46 C81 66 67 80 50 89 C33 80 19 66 19 46 V22 Z M33 49 L44 60 L67 37 L73 43 L44 72 L27 55 Z",
+    label: "Shield",
+  },
+  {
+    d: "M65 33 C61 25 55 22 49 22 C40 22 34 27 34 35 C34 43 41 46 50 48 C59 50 66 53 66 62 C66 71 59 76 50 76 C43 76 37 73 33 66 M50 12 V22 M50 76 V88",
+    stroke: 9,
+    label: "Ledger",
+  },
+  { d: "M41 26 L65 50 L41 74", stroke: 12, label: "Forward" },
+  { d: "M50 13 C53 40 60 47 87 50 C60 53 53 60 50 87 C47 60 40 53 13 50 C40 47 47 40 50 13 Z", label: "Spark" },
+]
+
+const DEFAULT_MARK: OnyxGlyph = { d: "M38 18 V44 M82 38 H56 M62 82 V56 M18 62 H44", stroke: 15, label: "Onyx" }
+
+const DISPLAY_STACK = '"Inter Tight", "Helvetica Neue", Helvetica, Arial, system-ui, sans-serif'
+const MONO_STACK = '"JetBrains Mono", "SF Mono", ui-monospace, Menlo, Consolas, monospace'
+
+// Per-tile resting tilt [rotateX, rotateY, rotateZ], so the orbit reads as
+// loose objects in space rather than a dial.
+const TILTS = [
+  [18, -24, -12],
+  [-12, 28, 9],
+  [22, 16, -4],
+  [-20, -18, 14],
+  [12, 24, -16],
+  [-10, -14, 7],
+  [16, 12, -9],
+  [-16, 20, 5],
+]
+
+// Dust drifting through the spotlight: [left %, top %, size px, duration s, delay s].
+const DUST = [
+  [22, 64, 2, 13, -2],
+  [31, 38, 1.5, 17, -9],
+  [44, 72, 2.5, 15, -4],
+  [52, 30, 1.5, 19, -12],
+  [61, 58, 2, 14, -7],
+  [70, 42, 1.5, 16, -1],
+  [77, 68, 2, 18, -14],
+  [38, 52, 1, 12, -5],
+  [57, 80, 1.5, 20, -10],
+  [66, 24, 1, 15, -3],
+  [27, 28, 1, 21, -16],
+  [48, 46, 1, 13, -8],
+]
+
+// #region timeline
+// Pure helpers, lifted out and executed by tests/onyx-glyph-preloader.test.mjs.
+
+const clamp01 = (x: number) => (x <= 0 ? 0 : x >= 1 ? 1 : x)
+
+// Surges and stalls like a real load instead of a linear tween. [time, progress] knots.
+const KNOTS = [
+  [0, 0],
+  [0.24, 0.31],
+  [0.34, 0.34],
+  [0.62, 0.72],
+  [0.71, 0.74],
+  [1, 1],
+]
+
+export function ogpSimulated(t: number) {
+  if (t <= 0) return 0
+  if (t >= 1) return 1
+  for (let i = 0; i < KNOTS.length - 1; i++) {
+    const a = KNOTS[i]
+    const b = KNOTS[i + 1]
+    if (t <= b[0]) {
+      const local = (t - a[0]) / (b[0] - a[0])
+      const eased = 1 - Math.pow(1 - local, 3)
+      return a[1] + (b[1] - a[1]) * eased
+    }
+  }
+  return 1
+}
+
+// How far tile i of n has ignited at progress p: each owns an equal slice.
+export function ogpLit(p: number, i: number, n: number) {
+  return clamp01(clamp01(p) * n - i)
+}
+
+// Tiles fully lit at progress p.
+export function ogpCount(p: number, n: number) {
+  return Math.min(n, Math.floor(clamp01(p) * n + 1e-9))
+}
+
+// Unit-circle position of slot i of n, starting at twelve o'clock, clockwise.
+export function ogpSlot(i: number, n: number) {
+  const a = ((-90 + (360 / n) * i) * Math.PI) / 180
+  return { x: Math.round(Math.cos(a) * 1e4) / 1e4, y: Math.round(Math.sin(a) * 1e4) / 1e4 }
+}
+
+// Seeded so every mount paints the same glitter.
+export function ogpRng(seed: number) {
+  let s = seed >>> 0
+  return () => {
+    s = (s + 0x6d2b79f5) >>> 0
+    let t = s
+    t = Math.imul(t ^ (t >>> 15), t | 1)
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61)
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296
+  }
+}
+// #endregion
+
+// ---- procedural textures ------------------------------------------------------
+
+const FACE = 512
+
+interface OgpTextures {
+  faces: string[]
+  hero: string
+  back: string
+  glitA: string
+  glitB: string
+  grain: string
+}
+
+function canvas(n: number) {
+  const c = document.createElement("canvas")
+  c.width = n
+  c.height = n
+  return c
+}
+
+function ctx(c: HTMLCanvasElement) {
+  const g = c.getContext("2d")
+  if (!g) throw new Error("no 2d context")
+  return g
+}
+
+function roundRect(g: CanvasRenderingContext2D, n: number, r: number) {
+  g.beginPath()
+  g.moveTo(r, 0)
+  g.arcTo(n, 0, n, n, r)
+  g.arcTo(n, n, 0, n, r)
+  g.arcTo(0, n, 0, 0, r)
+  g.arcTo(0, 0, n, 0, r)
+  g.closePath()
+}
+
+// Fine sandblast plus glitter, weighted toward the lit top-left corner.
+function sprinkle(g: CanvasRenderingContext2D, rnd: () => number, n: number, count: number, color: string, alpha: number) {
+  g.fillStyle = color
+  for (let k = 0; k < count; k++) {
+    const x = rnd() * n
+    const y = rnd() * n
+    const b = rnd()
+    const lit = 0.4 + 0.6 * (1 - (x + y) / (2 * n))
+    g.globalAlpha = alpha * lit * (b * b * 0.9 + 0.04)
+    const s = b > 0.99 ? 2.4 : b > 0.92 ? 1.6 : 1
+    g.fillRect(x, y, s, s)
+  }
+  g.globalAlpha = 1
+}
+
+function glyphMask(glyph: OnyxGlyph) {
+  const c = canvas(FACE)
+  const g = ctx(c)
+  const k = (FACE * 0.66) / 100
+  g.setTransform(k, 0, 0, k, FACE * 0.17, FACE * 0.17)
+  const path = new Path2D(glyph.d)
+  g.fillStyle = "#fff"
+  g.strokeStyle = "#fff"
+  if (glyph.stroke) {
+    g.lineWidth = glyph.stroke
+    g.lineCap = "round"
+    g.lineJoin = "round"
+    g.stroke(path)
+  } else {
+    g.fill(path, "evenodd")
+  }
+  return c
+}
+
+function paintFace(glyph: OnyxGlyph | null, mode: "cut" | "deboss", pal: OnyxPalette, density: number, seed: number) {
+  const rnd = ogpRng(seed)
+  const n = FACE
+  const c = canvas(n)
+  const g = ctx(c)
+  roundRect(g, n, n * 0.2)
+  g.clip()
+
+  const base = g.createLinearGradient(0, 0, n, n)
+  base.addColorStop(0, pal.metal)
+  base.addColorStop(0.62, pal.shade)
+  base.addColorStop(1, pal.shade)
+  g.fillStyle = base
+  g.fillRect(0, 0, n, n)
+  const bloom = g.createRadialGradient(n * 0.26, n * 0.2, 0, n * 0.26, n * 0.2, n * 0.85)
+  bloom.addColorStop(0, "rgba(255,255,255,0.11)")
+  bloom.addColorStop(1, "rgba(255,255,255,0)")
+  g.fillStyle = bloom
+  g.fillRect(0, 0, n, n)
+
+  sprinkle(g, rnd, n, 14000, "#000", 0.5)
+  sprinkle(g, rnd, n, Math.round(16000 * density), pal.glitter, 0.95)
+
+  if (glyph) {
+    const mask = glyphMask(glyph)
+    // everything but the glyph: its shadow is what falls into the recess
+    const inv = canvas(n)
+    const ig = ctx(inv)
+    ig.fillStyle = "#fff"
+    ig.fillRect(0, 0, n, n)
+    ig.globalCompositeOperation = "destination-out"
+    ig.drawImage(mask, 0, 0)
+
+    const well = canvas(n)
+    const w = ctx(well)
+    w.drawImage(mask, 0, 0)
+    w.globalCompositeOperation = "source-in"
+    if (mode === "cut") {
+      w.fillStyle = pal.stage
+      w.fillRect(0, 0, n, n)
+    } else {
+      const floor = w.createLinearGradient(0, 0, n, n)
+      floor.addColorStop(0, "#030304")
+      floor.addColorStop(1, "#131315")
+      w.fillStyle = floor
+      w.fillRect(0, 0, n, n)
+      w.globalCompositeOperation = "source-atop"
+      sprinkle(w, rnd, n, Math.round(2400 * density), pal.glitter, 0.4)
+    }
+    w.globalCompositeOperation = "source-atop"
+    // draw the stencil far off-canvas so only its offset shadow lands
+    const shade = (color: string, blur: number, dx: number, dy: number) => {
+      w.shadowColor = color
+      w.shadowBlur = blur
+      w.shadowOffsetX = dx + n * 3
+      w.shadowOffsetY = dy
+      w.drawImage(inv, -n * 3, 0)
+    }
+    if (mode === "cut") {
+      shade("rgba(0,0,0,1)", 6, 0, 7)
+      shade("rgba(150,150,160,0.55)", 5, -3, -9)
+      shade("rgba(255,255,255,0.35)", 1, -1, -2)
+    } else {
+      shade("rgba(0,0,0,0.95)", 9, 7, 10)
+      shade("rgba(0,0,0,0.8)", 2, 2, 3)
+      shade("rgba(255,255,255,0.24)", 2, -2, -3)
+    }
+    w.shadowColor = "transparent"
+    g.drawImage(well, 0, 0)
+
+    // the lip of the recess catches the light along its lower edge
+    const lip = canvas(n)
+    const l = ctx(lip)
+    l.shadowColor = "rgba(255,255,255,0.22)"
+    l.shadowBlur = 2
+    l.shadowOffsetX = n * 3 + 1.5
+    l.shadowOffsetY = 2
+    l.drawImage(mask, -n * 3, 0)
+    l.globalCompositeOperation = "destination-out"
+    l.shadowColor = "transparent"
+    l.drawImage(mask, 0, 0)
+    g.drawImage(lip, 0, 0)
+  }
+
+  const bevel = g.createLinearGradient(0, 0, n, n)
+  bevel.addColorStop(0, "rgba(255,255,255,0.34)")
+  bevel.addColorStop(0.45, "rgba(255,255,255,0.03)")
+  bevel.addColorStop(1, "rgba(255,255,255,0.18)")
+  g.lineWidth = n * 0.028
+  g.strokeStyle = bevel
+  roundRect(g, n, n * 0.2)
+  g.stroke()
+  return c
+}
+
+// Sparse, brighter specks with a few cross glints, laid over a face and
+// faded by the light so they flash as it moves.
+function paintSparkle(seed: number, count: number) {
+  const n = 256
+  const c = canvas(n)
+  const g = ctx(c)
+  const rnd = ogpRng(seed)
+  for (let k = 0; k < count; k++) {
+    const x = rnd() * n
+    const y = rnd() * n
+    const b = rnd()
+    const r = 0.35 + b * 0.75
+    const dot = g.createRadialGradient(x, y, 0, x, y, r * 2)
+    dot.addColorStop(0, "rgba(255,255,255," + (0.55 + b * 0.45).toFixed(2) + ")")
+    dot.addColorStop(1, "rgba(255,255,255,0)")
+    g.fillStyle = dot
+    g.fillRect(x - r * 3, y - r * 3, r * 6, r * 6)
+    if (b > 0.94) {
+      g.fillStyle = "rgba(255,255,255,0.5)"
+      g.fillRect(x - r * 5, y - 0.3, r * 10, 0.6)
+      g.fillRect(x - 0.3, y - r * 5, 0.6, r * 10)
+    }
+  }
+  return c
+}
+
+function paintGrain() {
+  const n = 160
+  const c = canvas(n)
+  const g = ctx(c)
+  const img = g.createImageData(n, n)
+  const rnd = ogpRng(7)
+  for (let i = 0; i < img.data.length; i += 4) {
+    const v = Math.round(rnd() * 255)
+    img.data[i] = v
+    img.data[i + 1] = v
+    img.data[i + 2] = v
+    img.data[i + 3] = 34
+  }
+  g.putImageData(img, 0, 0)
+  return c
+}
+
+// Synchronous on purpose: toBlob is scheduled into idle time, which a page
+// this busy never has. WebP keeps the noisy faces small; browsers that cannot
+// encode it hand back PNG instead.
+const toUrl = (c: HTMLCanvasElement) => 'url("' + c.toDataURL("image/webp", 0.92) + '")'
+
+function paintAll(glyphs: OnyxGlyph[], mark: OnyxGlyph, markStyle: "cut" | "deboss", pal: OnyxPalette, density: number): OgpTextures {
+  return {
+    faces: glyphs.map((gl, i) => toUrl(paintFace(gl, "deboss", pal, density, 101 + i * 17))),
+    hero: toUrl(paintFace(mark, markStyle, pal, density, 977)),
+    back: toUrl(paintFace(null, "deboss", pal, density, 1301)),
+    glitA: toUrl(paintSparkle(11, Math.round(110 * Math.max(0.2, density)))),
+    glitB: toUrl(paintSparkle(29, Math.round(110 * Math.max(0.2, density)))),
+    grain: toUrl(paintGrain()),
+  }
+}
+
+// ---- styles -------------------------------------------------------------------
+
+const OGP_CSS = `
+.ogp-root {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+  background: var(--ogp-stage);
+  color: var(--ogp-ink);
+  font-family: var(--ogp-display);
+  --ogp-t: calc(var(--ogp-u) * 0.18);
+  --ogp-r: calc(var(--ogp-u) * 0.245);
+  --ogp-h: calc(var(--ogp-u) * 0.32);
+  --ogp-bar: max(38px, calc(var(--ogp-u) * 0.085));
+  -webkit-tap-highlight-color: transparent;
+}
+.ogp-gate *, .ogp-gate *::before, .ogp-gate *::after { box-sizing: border-box; }
+.ogp-dest {
+  position: absolute;
+  inset: 0;
+  overflow-y: auto;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.8s ease 0.2s;
+}
+.ogp-dest[data-active="true"] { opacity: 1; pointer-events: auto; }
+
+.ogp-gate {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  background: var(--ogp-stage);
+  cursor: pointer;
+  outline: none;
+  user-select: none;
+  -webkit-user-select: none;
+  transition: opacity 0.9s cubic-bezier(0.7, 0, 0.3, 1) 0.15s;
+}
+.ogp-gate:focus-visible .ogp-frame { box-shadow: inset 0 0 0 1px var(--ogp-rim); }
+.ogp-root[data-phase="lift"] .ogp-gate { opacity: 0; pointer-events: none; }
+
+/* ---- light ---- */
+.ogp-spot {
+  position: absolute;
+  inset: -20%;
+  pointer-events: none;
+  background: radial-gradient(
+    closest-side at calc(50% + var(--ogp-mx) * 4%) calc(46% + var(--ogp-my) * 4%),
+    rgba(255, 255, 255, 0.075),
+    rgba(255, 255, 255, 0.02) 55%,
+    transparent 100%
+  );
+  opacity: 0;
+  animation: ogp-fade-in 2.4s ease 0.2s forwards;
+}
+.ogp-cone {
+  position: absolute;
+  left: 50%;
+  top: -10%;
+  width: calc(var(--ogp-u) * 1.1);
+  height: 75%;
+  transform: translateX(-50%);
+  pointer-events: none;
+  background: conic-gradient(from 180deg at 50% 0%, transparent 162deg, rgba(255, 255, 255, 0.05) 180deg, transparent 198deg);
+  filter: blur(18px);
+  opacity: 0;
+  transition: opacity 1.4s ease;
+}
+.ogp-root[data-phase="forge"] .ogp-cone, .ogp-root[data-phase="reveal"] .ogp-cone { opacity: 1; }
+.ogp-vignette {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(ellipse at 50% 46%, transparent 38%, rgba(0, 0, 0, 0.75) 100%);
+}
+.ogp-grain {
+  position: absolute;
+  inset: -50%;
+  pointer-events: none;
+  opacity: 0.55;
+  mix-blend-mode: overlay;
+  background-image: var(--ogp-grain);
+  background-size: 160px 160px;
+  animation: ogp-grain 0.9s steps(6) infinite;
+}
+.ogp-dust { position: absolute; inset: 0; pointer-events: none; }
+.ogp-mote {
+  position: absolute;
+  border-radius: 50%;
+  background: var(--ogp-glitter);
+  box-shadow: 0 0 6px rgba(255, 255, 255, 0.6);
+  opacity: 0;
+  animation: ogp-drift linear infinite;
+}
+
+/* ---- camera ---- */
+.ogp-cam {
+  position: absolute;
+  inset: 0;
+  perspective: calc(var(--ogp-u) * 2.2);
+  perspective-origin: 50% 48%;
+}
+.ogp-rig {
+  position: absolute;
+  left: 50%;
+  top: 48%;
+  width: 0;
+  height: 0;
+  transform-style: preserve-3d;
+  transform: rotateX(calc(var(--ogp-my) * -11deg)) rotateY(calc(var(--ogp-mx) * 14deg));
+}
+.ogp-ring {
+  position: absolute;
+  transform-style: preserve-3d;
+  animation: ogp-spin var(--ogp-spin) linear infinite;
+}
+.ogp-slot {
+  position: absolute;
+  left: calc(var(--ogp-t) * -0.5);
+  top: calc(var(--ogp-t) * -0.5);
+  width: var(--ogp-t);
+  height: var(--ogp-t);
+  transform-style: preserve-3d;
+  transform: translate3d(calc(var(--x) * var(--ogp-r)), calc(var(--y) * var(--ogp-r)), 0);
+  transition: transform 1.25s cubic-bezier(0.65, 0, 0.25, 1);
+  transition-delay: calc(var(--i) * 70ms);
+}
+.ogp-root[data-phase="forge"] .ogp-slot,
+.ogp-root[data-phase="reveal"] .ogp-slot,
+.ogp-root[data-phase="lift"] .ogp-slot {
+  transform: translate3d(0, 0, calc(var(--ogp-u) * -0.12)) rotateZ(180deg) scale(0.55);
+}
+.ogp-counter, .ogp-bob, .ogp-tile, .ogp-hero, .ogp-hero-turn, .ogp-hero-bob {
+  position: absolute;
+  inset: 0;
+  transform-style: preserve-3d;
+}
+.ogp-counter { animation: ogp-spin var(--ogp-spin) linear infinite reverse; }
+.ogp-bob { animation: ogp-bob 5.5s ease-in-out infinite alternate; }
+.ogp-tile {
+  --ogp-hz: 0;
+  transform: translateZ(calc(var(--ogp-hz) * var(--ogp-t) * 0.28))
+    rotateX(calc(var(--rx) * (1 - var(--ogp-hz) * 0.7)))
+    rotateY(calc(var(--ry) * (1 - var(--ogp-hz) * 0.7)))
+    rotateZ(var(--rz));
+  transition: transform 0.6s cubic-bezier(0.2, 0.9, 0.25, 1.15);
+}
+.ogp-tile:hover { --ogp-hz: 1; }
+
+/* the stack that gives each tile its thickness */
+.ogp-layer, .ogp-face {
+  position: absolute;
+  inset: 0;
+  border-radius: 20%;
+}
+.ogp-layer {
+  transform: translateZ(calc(var(--ogp-t) * var(--ogp-depth) * var(--k) * -1));
+  background: linear-gradient(215deg, #26262a 0%, #08080a 42%, #121214 66%, var(--ogp-rim) 100%);
+}
+.ogp-hero .ogp-layer { transform: translateZ(calc(var(--ogp-h) * var(--ogp-depth) * var(--k) * -1)); }
+.ogp-face {
+  overflow: hidden;
+  background-color: var(--ogp-shade);
+  background-image: linear-gradient(135deg, var(--ogp-metal), var(--ogp-shade) 62%);
+  background-size: 100% 100%;
+  filter: blur(0px) brightness(calc(0.3 + var(--ogp-lit) * 0.7));
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.05);
+}
+.ogp-glit {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  mix-blend-mode: screen;
+  background-size: 55% 55%;
+  background-repeat: repeat;
+}
+.ogp-glit-a {
+  background-image: var(--ogp-glit-a);
+  opacity: calc(0.08 + (0.5 + var(--ogp-mx) * 0.5) * (0.35 + var(--ogp-lit) * 0.55));
+  background-position: calc(var(--ox) + var(--ogp-mx) * 6px) calc(var(--oy) + var(--ogp-my) * 6px);
+}
+.ogp-glit-b {
+  background-image: var(--ogp-glit-b);
+  opacity: calc(0.08 + (0.5 - var(--ogp-mx) * 0.5) * (0.35 + var(--ogp-lit) * 0.55));
+  background-position: calc(var(--oy) - var(--ogp-mx) * 6px) calc(var(--ox) - var(--ogp-my) * 6px);
+}
+.ogp-sheen {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  mix-blend-mode: screen;
+  background: radial-gradient(
+    circle at calc(30% - var(--ogp-mx) * 28%) calc(24% - var(--ogp-my) * 28%),
+    rgba(255, 255, 255, 0.2),
+    rgba(255, 255, 255, 0.04) 38%,
+    transparent 62%
+  );
+  opacity: calc(0.35 + var(--ogp-lit) * 0.5);
+  transition: opacity 0.4s ease;
+}
+.ogp-tile:hover .ogp-sheen { opacity: 1; }
+.ogp-sweep {
+  position: absolute;
+  inset: -40%;
+  pointer-events: none;
+  mix-blend-mode: screen;
+  background: linear-gradient(115deg, transparent 42%, rgba(255, 255, 255, 0.28) 50%, transparent 58%);
+  transform: translateX(-70%);
+  opacity: 0;
+}
+.ogp-tile[data-lit="1"] .ogp-sweep { animation: ogp-sweep 1.1s cubic-bezier(0.3, 0, 0.2, 1) forwards; }
+.ogp-tile:hover .ogp-sweep { animation: ogp-sweep 0.9s cubic-bezier(0.3, 0, 0.2, 1) forwards; }
+
+/* the orbit racks in from soft focus, and dissolves into the hero */
+.ogp-leaf { animation: ogp-rack 1.6s cubic-bezier(0.2, 0.7, 0.2, 1) backwards; animation-delay: calc(0.15s + var(--i) * 0.14s); }
+.ogp-slot .ogp-leaf { transition: opacity 0.7s ease; }
+.ogp-root[data-phase="forge"] .ogp-slot .ogp-leaf,
+.ogp-root[data-phase="reveal"] .ogp-slot .ogp-leaf,
+.ogp-root[data-phase="lift"] .ogp-slot .ogp-leaf {
+  opacity: 0;
+  transition-delay: calc(0.75s + var(--i) * 60ms);
+}
+
+/* ---- the hero tile ---- */
+.ogp-hero {
+  left: calc(var(--ogp-h) * -0.5);
+  top: calc(var(--ogp-h) * -0.5);
+  right: auto;
+  bottom: auto;
+  width: var(--ogp-h);
+  height: var(--ogp-h);
+  transform: translateZ(calc(var(--ogp-u) * -0.5)) scale(0.4);
+  transition: transform 1.7s cubic-bezier(0.16, 1, 0.3, 1) 0.55s;
+  pointer-events: none;
+}
+.ogp-hero .ogp-leaf { animation: none; opacity: 0; transition: opacity 0.6s ease 0.6s; }
+.ogp-hero-turn {
+  transform: rotateY(-180deg) rotateZ(-30deg);
+  transition: transform 1.9s cubic-bezier(0.22, 1, 0.36, 1) 0.6s;
+}
+.ogp-hero-bob { animation: ogp-bob 6s ease-in-out infinite alternate; }
+.ogp-root[data-phase="reveal"] .ogp-hero, .ogp-root[data-phase="forge"] .ogp-hero {
+  transform: translateZ(0) scale(1);
+  pointer-events: auto;
+}
+.ogp-root[data-phase="reveal"] .ogp-hero-turn, .ogp-root[data-phase="forge"] .ogp-hero-turn { transform: rotateX(14deg) rotateY(-20deg) rotateZ(-4deg); }
+.ogp-root[data-phase="reveal"] .ogp-hero .ogp-leaf,
+.ogp-root[data-phase="forge"] .ogp-hero .ogp-leaf,
+.ogp-root[data-phase="lift"] .ogp-hero .ogp-leaf { opacity: 1; }
+.ogp-root[data-phase="lift"] .ogp-hero {
+  transform: translateZ(calc(var(--ogp-u) * 1.6)) scale(1.3);
+  transition: transform 1.1s cubic-bezier(0.7, 0, 0.84, 0);
+}
+.ogp-root[data-phase="lift"] .ogp-hero-turn { transform: rotateX(14deg) rotateY(-20deg) rotateZ(-4deg); transition: none; }
+.ogp-face-front { transform: translateZ(0.5px); backface-visibility: hidden; -webkit-backface-visibility: hidden; }
+.ogp-face-back {
+  transform: translateZ(calc(var(--ogp-h) * var(--ogp-depth) * -1 - 0.5px)) rotateY(180deg);
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+.ogp-root[data-phase="reveal"] .ogp-hero .ogp-sweep { animation: ogp-sweep 1.6s cubic-bezier(0.3, 0, 0.2, 1) 0.2s forwards; }
+.ogp-hero .ogp-tile:hover .ogp-sweep { animation: ogp-sweep 1.1s cubic-bezier(0.3, 0, 0.2, 1) forwards; }
+.ogp-hero .ogp-tile { --ogp-lit: 1; transform: none; }
+.ogp-hero .ogp-tile:hover { transform: translateZ(calc(var(--ogp-h) * 0.12)); }
+
+.ogp-flash {
+  position: absolute;
+  left: 50%;
+  top: 48%;
+  width: calc(var(--ogp-u) * 0.9);
+  height: calc(var(--ogp-u) * 0.9);
+  margin: calc(var(--ogp-u) * -0.45) 0 0 calc(var(--ogp-u) * -0.45);
+  border-radius: 50%;
+  pointer-events: none;
+  background: radial-gradient(closest-side, rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0.05) 45%, transparent);
+  opacity: 0;
+  transform: scale(0.3);
+}
+.ogp-root[data-phase="forge"] .ogp-flash { animation: ogp-flash 1.6s cubic-bezier(0.2, 0.7, 0.2, 1) 0.8s both; }
+
+/* ---- wordmark ---- */
+.ogp-title {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(48% + var(--ogp-h) * 0.5 + var(--ogp-u) * 0.075);
+  text-align: center;
+  pointer-events: none;
+}
+.ogp-word {
+  display: inline-block;
+  margin: 0;
+  font-size: max(22px, calc(var(--ogp-u) * 0.062));
+  font-weight: 600;
+  letter-spacing: 0.42em;
+  text-indent: 0.42em;
+  line-height: 1;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.ogp-letter {
+  display: inline-block;
+  color: transparent;
+  background: linear-gradient(180deg, var(--ogp-ink) 10%, #8a8a92 62%, #3d3d42 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  opacity: 0;
+  filter: blur(10px);
+  transform: translateY(0.25em);
+}
+.ogp-root[data-phase="reveal"] .ogp-letter, .ogp-root[data-phase="lift"] .ogp-letter {
+  animation: ogp-letter 1.1s cubic-bezier(0.2, 0.7, 0.2, 1) forwards;
+}
+.ogp-caption {
+  margin: calc(var(--ogp-u) * 0.024) 0 0;
+  font-family: var(--ogp-mono);
+  font-size: max(10px, calc(var(--ogp-u) * 0.016));
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: #8b8b93;
+  opacity: 0;
+  transition: opacity 1s ease 0.9s, letter-spacing 1.6s cubic-bezier(0.2, 0.7, 0.2, 1) 0.9s;
+}
+.ogp-root[data-phase="reveal"] .ogp-caption { opacity: 1; letter-spacing: 0.44em; }
+
+/* ---- letterbox + HUD ---- */
+.ogp-bar {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: var(--ogp-bar);
+  z-index: 3;
+  background: #000;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 0 clamp(16px, 4vw, 44px);
+  font-family: var(--ogp-mono);
+  font-size: max(9px, calc(var(--ogp-u) * 0.0145));
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: #74747c;
+  white-space: nowrap;
+  transition: transform 1s cubic-bezier(0.7, 0, 0.3, 1);
+}
+.ogp-bar-top { top: 0; transform: translateY(-100%); animation: ogp-bar-in 1.1s cubic-bezier(0.16, 1, 0.3, 1) 0.1s forwards; }
+.ogp-bar-bot { bottom: 0; transform: translateY(100%); animation: ogp-bar-in 1.1s cubic-bezier(0.16, 1, 0.3, 1) 0.1s forwards; }
+.ogp-root[data-phase="lift"] .ogp-bar-top { animation: none; transform: translateY(-100%); }
+.ogp-root[data-phase="lift"] .ogp-bar-bot { animation: none; transform: translateY(100%); }
+.ogp-bar b { font-weight: 500; color: var(--ogp-ink); }
+.ogp-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  margin-right: 10px;
+  border-radius: 50%;
+  background: #d8d8de;
+  vertical-align: 1px;
+  animation: ogp-blink 1.2s steps(2) infinite;
+}
+.ogp-root[data-phase="reveal"] .ogp-dot { animation: none; background: var(--ogp-ink); box-shadow: 0 0 8px rgba(255, 255, 255, 0.6); }
+.ogp-track {
+  position: relative;
+  flex: 1;
+  max-width: 420px;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.12);
+}
+.ogp-fill {
+  position: absolute;
+  inset: 0;
+  background: var(--ogp-ink);
+  transform-origin: 0 50%;
+  transform: scaleX(var(--ogp-p));
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+}
+.ogp-ticks { position: absolute; inset: -3px 0; display: flex; justify-content: space-between; }
+.ogp-ticks i { width: 1px; height: 7px; background: rgba(255, 255, 255, 0.25); }
+.ogp-pct { min-width: 4.6em; text-align: right; font-variant-numeric: tabular-nums; }
+.ogp-pct b { font-size: 1.5em; letter-spacing: 0.08em; }
+.ogp-hide-sm { display: inline; }
+.ogp-hint { animation: ogp-blink 1.6s ease-in-out infinite; color: var(--ogp-ink); }
+.ogp-frame { position: absolute; inset: 0; pointer-events: none; }
+.ogp-veil {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  background: var(--ogp-stage);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.65s ease;
+}
+.ogp-veil[data-on="true"] { opacity: 1; }
+.ogp-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+@keyframes ogp-spin { to { transform: rotateZ(360deg); } }
+@keyframes ogp-bob {
+  from { transform: translate3d(0, calc(var(--ogp-u) * -0.008), calc(var(--ogp-u) * -0.012)); }
+  to { transform: translate3d(0, calc(var(--ogp-u) * 0.008), calc(var(--ogp-u) * 0.02)); }
+}
+/* no "to": each leaf settles onto its own resting filter */
+@keyframes ogp-rack {
+  from { opacity: 0; filter: blur(14px) brightness(0.2); }
+}
+@keyframes ogp-sweep {
+  0% { transform: translateX(-70%); opacity: 1; }
+  100% { transform: translateX(70%); opacity: 1; }
+}
+@keyframes ogp-flash {
+  0% { opacity: 0; transform: scale(0.3); }
+  35% { opacity: 1; }
+  100% { opacity: 0; transform: scale(1.4); }
+}
+@keyframes ogp-letter { to { opacity: 1; filter: blur(0); transform: none; } }
+@keyframes ogp-bar-in { to { transform: none; } }
+@keyframes ogp-blink { 50% { opacity: 0.35; } }
+@keyframes ogp-fade-in { to { opacity: 1; } }
+@keyframes ogp-grain {
+  0% { transform: translate(0, 0); }
+  20% { transform: translate(-7%, 4%); }
+  40% { transform: translate(5%, -6%); }
+  60% { transform: translate(-3%, -9%); }
+  80% { transform: translate(8%, 3%); }
+  100% { transform: translate(-5%, 7%); }
+}
+@keyframes ogp-drift {
+  0% { opacity: 0; transform: translate3d(0, 0, 0); }
+  20% { opacity: 0.7; }
+  80% { opacity: 0.5; }
+  100% { opacity: 0; transform: translate3d(calc(var(--ogp-u) * 0.05), calc(var(--ogp-u) * -0.22), 0); }
+}
+
+.ogp-root svg, .ogp-root canvas, .ogp-root img { max-width: none; }
+
+@media (max-width: 520px) {
+  .ogp-hide-sm { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ogp-ring, .ogp-counter, .ogp-bob, .ogp-hero-bob { animation: none; }
+  .ogp-grain { animation: none; }
+  .ogp-dust { display: none; }
+  .ogp-leaf { animation: none; }
+  .ogp-sweep { display: none; }
+  .ogp-flash { display: none; }
+  .ogp-slot { transition: none; }
+  .ogp-hero, .ogp-hero-turn { transition: opacity 0.4s ease; }
+  .ogp-hero-turn { transform: none; }
+  .ogp-root[data-phase="lift"] .ogp-hero { transform: translateZ(0) scale(1); transition: none; }
+  .ogp-letter { filter: none; transform: none; }
+  .ogp-root[data-phase="reveal"] .ogp-letter, .ogp-root[data-phase="lift"] .ogp-letter { animation: none; opacity: 1; }
+  .ogp-tile { transition: none; }
+}
+`
+
+// ---- component ----------------------------------------------------------------
+
+type Phase = "load" | "forge" | "reveal" | "lift" | "done"
+
+const FORGE_MS = 2300
+const HOLD_MS = 3200
+const LIFT_MS = 1200
+const REWIND_MS = 700
+const LAYERS = 9
+const HERO_LAYERS = 14
+
+function Slab({ layers, faceStyle, back, children }: { layers: number; faceStyle: React.CSSProperties; back?: React.CSSProperties; children?: React.ReactNode }) {
+  return (
+    <>
+      {Array.from({ length: layers }, (_, k) => (
+        <span key={k} className="ogp-layer ogp-leaf" style={{ "--k": ((k + 1) / layers).toFixed(3) } as React.CSSProperties} />
+      ))}
+      {back ? <span className="ogp-face ogp-face-back ogp-leaf" style={back} /> : null}
+      <span className={"ogp-face ogp-leaf" + (back ? " ogp-face-front" : "")} style={faceStyle}>
+        {children}
+      </span>
+    </>
+  )
+}
+
+export default function OnyxGlyphPreloader({
+  children,
+  loop = false,
+  progress,
+  durationMs = 4200,
+  glyphs = DEFAULT_GLYPHS,
+  mark = DEFAULT_MARK,
+  markStyle = "cut",
+  word = "Onyx",
+  caption = "Every tool, one mark",
+  palette,
+  glitter = 1,
+  depth = 0.12,
+  spin = 48,
+  hud = false,
+  fontFamily = DISPLAY_STACK,
+  height = "100svh",
+  onComplete,
+  className = "",
+}: OnyxGlyphPreloaderProps) {
+  const [phase, setPhase] = React.useState<Phase>("load")
+  const [pct, setPct] = React.useState(0)
+  const [cycle, setCycle] = React.useState(0)
+  const [veil, setVeil] = React.useState(false)
+  const [tex, setTex] = React.useState<OgpTextures | null>(null)
+  const [unit, setUnit] = React.useState(640)
+
+  const rootRef = React.useRef<HTMLDivElement>(null)
+  const tileRefs = React.useRef<(HTMLDivElement | null)[]>([])
+  const pointerRef = React.useRef<{ x: number; y: number } | null>(null)
+  const rushRef = React.useRef(false)
+  const progressRef = React.useRef(progress)
+  progressRef.current = progress
+  const onCompleteRef = React.useRef(onComplete)
+  onCompleteRef.current = onComplete
+
+  const colors = { ...DEFAULT_PALETTE, ...palette }
+  const n = Math.max(1, glyphs.length)
+  const lit = ogpCount(pct / 100, n)
+  const current = glyphs[Math.min(n - 1, lit)]
+
+  // ---- paint the metal once per look ---------------------------------------------
+  const look = JSON.stringify([glyphs, mark, markStyle, colors, glitter])
+  React.useEffect(() => {
+    try {
+      setTex(paintAll(glyphs, mark, markStyle, colors, Math.max(0, glitter)))
+    } catch {
+      /* no canvas (tests, very old browsers): the CSS gradients stand in */
+    }
+  }, [look])
+
+  // ---- size everything off the shorter side ---------------------------------------
+  React.useEffect(() => {
+    const root = rootRef.current
+    if (!root) return
+    const measure = () => {
+      const r = root.getBoundingClientRect()
+      const u = Math.min(r.width, r.height)
+      if (u > 0) setUnit(Math.round(u))
+    }
+    measure()
+    if (typeof ResizeObserver === "undefined") return
+    const ro = new ResizeObserver(measure)
+    ro.observe(root)
+    return () => ro.disconnect()
+  }, [])
+
+  // ---- the light: follows the pointer, wanders on its own when there is none ------
+  React.useEffect(() => {
+    const root = rootRef.current
+    if (!root) return
+    const still = typeof matchMedia !== "undefined" && matchMedia("(prefers-reduced-motion: reduce)").matches
+    let raf = 0
+    let x = 0
+    let y = 0
+    const t0 = performance.now()
+    const tick = (now: number) => {
+      const ptr = pointerRef.current
+      let tx = 0
+      let ty = 0
+      if (ptr) {
+        tx = ptr.x
+        ty = ptr.y
+      } else if (!still) {
+        const s = (now - t0) / 1000
+        tx = Math.sin(s * 0.45) * 0.5
+        ty = Math.sin(s * 0.31 + 1.2) * 0.32
+      }
+      x += (tx - x) * 0.07
+      y += (ty - y) * 0.07
+      root.style.setProperty("--ogp-mx", x.toFixed(4))
+      root.style.setProperty("--ogp-my", y.toFixed(4))
+      raf = requestAnimationFrame(tick)
+    }
+    raf = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(raf)
+  }, [])
+
+  // ---- load: drive the ignition from progress, frame by frame ---------------------
+  React.useEffect(() => {
+    if (phase !== "load") return
+    const root = rootRef.current
+    let raf = 0
+    let shown = 0
+    let last = performance.now()
+    const start = last
+    let lastPct = -1
+    rushRef.current = false
+
+    const paint = (p: number) => {
+      root?.style.setProperty("--ogp-p", p.toFixed(4))
+      tileRefs.current.forEach((el, i) => {
+        if (!el) return
+        const v = ogpLit(p, i, n)
+        el.style.setProperty("--ogp-lit", (1 - Math.pow(1 - v, 2)).toFixed(3))
+        el.dataset.lit = v >= 1 ? "1" : "0"
+      })
+      const next = Math.round(p * 100)
+      if (next !== lastPct) {
+        lastPct = next
+        setPct(next)
+      }
+    }
+
+    const tick = (now: number) => {
+      const dt = Math.min(64, now - last)
+      last = now
+      const external = progressRef.current
+      let target =
+        external !== undefined ? clamp01(external / 100) : ogpSimulated((now - start) / Math.max(400, durationMs))
+      if (rushRef.current) target = 1
+      // glide toward the target so stepped real progress still moves smoothly
+      const rate = rushRef.current ? 0.12 : external !== undefined ? 0.1 : 1
+      shown += (target - shown) * Math.min(1, rate * (dt / 16.7))
+      if (target - shown < 0.002) shown = target
+      paint(shown)
+      if (shown >= 1) {
+        setPhase("forge")
+        return
+      }
+      raf = requestAnimationFrame(tick)
+    }
+    paint(0)
+    raf = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(raf)
+  }, [phase, cycle, durationMs, n])
+
+  // ---- holds between phases ---------------------------------------------------------
+  React.useEffect(() => {
+    if (phase === "forge") {
+      const t = setTimeout(() => setPhase("reveal"), FORGE_MS)
+      return () => clearTimeout(t)
+    }
+    if (phase === "reveal") {
+      const t = setTimeout(() => {
+        if (loop) setVeil(true)
+        else setPhase("lift")
+      }, HOLD_MS)
+      return () => clearTimeout(t)
+    }
+    if (phase === "lift") {
+      const t = setTimeout(() => {
+        setPhase("done")
+        onCompleteRef.current?.()
+      }, LIFT_MS)
+      return () => clearTimeout(t)
+    }
+  }, [phase, loop])
+
+  // the veil comes down, the stage resets beneath it, the veil goes up
+  React.useEffect(() => {
+    if (!veil) return
+    const t = setTimeout(() => {
+      setPct(0)
+      setPhase("load")
+      setCycle((c) => c + 1)
+      setVeil(false)
+    }, REWIND_MS)
+    return () => clearTimeout(t)
+  }, [veil])
+
+  const onActivate = () => {
+    if (veil) return
+    if (phase === "load") rushRef.current = true
+    else if (phase === "forge") setPhase("reveal")
+    else if (phase === "reveal") {
+      if (loop) setVeil(true)
+      else setPhase("lift")
+    }
+  }
+
+  const onPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    const root = rootRef.current
+    if (!root || e.pointerType === "touch") return
+    const r = root.getBoundingClientRect()
+    pointerRef.current = { x: ((e.clientX - r.left) / r.width) * 2 - 1, y: ((e.clientY - r.top) / r.height) * 2 - 1 }
+  }
+  const onPointerLeave = () => {
+    pointerRef.current = null
+  }
+
+  const loading = phase === "load"
+  const status = loading ? "Assembling" : phase === "forge" ? "Forging" : "Ready"
+  const hint = loop ? "Click to replay" : "Click to enter"
+  const bg = (url: string | undefined): React.CSSProperties => (url ? { backgroundImage: url } : {})
+
+  return (
+    <div
+      ref={rootRef}
+      className={"ogp-root " + className}
+      data-phase={phase}
+      style={
+        {
+          height,
+          "--ogp-u": unit + "px",
+          "--ogp-mx": 0,
+          "--ogp-my": 0,
+          "--ogp-p": 0,
+          "--ogp-lit": 0,
+          "--ogp-spin": Math.max(4, spin) + "s",
+          "--ogp-depth": Math.max(0, depth),
+          "--ogp-stage": colors.stage,
+          "--ogp-metal": colors.metal,
+          "--ogp-shade": colors.shade,
+          "--ogp-rim": colors.rim,
+          "--ogp-glitter": colors.glitter,
+          "--ogp-ink": colors.ink,
+          "--ogp-display": fontFamily,
+          "--ogp-mono": MONO_STACK,
+          "--ogp-glit-a": tex?.glitA ?? "none",
+          "--ogp-glit-b": tex?.glitB ?? "none",
+          "--ogp-grain": tex?.grain ?? "none",
+        } as React.CSSProperties
+      }
+      onPointerMove={onPointerMove}
+      onPointerLeave={onPointerLeave}
+    >
+      <style>{OGP_CSS}</style>
+
+      {!loop && children ? (
+        <div className="ogp-dest" data-active={phase === "done"} aria-hidden={phase !== "done"}>
+          {children}
+        </div>
+      ) : null}
+
+      {phase !== "done" ? (
+        <div
+          className="ogp-gate"
+          role="progressbar"
+          aria-label={word + " is loading"}
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-valuenow={pct}
+          aria-valuetext={loading ? pct + "%" : "Loaded. Press Enter to continue."}
+          tabIndex={0}
+          onClick={onActivate}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault()
+              onActivate()
+            }
+          }}
+        >
+          <div className="ogp-spot" />
+          <div className="ogp-cone" />
+          <div className="ogp-dust" aria-hidden="true">
+            {DUST.map(([left, top, size, dur, delay], i) => (
+              <span
+                key={i}
+                className="ogp-mote"
+                style={{ left: left + "%", top: top + "%", width: size, height: size, animationDuration: dur + "s", animationDelay: delay + "s" }}
+              />
+            ))}
+          </div>
+          <div className="ogp-flash" />
+
+          <div className="ogp-cam" key={cycle} aria-hidden="true">
+            <div className="ogp-rig">
+              <div className="ogp-ring">
+                {glyphs.map((g, i) => {
+                  const { x, y } = ogpSlot(i, n)
+                  const [rx, ry, rz] = TILTS[i % TILTS.length]
+                  return (
+                    <div key={i} className="ogp-slot" style={{ "--x": x, "--y": y, "--i": i } as React.CSSProperties}>
+                      <div className="ogp-counter">
+                        <div className="ogp-bob" style={{ animationDelay: -i * 1.3 + "s", animationDuration: 4.6 + (i % 3) * 0.9 + "s" }}>
+                          <div
+                            ref={(el) => {
+                              tileRefs.current[i] = el
+                            }}
+                            className="ogp-tile"
+                            title={g.label}
+                            style={
+                              {
+                                "--rx": rx + "deg",
+                                "--ry": ry + "deg",
+                                "--rz": rz + "deg",
+                                "--ox": (i * 37) % 100 + "px",
+                                "--oy": (i * 61) % 100 + "px",
+                              } as React.CSSProperties
+                            }
+                          >
+                            <Slab layers={LAYERS} faceStyle={bg(tex?.faces[i])}>
+                              <i className="ogp-glit ogp-glit-a" />
+                              <i className="ogp-glit ogp-glit-b" />
+                              <i className="ogp-sheen" />
+                              <i className="ogp-sweep" />
+                            </Slab>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+
+              <div className="ogp-hero">
+                <div className="ogp-hero-bob">
+                  <div className="ogp-hero-turn">
+                    <div className="ogp-tile" style={{ "--ox": "13px", "--oy": "29px" } as React.CSSProperties}>
+                      <Slab layers={HERO_LAYERS} faceStyle={bg(tex?.hero)} back={bg(tex?.back)}>
+                        <i className="ogp-glit ogp-glit-a" />
+                        <i className="ogp-glit ogp-glit-b" />
+                        <i className="ogp-sheen" />
+                        <i className="ogp-sweep" />
+                      </Slab>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="ogp-title" aria-hidden="true">
+            <p className="ogp-word">
+              {Array.from(word).map((ch, i) => (
+                <span key={i + ch} className="ogp-letter" style={{ animationDelay: 0.08 + i * 0.07 + "s" }}>
+                  {ch === " " ? " " : ch}
+                </span>
+              ))}
+            </p>
+            {caption ? <p className="ogp-caption">{caption}</p> : null}
+          </div>
+
+          <div className="ogp-vignette" />
+          <div className="ogp-grain" />
+
+          {hud ? (
+            <>
+              <div className="ogp-bar ogp-bar-top" aria-hidden="true">
+                <span>
+                  <span className="ogp-dot" />
+                  <b>{word}</b>
+                  <span className="ogp-hide-sm"> — {status}</span>
+                </span>
+                <span>
+                  {loading ? (
+                    <>
+                      <span className="ogp-hide-sm">{current?.label ? current.label + " · " : ""}</span>
+                      {String(lit).padStart(2, "0")} / {String(n).padStart(2, "0")}
+                    </>
+                  ) : (
+                    <span className={phase === "reveal" ? "ogp-hint" : ""}>{phase === "reveal" ? hint : status}</span>
+                  )}
+                </span>
+              </div>
+              <div className="ogp-bar ogp-bar-bot" aria-hidden="true">
+                <span className="ogp-hide-sm">Reel {String(cycle + 1).padStart(2, "0")}</span>
+                <span className="ogp-track">
+                  <span className="ogp-fill" />
+                  <span className="ogp-ticks">
+                    {glyphs.map((_, i) => (
+                      <i key={i} />
+                    ))}
+                    <i />
+                  </span>
+                </span>
+                <span className="ogp-pct">
+                  <b>{String(pct).padStart(3, "0")}</b> %
+                </span>
+              </div>
+            </>
+          ) : null}
+          <div className="ogp-frame" />
+          <div className="ogp-veil" data-on={veil} />
+          <span className="ogp-sr" aria-live="polite">
+            {loading ? (lit > 0 ? glyphs[lit - 1]?.label ?? "" : "") : word + " — " + caption}
+          </span>
+        </div>
+      ) : null}
+    </div>
+  )
+}
+
+
+
+demo.tsx
+"use client"
+
+import OnyxGlyphPreloader from "@/components/ui/onyx-glyph-preloader"
+
+// Your own glyphs, mark and metal: a warmer gunmetal with a heavier glitter.
+const glyphs = [
+  { d: "M50 18 L82 50 L50 82 L18 50 Z M50 36 L64 50 L50 64 L36 50 Z", label: "Facet" },
+  { d: "M28 30 H72 M28 50 H72 M28 70 H56", stroke: 10, label: "Notes" },
+  { d: "M50 16 A34 34 0 1 0 50.1 16 Z M50 34 A16 16 0 1 1 49.9 34 Z", label: "Ring" },
+  { d: "M30 70 L50 30 L70 70", stroke: 11, label: "Peak" },
+]
+
+export default function Demo() {
+  return (
+    <OnyxGlyphPreloader
+      loop
+      glyphs={glyphs}
+      mark={{ d: "M30 30 L70 70 M70 30 L30 70", stroke: 13, label: "Cross" }}
+      word="Foundry"
+      caption="Four tools, one cast"
+      glitter={1.6}
+      depth={0.12}
+      palette={{ metal: "#3a3633", shade: "#0d0c0b", rim: "#8a7d70", glitter: "#ffe9cf", ink: "#f3e9dd" }}
+    />
+  )
+}
+
+```
+
+Implementation Guidelines
+ 1. Analyze the component structure and identify all required dependencies
+ 2. Review the component's argumens and state
+ 3. Identify any required context providers or hooks and install them
+ 4. Questions to Ask
+ - What data/props will be passed to this component?
+ - Are there any specific state management requirements?
+ - Are there any required assets (images, icons, etc.)?
+ - What is the expected responsive behavior?
+ - What is the best place to use this component in the app?
+
+Steps to integrate
+ 0. Copy paste all the code above in the correct directories
+ 1. Install external dependencies
+ 2. Fill image assets with Unsplash stock images you know exist
+ 3. Use lucide-react icons for svgs or logos if component requires them

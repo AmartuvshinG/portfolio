@@ -58,3 +58,7 @@ docs/reference/video/
 docs/private/
 # Screenshots dropped in for direction (palette refs, phone captures).
 docs/reference/images/
+# The Path's place photos as supplied (large, and the photographs belong to
+# their owners). scripts/bake-path-photos.mjs reads them from here; only the
+# baked webps in public/path/photos/ are committed.
+docs/source-photos/

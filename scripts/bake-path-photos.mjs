@@ -1,6 +1,6 @@
 /**
- * Bake the Path's landing photos: one per place, from the drops in the repo
- * root, into public/path/photos/<key>-<w>.webp.
+ * Bake the Path's landing photos: one per place, from the originals in
+ * docs/source-photos/ (gitignored), into public/path/photos/<key>-<w>.webp.
  *
  *   node scripts/bake-path-photos.mjs
  *
@@ -15,6 +15,7 @@ import sharp from "sharp";
 
 const ROOT = new URL("..", import.meta.url);
 const OUT = new URL("public/path/photos/", ROOT);
+const SRC = new URL("docs/source-photos/", ROOT);
 
 const SOURCES = {
   must: "shutis.webp",
@@ -28,7 +29,7 @@ const WIDTHS = [640, 1280];
 
 await mkdir(OUT, { recursive: true });
 for (const [key, file] of Object.entries(SOURCES)) {
-  const src = sharp(fileURLToPath(new URL(file, ROOT)));
+  const src = sharp(fileURLToPath(new URL(file, SRC)));
   const { width, height } = await src.metadata();
   const widths = [...new Set(WIDTHS.map((w) => Math.min(w, width)))];
   for (const w of widths) {
