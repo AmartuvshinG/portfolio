@@ -6,7 +6,6 @@ import { Anatomy } from "@/components/sections/Anatomy";
 import { SelectedWork } from "@/components/sections/SelectedWork";
 import { Timeline } from "@/components/sections/Timeline";
 import { Contact } from "@/components/sections/Contact";
-import { FilmInterlude } from "@/components/sections/FilmInterlude";
 import { CaseFileHost } from "@/components/work/CaseFile";
 import { getGitHubSummary } from "@/lib/github";
 
@@ -34,14 +33,9 @@ export default async function Home() {
   return (
     <>
       <Hero />
-      {/* The film behind the page (FilmBackdrop) moves at the joins; these
-          two give its biggest moments — the doors, the porthole — empty
-          screen to land on. */}
-      <FilmInterlude variant="doors" />
       <About />
       <Connect github={github} />
       <SelectedWork />
-      <FilmInterlude variant="airlock" />
       <Capabilities />
       {/* Inside the capstone: one prediction through the system, from the
           team's final report, and the usability test he ran on it. */}

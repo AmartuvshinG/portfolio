@@ -13,9 +13,9 @@ import { IconArrowUp, IconReplay } from "@/components/ui/HudIcons";
 import { replayIntro } from "@/lib/intro";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
 
-/** The footage's makers, as their own components name them. */
-const CITY = { name: "Guglielmo Giannattasio", via: "21st.dev", href: "https://www.guglielmogiannattasio.it" };
-const STATION = { name: "yuraoak", via: "GitHub", href: "https://github.com/yuraoak/airlock-hero-assets" };
+/** The ground — the red haze and the dotted rain — is ported from this
+    component (repo root: `cyberpunk neon preloaer.txt`). */
+const GROUND = { name: "Neon Katakana Preloader", via: "21st.dev" };
 /** The Path's globe is Natural Earth's land, lakes and borders, baked (scripts/bake-globe-mask). */
 const MAP = { name: "Natural Earth", href: "https://www.naturalearthdata.com" };
 
@@ -26,8 +26,8 @@ const MAP = { name: "Natural Earth", href: "https://www.naturalearthdata.com" };
  * like one: the LED sign running the name as the house lights come up, then
  * end credits, set the way a film sets them, roles right-aligned against names
  * on a centre line. Every credit is a fact about how the site was made: who
- * designed and built it, the faces, the stack, and — owed since the film went
- * in — who made the two reels the backdrop is cut from. Then the seal, the
+ * designed and built it, the faces, the stack, and where the ground behind
+ * the page and the map on the Path come from. Then the seal, the
  * brushed name, and the house index for anyone who wants to go back in.
  *
  * Carries `data-act="void"` so the chrome above stays inverted to the bottom.
@@ -45,23 +45,12 @@ export function Footer() {
     { role: cr.type, value: "Michroma · Chakra Petch · Archivo · Rajdhani · JetBrains Mono · Noto Sans Mongolian" },
     { role: cr.built, value: "Next.js · React · Tailwind CSS · Framer Motion · GSAP · Lenis · WebGL" },
     {
-      role: cr.city,
+      role: cr.ground,
       value: (
-        <a href={CITY.href} target="_blank" rel="noopener noreferrer" className="spectrum-underline">
-          {CITY.name}
-          <span className="text-muted"> — {cr.via} {CITY.via}</span>
-          <span className="sr-only">{t.common.newTab}</span>
-        </a>
-      ),
-    },
-    {
-      role: cr.station,
-      value: (
-        <a href={STATION.href} target="_blank" rel="noopener noreferrer" className="spectrum-underline">
-          {STATION.name}
-          <span className="text-muted"> — {cr.via} {STATION.via}</span>
-          <span className="sr-only">{t.common.newTab}</span>
-        </a>
+        <>
+          {GROUND.name}
+          <span className="text-muted"> — {cr.via} {GROUND.via}</span>
+        </>
       ),
     },
     {

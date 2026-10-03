@@ -13,9 +13,8 @@ import { INK_NAME } from "@/lib/inkName";
  *
  * An easter egg for the curious, and the one place the site's machinery is
  * shown on purpose. Every number on it is measured or read, never written for
- * effect: the frame rate is counted while the panel is open, the reel and
- * timecode are read from the film's own readout, the renderer from the
- * backdrop, the quality tier from the same hook the site uses to decide what
+ * effect: the frame rate is counted while the panel is open, the ground's
+ * state and renderer are read from the ground itself, the quality tier from the same hook the site uses to decide what
  * to draw. A HUD that invented figures would be exactly the "fake futuristic
  * terminology" the brief rules out.
  *
@@ -55,7 +54,7 @@ function Panel() {
   const reelRef = useRef<HTMLSpanElement>(null);
   const [env, setEnv] = useState({ dpr: 1, w: 0, h: 0, renderer: "—" });
 
-  /* Frame rate, counted over half-second windows, and the film's readout,
+  /* Frame rate, counted over half-second windows, and the ground's state,
      both written straight to their nodes: the panel itself never re-renders
      at frame rate. */
   useEffect(() => {
@@ -68,20 +67,20 @@ function Panel() {
         if (fpsRef.current) fpsRef.current.textContent = String(Math.round((frames * 1000) / (now - since)));
         frames = 0;
         since = now;
-        const hud = document.querySelector("[data-film-hud]")?.textContent?.trim();
-        if (reelRef.current) reelRef.current.textContent = hud || d.none;
+        const ground = document.querySelector<HTMLElement>("[data-ground]")?.dataset.ground;
+        if (reelRef.current) reelRef.current.textContent = ground || d.none;
       }
       raf = requestAnimationFrame(tick);
     };
     raf = requestAnimationFrame(tick);
 
     const read = () => {
-      const film = document.querySelector<HTMLElement>("[data-film-renderer]");
+      const ground = document.querySelector<HTMLElement>("[data-ground-renderer]");
       setEnv({
         dpr: Math.round((window.devicePixelRatio || 1) * 100) / 100,
         w: window.innerWidth,
         h: window.innerHeight,
-        renderer: film?.dataset.filmRenderer ?? d.none,
+        renderer: ground?.dataset.groundRenderer ?? d.none,
       });
     };
     read();

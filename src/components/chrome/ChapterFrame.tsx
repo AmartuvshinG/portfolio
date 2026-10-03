@@ -172,9 +172,10 @@ function ChapterSpine({ chapters, active }: { chapters: string[]; active: number
     };
   }, [chapters]);
 
-  /* Ends above the film's vertical reel timecode in the same gutter. */
+  /* Symmetric in the gutter: the reel timecode it once stopped short of
+     went with the film. */
   return (
-    <div className="absolute bottom-[34vh] right-5 top-[18vh] w-px translate-x-1/2">
+    <div className="absolute bottom-[18vh] right-5 top-[18vh] w-px translate-x-1/2">
       <span className="absolute inset-0 bg-current opacity-[0.14]" />
       <span
         ref={fillRef}

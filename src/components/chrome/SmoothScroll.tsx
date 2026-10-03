@@ -14,6 +14,7 @@ import { MotionConfig } from "framer-motion";
 import { gsap, ScrollTrigger } from "@/lib/gsap";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
 import { noteScroll } from "@/lib/scrollPause";
+import { noteVelocity } from "@/lib/groundBus";
 
 interface LenisContextValue {
   /** `immediate` jumps without the 1.2s glide — for restoring a position, not
@@ -72,10 +73,13 @@ export function SmoothScroll({ children }: { children: ReactNode }) {
     // must still apply to the instance we just created.
     if (locks.current > 0) lenis.stop();
 
-    /* `noteScroll` freezes the aurora for the length of the scroll — see
-       lib/scrollPause.ts. It writes an attribute on start and on stop only. */
-    lenis.on("scroll", () => {
+    /* `noteScroll` pauses the ground's idle loops for the length of the
+       scroll — see lib/scrollPause.ts. It writes an attribute on start and on
+       stop only. `noteVelocity` lets the rain feel the scroll (lib/groundBus):
+       module state, read from the ground's own frame loop. */
+    lenis.on("scroll", (l: Lenis) => {
       noteScroll();
+      noteVelocity(l.velocity);
       ScrollTrigger.update();
     });
 

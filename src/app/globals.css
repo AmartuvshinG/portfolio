@@ -932,6 +932,33 @@ html.hud-cursor * {
 
 
 /* ---------------------------------------------------------------------------
+   Neon ground — the site-wide backdrop (components/backdrop/NeonGround.tsx)
+   ---------------------------------------------------------------------------
+   The floor haze is the Neon Katakana Preloader's: blood red rising off the
+   bottom edge and the two bottom corners. Static gradients, no blur, nothing
+   animated per frame — a seam crossing sets `[data-surge]` and the transition
+   swells it (fast up, slow down). The rain is the canvas between the two. */
+.ground-haze {
+  --haze: #5c0820;
+  background:
+    radial-gradient(ellipse 110% 70% at 50% 115%, var(--haze) 0%, transparent 72%),
+    radial-gradient(ellipse 70% 34% at 50% 102%, var(--haze) 0%, transparent 80%),
+    radial-gradient(ellipse 40% 60% at 0% 100%, var(--haze) 0%, transparent 70%),
+    radial-gradient(ellipse 40% 60% at 100% 100%, var(--haze) 0%, transparent 70%);
+  opacity: 0.72;
+  transition: opacity 1.3s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.neon-ground[data-surge] .ground-haze {
+  opacity: 1;
+  transition-duration: 0.3s;
+}
+/* Scanlines: painted once, never blended (a blend mode on a fixed,
+   viewport-wide layer re-composites everything under it every frame). */
+.ground-scan {
+  background: repeating-linear-gradient(to bottom, rgba(255, 255, 255, 0.022) 0 1px, transparent 1px 3px);
+}
+
+/* ---------------------------------------------------------------------------
    Aurora — the site-wide backdrop (components/backdrop/Aurora.tsx)
    ---------------------------------------------------------------------------
    Every keyframe here animates transform or opacity only. Blobs are soft
