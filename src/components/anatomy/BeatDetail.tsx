@@ -37,7 +37,32 @@ const VECTOR = (() => {
     return 0.15 + (s / 2147483648) * 0.85;
   });
 })();
-const NEIGHBOURS = [0.86, 0.71, 0.63];
+
+/**
+ * The duplicate-detection example from the team's final presentation (the
+ * "REQ 2.b" slide): a new bug and the two past reports it matched.
+ * Locale-free, like EXAMPLE.
+ */
+export const DUPLICATE = {
+  query: "Browser freezes when opening a PDF with more than 100 pages",
+  matches: [
+    { text: "App hangs on large PDF documents — memory spike observed", score: 0.92 },
+    { text: "PDF viewer unresponsive after loading document over 80 pages", score: 0.78 },
+  ],
+};
+
+/**
+ * The confusion matrix from the final presentation ("Model Performance"), rows actual,
+ * columns predicted. It sums to 225,658 — every record, the training split
+ * included — which is why the chapter sets it beside the report's 89%.
+ */
+export const SEVERITIES = ["S1", "S2", "S3", "S4"] as const;
+export const MATRIX = [
+  [14374, 99, 119, 30],
+  [236, 17327, 198, 51],
+  [1748, 1140, 144217, 1476],
+  [88, 32, 334, 44189],
+];
 
 /** The beats that carry a drawing. Copy alone for the rest. */
 export function BeatDetail({ i, words, animate }: { i: number; words: Words; animate: boolean }) {
@@ -57,12 +82,47 @@ export function BeatDetail({ i, words, animate }: { i: number; words: Words; ani
     case 6:
       return <Result words={words} animate={animate} />;
     case 7:
-      return <Alternatives words={words} animate={animate} />;
+      return <Measured words={words} animate={animate} />;
     case 8:
-      return <Usability words={words} animate={animate} />;
+      return <Alternatives words={words} animate={animate} />;
+    case 9:
+      return <Design words={words} animate={animate} />;
+    case 10:
+      return <Usability words={words} />;
+    case 11:
+      return <Fixes words={words} animate={animate} />;
     default:
       return null;
   }
+}
+
+/**
+ * Under a beat's lead: the same thing without the jargon, and the jargon it
+ * does use, defined. Both come from the team's own plain-language slides.
+ */
+export function BeatNotes({ i, words, className }: { i: number; words: Words; className?: string }) {
+  const b = words.beats[i];
+  if (!b.plain && !b.terms) return null;
+  return (
+    <div className={cn("space-y-3", className)}>
+      {b.plain && (
+        <p className="border-l-2 border-[var(--color-holo)] pl-4 text-base leading-relaxed text-fg/90">
+          <span className="tag mr-2 text-[var(--color-holo)]">{words.plainLabel}</span>
+          {b.plain}
+        </p>
+      )}
+      {b.terms && (
+        <dl className="space-y-1.5">
+          {b.terms.map((t) => (
+            <div key={t.term} className="flex flex-wrap items-baseline gap-x-3">
+              <dt className="tag shrink-0 text-[var(--color-holo)]">{t.term}</dt>
+              <dd className="text-sm leading-snug text-muted">{t.def}</dd>
+            </div>
+          ))}
+        </dl>
+      )}
+    </div>
+  );
 }
 
 /** Grows in from the left when animated; simply there otherwise. */
@@ -82,20 +142,16 @@ function Label({ children, tone = "faint" }: { children: React.ReactNode; tone?:
 }
 
 function Illustrative({ words }: { words: Words }) {
-  return (
-    <span className="ml-2 rounded-sm border border-line px-1.5 py-px font-mono text-[0.625rem] uppercase tracking-[0.16em] text-faint">
-      {words.illustrative}
-    </span>
-  );
+  return <span className="tag ml-2 rounded-sm border border-line px-1.5 py-px text-faint">{words.illustrative}</span>;
 }
 
 function InputField({ words, animate }: { words: Words; animate: boolean }) {
   return (
     <div>
       <Label>{words.exampleLabel}</Label>
-      <div className="mt-2 border border-line-strong bg-[color-mix(in_srgb,var(--color-bg)_70%,transparent)] px-4 py-3 font-mono text-[0.9375rem] text-fg">
+      <div className="mt-2 border border-line-strong bg-[color-mix(in_srgb,var(--color-bg)_70%,transparent)] px-4 py-3 font-mono text-base text-fg">
         <motion.span
-          className="inline-block overflow-hidden whitespace-nowrap align-bottom"
+          className="inline-block overflow-hidden align-bottom"
           initial={animate ? { clipPath: "inset(0 100% 0 0)" } : false}
           animate={{ clipPath: "inset(0 0% 0 0)" }}
           transition={{ duration: 1.1, ease: "linear" }}
@@ -104,7 +160,7 @@ function InputField({ words, animate }: { words: Words; animate: boolean }) {
         </motion.span>
         <span aria-hidden className="ml-0.5 inline-block h-[1.1em] w-[2px] translate-y-[2px] bg-[var(--color-holo)]" />
       </div>
-      <p className="mt-3 font-mono text-xs tracking-[0.12em] text-[var(--color-holo)]">POST /analyze_bug</p>
+      <p className="tag mt-3 text-[var(--color-holo)]">POST /analyze_bug</p>
     </div>
   );
 }
@@ -115,18 +171,18 @@ function Threats({ keys, words, animate }: { keys: Stride[]; words: Words; anima
       {keys.map((k, n) => (
         <motion.li
           key={k}
-          className="grid grid-cols-[2.25rem_minmax(0,1fr)] gap-3 py-2.5"
+          className="grid grid-cols-[2.75rem_minmax(0,1fr)] gap-4 py-2.5"
           initial={animate ? { opacity: 0, x: -8 } : false}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.4, delay: 0.08 * n, ease: EASE_DEVELOP }}
         >
-          <span className="grid h-8 w-8 place-items-center border border-[var(--color-holo)] font-mono text-sm font-bold text-[var(--color-holo)]">
+          <span className="grid h-10 w-10 place-items-center border border-[var(--color-holo)] font-mono text-base font-bold text-[var(--color-holo)]">
             {k}
           </span>
           <div className="min-w-0">
-            <p className="font-mono text-[0.6875rem] uppercase tracking-[0.16em] text-faint">{words.stride[k]}</p>
-            <p className="mt-0.5 text-[0.9375rem] leading-snug text-fg">{words.threats[k].threat}</p>
-            <p className="mt-0.5 text-sm leading-snug text-[var(--color-holo)]">→ {words.threats[k].control}</p>
+            <p className="tag text-muted">{words.stride[k]}</p>
+            <p className="mt-0.5 text-base leading-snug text-fg">{words.threats[k].threat}</p>
+            <p className="mt-0.5 text-base leading-snug text-[var(--color-holo)]">→ {words.threats[k].control}</p>
           </div>
         </motion.li>
       ))}
@@ -136,17 +192,17 @@ function Threats({ keys, words, animate }: { keys: Stride[]; words: Words; anima
 
 function Forest({ words, animate }: { words: Words; animate: boolean }) {
   return (
-    <div className="grid gap-5 sm:grid-cols-2">
+    <div className="grid gap-6 sm:grid-cols-2">
       <div>
-        <div className="flex items-center">
+        <div className="flex flex-wrap items-center gap-y-1">
           <Label>{words.tokensLabel}</Label>
           <Illustrative words={words} />
         </div>
-        <ul className="mt-2 space-y-1.5">
+        <ul className="mt-3 space-y-2">
           {TOKENS.map(([w, v], n) => (
-            <li key={w} className="grid grid-cols-[5.5rem_minmax(0,1fr)] items-center gap-3">
-              <span className="font-mono text-xs text-fg/80">{w}</span>
-              <span className="h-1.5 bg-[var(--color-line)]">
+            <li key={w} className="grid grid-cols-[6.5rem_minmax(0,1fr)] items-center gap-3">
+              <span className="font-mono text-sm text-fg/90">{w}</span>
+              <span className="h-2 bg-[var(--color-line)]">
                 <Grow to={v} animate={animate} delay={0.05 * n} className="bg-[var(--color-holo)]" />
               </span>
             </li>
@@ -154,19 +210,19 @@ function Forest({ words, animate }: { words: Words; animate: boolean }) {
         </ul>
       </div>
       <div>
-        <div className="flex items-center">
+        <div className="flex flex-wrap items-center gap-y-1">
           <Label>{words.votesLabel}</Label>
           <Illustrative words={words} />
         </div>
-        <div className="mt-2 grid grid-cols-6 gap-1.5">
+        <div className="mt-3 grid grid-cols-6 gap-1.5">
           {VOTES.map((v, n) => (
             <motion.span
               key={n}
               className={cn(
-                "grid h-8 place-items-center border font-mono text-xs",
+                "grid h-10 place-items-center border font-mono text-sm",
                 v === MAJORITY
                   ? "border-[var(--color-holo)] text-[var(--color-holo)]"
-                  : "border-line-strong text-faint"
+                  : "border-line-strong text-muted"
               )}
               initial={animate ? { opacity: 0, y: 6 } : false}
               animate={{ opacity: 1, y: 0 }}
@@ -178,7 +234,7 @@ function Forest({ words, animate }: { words: Words; animate: boolean }) {
         </div>
         <p className="mt-3 flex items-baseline gap-3">
           <Label>{words.majority}</Label>
-          <span className="display-caps text-2xl text-[var(--color-holo)]">{MAJORITY}</span>
+          <span className="display-caps text-3xl text-[var(--color-holo)]">{MAJORITY}</span>
         </p>
       </div>
     </div>
@@ -202,12 +258,12 @@ function Marked() {
 function Override({ words, animate }: { words: Words; animate: boolean }) {
   return (
     <div>
-      <p className="border border-line-strong px-4 py-3 font-mono text-[0.9375rem] text-fg/85">
+      <p className="border border-line-strong px-4 py-3 font-mono text-base text-fg/90">
         <Marked />
       </p>
       <div className="mt-5 flex flex-wrap items-center gap-x-5 gap-y-3">
-        <span className="display-caps text-3xl text-faint line-through decoration-2">{MAJORITY}</span>
-        <span aria-hidden className="font-mono text-faint">→</span>
+        <span className="display-caps text-3xl text-muted line-through decoration-2">{MAJORITY}</span>
+        <span aria-hidden className="font-mono text-muted">→</span>
         <motion.span
           className="display-caps text-5xl text-[var(--color-hazard)] [text-shadow:0_0_22px_color-mix(in_srgb,var(--color-hazard)_55%,transparent)]"
           initial={animate ? { opacity: 0, scale: 1.4 } : false}
@@ -216,7 +272,7 @@ function Override({ words, animate }: { words: Words; animate: boolean }) {
         >
           S1
         </motion.span>
-        <span className="hud-brackets px-3 py-1 font-mono text-xs uppercase tracking-[0.18em] text-[var(--color-hazard)] [--hud-c:var(--color-hazard)]">
+        <span className="tag hud-brackets px-3 py-1 text-[var(--color-hazard)] [--hud-c:var(--color-hazard)]">
           {words.override} · {words.keyword}: “{KEYWORD}”
         </span>
       </div>
@@ -225,13 +281,14 @@ function Override({ words, animate }: { words: Words; animate: boolean }) {
 }
 
 function Neighbours({ words, animate }: { words: Words; animate: boolean }) {
+  const X = words.example2;
   return (
     <div>
-      <div className="flex items-center">
+      <div className="flex flex-wrap items-center gap-y-1">
         <Label>{words.vectorLabel}</Label>
         <Illustrative words={words} />
       </div>
-      <div className="mt-2 flex h-10 items-end gap-[3px]">
+      <div className="mt-2 flex h-8 items-end gap-[3px]">
         {VECTOR.map((v, n) => (
           <motion.span
             key={n}
@@ -243,16 +300,28 @@ function Neighbours({ words, animate }: { words: Words; animate: boolean }) {
           />
         ))}
       </div>
+
+      {/* The presentation's worked example: real wording, real scores. */}
       <p className="mt-5">
-        <Label>{words.neighbours}</Label>
+        <Label tone="holo">{X.label}</Label>
       </p>
-      <ul className="mt-2 space-y-2">
-        {NEIGHBOURS.map((v, n) => (
-          <li key={n} className="grid grid-cols-[7.5rem_minmax(0,1fr)] items-center gap-3">
-            <span className="font-mono text-xs text-fg/80">{words.pastReport(n + 1)}</span>
-            <span className="h-1.5 bg-[var(--color-line)]">
-              <Grow to={v} animate={animate} delay={0.4 + 0.1 * n} className="bg-[var(--color-holo)]" />
-            </span>
+      <div className="mt-2 border border-line-strong px-4 py-3">
+        <p className="tag text-muted">{X.newBug}</p>
+        <p className="mt-1 font-mono text-base text-fg">“{DUPLICATE.query}”</p>
+      </div>
+      <p className="tag mt-4 text-muted">{X.matches}</p>
+      <ul className="mt-2 space-y-3">
+        {DUPLICATE.matches.map((m, n) => (
+          <li key={m.text}>
+            <p className="text-base leading-snug text-fg/90">“{m.text}”</p>
+            <div className="mt-1.5 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
+              <span className="h-2 bg-[var(--color-line)]">
+                <Grow to={m.score} animate={animate} delay={0.4 + 0.1 * n} className="bg-[var(--color-holo)]" />
+              </span>
+              <span className="tabular font-mono text-sm text-[var(--color-holo)]">
+                {Math.round(m.score * 100)}% {X.similar}
+              </span>
+            </div>
           </li>
         ))}
       </ul>
@@ -269,36 +338,36 @@ function Result({ words, animate }: { words: Words; animate: boolean }) {
   ];
   return (
     <div>
-      <dl className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-5 gap-y-1.5 border border-line-strong px-4 py-3">
+      <dl className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-5 gap-y-2 border border-line-strong px-4 py-3">
         <dt className="micro self-center">{R.severity}</dt>
         <dd className="display-caps text-2xl text-[var(--color-hazard)]">S1</dd>
         <dt className="micro self-center">{R.keywords}</dt>
-        <dd className="font-mono text-sm text-[var(--color-hazard)]">{KEYWORD}</dd>
+        <dd className="font-mono text-base text-[var(--color-hazard)]">{KEYWORD}</dd>
         <dt className="micro self-center">{R.confidence}</dt>
-        <dd className="text-sm text-fg/80">{R.confidenceValue}</dd>
+        <dd className="text-base text-fg/85">{R.confidenceValue}</dd>
         <dt className="micro self-center">{R.team}</dt>
         <dd className="self-center">
           <span className="block h-1.5 w-24 bg-[var(--color-line-strong)]" />
         </dd>
         <dt className="micro self-center">{R.similar}</dt>
-        <dd className="font-mono text-sm text-fg">3</dd>
+        <dd className="font-mono text-base text-fg">3</dd>
       </dl>
 
       {/* Measured averages against the 5 s target (report §15.2). */}
-      <div className="mt-5 space-y-2.5">
+      <div className="mt-5 space-y-3">
         {bars.map(([k, s], n) => (
-          <div key={k} className="grid grid-cols-[minmax(0,9rem)_minmax(0,1fr)_3.5rem] items-center gap-3">
+          <div key={k} className="grid grid-cols-[minmax(0,11rem)_minmax(0,1fr)_4rem] items-center gap-3">
             <span className="micro">{k}</span>
             <span className="relative h-2 bg-[var(--color-line)]">
               <Grow to={s / 5} animate={animate} delay={0.15 * n} className="bg-[var(--color-holo)]" />
               <span aria-hidden className="absolute -top-1.5 right-0 h-5 w-px bg-[var(--color-hazard)]" />
             </span>
-            <span className="tabular text-right font-mono text-sm text-fg">
+            <span className="tabular text-right font-mono text-base text-fg">
               {s} {T.unit}
             </span>
           </div>
         ))}
-        <p className="text-right font-mono text-[0.6875rem] uppercase tracking-[0.16em] text-[var(--color-hazard)]">
+        <p className="tag text-right text-[var(--color-hazard)]">
           {T.target} &lt; 5 {T.unit}
         </p>
       </div>
@@ -307,11 +376,133 @@ function Result({ words, animate }: { words: Words; animate: boolean }) {
         {words.extras.map((e) => (
           <div key={e.k} className="flex flex-col-reverse">
             <dt className="micro">{e.k}</dt>
-            <dd className="display-caps tabular text-xl text-fg">{e.v}</dd>
+            <dd className="display-caps tabular text-2xl text-fg">{e.v}</dd>
           </div>
         ))}
       </dl>
     </div>
+  );
+}
+
+/** The cell's tint: log-scaled, since the counts run from 30 to 144,217. */
+function tint(n: number) {
+  const max = Math.log10(144217);
+  return Math.round((Math.log10(Math.max(1, n)) / max) * 26);
+}
+
+/**
+ * The model, measured: the report's figure first, then the presentation's
+ * grid with what it does and doesn't show said beside it. The diagonal is
+ * solid holo (right answers); everything off it is a low tint, so its light
+ * text keeps its contrast.
+ */
+function Measured({ words, animate }: { words: Words; animate: boolean }) {
+  const M = words.measured;
+  return (
+    <div>
+      <div className="flex flex-wrap items-end gap-x-8 gap-y-3">
+        <div className="flex flex-col-reverse">
+          <span className="micro">{M.report.k}</span>
+          <span className="display-caps tabular text-3xl text-fg">{M.report.v}</span>
+        </div>
+        <dl className="flex flex-wrap gap-x-5 gap-y-2">
+          {M.metrics.map((m) => (
+            <div key={m.k} className="flex flex-col-reverse">
+              <dt className="tag text-muted">{m.k}</dt>
+              <dd className="display-caps tabular text-xl text-[var(--color-holo)]">{m.v}</dd>
+            </div>
+          ))}
+        </dl>
+      </div>
+      <p className="tag mt-2 text-[var(--color-holo)]">{M.scope}</p>
+
+      <figure className="mt-2">
+        <div aria-hidden className="grid grid-cols-[1.25rem_2.25rem_repeat(4,minmax(0,1fr))] gap-1">
+          <span />
+          <span />
+          {SEVERITIES.map((s) => (
+            <span key={s} className="tag pb-0.5 text-center text-muted">
+              {s}
+            </span>
+          ))}
+          {MATRIX.map((row, r) => (
+            <MatrixRow key={r} r={r} row={row} words={words} animate={animate} />
+          ))}
+        </div>
+        <figcaption className="tag mt-1 text-right text-muted">{M.predicted} →</figcaption>
+        <MatrixTable words={words} />
+      </figure>
+
+      <p className="mt-2 text-sm leading-snug text-fg/85">
+        {M.caveat} <span className="text-[var(--color-holo)]">{M.loop}</span>
+      </p>
+    </div>
+  );
+}
+
+function MatrixRow({ r, row, words, animate }: { r: number; row: number[]; words: Words; animate: boolean }) {
+  return (
+    <>
+      {r === 0 ? (
+        <span className="row-span-4 flex items-center justify-center">
+          <span className="tag -rotate-90 whitespace-nowrap text-muted">{words.measured.actual}</span>
+        </span>
+      ) : null}
+      <span className="tag grid place-items-center text-muted">{SEVERITIES[r]}</span>
+      {row.map((n, c) => {
+        const diag = r === c;
+        return (
+          <motion.span
+            key={c}
+            title={words.measured.cell(SEVERITIES[r], SEVERITIES[c], n.toLocaleString("en-US"))}
+            className={cn(
+              "tabular grid h-8 place-items-center rounded-[3px] font-mono text-sm",
+              diag ? "bg-[var(--color-holo)] font-bold text-[var(--color-void)]" : "text-fg"
+            )}
+            style={
+              diag ? undefined : { background: `color-mix(in srgb, var(--color-holo) ${tint(n)}%, var(--color-void))` }
+            }
+            initial={animate ? { opacity: 0 } : false}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.3, delay: 0.04 * (r * 4 + c) }}
+          >
+            {n.toLocaleString("en-US")}
+          </motion.span>
+        );
+      })}
+    </>
+  );
+}
+
+/** The grid as a table, for assistive tech. */
+export function MatrixTable({ words }: { words: Words }) {
+  const M = words.measured;
+  return (
+    <table className="sr-only">
+      <caption>{M.caption}</caption>
+      <thead>
+        <tr>
+          <th scope="col">
+            {M.actual} / {M.predicted}
+          </th>
+          {SEVERITIES.map((s) => (
+            <th key={s} scope="col">
+              {s}
+            </th>
+          ))}
+        </tr>
+      </thead>
+      <tbody>
+        {MATRIX.map((row, r) => (
+          <tr key={r}>
+            <th scope="row">{SEVERITIES[r]}</th>
+            {row.map((n, c) => (
+              <td key={c}>{n.toLocaleString("en-US")}</td>
+            ))}
+          </tr>
+        ))}
+      </tbody>
+    </table>
   );
 }
 
@@ -327,15 +518,58 @@ function Alternatives({ words, animate }: { words: Words; animate: boolean }) {
           transition={{ duration: 0.4, delay: 0.08 * n, ease: EASE_DEVELOP }}
         >
           <p className="flex flex-wrap items-baseline justify-between gap-x-4">
-            <span className="font-tech text-lg font-semibold uppercase tracking-wide text-fg/90 line-through decoration-[var(--color-faint)] decoration-1">
+            <span className="font-tech text-xl font-semibold uppercase tracking-wide text-fg/90 line-through decoration-[var(--color-faint)] decoration-1">
               {a.name}
             </span>
-            <span className="font-mono text-[0.6875rem] uppercase tracking-[0.16em] text-faint">{words.notChosen}</span>
+            <span className="tag text-muted">{words.notChosen}</span>
           </p>
-          <p className="mt-1 text-[0.9375rem] leading-snug text-fg/75">{a.why}</p>
+          <p className="mt-1 text-base leading-snug text-fg/85">{a.why}</p>
         </motion.li>
       ))}
     </ul>
+  );
+}
+
+/** His interface rules: the three flows it is built around, and the roles its tabs follow. */
+function Design({ words, animate }: { words: Words; animate: boolean }) {
+  const D = words.design;
+  return (
+    <div>
+      <Label>{D.flowsLabel}</Label>
+      <ol className="mt-2 space-y-2">
+        {D.flows.map((f, n) => (
+          <motion.li
+            key={f.join()}
+            className="flex flex-wrap items-center gap-x-2 gap-y-1 border border-line px-3 py-1.5"
+            initial={animate ? { opacity: 0, x: -8 } : false}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.4, delay: 0.08 * n, ease: EASE_DEVELOP }}
+          >
+            {f.map((step, k) => (
+              <span key={step + k} className="flex items-center gap-2">
+                {k > 0 && (
+                  <span aria-hidden className="text-[var(--color-hazard)]">
+                    →
+                  </span>
+                )}
+                <span className="font-tech text-lg font-semibold uppercase tracking-wide text-fg">{step}</span>
+              </span>
+            ))}
+          </motion.li>
+        ))}
+      </ol>
+      <p className="mt-4">
+        <Label>{D.rolesLabel}</Label>
+      </p>
+      <dl className="mt-2 divide-y divide-line border-y border-line">
+        {D.roles.map((r) => (
+          <div key={r.name} className="grid gap-x-4 py-2 sm:grid-cols-[11rem_minmax(0,1fr)]">
+            <dt className="tag self-center text-[var(--color-holo)]">{r.name}</dt>
+            <dd className="text-base leading-snug text-fg/85">{r.can}</dd>
+          </div>
+        ))}
+      </dl>
+    </div>
   );
 }
 
@@ -343,67 +577,59 @@ const PRIORITY_TONE = {
   critical: "var(--color-signal)",
   high: "var(--color-hazard)",
   medium: "var(--color-holo)",
-  low: "var(--color-faint)",
+  low: "var(--color-muted)",
 } as const;
 
-function Usability({ words, animate }: { words: Words; animate: boolean }) {
+function Usability({ words }: { words: Words }) {
   const U = words.usability;
   return (
-    <div>
-      <div className="border border-line-strong px-4 py-3">
-        <p className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-          <Label>{U.target}</Label>
-          <span className="font-mono text-xs uppercase tracking-[0.16em] text-[var(--color-hazard)]">
-            {U.result}: {U.status}
-          </span>
-        </p>
-        <p className="mt-1 text-[0.9375rem] leading-snug text-fg">{U.targetText}</p>
-        <dl className="mt-3 grid grid-cols-2 gap-4">
-          {U.figures.map((f) => (
-            <div key={f.k} className="flex flex-col-reverse">
-              <dt className="mt-0.5 text-xs leading-snug text-muted">{f.k}</dt>
-              <dd className="display-caps tabular text-2xl leading-none text-fg">{f.v}</dd>
-            </div>
-          ))}
-        </dl>
-        {/* The fixes below name the same two bugs: on a short screen this
-            line is the one to give up. */}
-        <p className="mt-3 text-sm leading-snug text-fg/75 md:[@media(max-height:820px)]:hidden">{U.blockedBy}</p>
-      </div>
-
-      <p className="mt-4">
-        <Label>{U.fixesLabel}</Label>
+    <div className="border border-line-strong px-5 py-4">
+      <p className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+        <Label>{U.target}</Label>
+        <span className="tag text-[var(--color-hazard)]">
+          {U.result}: {U.status}
+        </span>
       </p>
-      <ul className="mt-1 divide-y divide-line border-b border-line">
-        {U.fixes.map((f, n) => (
-          <motion.li
-            key={f.problem}
-            className="grid grid-cols-[4.5rem_minmax(0,1fr)] gap-3 py-1.5"
-            initial={animate ? { opacity: 0 } : false}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.3, delay: 0.06 * n }}
-          >
-            <span
-              className="pt-[3px] font-mono text-[0.625rem] uppercase tracking-[0.14em]"
-              style={{ color: PRIORITY_TONE[f.priority] }}
-            >
-              {U.priority[f.priority]}
-            </span>
-            <span className="min-w-0 text-[0.8125rem] leading-snug">
-              <span className="text-fg">{f.problem}</span>
-              <span className="text-fg/60"> → {f.fix}</span>
-              <span
-                className={cn(
-                  "ml-2 font-mono text-[0.625rem] uppercase tracking-[0.14em]",
-                  f.open ? "text-[var(--color-hazard)]" : "text-[var(--color-holo)]"
-                )}
-              >
+      <p className="mt-2 text-lg leading-snug text-fg">{U.targetText}</p>
+      <dl className="mt-4 grid grid-cols-2 gap-5">
+        {U.figures.map((f) => (
+          <div key={f.k} className="flex flex-col-reverse">
+            <dt className="mt-1 text-base leading-snug text-muted">{f.k}</dt>
+            <dd className="display-caps tabular text-4xl leading-none text-fg">{f.v}</dd>
+          </div>
+        ))}
+      </dl>
+      <p className="mt-4 text-base leading-relaxed text-fg/85">{U.blockedBy}</p>
+    </div>
+  );
+}
+
+function Fixes({ words, animate }: { words: Words; animate: boolean }) {
+  const U = words.usability;
+  return (
+    <ul className="divide-y divide-line border-y border-line">
+      {U.fixes.map((f, n) => (
+        <motion.li
+          key={f.problem}
+          className="grid grid-cols-[6rem_minmax(0,1fr)] gap-4 py-2.5"
+          initial={animate ? { opacity: 0 } : false}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.3, delay: 0.06 * n }}
+        >
+          <span className="tag pt-0.5" style={{ color: PRIORITY_TONE[f.priority] }}>
+            {U.priority[f.priority]}
+          </span>
+          <span className="min-w-0">
+            <span className="block text-base leading-snug text-fg">{f.problem}</span>
+            <span className="mt-0.5 block text-base leading-snug text-fg/80">
+              → {f.fix}
+              <span className={cn("tag ml-2", f.open ? "text-[var(--color-hazard)]" : "text-[var(--color-holo)]")}>
                 {f.open ? U.open : U.fixed}
               </span>
             </span>
-          </motion.li>
-        ))}
-      </ul>
-    </div>
+          </span>
+        </motion.li>
+      ))}
+    </ul>
   );
 }

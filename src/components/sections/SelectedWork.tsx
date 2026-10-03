@@ -230,7 +230,7 @@ function Theatre({ sectionRef: ref }: { sectionRef: React.RefObject<HTMLElement 
                         browser's traffic lights. Which file is up, then the
                         real address of the build. */}
                     <div className="relative flex h-9 items-center gap-3 border-b border-line bg-[#051114] px-4">
-                      <span className="font-mono text-[0.625rem] tabular tracking-[0.22em] text-[var(--color-hazard)]" aria-hidden>
+                      <span className="tag tabular text-[var(--color-hazard)]" aria-hidden>
                         {current.index}/{String(n).padStart(2, "0")}
                       </span>
                       <span className="h-3 w-px bg-line" aria-hidden />

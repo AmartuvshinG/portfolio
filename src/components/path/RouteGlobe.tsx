@@ -245,9 +245,8 @@ function City({ label, on, here, small }: { label: string; on: boolean; here: bo
       />
       <span
         className={cn(
-          "absolute left-3.5 top-1 whitespace-nowrap font-mono uppercase tracking-[0.2em] transition-colors duration-500 [text-shadow:0_1px_6px_rgba(0,0,0,0.9)]",
-          small ? "text-[0.625rem]" : "text-xs",
-          here ? "text-fg" : on ? "text-fg/75" : "text-faint"
+          "absolute left-3.5 top-1 whitespace-nowrap font-mono text-xs uppercase tracking-[0.12em] transition-colors duration-500 [text-shadow:0_1px_6px_rgba(0,0,0,0.9)]",
+          here ? "text-fg" : on ? "text-fg/85" : "text-muted"
         )}
       >
         {label}

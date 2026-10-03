@@ -145,10 +145,10 @@ export function Shard({
         </span>
 
         <span className="flex flex-col justify-center gap-[3px] pl-3 pr-4">
-          <span className="display-caps text-[1.15rem] leading-none text-fg">{code}</span>
+          <span className="display-caps text-[1.25rem] leading-none text-fg">{code}</span>
           <span
             className={cn(
-              "font-mono text-[0.625rem] uppercase leading-none tracking-[0.22em]",
+              "tag leading-none",
               entry.kind === "project" && "spectrum-text"
             )}
             style={entry.kind === "project" ? undefined : { color: cls.ink }}
@@ -158,7 +158,7 @@ export function Shard({
           </span>
         </span>
 
-        <span aria-hidden className="tabular ml-auto flex items-end pb-[7px] pr-4 font-mono text-[0.625rem] tracking-[0.12em] text-faint">
+        <span aria-hidden className="tag tabular ml-auto flex items-end pb-[7px] pr-4 normal-case text-muted">
           {serial}
         </span>
       </motion.div>

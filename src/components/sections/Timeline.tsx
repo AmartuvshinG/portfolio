@@ -29,6 +29,7 @@ import { ScrambleText } from "@/components/motion/ScrambleText";
 import { RouteGlobe } from "@/components/path/RouteGlobe";
 import { DateStamp, yearNeon, type PathWords } from "@/components/path/NeonStamp";
 import { ScriptLabel } from "@/components/ui/ScriptLabel";
+import { OrgMark } from "@/components/ui/OrgMark";
 import { DecodeText, ReadLine, Shard, shardLamp } from "@/components/path/Shard";
 import { cn } from "@/lib/utils";
 
@@ -241,8 +242,10 @@ function Stage({ sectionRef: ref }: { sectionRef: React.RefObject<HTMLElement | 
         className="pointer-events-none absolute inset-y-0 right-0 w-[58%] bg-[linear-gradient(to_right,transparent,color-mix(in_srgb,var(--color-bg)_70%,transparent)_38%)]"
       />
       <div className="pointer-events-none relative mx-auto flex h-full max-w-[1800px] flex-col px-5 pb-6 pt-20 md:px-8 lg:px-16">
-        <div className="pointer-events-auto relative flex items-start justify-between gap-6 pt-3">
-          <div className="relative">
+        {/* The masthead on the left, the board on the right from the top:
+            the board needs the height more than the hint does. */}
+        <div className="flex min-h-0 flex-1 items-start justify-between gap-6 pt-3">
+          <div className="pointer-events-auto relative">
             <ScriptLabel href="#timeline" />
             <span className="eyebrow kicker-plate">
               {sectionIndex("#timeline")} — {P.eyebrow}
@@ -250,18 +253,15 @@ function Stage({ sectionRef: ref }: { sectionRef: React.RefObject<HTMLElement | 
             <h2 className="display-caps mt-3 text-[clamp(1.6rem,3.4vw,3.25rem)] text-fg [@media(max-height:820px)]:text-[clamp(1.4rem,2.6vw,2.4rem)]">
               {P.title}
             </h2>
+            <span className="micro tabular mt-3 hidden !text-fg/85 lg:block">{P.hint}</span>
           </div>
-          <span className="micro tabular hidden pt-2 lg:block">{P.hint}</span>
-        </div>
-
-        <div className="flex min-h-0 flex-1 justify-end pt-4">
           <Board
             entries={entries}
             moment={moment}
             pos={pos}
             words={P}
             goTo={goTo}
-            className="pointer-events-auto w-[min(56%,620px)] lg:w-[min(46%,660px)]"
+            className="pointer-events-auto max-h-full w-[min(58%,640px)] lg:w-[min(50%,720px)]"
           />
         </div>
       </div>
@@ -299,8 +299,8 @@ function Extra({
       <dl className={cn("flex flex-wrap gap-y-2", compact ? "gap-x-5" : "gap-x-7", className)}>
         {metrics.map((m) => (
           <div key={m.label} className="flex flex-col-reverse">
-            <dt className={cn("micro", compact && "!text-[0.625rem]")}>{m.label}</dt>
-            <dd className={cn("display-caps tabular text-fg", compact ? "text-base" : "text-xl")}>{m.value}</dd>
+            <dt className="micro">{m.label}</dt>
+            <dd className={cn("display-caps tabular text-fg", compact ? "text-lg" : "text-xl")}>{m.value}</dd>
           </div>
         ))}
       </dl>
@@ -342,12 +342,12 @@ function Board({
         className
       )}
     >
-      <div className="flex items-center justify-between gap-4 border-b border-line-strong pb-2">
+      <div className="flex items-center justify-between gap-4 border-b border-line-strong">
         <span className="micro">{words.board}</span>
         <button
           type="button"
           onClick={() => openCase("spotfixes")}
-          className="micro inline-flex min-h-6 items-center gap-1.5 !text-fg transition-colors hover:!text-[var(--color-hazard)]"
+          className="micro inline-flex min-h-11 items-center gap-1.5 !text-fg transition-colors hover:!text-[var(--color-hazard)]"
         >
           {words.openCase} <IconArrowRight size={13} />
         </button>
@@ -366,11 +366,11 @@ function Board({
                   onClick={() => goTo(i)}
                   aria-current={on ? "step" : undefined}
                   className={cn(
-                    "grid w-full grid-cols-[3.25rem_minmax(0,1fr)_auto] items-center gap-4 border-b border-line px-2 py-2 text-left transition-[opacity,background-color] duration-300 [@media(max-height:820px)]:py-[5px]",
+                    "grid w-full grid-cols-[3.75rem_minmax(0,1fr)] items-center gap-4 border-b border-line px-2 py-2.5 text-left transition-[opacity,background-color] duration-300 [@media(max-height:820px)]:py-1",
                     on
                       ? "bg-[color-mix(in_srgb,var(--color-hazard)_9%,transparent)]"
                       : "hover:bg-[color-mix(in_srgb,var(--color-fg)_4%,transparent)]",
-                    !on && i > reached && "opacity-45"
+                    !on && i > reached && "opacity-60"
                   )}
                 >
                   {/* The row's lamp, in its shard's class colour: a notch while
@@ -384,13 +384,13 @@ function Board({
                     )}
                     style={shardLamp(e.kind)}
                   />
-                  <span className="display-caps tabular text-sm" style={{ color: yearNeon(e.start.year) }}>
+                  <span className="display-caps tabular text-base" style={{ color: yearNeon(e.start.year) }}>
                     {e.start.year}
                   </span>
-                  <span className="min-w-0 truncate font-tech text-[0.9375rem] font-semibold uppercase tracking-wide text-fg">
-                    {on ? <ScrambleText key={`s${i}`} text={e.title} immediate speed={28} /> : e.title}
+                  <span className="line-clamp-2 min-w-0 font-tech text-base font-semibold uppercase leading-tight tracking-wide text-fg lg:text-lg lg:leading-tight">
+                    {on ? <ScrambleText key={`s${i}-${e.title}`} text={e.title} immediate speed={28} /> : e.title}
                   </span>
-                  <span className="micro hidden xl:inline">{words.places[e.stop]}</span>
+                  <span className="sr-only">, {words.places[e.stop]}</span>
                 </button>
                 <span className="sr-only">
                   {e.period}. {e.org}. {e.description}
@@ -437,12 +437,12 @@ function LegRow({
     <div aria-hidden className="border-b border-line">
       <div
         className={cn(
-          "flex items-center gap-3 px-2 py-1.5 font-mono text-[0.6875rem] uppercase tracking-[0.2em] transition-colors duration-300 [@media(max-height:820px)]:py-1",
-          on ? "text-[var(--color-holo)]" : done ? "text-faint" : "text-faint/60"
+          "tag flex items-center gap-3 px-2 py-1.5 transition-colors duration-300 [@media(max-height:820px)]:py-1",
+          on ? "text-[var(--color-holo)]" : done ? "text-muted" : "text-faint"
         )}
       >
         <span>{words.places[leg.from]}</span>
-        <IconArrowRight size={11} />
+        <IconArrowRight size={13} />
         <span>{words.places[leg.to]}</span>
         <span className="tabular ml-auto">{words.distance(KM)}</span>
       </div>
@@ -525,13 +525,16 @@ function Opened({ entry, words }: { entry: TimelineEntry; words: PathWords }) {
     <div className="grid grid-cols-[auto_minmax(0,1fr)] gap-5 px-2 pb-3 pt-3 lg:gap-6">
       <DateStamp entry={entry} play={play} instant={false} words={words} size="md" noNote />
       <div className="min-w-0">
-        <Shard entry={entry} words={words} play={play} instant={false} className="ml-[5px] mt-[5px]" />
+        <div className="flex items-start justify-between gap-4">
+          <Shard entry={entry} words={words} play={play} instant={false} className="ml-[5px] mt-[5px]" />
+          {entry.mark && <OrgMark mark={entry.mark} height={44} className="mt-1" />}
+        </div>
         <div className="relative mt-3.5">
           <ReadLine play={play} instant={false} />
-          <p className="font-mono text-[0.6875rem] uppercase tracking-[0.16em] text-fg/70">
+          <p className="tag text-fg/85">
             <DecodeText text={entry.org} play={play} instant={false} />
           </p>
-          <p className="mt-1.5 line-clamp-3 text-[0.9375rem] leading-snug text-fg/80">{entry.description}</p>
+          <p className="mt-1.5 text-base leading-snug text-fg/85">{entry.description}</p>
           <Extra entry={entry} words={words} compact className="mt-2.5" />
         </div>
       </div>
@@ -629,14 +632,14 @@ function Record({ reduced }: { reduced: boolean }) {
       {groups.map((g, k) => (
         <div key={k} className="mt-10 first-of-type:mt-6">
           {g.leg && (
-            <p className="mb-6 flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-xs uppercase tracking-[0.2em] text-[var(--color-holo)]">
+            <p className="tag mb-6 flex flex-wrap items-center gap-x-3 gap-y-1 text-[var(--color-holo)]">
               <span>{P.places[g.leg.from]}</span>
               <IconArrowRight size={12} />
               <span>{P.places[g.leg.to]}</span>
-              <span className="tabular text-faint">· {P.distance(KM)}</span>
+              <span className="tabular text-muted">· {P.distance(KM)}</span>
             </p>
           )}
-          <h3 className="flex items-center gap-3 font-mono text-sm uppercase tracking-[0.22em] text-fg">
+          <h3 className="flex items-center gap-3 font-mono text-base uppercase tracking-[0.1em] text-fg">
             <span aria-hidden className="h-2 w-2 rotate-45 bg-[var(--color-hazard)]" />
             {P.placesLong[g.stop]}
           </h3>
@@ -668,14 +671,17 @@ function Row({ entry, reduced, words }: { entry: TimelineEntry; reduced: boolean
         <DateStamp entry={entry} play={play} instant={reduced} words={words} noNote />
       </div>
       <div>
-        <Shard entry={entry} words={words} play={play} instant={reduced} className="ml-[5px] mt-[5px]" />
+        <div className="flex items-start justify-between gap-4">
+          <Shard entry={entry} words={words} play={play} instant={reduced} className="ml-[5px] mt-[5px]" />
+          {entry.mark && <OrgMark mark={entry.mark} height={48} />}
+        </div>
         <h4 className="mt-5 font-tech text-3xl font-bold uppercase leading-[1.08] text-balance text-fg md:text-4xl">
           {entry.title}
         </h4>
-        <p className="mt-3 font-mono text-sm uppercase tracking-[0.18em] text-fg/70 md:text-base">
+        <p className="mt-3 font-mono text-base uppercase tracking-[0.08em] text-fg/85">
           <DecodeText text={entry.org} play={play} instant={reduced} />
         </p>
-        <p className="mt-5 max-w-3xl text-lg leading-relaxed text-fg/80">{entry.description}</p>
+        <p className="mt-5 max-w-3xl text-lg leading-relaxed text-fg/85">{entry.description}</p>
         <Extra entry={entry} words={words} className="mt-5" />
         {entry.extra === "spotfixes" && (
           <button

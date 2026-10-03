@@ -82,6 +82,8 @@ export interface Stamp {
   season?: "summer";
 }
 
+export type OrgMarkKey = "must" | "gannon" | "chickfila" | "oyutolgoi";
+
 export interface TimelineEntry {
   /** When it began — or, for a single moment (a graduation), when it was. */
   start: Stamp;
@@ -98,6 +100,10 @@ export interface TimelineEntry {
   /** Something the Path shows beside this entry: the GPA on the degree, the
       measured figures and the case file on the capstone. Locale-free. */
   extra?: "gpa" | "spotfixes";
+  /** The organisation's logo, drawn white beside the entry (ui/OrgMark). For a
+      role through a contractor it is the place worked at, which is the name
+      people know; the org line still says who the employer was. */
+  mark?: OrgMarkKey;
   title: string;
   org: string;
   description: string;
@@ -313,7 +319,9 @@ export const projects: Project[] = [
       "Spotfixes was our year-long senior design capstone at Gannon University (Fall 2025 – Spring 2026), built with feedback from Mozilla Firefox developers and our faculty mentor. It predicts a bug's severity (S1–S4) with a TF-IDF + Random Forest model plus a critical-keyword rule engine, and uses RAG similarity search to surface the three most similar past bugs. Companies get isolated workspaces (multi-tenant, Supabase row-level security), can bulk-upload their own bugs, and retrain the model on them. I led the React UI/UX, ran usability testing and QA logging, and assessed the Docker deployment on Ubuntu.",
     stack: ["React", "FastAPI", "Python", "scikit-learn", "ChromaDB", "Supabase", "Docker"],
     highlights: [
-      "89% severity-prediction accuracy",
+      "89% severity-prediction accuracy (final report); 97.6% when scored across the full dataset, training data included",
+      "Multi-tenant: three roles, each company's data isolated at the database row level",
+      "Duplicate detection by meaning, not keywords (ChromaDB + RAG)",
       "3.4 s average prediction, 1.2 s similarity search (target: under 5 s)",
       "Usability testing found duplicate-admin and retraining-progress bugs, both fixed",
       "Deployed live at spotfixes.com with GitHub Actions CI/CD",
@@ -447,6 +455,7 @@ export const timeline: TimelineEntry[] = [
     period: "2020 – 2021",
     kind: "education",
     stop: "ub",
+    mark: "must",
     title: "University studies · 21 credits",
     org: "Mongolian University of Science and Technology",
     description: "Ulaanbaatar, Mongolia. 21 credits completed.",
@@ -457,6 +466,7 @@ export const timeline: TimelineEntry[] = [
     period: "Summers 2022 & 2023",
     kind: "work",
     stop: "erie",
+    mark: "gannon",
     title: "Summer Student Conference Assistant",
     org: "Gannon Auxiliary Services",
     description: "Prepared residence halls and supported conference guests.",
@@ -467,6 +477,7 @@ export const timeline: TimelineEntry[] = [
     period: "Aug 2023 – May 2024",
     kind: "work",
     stop: "erie",
+    mark: "gannon",
     title: "Front Desk Student Attendant",
     org: "Gannon Residence Life",
     description: "Maintained student housing records in StarRez and resolved resident inquiries.",
@@ -477,6 +488,7 @@ export const timeline: TimelineEntry[] = [
     period: "May 2025 – Apr 2026",
     kind: "work",
     stop: "erie",
+    mark: "chickfila",
     title: "Foodservice Student Worker",
     org: "Metz Culinary · Chick-fil-A",
     description: "High-volume food preparation and inventory during peak campus hours.",
@@ -488,6 +500,7 @@ export const timeline: TimelineEntry[] = [
     kind: "project",
     stop: "erie",
     extra: "spotfixes",
+    mark: "gannon",
     title: "Spotfixes · Senior Design Capstone",
     org: "Gannon University · Team of 3",
     description:
@@ -500,6 +513,7 @@ export const timeline: TimelineEntry[] = [
     kind: "education",
     stop: "erie",
     extra: "gpa",
+    mark: "gannon",
     title: "B.S. Software Engineering",
     org: "Gannon University",
     description:
@@ -511,6 +525,7 @@ export const timeline: TimelineEntry[] = [
     period: "Jun – Sep 2026",
     kind: "work",
     stop: "ub",
+    mark: "oyutolgoi",
     title: "Corporate Logistics Coordinator (Contractor, Khanbogd Khurd)",
     org: "Oyu Tolgoi LLC",
     description:

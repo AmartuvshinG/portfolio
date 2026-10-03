@@ -26,7 +26,7 @@ import { cn } from "@/lib/utils";
 export type NodeKey = "input" | "api" | "guard" | "db" | "tfidf" | "forest" | "rules" | "embed" | "chroma" | "result";
 
 const VB = { w: 600, h: 680 };
-const NW = 188;
+const NW = 228;
 const NH = 46;
 
 const NODES: Record<NodeKey, { x: number; y: number }> = {
@@ -104,11 +104,14 @@ const FOCUS: NodeKey[][] = [
   ["rules"],
   ["embed", "chroma"],
   ["result"],
+  ["forest"],
   [],
   ["input", "result"],
+  ["input", "result"],
+  ["input", "result"],
 ];
-/** The beat that is about his own work: the UI, at both ends of the line. */
-export const MINE_BEAT = 8;
+/** The beats about his own work: the UI, at both ends of the line. */
+export const MINE_BEATS: readonly number[] = [9, 10, 11];
 /** From this beat the rule engine has fired, and stays the colour of it. */
 const OVERRIDE_BEAT = 4;
 
@@ -186,7 +189,7 @@ export function Schematic({
 
   const reached = (k: NodeKey) => beat === null || beat >= REACHED[k];
   const focus = beat === null ? [] : (FOCUS[beat] ?? []);
-  const mine = beat === MINE_BEAT;
+  const mine = beat !== null && MINE_BEATS.includes(beat);
 
   return (
     <svg
@@ -221,9 +224,9 @@ export function Schematic({
               x={8}
               y={b.y - 9}
               className="font-mono uppercase"
-              fontSize={10.5}
-              letterSpacing="0.16em"
-              style={{ fill: active ? "var(--color-holo)" : "var(--color-faint)", transition: "fill 400ms" }}
+              fontSize={13}
+              letterSpacing="0.08em"
+              style={{ fill: active ? "var(--color-holo)" : "var(--color-muted)", transition: "fill 400ms" }}
             >
               {words[b.key]}
             </text>
@@ -246,7 +249,7 @@ export function Schematic({
                     y={14.5}
                     textAnchor="middle"
                     className="font-mono"
-                    fontSize={12}
+                    fontSize={13}
                     fontWeight={700}
                     style={{ fill: on ? "var(--color-holo)" : "var(--color-faint)", transition: "fill 400ms" }}
                   >
@@ -305,33 +308,33 @@ export function Schematic({
             />
             <text
               x={NW / 2}
-              y={20}
+              y={20.5}
               textAnchor="middle"
               className="font-mono uppercase"
-              fontSize={12.5}
+              fontSize={15.5}
               fontWeight={600}
-              letterSpacing="0.12em"
-              style={{ fill: on ? "var(--color-fg)" : "var(--color-faint)", transition: "fill 400ms" }}
+              letterSpacing="0.08em"
+              style={{ fill: on ? "var(--color-fg)" : "var(--color-muted)", transition: "fill 400ms" }}
             >
               {words.nodes[k]}
             </text>
             <text
               x={NW / 2}
-              y={36}
+              y={38}
               textAnchor="middle"
               className="font-mono"
-              fontSize={10.5}
-              style={{ fill: isFocus ? tone : "var(--color-faint)", transition: "fill 400ms" }}
+              fontSize={13}
+              style={{ fill: isFocus ? tone : "var(--color-muted)", transition: "fill 400ms" }}
             >
               {words.nodeSubs[k]}
             </text>
             {mine && isFocus && (
               <text
                 x={NW + 10}
-                y={27}
+                y={28}
                 className="font-mono uppercase"
-                fontSize={10.5}
-                letterSpacing="0.16em"
+                fontSize={13}
+                letterSpacing="0.08em"
                 style={{ fill: "var(--color-hazard)" }}
               >
                 ← {words.myPart}

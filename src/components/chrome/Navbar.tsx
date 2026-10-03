@@ -282,7 +282,7 @@ export function Navbar() {
               aria-expanded={open}
               aria-controls="mobile-nav"
               className={cn(
-                "hud-brackets flex h-11 items-center gap-3 px-3 font-mono text-[0.75rem] uppercase tracking-[0.24em] text-fg",
+                "hud-brackets flex h-11 items-center gap-3 px-3 font-mono text-[0.875rem] uppercase tracking-[0.16em] text-fg",
                 mn ? "min-[1280px]:hidden" : "min-[1080px]:hidden"
               )}
             >

@@ -234,7 +234,7 @@ function Tuner({
   return (
     <div aria-hidden className="mt-12 flex h-14 items-stretch gap-4 md:mt-14">
       {/* Status: what the band is doing. */}
-      <div className="flex w-44 shrink-0 flex-col justify-center gap-1 border-l border-[color-mix(in_srgb,var(--color-holo)_45%,transparent)] pl-3 font-mono text-[0.6875rem] uppercase tracking-[0.2em]">
+      <div className="flex w-44 shrink-0 flex-col justify-center gap-1 border-l border-[color-mix(in_srgb,var(--color-holo)_45%,transparent)] pl-3 tag">
         <span className="text-muted">{t.connect.tuner}</span>
         <span className="flex items-center gap-2 text-[var(--color-holo)]">
           <span
@@ -258,13 +258,13 @@ function Tuner({
             transition={PANEL_SPRING}
           >
             <span
-              className={`font-mono text-[0.625rem] tracking-[0.22em] transition-colors duration-300 ${tuned === i ? "text-[var(--color-holo)]" : "text-faint group-hover/st:text-fg"}`}
+              className={`tag transition-colors duration-300 ${tuned === i ? "text-[var(--color-holo)]" : "text-faint group-hover/st:text-fg"}`}
             >
               {code(i)}
             </span>
             <span className={`h-3 w-px transition-colors duration-300 ${tuned === i ? "bg-[var(--color-holo)]" : "bg-line-strong"}`} />
             <span
-              className={`font-mono text-[0.625rem] tracking-[0.18em] transition-colors duration-300 ${tuned === i ? "text-fg" : "text-faint"}`}
+              className={`tag normal-case transition-colors duration-300 ${tuned === i ? "text-fg" : "text-muted"}`}
             >
               {socials[i].label}
             </span>
@@ -289,7 +289,7 @@ function Tuner({
       {/* The scope. */}
       <div className="hidden w-48 shrink-0 flex-col justify-center gap-1 lg:flex">
         <Scope kind={tuned === null ? null : kindOf(socials[tuned])} live={live} />
-        <span className="text-right font-mono text-[0.625rem] tracking-[0.2em] text-faint">{t.connect.tuneHint}</span>
+        <span className="tag text-right normal-case text-muted">{t.connect.tuneHint}</span>
       </div>
     </div>
   );
@@ -580,11 +580,11 @@ function ChannelArt({ social, lit, live }: { social: SocialLink; lit: boolean; l
             transform: `perspective(900px) rotateY(${lit ? -4 : -12}deg) scale(${lit ? 1 : 0.9})`,
           }}
         >
-          <div className="flex items-center gap-2 bg-[#051114] px-2.5 py-1.5 font-mono text-[0.625rem] tracking-[0.2em]">
+          <div className="flex items-center gap-2 bg-[#051114] px-2.5 py-1.5 tag">
             <span className="h-1.5 w-1.5 rounded-full bg-[var(--color-holo)] shadow-[0_0_6px_var(--color-holo)]" />
             <span className="text-[var(--color-holo)]">LIVE</span>
             <span className="h-2.5 w-px bg-white/15" />
-            <span className="truncate tracking-normal text-white/60">spotfixes.com</span>
+            <span className="truncate normal-case tracking-normal text-white/75">spotfixes.com</span>
           </div>
           <div className="relative overflow-hidden">
             {/* eslint-disable-next-line @next/next/no-img-element -- decorative, fixed asset */}
@@ -698,7 +698,7 @@ function LanguageMix({ languages }: { languages: GitHubSummary["languages"] }) {
   }));
   return (
     <figure className="flex flex-col gap-2">
-      <figcaption className="font-mono text-[0.6875rem] uppercase tracking-[0.2em] text-muted">{t.connect.langMix}</figcaption>
+      <figcaption className="tag text-muted">{t.connect.langMix}</figcaption>
       <div aria-hidden className="flex h-2 w-full gap-[3px]">
         {segs.map((s) => (
           <span
@@ -713,7 +713,7 @@ function LanguageMix({ languages }: { languages: GitHubSummary["languages"] }) {
           />
         ))}
       </div>
-      <ul className="flex flex-wrap gap-x-4 gap-y-1 font-mono text-[0.6875rem] uppercase tracking-[0.14em] text-fg/80">
+      <ul className="tag flex flex-wrap gap-x-4 gap-y-1 text-fg/85">
         {segs.map((s) => (
           <li key={s.name}>
             {s.name} <span className="tabular text-[var(--color-holo)]">{Math.round(s.share * 100)}%</span>
@@ -738,7 +738,7 @@ function RepoLog({ log }: { log: GitHubSummary["log"] }) {
   const shown = hover ?? log.length - 1;
   return (
     <figure className="flex flex-col gap-2">
-      <figcaption className="flex justify-between gap-4 font-mono text-[0.6875rem] uppercase tracking-[0.2em] text-muted">
+      <figcaption className="tag flex justify-between gap-4 text-muted">
         <span>{t.connect.repoLog}</span>
         <span className="truncate normal-case tracking-[0.08em] text-[var(--color-holo)]">
           {t.connect.started(log[shown].name, formatMonth(log[shown].created, locale))}
@@ -764,7 +764,7 @@ function RepoLog({ log }: { log: GitHubSummary["log"] }) {
           );
         })}
       </div>
-      <div aria-hidden className="flex justify-between font-mono text-[0.625rem] tabular tracking-[0.18em] text-faint">
+      <div aria-hidden className="tag flex justify-between tabular text-muted">
         <span>{new Date(t0).getUTCFullYear()}</span>
         <span>{new Date(t1).getUTCFullYear()}</span>
       </div>
@@ -794,7 +794,7 @@ function Meters({ expanded }: { expanded: boolean }) {
         const fill = pct ? Number(pct[1]) / 100 : 1;
         return (
           <div key={m.label} className="flex min-w-0 flex-col gap-1.5">
-            <dt className="order-2 truncate font-mono text-[0.625rem] uppercase tracking-[0.16em] text-muted">{m.label}</dt>
+            <dt className="tag order-2 text-muted">{m.label}</dt>
             <dd className="order-1 flex flex-col gap-1.5">
               <span className="font-tech text-2xl font-semibold tabular leading-none text-[var(--color-holo)] md:text-3xl">
                 {m.value}

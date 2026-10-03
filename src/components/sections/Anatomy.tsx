@@ -15,7 +15,7 @@ import { ScriptLabel } from "@/components/ui/ScriptLabel";
 import { IconArrowRight } from "@/components/ui/HudIcons";
 import { ScrambleText } from "@/components/motion/ScrambleText";
 import { Schematic } from "@/components/anatomy/Schematic";
-import { BeatDetail } from "@/components/anatomy/BeatDetail";
+import { BeatDetail, BeatNotes, DUPLICATE, MatrixTable } from "@/components/anatomy/BeatDetail";
 import type { UiStrings } from "@/lib/ui";
 import { cn } from "@/lib/utils";
 
@@ -45,22 +45,32 @@ const HOLD = 0.26;
 const EDGE = 0.3;
 /** Scroll per beat, in viewport heights. */
 const STEP_VH = 52;
-/** Beats whose drawing is tall enough to crowd a short screen. */
-const DENSE = [6, 8];
 
 export function Anatomy() {
   const { t } = useI18n();
   const reduced = useReducedMotion();
   const ref = useRef<HTMLElement>(null);
   const [roomy, setRoomy] = useState(false);
+  /* The pinned stage shows a whole beat at once at full reading size, which
+     takes a tall screen. Below this (a 1366×768 laptop, a tablet) the beats
+     read as a list instead of shrinking or scrolling inside the stage. */
+  const [stageRoom, setStageRoom] = useState(false);
   useEffect(() => {
     const mq = window.matchMedia("(min-width: 768px) and (min-height: 600px)");
-    const update = () => setRoomy(mq.matches);
+    const big = window.matchMedia("(min-width: 1200px) and (min-height: 860px)");
+    const update = () => {
+      setRoomy(mq.matches);
+      setStageRoom(big.matches);
+    };
     update();
     mq.addEventListener("change", update);
-    return () => mq.removeEventListener("change", update);
+    big.addEventListener("change", update);
+    return () => {
+      mq.removeEventListener("change", update);
+      big.removeEventListener("change", update);
+    };
   }, []);
-  const pinned = roomy && !reduced;
+  const pinned = stageRoom && !reduced;
   const n = t.anatomy.beats.length;
 
   return (
@@ -127,59 +137,62 @@ function Stage({ sectionRef: ref }: { sectionRef: React.RefObject<HTMLElement | 
 
   return (
     <div className="sticky top-0 h-dvh w-full overflow-hidden">
+      {/* The footage falls off behind the text column, so the prose sits on
+          dark rather than on the tunnel's brightest edges. */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-y-0 right-0 w-[62%] bg-[linear-gradient(to_right,transparent,color-mix(in_srgb,var(--color-bg)_78%,transparent)_30%)]"
+      />
       <div className="relative mx-auto flex h-full max-w-[1800px] flex-col px-5 pb-6 pt-20 md:px-8 lg:px-16">
-        <header className="flex items-start justify-between gap-6 pt-3">
-          <div className="relative">
-            <ScriptLabel href="#anatomy" />
-            <span className="eyebrow kicker-plate">
-              {sectionIndex("#anatomy")} — {A.eyebrow}
-            </span>
-            <h2 className="display-caps mt-3 text-[clamp(1.5rem,3vw,3rem)] text-fg [@media(max-height:820px)]:text-[clamp(1.25rem,2.1vw,2.25rem)]">
-              {A.title}
-            </h2>
-            <p className="micro mt-2 !text-[var(--color-hazard)] lg:hidden">{A.credit}</p>
-          </div>
-          <div className="hidden flex-col items-end gap-1.5 pt-2 text-right lg:flex">
-            <span className="micro !text-[var(--color-hazard)]">{A.credit}</span>
-            <span className="micro">{A.source}</span>
-            <span className="micro mt-2 !text-fg/70">{A.hint}</span>
-          </div>
-        </header>
-
-        <div className="grid min-h-0 flex-1 grid-cols-[minmax(0,6fr)_minmax(0,5fr)] gap-8 pt-4 lg:gap-14 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
-          <div className="relative min-h-0 py-2">
-            <Schematic pos={pos} hold={HOLD} beat={beat} words={A} />
-          </div>
-
+        {/* Two columns the full height of the screen: the masthead heads the
+            drawing, so the beat's text gets every line below the navbar. */}
+        <div className="grid min-h-0 flex-1 grid-cols-[minmax(0,5fr)_minmax(0,7fr)] gap-8 pt-3 lg:gap-12 xl:grid-cols-[minmax(0,5fr)_minmax(0,6fr)]">
           <div className="flex min-h-0 flex-col">
+            <header className="relative">
+              <ScriptLabel href="#anatomy" />
+              <span className="eyebrow kicker-plate">
+                {sectionIndex("#anatomy")} — {A.eyebrow}
+              </span>
+              <h2 className="display-caps mt-3 text-[clamp(1.75rem,2.6vw,2.75rem)] text-fg [@media(max-height:820px)]:text-[clamp(1.5rem,2.2vw,2.25rem)]">
+                {A.title}
+              </h2>
+              <p className="mt-2 flex flex-wrap gap-x-4 gap-y-1">
+                <span className="micro !text-[var(--color-hazard)]">{A.credit}</span>
+                <span className="micro">{A.source}</span>
+              </p>
+            </header>
+            <div className="relative min-h-0 flex-1 py-3">
+              <Schematic pos={pos} hold={HOLD} beat={beat} words={A} />
+            </div>
+          </div>
+
+          <div className="flex min-h-0 flex-col pt-1">
             <Ticks n={n} beat={beat} words={A} goTo={goTo} />
+            <p className="micro mt-1 hidden !text-fg/85 lg:block">{A.hint}</p>
             {/* The beat on screen. Decoration for assistive tech, which reads
-                the full sequence below instead. */}
-            <div aria-hidden className="relative mt-5 min-h-0 flex-1">
+                the full sequence below instead. It never shrinks its type to
+                fit: on a short screen a long beat scrolls inside itself
+                (Lenis leaves it alone). */}
+            <div
+              aria-hidden
+              data-lenis-prevent
+              className="relative mt-4 min-h-0 flex-1 overflow-y-auto overscroll-contain pr-2 [scrollbar-width:thin]"
+            >
               <AnimatePresence mode="popLayout" initial={false}>
                 <motion.div
                   key={beat}
-                  className="absolute inset-x-0 top-0"
+                  className="absolute inset-x-0 top-0 pb-2 pr-2"
                   initial={{ opacity: 0, y: 14 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -10, transition: { duration: 0.16 } }}
                   transition={{ duration: 0.45, ease: EASE_DEVELOP }}
                 >
-                  <h3 className="font-tech text-2xl font-bold uppercase leading-[1.08] text-fg lg:text-[2rem] [@media(max-height:820px)]:text-xl">
-                    <ScrambleText key={`t${beat}`} text={A.beats[beat].title} immediate speed={26} />
+                  <h3 className="font-tech text-3xl font-bold uppercase leading-[1.05] text-fg lg:text-4xl">
+                    <ScrambleText key={`t${beat}-${A.beats[beat].title}`} text={A.beats[beat].title} immediate speed={26} />
                   </h3>
-                  {/* On a short screen the two fullest beats drop their lead
-                      line: the drawing says it, and the text below the stage
-                      keeps it for assistive tech. */}
-                  <p
-                    className={cn(
-                      "mt-3 max-w-xl text-base leading-relaxed text-fg/80 lg:text-[1.0625rem] [@media(max-height:820px)]:text-[0.9375rem] [@media(max-height:820px)]:leading-snug",
-                      DENSE.includes(beat) && "[@media(max-height:820px)]:hidden"
-                    )}
-                  >
-                    {A.beats[beat].body}
-                  </p>
-                  <div className="mt-5 max-w-xl [@media(max-height:820px)]:mt-3">
+                  <p className="mt-3 max-w-2xl text-lg leading-relaxed text-fg/85">{A.beats[beat].body}</p>
+                  <BeatNotes i={beat} words={A} className="mt-4 max-w-2xl" />
+                  <div className="mt-5 max-w-2xl">
                     <BeatDetail i={beat} words={A} animate />
                   </div>
                   {beat === n - 1 && <CaseLink words={A} className="mt-5" />}
@@ -255,6 +268,7 @@ function SrSequence({ words }: { words: UiStrings["anatomy"] }) {
           <li key={i}>
             <h3>{b.title}</h3>
             <p>{b.body}</p>
+            <BeatNotes i={i} words={words} />
             <SrDetail i={i} words={words} />
           </li>
         ))}
@@ -281,7 +295,27 @@ function SrDetail({ i, words }: { i: number; words: UiStrings["anatomy"] }) {
         {words.timing.target}: &lt; 5 {words.timing.unit}. {words.extras.map((e) => `${e.v} ${e.k}`).join(". ")}.
       </p>
     );
-  if (i === 7)
+  if (i === 5) {
+    const X = words.example2;
+    return (
+      <p>
+        {X.label}. {X.newBug}: “{DUPLICATE.query}”. {X.matches}:{" "}
+        {DUPLICATE.matches.map((m) => `“${m.text}”, ${Math.round(m.score * 100)}% ${X.similar}`).join("; ")}.
+      </p>
+    );
+  }
+  if (i === 7) {
+    const M = words.measured;
+    return (
+      <>
+        <p>
+          {M.report.v} {M.report.k}. {M.scope}: {M.metrics.map((m) => `${m.k} ${m.v}`).join(", ")}. {M.caveat} {M.loop}
+        </p>
+        <MatrixTable words={words} />
+      </>
+    );
+  }
+  if (i === 8)
     return (
       <ul>
         {words.alternatives.map((a) => (
@@ -291,22 +325,42 @@ function SrDetail({ i, words }: { i: number; words: UiStrings["anatomy"] }) {
         ))}
       </ul>
     );
-  if (i === 8) {
-    const U = words.usability;
+  if (i === 9) {
+    const D = words.design;
     return (
       <>
         <p>
-          {U.target}: {U.targetText}. {U.result}: {U.status}. {U.figures.map((f) => `${f.v} ${f.k}`).join(". ")}.{" "}
-          {U.blockedBy}
+          {D.flowsLabel}: {D.flows.map((f) => f.join(" → ")).join("; ")}.
         </p>
         <ul>
-          {U.fixes.map((f) => (
-            <li key={f.problem}>
-              {U.priority[f.priority]}: {f.problem}. {f.fix}. {f.open ? U.open : U.fixed}.
+          {D.roles.map((r) => (
+            <li key={r.name}>
+              {r.name}: {r.can}
             </li>
           ))}
         </ul>
       </>
+    );
+  }
+  if (i === 10) {
+    const U = words.usability;
+    return (
+      <p>
+        {U.target}: {U.targetText}. {U.result}: {U.status}. {U.figures.map((f) => `${f.v} ${f.k}`).join(". ")}.{" "}
+        {U.blockedBy}
+      </p>
+    );
+  }
+  if (i === 11) {
+    const U = words.usability;
+    return (
+      <ul>
+        {U.fixes.map((f) => (
+          <li key={f.problem}>
+            {U.priority[f.priority]}: {f.problem}. {f.fix}. {f.open ? U.open : U.fixed}.
+          </li>
+        ))}
+      </ul>
     );
   }
   return null;
@@ -354,8 +408,9 @@ function Step({ i, reduced, words }: { i: number; reduced: boolean; words: UiStr
   return (
     <li className="border-b border-line py-9 md:py-12">
       <span className="micro tabular !text-[var(--color-holo)]">{words.step(i + 1, words.beats.length)}</span>
-      <h3 className="mt-3 font-tech text-2xl font-bold uppercase leading-[1.08] text-fg md:text-3xl">{b.title}</h3>
-      <p className="mt-3 max-w-2xl text-base leading-relaxed text-fg/80 md:text-lg">{b.body}</p>
+      <h3 className="mt-3 font-tech text-3xl font-bold uppercase leading-[1.05] text-fg md:text-4xl">{b.title}</h3>
+      <p className="mt-3 max-w-2xl text-lg leading-relaxed text-fg/85 md:text-xl">{b.body}</p>
+      <BeatNotes i={i} words={words} className="mt-4 max-w-2xl" />
       {/* Always in the document (its words are content), finished; it is
           drawn on again, once, as it scrolls in. Reduced motion: still. */}
       <div ref={ref} className="mt-6 max-w-2xl">

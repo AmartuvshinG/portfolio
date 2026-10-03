@@ -7,7 +7,6 @@ import { LedTicker } from "@/components/chrome/LedTicker";
 import { Reveal } from "@/components/motion/Reveal";
 import { Cta } from "@/components/ui/Cta";
 import { InkSign } from "@/components/ui/InkSign";
-import { Olzii } from "@/components/ui/Olzii";
 import { Seal } from "@/components/ui/Seal";
 import { IconArrowUp, IconReplay } from "@/components/ui/HudIcons";
 import { replayIntro } from "@/lib/intro";
@@ -122,8 +121,6 @@ export function Footer() {
           <a href={`mailto:${contact.email}`} className="spectrum-underline font-mono text-sm text-fg">
             {contact.email}
           </a>
-          {/* The last mark of the reel: the endless knot, drawn once. */}
-          <Olzii className="mt-6 h-10 w-10" />
         </Reveal>
       </div>
 

@@ -11,6 +11,9 @@
  * type error, not a silent English fallback.
  */
 
+/** One beat of the Inside chapter. `plain` says it without the jargon; `terms` define the jargon it does use. */
+type AnatomyBeat = { title: string; body: string; plain?: string; terms?: { term: string; def: string }[] };
+
 const en = {
   lang: {
     /** The toggle's own labels, always in their own script. */
@@ -151,36 +154,64 @@ const en = {
       {
         title: "Who is asking?",
         body: "Every request carries a JSON Web Token. Before anything else runs, the API checks its signature and expiry, over HTTPS only. This is the first trust boundary, so it is where the threat model starts.",
+        terms: [{ term: "JWT", def: "JSON Web Token: a signed pass sent with every request. A forged or expired one is refused." }],
       },
       {
         title: "Whose data is this?",
         body: "Companies share one system but never see each other's bugs. The Tenant Guard takes the company ID from the verified token, never from the request, and Supabase row-level security enforces the same rule again inside the database.",
+        plain: "Think of an apartment building: every company has its own front door, and nobody can walk into someone else's flat, even in the same building.",
+        terms: [
+          { term: "RLS", def: "Row-level security: a lock on every single row of data in the database." },
+          { term: "RBAC", def: "Role-based access control: your role decides what you can touch." },
+        ],
       },
       {
         title: "The forest votes",
         body: "The summary becomes TF-IDF word weights, and the trees of a Random Forest vote on its severity, from S1 (most severe) to S4. The model's probability becomes the confidence score.",
+        plain: "The model can't read English, so each word becomes a score for how much it means: “crash” scores high, “the” scores zero. Then hundreds of decision trees each give an answer, and the majority wins.",
+        terms: [
+          { term: "TF-IDF", def: "A formula that scores how important each word is." },
+          { term: "Random Forest", def: "Many decision trees that each vote; the majority wins." },
+        ],
       },
       {
         title: "A word that overrides",
         body: "A rule engine then looks for critical keywords such as “crash”, “security” and “leak”. If one is there, the label is forced to S1, so a dangerous bug never sinks to the bottom of the pile.",
+        plain: "Some words are too important to leave to a vote.",
       },
       {
         title: "Seen this before?",
-        body: "Alongside the forest, a sentence-transformer model turns the summary into a vector, and ChromaDB finds the three past reports closest to it by cosine distance, shown as a similarity match.",
+        body: "Alongside the forest, a sentence-transformer model turns the summary into a vector, and ChromaDB finds the past reports closest to it by cosine distance, shown as a similarity match.",
+        plain: "It searches by meaning, not exact wording, so “freezes” and “hangs” still match. The engineer sees the likely duplicates before filing, not after.",
+        terms: [{ term: "ChromaDB + RAG", def: "A vector database that searches by meaning, and shows what it found as the evidence." }],
       },
       {
         title: "An answer in under five seconds",
         body: "The UI shows the severity, the confidence, the keywords behind it, a suggested team and the three similar reports. The target was under 5 s; the measured averages were 3.4 s for the prediction and 1.2 s for the similarity search.",
       },
       {
+        title: "How good is it?",
+        body: "The model learned from 222,000 real Firefox bugs, each already given a severity by Mozilla's engineers, with 20% kept aside for testing. Our final report puts its accuracy at 89%.",
+        plain: "In the grid, each row is what a bug really was and each column is what the model said. Everything on the diagonal is a right answer.",
+      },
+      {
         title: "What we didn't build",
         body: "Three designs we weighed and turned down, and why.",
+      },
+      {
+        title: "Then I designed the screens",
+        body: "As UI/UX lead I set the rules the interface is built on: one colour formula for every surface, so each tab uses the same border, background and text colours; text hierarchy carried by opacity; responsive grids; and a navigation bar that sits on the top or the left and collapses.",
+        plain: "One set of rules means every screen feels like the same product, whoever on the team built it.",
       },
       {
         title: "Then I put it in front of people",
         body: "As UI/UX lead I ran the usability testing and kept the QA log. One session, measured against a target we had set ourselves:",
       },
-    ],
+      {
+        title: "What the log turned into",
+        body: "Every problem from the session went into the QA log with a priority, and from there into a fix.",
+      },
+    ] as AnatomyBeat[],
     stride: {
       S: "Spoofing",
       T: "Tampering",
@@ -217,9 +248,46 @@ const en = {
     },
     timing: { target: "Target", prediction: "Prediction", similarity: "Similarity search", unit: "s", avg: "avg" },
     extras: [
-      { v: "89%", k: "model accuracy" },
+      { v: "89%", k: "accuracy, final report" },
       { v: "100 in 42 s", k: "records per bulk upload, no timeout" },
     ],
+    plainLabel: "In plain terms",
+    measured: {
+      scope: "Final presentation · every record scored, training data included",
+      metrics: [
+        { k: "Accuracy", v: "97.6%" },
+        { k: "F1 score", v: "97.6%" },
+        { k: "Precision", v: "97.7%" },
+        { k: "Recall", v: "97.6%" },
+      ],
+      caveat: "That is why it reads higher than the report's 89%: a model always does better on bugs it has already seen.",
+      report: { v: "89%", k: "accuracy, final report" },
+      actual: "Actual",
+      predicted: "Predicted",
+      caption: "Confusion matrix, S1 to S4",
+      cell: (actual: string, predicted: string, n: string) => `Actually ${actual}, predicted ${predicted}: ${n}`,
+      loop: "And it keeps learning: when an engineer corrects a prediction, the correction goes back into training.",
+    },
+    example2: {
+      label: "Example from our final presentation",
+      newBug: "New bug",
+      matches: "Matches found before it was saved",
+      similar: "similar",
+    },
+    design: {
+      flowsLabel: "Three core flows",
+      flows: [
+        ["Submit", "score", "correct"],
+        ["Filter", "export", "audit"],
+        ["Upload", "score", "retrain"],
+      ],
+      rolesLabel: "The tabs follow the roles",
+      roles: [
+        { name: "Super Admin", can: "Every company, every user, the universal model" },
+        { name: "Company Admin", can: "Their team, their data, their company's model" },
+        { name: "Company User", can: "Submit bugs, see predictions, use analytics" },
+      ],
+    },
     notChosen: "Not chosen",
     alternatives: [
       {
@@ -340,9 +408,9 @@ const en = {
       base: "Made in",
       via: "via",
     },
-    /** Trademark credit for the marks on the Signal panels (see BrandMarks). */
+    /** Trademark credit for the marks on the Signal panels (see BrandMarks) and the Path (see OrgMark). */
     credit:
-      "GitHub and the Invertocat logo are trademarks of GitHub, Inc. LinkedIn and the IN logo are registered trademarks of LinkedIn Corporation.",
+      "GitHub and the Invertocat logo are trademarks of GitHub, Inc. LinkedIn and the IN logo are registered trademarks of LinkedIn Corporation. The Gannon University, Mongolian University of Science and Technology, Chick-fil-A and Oyu Tolgoi logos belong to their owners and mark where I studied and worked; no endorsement is implied.",
   },
   diagnostics: {
     title: "Diagnostics",
@@ -531,36 +599,64 @@ const mn: UiStrings = {
       {
         title: "Хэн асууж байна вэ?",
         body: "Хүсэлт бүр JSON Web Token-той ирнэ. Бусад бүхнээс өмнө API түүний гарын үсэг, хүчинтэй хугацааг зөвхөн HTTPS-ээр шалгана. Энэ бол итгэлцлийн эхний хил тул аюулын загвар эндээс эхэлнэ.",
+        terms: [{ term: "JWT", def: "JSON Web Token: хүсэлт бүртэй хамт явдаг гарын үсэгтэй нэвтрэх үнэмлэх. Хуурамч эсвэл хугацаа нь дууссаныг хүлээж авахгүй." }],
       },
       {
         title: "Энэ хэний өгөгдөл вэ?",
         body: "Компаниуд нэг системийг хуваалцдаг ч бие биеийнхээ алдааг хэзээ ч хардаггүй. Tenant Guard компанийн дугаарыг хүсэлтээс биш, баталгаажсан токеноос авдаг бөгөөд Supabase-ийн мөрийн түвшний хамгаалалт ижил дүрмийг өгөгдлийн санд дахин мөрдүүлнэ.",
+        plain: "Орон сууцны байр гэж бодоорой: компани бүр өөрийн хаалгатай, нэг байранд байсан ч өөр хүний айлд орж чадахгүй.",
+        terms: [
+          { term: "RLS", def: "Мөрийн түвшний хамгаалалт: өгөгдлийн сангийн мөр бүр дээрх цоож." },
+          { term: "RBAC", def: "Үүрэгт суурилсан эрх: таны үүрэг юунд хүрч болохыг шийднэ." },
+        ],
       },
       {
         title: "Ой санал өгнө",
         body: "Товч тайлбар TF-IDF үгсийн жин болж, Random Forest загварын моднууд түүний ноцтой байдлыг S1 (хамгийн ноцтой)-ээс S4 хүртэл санал хураана. Загварын магадлал итгэлийн оноо болно.",
+        plain: "Загвар англи хэл уншиж чадахгүй тул үг бүрийг ач холбогдлоор нь оноо болгоно: “crash” өндөр, “the” тэг оноо авна. Дараа нь хэдэн зуун шийдвэрийн мод тус бүр хариу өгч, олонх нь ялна.",
+        terms: [
+          { term: "TF-IDF", def: "Үг бүр хэр чухал болохыг үнэлдэг томьёо." },
+          { term: "Random Forest", def: "Олон шийдвэрийн мод санал өгч, олонх нь ялдаг загвар." },
+        ],
       },
       {
         title: "Шийдвэрийг өөрчлөх үг",
         body: "Дараа нь дүрмийн хөдөлгүүр “crash”, “security”, “leak” зэрэг чухал түлхүүр үгсийг хайна. Аль нэг нь байвал шошгыг S1 болгож, аюултай алдаа жагсаалтын ёроолд живэхээс сэргийлнэ.",
+        plain: "Зарим үгийг санал хураалтад даатгахад хэтэрхий чухал.",
       },
       {
         title: "Өмнө нь тохиолдож байсан уу?",
-        body: "Ойтой зэрэгцэн sentence-transformer загвар товч тайлбарыг вектор болгож, ChromaDB косинус зайгаар хамгийн ойр гурван өмнөх тайланг олж, ижил төстэй байдлаар нь харуулна.",
+        body: "Ойтой зэрэгцэн sentence-transformer загвар товч тайлбарыг вектор болгож, ChromaDB косинус зайгаар хамгийн ойр өмнөх тайлангуудыг олж, ижил төстэй байдлаар нь харуулна.",
+        plain: "Яг ижил үгээр биш, утгаар нь хайдаг тул “freezes”, “hangs” хоёр ч таарна. Инженер давхардлыг бүртгэхээс өмнө харна.",
+        terms: [{ term: "ChromaDB + RAG", def: "Утгаар нь хайдаг вектор өгөгдлийн сан, олсон зүйлээ нотолгоо болгон харуулна." }],
       },
       {
         title: "Таван секунд хүрэхгүй хугацаанд хариу",
         body: "Интерфейс ноцтой байдал, итгэлийн оноо, түүнд нөлөөлсөн түлхүүр үгс, санал болгох баг, ижил төстэй гурван тайланг харуулна. Зорилт 5 секундээс бага байсан; хэмжсэн дундаж нь таамаглалд 3.4 с, ижил төстэй хайлтад 1.2 с.",
       },
       {
+        title: "Хэр сайн бэ?",
+        body: "Загвар Mozilla-гийн инженерүүд ноцтой байдлыг нь аль хэдийн тогтоосон Firefox-ийн 222,000 бодит алдаанаас суралцсан бөгөөд 20%-ийг нь туршилтад үлдээсэн. Эцсийн тайланд нарийвчлалыг 89% гэж тэмдэглэсэн.",
+        plain: "Хүснэгтийн мөр бүр алдааны бодит ангилал, багана бүр загварын хариу. Диагональ дээрх бүхэн зөв хариулт.",
+      },
+      {
         title: "Бидний бүтээгээгүй зүйлс",
         body: "Бидний авч үзээд татгалзсан гурван шийдэл, шалтгааных нь хамт.",
+      },
+      {
+        title: "Дараа нь дэлгэцүүдийг зохиосон",
+        body: "UI/UX ахлагчийн хувьд интерфейсийн дүрмийг би тогтоосон: бүх гадаргууд нэг өнгөний томьёо, ингэснээр таб бүр ижил хүрээ, дэвсгэр, текстийн өнгөтэй; текстийн шатлалыг тунгалагшлаар; уян хатан тор; дээр эсвэл зүүн талд байрлаж, хураагддаг цэс.",
+        plain: "Нэг багц дүрэм нь багийн хэн хийснээс үл хамааран дэлгэц бүрийг нэг бүтээгдэхүүн мэт харагдуулна.",
       },
       {
         title: "Дараа нь хүмүүст туршуулсан",
         body: "UI/UX ахлагчийн хувьд би хэрэглэгчийн туршилтыг явуулж, QA бүртгэлийг хөтөлсөн. Нэг туршилт, бидний өөрсдөө тавьсан зорилттой харьцуулбал:",
       },
-    ],
+      {
+        title: "Бүртгэлээс гарсан засварууд",
+        body: "Туршилтаас гарсан асуудал бүрийг ач холбогдолтой нь QA бүртгэлд оруулж, тэндээсээ засвар болгосон.",
+      },
+    ] as AnatomyBeat[],
     stride: {
       S: "Хуурамчаар илрэх",
       T: "Өөрчлөх",
@@ -597,9 +693,46 @@ const mn: UiStrings = {
     },
     timing: { target: "Зорилт", prediction: "Таамаглал", similarity: "Ижил төстэй хайлт", unit: "с", avg: "дундаж" },
     extras: [
-      { v: "89%", k: "загварын нарийвчлал" },
+      { v: "89%", k: "нарийвчлал, эцсийн тайлан" },
       { v: "100 / 42 с", k: "бөөнөөр оруулахад, хугацаа хэтрэхгүй" },
     ],
+    plainLabel: "Энгийнээр хэлбэл",
+    measured: {
+      scope: "Эцсийн танилцуулга · бүх бичлэгийг сургалтын өгөгдлийн хамт үнэлсэн",
+      metrics: [
+        { k: "Нарийвчлал", v: "97.6%" },
+        { k: "F1 оноо", v: "97.6%" },
+        { k: "Precision", v: "97.7%" },
+        { k: "Recall", v: "97.6%" },
+      ],
+      caveat: "Тиймээс тайлангийн 89%-иас өндөр харагдана: загвар өмнө нь харсан алдаан дээрээ үргэлж илүү сайн.",
+      report: { v: "89%", k: "нарийвчлал, эцсийн тайлан" },
+      actual: "Бодит",
+      predicted: "Таамагласан",
+      caption: "Төөрөгдлийн матриц, S1-ээс S4",
+      cell: (actual: string, predicted: string, n: string) => `Бодит ${actual}, таамагласан ${predicted}: ${n}`,
+      loop: "Мөн суралцсаар байдаг: инженер таамаглалыг засахад тэр засвар сургалт руу буцаж орно.",
+    },
+    example2: {
+      label: "Эцсийн танилцуулгаас авсан жишээ",
+      newBug: "Шинэ алдаа",
+      matches: "Хадгалахаас өмнө олдсон тохирол",
+      similar: "төстэй",
+    },
+    design: {
+      flowsLabel: "Гурван үндсэн урсгал",
+      flows: [
+        ["Илгээх", "үнэлэх", "засах"],
+        ["Шүүх", "экспортлох", "аудит"],
+        ["Оруулах", "үнэлэх", "дахин сургах"],
+      ],
+      rolesLabel: "Табууд үүргийг дагана",
+      roles: [
+        { name: "Супер админ", can: "Бүх компани, бүх хэрэглэгч, нийтлэг загвар" },
+        { name: "Компанийн админ", can: "Өөрийн баг, өгөгдөл, компанийн загвар" },
+        { name: "Компанийн хэрэглэгч", can: "Алдаа илгээх, таамаглал харах, аналитик ашиглах" },
+      ],
+    },
     notChosen: "Сонгоогүй",
     alternatives: [
       {
@@ -719,7 +852,7 @@ const mn: UiStrings = {
       via: "эх сурвалж",
     },
     credit:
-      "GitHub болон Invertocat лого нь GitHub, Inc.-ийн барааны тэмдэг. LinkedIn болон IN лого нь LinkedIn Corporation-ийн бүртгэлтэй барааны тэмдэг.",
+      "GitHub болон Invertocat лого нь GitHub, Inc.-ийн барааны тэмдэг. LinkedIn болон IN лого нь LinkedIn Corporation-ийн бүртгэлтэй барааны тэмдэг. Gannon University, ШУТИС, Chick-fil-A, Оюу Толгойн лого нь эзэмшигчдийнх бөгөөд миний суралцаж, ажилласан газрыг заана; ямар нэг дэмжлэг илэрхийлээгүй.",
   },
   diagnostics: {
     title: "Оношилгоо",
