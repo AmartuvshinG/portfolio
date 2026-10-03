@@ -15,6 +15,7 @@ import {
 } from "framer-motion";
 import { degreeCourses, education, sectionIndex, timeline as baseTimeline, type TimelineEntry } from "@/lib/content";
 import { useI18n } from "@/lib/i18n";
+import { SliceTitle } from "@/components/motion/SliceTitle";
 import { openCase } from "@/lib/caseFile";
 import { isInteractive, modalOpen } from "@/lib/keys";
 import { distanceKm, type StopKey } from "@/lib/routeGeo";
@@ -310,7 +311,7 @@ function Stage({ sectionRef: ref }: { sectionRef: React.RefObject<HTMLElement | 
               {sectionIndex("#timeline")} — {P.eyebrow}
             </span>
             <h2 className="display-caps mt-3 text-[clamp(1.6rem,3.4vw,3.25rem)] text-fg [@media(max-height:820px)]:text-[clamp(1.4rem,2.6vw,2.4rem)]">
-              {P.title}
+              <SliceTitle text={P.title} />
             </h2>
             <span className="micro tabular mt-3 hidden !text-fg/85 lg:block">{P.hint}</span>
           </div>

@@ -13,6 +13,7 @@ import {
 import { ArrowUpRight } from "lucide-react";
 import { accentColor, projects as baseProjects, readable, sectionIndex, type Project } from "@/lib/content";
 import { useI18n } from "@/lib/i18n";
+import { SliceTitle } from "@/components/motion/SliceTitle";
 import { openCase } from "@/lib/caseFile";
 import { isInteractive, modalOpen } from "@/lib/keys";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
@@ -192,7 +193,7 @@ function Theatre({ sectionRef: ref }: { sectionRef: React.RefObject<HTMLElement 
                 {sectionIndex("#work")} — {t.work.eyebrow}
               </span>
               <h2 className="display-caps mt-3 text-[clamp(1.6rem,3.4vw,3.25rem)] text-fg">
-                {t.work.title}
+                <SliceTitle text={t.work.title} />
               </h2>
             </div>
             <span className="micro tabular hidden lg:block">{t.work.hint}</span>
@@ -605,7 +606,9 @@ function Stack({ reduced }: { reduced: boolean }) {
         <span className="eyebrow kicker-plate">
           {sectionIndex("#work")} — {t.work.eyebrow}
         </span>
-        <h2 className="display-caps mt-3 text-[clamp(1.6rem,4vw,3.75rem)] text-fg">{t.work.title}</h2>
+        <h2 className="display-caps mt-3 text-[clamp(1.6rem,4vw,3.75rem)] text-fg">
+          <SliceTitle text={t.work.title} />
+        </h2>
 
         <div className={cn("mt-12", reduced ? "grid gap-8 md:grid-cols-2" : "space-y-6")}>
           {c.projects.map((p, i) => {

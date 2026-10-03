@@ -12,6 +12,7 @@ import {
 } from "framer-motion";
 import { sectionIndex } from "@/lib/content";
 import { useI18n } from "@/lib/i18n";
+import { SliceTitle } from "@/components/motion/SliceTitle";
 import { openCase } from "@/lib/caseFile";
 import { isInteractive, modalOpen } from "@/lib/keys";
 import { EASE_EXPO } from "@/lib/motion";
@@ -153,7 +154,9 @@ function Stage({ sectionRef: ref }: { sectionRef: React.RefObject<HTMLElement | 
             <span className="eyebrow kicker-plate">
               {sectionIndex("#anatomy")} — {A.eyebrow}
             </span>
-            <h2 className="display-caps mt-3 text-[clamp(1.75rem,2.8vw,3rem)] text-fg">{A.title}</h2>
+            <h2 className="display-caps mt-3 text-[clamp(1.75rem,2.8vw,3rem)] text-fg">
+              <SliceTitle text={A.title} />
+            </h2>
           </div>
           <p className="flex flex-col items-end gap-1 pb-1 text-right">
             <span className="micro !text-[var(--color-hazard)]">{A.credit}</span>

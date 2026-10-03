@@ -284,7 +284,7 @@ export const mn: SiteContent = {
     ],
     signature: [
       { k: "ЧИГЛЭЛ", v: "Full-stack · ML" },
-      { k: "ХЭЛ", v: "Java · Python · React" },
+      { k: "ГОЛ ХЭРЭГСЭЛ", v: "Java · Python · React" },
       { k: "ЗЭРЭГ", v: "Бакалавр · Деканы жагсаалт ×3" },
       { k: "АМЬДАРДАГ", v: "Улаанбаатар, МН" },
     ],

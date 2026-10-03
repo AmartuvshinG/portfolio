@@ -5,6 +5,7 @@ import { motion, useScroll, useSpring, useTransform, type MotionValue } from "fr
 import { ArrowUpRight } from "lucide-react";
 import { sectionIndex, type SocialLink } from "@/lib/content";
 import { useI18n } from "@/lib/i18n";
+import { SliceTitle } from "@/components/motion/SliceTitle";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
 import { ChapterSeam } from "@/components/chrome/ChapterSeam";
 import { GitHubMark, LinkedInMark } from "@/components/ui/BrandMarks";
@@ -69,7 +70,7 @@ export function Connect({ github }: { github: GitHubSummary | null }) {
               <span className="eyebrow">{t.connect.eyebrow}</span>
             </div>
             <h2 className="display-caps text-fg" style={{ fontSize: "clamp(1.6rem, 4.4vw, 4.25rem)" }}>
-              {t.connect.title}
+              <SliceTitle text={t.connect.title} />
             </h2>
           </div>
           <p className="max-w-md text-base leading-relaxed text-fg/80 md:pb-3 md:text-right">{t.connect.lead}</p>

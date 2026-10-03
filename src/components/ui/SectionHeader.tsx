@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { ScrambleText } from "@/components/motion/ScrambleText";
+import { SliceTitle } from "@/components/motion/SliceTitle";
 import { ScriptLabel } from "@/components/ui/ScriptLabel";
 import { DUR, EASE_DEVELOP, inView } from "@/lib/motion";
 import { cn } from "@/lib/utils";
@@ -29,9 +30,9 @@ interface SectionHeaderProps {
  * Section masthead, as a film's title card. When it first scrolls in:
  *
  *   1. the index decodes (ScrambleText) and the rule draws out from it;
- *   2. the title develops top to bottom (the site's one entrance) while its
- *      tracking closes from slightly wide to set — a title settling, not
- *      sliding;
+ *   2. the title assembles from three bands sliding in from alternating
+ *      sides (motion/SliceTitle, every tab's shared title entrance) while its
+ *      tracking closes from slightly wide to set;
  *   3. one anamorphic streak crosses it, the way a lens catches a light
  *      passing the frame. Once, never on a loop.
  *
@@ -91,17 +92,8 @@ export function SectionHeader({
             voice === "caps" ? "display-caps text-fg" : "font-tech font-semibold leading-[1.04] text-fg"
           )}
           style={{ fontSize: voice === "caps" ? "clamp(1.6rem, 4.4vw, 4.25rem)" : "clamp(2.25rem, 5.5vw, 5rem)" }}
-          variants={{
-            hidden: { opacity: 0, clipPath: "inset(0% -10% 100% -10%)" },
-            show: {
-              opacity: 1,
-              clipPath: "inset(-20% -10% -20% -10%)",
-              transition: { duration: DUR.cinematic * 0.75, ease, delay: 0.1 },
-              transitionEnd: { clipPath: "none" },
-            },
-          }}
         >
-          {title}
+          <SliceTitle text={title} />
         </motion.h2>
         {/* The streak: a hairline of light with a wide soft flare, sliding
             across once (transform and opacity only). */}

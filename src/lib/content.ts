@@ -245,7 +245,7 @@ export const about = {
   ],
   signature: [
     { k: "FOCUS", v: "Full-stack · ML" },
-    { k: "LANGUAGES", v: "Java · Python · React" },
+    { k: "MAIN TOOLS", v: "Java · Python · React" },
     { k: "DEGREE", v: "B.S. SE · Dean's List ×3" },
     { k: "LIVES IN", v: "Ulaanbaatar, MN" },
   ],
