@@ -320,7 +320,7 @@ function Scope({ kind, live }: { kind: Kind | null; live: boolean }) {
     canvas.width = W * dpr;
     canvas.height = H * dpr;
     ctx.scale(dpr, dpr);
-    const holo = getComputedStyle(document.documentElement).getPropertyValue("--color-holo").trim() || "#7eeaff";
+    const holo = getComputedStyle(document.documentElement).getPropertyValue("--color-holo").trim() || "#8fe9f0";
 
     const shape = (k: Kind | null, x: number) => {
       switch (k) {
@@ -361,7 +361,7 @@ function Scope({ kind, live }: { kind: Kind | null; live: boolean }) {
       const phase = reduced ? 0 : now * 0.06;
       ctx.clearRect(0, 0, W, H);
       // The graticule.
-      ctx.strokeStyle = "rgba(236,238,251,0.10)";
+      ctx.strokeStyle = "rgba(228,241,243,0.10)";
       ctx.lineWidth = 1;
       ctx.beginPath();
       ctx.moveTo(0, H / 2 + 0.5);
@@ -444,7 +444,7 @@ function ChannelPanel({
         target="_blank"
         rel="noreferrer noopener"
         data-channel=""
-        className="signal-crt group/panel relative block min-h-[30vh] w-full overflow-hidden rounded-[3px] bg-[#04060b] md:h-full"
+        className="signal-crt group/panel relative block min-h-[30vh] w-full overflow-hidden rounded-[3px] bg-[#040e11] md:h-full"
       >
         {/* The channel's texture, dimmed: the data leads now. */}
         <div className="absolute inset-0 opacity-40">
@@ -580,7 +580,7 @@ function ChannelArt({ social, lit, live }: { social: SocialLink; lit: boolean; l
             transform: `perspective(900px) rotateY(${lit ? -4 : -12}deg) scale(${lit ? 1 : 0.9})`,
           }}
         >
-          <div className="flex items-center gap-2 bg-[#06070c] px-2.5 py-1.5 font-mono text-[0.625rem] tracking-[0.2em]">
+          <div className="flex items-center gap-2 bg-[#051114] px-2.5 py-1.5 font-mono text-[0.625rem] tracking-[0.2em]">
             <span className="h-1.5 w-1.5 rounded-full bg-[var(--color-holo)] shadow-[0_0_6px_var(--color-holo)]" />
             <span className="text-[var(--color-holo)]">LIVE</span>
             <span className="h-2.5 w-px bg-white/15" />
@@ -637,7 +637,7 @@ function Readout({
   }
   if (kind === "live") {
     return (
-      <span className="flex w-fit items-center gap-2 rounded-md bg-[#05060d]/55 px-2.5 py-1.5 font-mono text-xs uppercase tracking-[0.14em] text-[var(--color-holo)]">
+      <span className="flex w-fit items-center gap-2 rounded-md bg-[#061317]/55 px-2.5 py-1.5 font-mono text-xs uppercase tracking-[0.14em] text-[var(--color-holo)]">
         <span className={`h-1.5 w-1.5 rounded-full bg-[var(--color-holo)] ${live ? "animate-blink" : ""}`} />
         {t.connect.live}
       </span>
@@ -652,7 +652,7 @@ function Readout({
     <div
       /* A faint dark backing: the channel art runs behind at fixed positions
          and would otherwise strike through a line of data. */
-      className="-mx-2.5 flex w-fit max-w-[34rem] flex-col gap-1.5 rounded-md bg-[#05060d]/55 px-2.5 py-2 font-mono text-xs uppercase tracking-[0.14em] text-fg/85 transition-opacity duration-300"
+      className="-mx-2.5 flex w-fit max-w-[34rem] flex-col gap-1.5 rounded-md bg-[#061317]/55 px-2.5 py-2 font-mono text-xs uppercase tracking-[0.14em] text-fg/85 transition-opacity duration-300"
       style={{ opacity: expanded ? 1 : 0.55 }}
     >
       {shown.map((l, i) => (

@@ -165,7 +165,7 @@ export function Contact() {
             {/* The status board: a readout, so its values are lit in holo;
                 the one lamp, on availability, is sodium — the site's
                 "available" call. */}
-            <div className="relative border border-line bg-[#05060d]/60 px-5 py-4">
+            <div className="relative border border-line bg-[#061317]/60 px-5 py-4">
               <span
                 aria-hidden
                 className="hud-brackets pointer-events-none absolute inset-0 [--hud-c:color-mix(in_srgb,var(--color-holo)_70%,transparent)] [--hud-l:10px]"

@@ -68,7 +68,7 @@ export function About() {
             panel reads as a file on a person; three rounded cards read as a
             pricing table. Every value is already stated elsewhere on the page. */}
         <Reveal className="mt-20 md:mt-28">
-          <div ref={plateRef} className="relative overflow-hidden border border-line bg-[#05060d]/60">
+          <div ref={plateRef} className="relative overflow-hidden border border-line bg-[#061317]/60">
             {/* Own layer: .hud-brackets sets the `background` shorthand, and
                 unlayered CSS would wipe the plate's fill if they shared a node. */}
             <span

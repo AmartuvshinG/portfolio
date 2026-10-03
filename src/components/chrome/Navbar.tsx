@@ -329,7 +329,7 @@ export function Navbar() {
             exit={{ opacity: 0, clipPath: "inset(100% 0 0 0)" }}
             transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
             className={cn(
-              "liquid-glass-live fixed inset-0 z-[80] flex flex-col overflow-hidden bg-[#020306]/85 px-6",
+              "liquid-glass-live fixed inset-0 z-[80] flex flex-col overflow-hidden bg-[#020a0c]/85 px-6",
               mn ? "min-[1280px]:hidden" : "min-[1080px]:hidden"
             )}
             style={{

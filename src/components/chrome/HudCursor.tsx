@@ -239,8 +239,8 @@ export function HudCursor() {
           are written straight to the node; nothing re-renders. */}
       <span
         ref={labelRef}
-        className="absolute left-0 top-0 whitespace-nowrap bg-[rgba(5,6,13,0.78)] px-1.5 py-0.5 pl-[calc(0.375rem+0.24em)] font-mono text-[11px] font-semibold uppercase tracking-[0.24em] text-[var(--color-hazard)] transition-opacity duration-150"
-        style={{ opacity: 0, willChange: "transform", textShadow: "0 0 8px rgba(255,160,43,0.55)" }}
+        className="absolute left-0 top-0 whitespace-nowrap bg-[rgba(6,19,23,0.78)] px-1.5 py-0.5 pl-[calc(0.375rem+0.24em)] font-mono text-[11px] font-semibold uppercase tracking-[0.24em] text-[var(--color-hazard)] transition-opacity duration-150"
+        style={{ opacity: 0, willChange: "transform", textShadow: "0 0 8px rgba(255,106,61,0.55)" }}
       />
     </div>
   );

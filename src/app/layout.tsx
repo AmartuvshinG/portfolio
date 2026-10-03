@@ -150,7 +150,7 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   /* Matches the opening act. The browser chrome should agree with the ground,
      not with a dark theme the site no longer has. */
-  themeColor: "#05060d",
+  themeColor: "#061317",
   width: "device-width",
   initialScale: 1,
 };

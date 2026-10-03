@@ -195,7 +195,7 @@ function Curtain({ replay }: { replay: boolean }) {
 
           {/* ---- the letterbox, and the slate in it ---------------------- */}
           <motion.div
-            className={`absolute inset-x-0 top-0 flex items-end justify-between bg-[#020306] px-5 pb-3 md:px-10 md:pb-4 ${BAR}`}
+            className={`absolute inset-x-0 top-0 flex items-end justify-between bg-[#020a0c] px-5 pb-3 md:px-10 md:pb-4 ${BAR}`}
             exit={{ y: "-100%" }}
             transition={{ duration: 1.0, delay: 0.25, ease: [0.7, 0, 0.3, 1] }}
           >
@@ -211,7 +211,7 @@ function Curtain({ replay }: { replay: boolean }) {
           </motion.div>
 
           <motion.div
-            className={`absolute inset-x-0 bottom-0 flex items-start justify-between gap-6 bg-[#020306] px-5 pt-3 md:px-10 md:pt-4 ${BAR}`}
+            className={`absolute inset-x-0 bottom-0 flex items-start justify-between gap-6 bg-[#020a0c] px-5 pt-3 md:px-10 md:pt-4 ${BAR}`}
             exit={{ y: "100%" }}
             transition={{ duration: 1.0, delay: 0.25, ease: [0.7, 0, 0.3, 1] }}
           >

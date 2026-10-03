@@ -65,7 +65,7 @@ const LOCK_LOOP_MS = 2600;
 const RELEASE_MS = 1500;
 const TEAR_MS = 280;
 
-const GLOW = "#7eeaff"; // --color-holo
+const GLOW = "#8fe9f0"; // --color-holo
 const CORE = "#dcfbff";
 const ACCENT = "#ff2742";
 

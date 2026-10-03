@@ -115,7 +115,7 @@ export function Shard({
           background:
             `linear-gradient(180deg, color-mix(in srgb, ${cls.ink} 16%, transparent), transparent 40%),` +
             `repeating-linear-gradient(135deg, rgba(255,255,255,0.025) 0 1px, transparent 1px 5px),` +
-            `color-mix(in srgb, ${cls.ink} 7%, #090a12)`,
+            `color-mix(in srgb, ${cls.ink} 7%, #071316)`,
           boxShadow: `inset 0 0 0 1px color-mix(in srgb, ${cls.ink} 42%, transparent), inset 0 1px 0 color-mix(in srgb, ${cls.ink} 75%, transparent)`,
         }}
         initial={false}

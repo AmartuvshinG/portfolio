@@ -54,7 +54,7 @@ export function Olzii({ className, title }: { className?: string; title?: string
       />
       <motion.path
         d={STRAND}
-        stroke="#07080d"
+        stroke="#061115"
         strokeWidth={0.3}
         initial={false}
         animate={{ pathLength: drawn ? 1 : 0, opacity: drawn ? 1 : 0 }}
@@ -62,7 +62,7 @@ export function Olzii({ className, title }: { className?: string; title?: string
       />
       <motion.g initial={false} animate={{ opacity: drawn ? 1 : 0 }} transition={settle}>
         <path d={OVER} stroke="var(--color-hazard)" strokeWidth={0.62} />
-        <path d={OVER} stroke="#07080d" strokeWidth={0.3} />
+        <path d={OVER} stroke="#061115" strokeWidth={0.3} />
       </motion.g>
     </svg>
   );

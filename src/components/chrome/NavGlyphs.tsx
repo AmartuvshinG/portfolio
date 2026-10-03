@@ -62,7 +62,7 @@ export function Monogram({ className }: { className?: string }) {
         stroke={`url(#${ramp})`}
         strokeWidth="1.6"
         strokeLinejoin="round"
-        fill="rgba(5,6,13,0.55)"
+        fill="rgba(6,19,23,0.55)"
       />
       <path
         ref={sparkRef}

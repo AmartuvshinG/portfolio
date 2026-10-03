@@ -60,7 +60,7 @@ function temperature(k: number): [number, number, number] {
   const stops: [number, [number, number, number]][] = [
     [0, [120, 22, 6]],
     [0.35, [240, 84, 18]],
-    [0.7, [255, 160, 43]],
+    [0.7, [255, 106, 61]],
     [1, [255, 236, 206]],
   ];
   for (let i = 1; i < stops.length; i++) {

@@ -71,10 +71,10 @@ const ARCS: ArcSpec[] = [
     boxShadow: "0px -4px 23px 0px rgba(255,255,255,0.71)",
     delay: 1.2,
   },
-  { color: "#22e0ff", size: "120%", blur: 31, delay: 0.6, offset: true },
-  { color: "#7b5cff", size: "124%", blur: 21, delay: 0.3, offset: true },
-  { color: "#ff2d8f", size: "128%", blur: 44, delay: 0, offset: true },
-  { color: "#05060d", size: "120%", blur: 51, delay: 0, offset: true },
+  { color: "#9fe3ec", size: "120%", blur: 31, delay: 0.6, offset: true },
+  { color: "#ff8a6b", size: "124%", blur: 21, delay: 0.3, offset: true },
+  { color: "#ff3b30", size: "128%", blur: 44, delay: 0, offset: true },
+  { color: "#061317", size: "120%", blur: 51, delay: 0, offset: true },
 ];
 
 /**
@@ -88,9 +88,9 @@ const ARCS: ArcSpec[] = [
  * against the void core.
  */
 const SEAM_ARCS: ArcSpec[] = [
-  { color: "#22e0ff", size: "122%", blur: 26, delay: 0.3, offset: true },
-  { color: "#ff2d8f", size: "128%", blur: 36, delay: 0, offset: true },
-  { color: "#05060d", size: "120%", blur: 42, delay: 0, offset: true },
+  { color: "#9fe3ec", size: "122%", blur: 26, delay: 0.3, offset: true },
+  { color: "#ff3b30", size: "128%", blur: 36, delay: 0, offset: true },
+  { color: "#061317", size: "120%", blur: 42, delay: 0, offset: true },
 ];
 
 /**
@@ -108,11 +108,11 @@ const SODIUM_ARCS: ArcSpec[] = [
     boxShadow: "0px -4px 23px 0px rgba(255,214,160,0.7)",
     delay: 0.6,
   },
-  { color: "#ffa02b", size: "120%", blur: 31, delay: 0.3, offset: true },
+  { color: "#ff6a3d", size: "120%", blur: 31, delay: 0.3, offset: true },
   { color: "#ff6a1a", size: "126%", blur: 44, delay: 0.15, offset: true },
   /* The void is home from the start (no offset): the stack is on screen for
      ~1.5s, and a void still sliding in left the floor glowing brown. */
-  { color: "#05060d", size: "120%", blur: 51, delay: 0 },
+  { color: "#061317", size: "120%", blur: 51, delay: 0 },
 ];
 
 /**
@@ -126,8 +126,8 @@ const SODIUM_ARCS: ArcSpec[] = [
  * context, so a blend never reaches the backdrop.
  */
 const RING_ARCS: ArcSpec[] = [
-  { color: "#22e0ff", size: "122%", blur: 22, ring: 14, delay: 0.3, offset: true },
-  { color: "#ff2d8f", size: "128%", blur: 30, ring: 18, delay: 0, offset: true },
+  { color: "#9fe3ec", size: "122%", blur: 22, ring: 14, delay: 0.3, offset: true },
+  { color: "#ff3b30", size: "128%", blur: 30, ring: 18, delay: 0, offset: true },
   { color: "rgba(255,238,220,0.55)", size: "124%", blur: 1, ring: 1.5, delay: 0 },
 ];
 

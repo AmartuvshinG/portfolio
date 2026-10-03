@@ -145,7 +145,7 @@ export function GlareCard({
   const glareY = useTransform(sy, (v) => `${50 + v * 42}%`);
   const sheenX = useTransform(sx, (v) => `${v * -22}%`);
 
-  const glare = useMotionTemplate`radial-gradient(circle at ${glareX} ${glareY}, rgba(236,238,251,0.30), transparent 62%)`;
+  const glare = useMotionTemplate`radial-gradient(circle at ${glareX} ${glareY}, rgba(228,241,243,0.30), transparent 62%)`;
   const edge = useMotionTemplate`radial-gradient(120% 90% at ${glareX} ${glareY}, color-mix(in srgb, var(--spectrum-2) 55%, transparent), transparent 68%)`;
 
   const onEnter = useCallback(() => {

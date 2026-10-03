@@ -191,7 +191,7 @@ function Marked() {
   return (
     <>
       {EXAMPLE.slice(0, at)}
-      <mark className="bg-[color-mix(in_srgb,var(--color-hazard)_22%,transparent)] px-0.5 text-[var(--color-hazard)] [text-shadow:0_0_12px_color-mix(in_srgb,var(--color-hazard)_60%,transparent)]">
+      <mark className="bg-[color-mix(in_srgb,var(--color-hazard)_22%,transparent)] px-0.5 text-[color-mix(in_srgb,var(--color-hazard)_55%,white)] [text-shadow:0_0_12px_color-mix(in_srgb,var(--color-hazard)_60%,transparent)]">
         {EXAMPLE.slice(at, at + KEYWORD.length)}
       </mark>
       {EXAMPLE.slice(at + KEYWORD.length)}

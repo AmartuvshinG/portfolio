@@ -36,7 +36,7 @@ function starField(count: number, seed: number) {
     const x = (srand(seed * 1000 + i * 2) * 100).toFixed(2);
     const y = (srand(seed * 1000 + i * 2 + 1) * 100).toFixed(2);
     const a = (0.35 + srand(seed * 7 + i) * 0.55).toFixed(2);
-    dots.push(`${x}vw ${y}vh 0 0 rgba(236,238,251,${a})`);
+    dots.push(`${x}vw ${y}vh 0 0 rgba(228,241,243,${a})`);
   }
   return dots.join(",");
 }

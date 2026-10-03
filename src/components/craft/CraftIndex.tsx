@@ -176,7 +176,7 @@ function Slide({ item, index, live }: { item: Capability; index: number; live: b
   const proof = item.proof ? c.projects.find((p) => p.slug === item.proof) : undefined;
 
   return (
-    <article className="flex h-full flex-col overflow-hidden rounded-[4px] bg-[#070814] ring-1 ring-inset ring-line-strong">
+    <article className="flex h-full flex-col overflow-hidden rounded-[4px] bg-[#08181c] ring-1 ring-inset ring-line-strong">
       <div className="relative aspect-[16/9] max-h-[42svh] w-full overflow-hidden border-b border-line">
         {item.shot ? (
           <Image
@@ -190,7 +190,7 @@ function Slide({ item, index, live }: { item: Capability; index: number; live: b
           <Schematic item={item} index={index} />
         )}
         <span aria-hidden className="pointer-events-none absolute inset-0" style={{ backgroundImage: SCANLINES }} />
-        <span className="micro absolute left-4 top-3 rounded-sm bg-[#05060d]/80 px-2 py-1 tabular text-fg">
+        <span className="micro absolute left-4 top-3 rounded-sm bg-[#061317]/80 px-2 py-1 tabular text-fg">
           {item.code}
           {proof && item.shot ? ` · ${proof.title}` : ""}
         </span>
@@ -254,7 +254,7 @@ function Schematic({ item, index }: { item: Capability; index: number }) {
     <div
       className="absolute inset-0 flex items-center justify-center"
       style={{
-        backgroundColor: "#070814",
+        backgroundColor: "#08181c",
         backgroundImage:
           "radial-gradient(60% 70% at 30% 40%, color-mix(in srgb, var(--spectrum-1) 22%, transparent), transparent 70%)," +
           "radial-gradient(55% 65% at 75% 65%, color-mix(in srgb, var(--spectrum-3) 20%, transparent), transparent 70%)," +

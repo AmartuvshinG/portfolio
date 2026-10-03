@@ -110,7 +110,7 @@ function Panel() {
       aria-label={d.title}
       className="script-sign fixed bottom-16 left-12 z-[125] w-[23rem] max-w-[calc(100vw-4rem)] px-4 py-3 font-mono text-[11px] uppercase tracking-[0.16em] text-fg/85"
       /* Opaque: page copy showing through a readout reads as a fault. */
-      style={{ background: "#05060d" }}
+      style={{ background: "#061317" }}
     >
       {/* A readout, so it is lit in holo, not sodium (the warm/cool rule). */}
       <div className="mb-2 flex items-center justify-between text-[var(--color-holo)]">

@@ -49,7 +49,7 @@ export function ChannelField({
       className={`absolute inset-0 h-full w-full transition-opacity duration-300 ${lit ? "cf-lit" : ""}`}
       style={{ opacity: lit ? 1 : 0.7 }}
     >
-      <rect width={W} height={H} fill="#0b0d1a" fillOpacity="0.5" />
+      <rect width={W} height={H} fill="#0a1d22" fillOpacity="0.5" />
       {/* A low pool of the channel's light at the foot — kept faint: the
           panel is a terminal, not a lit slab. */}
       <ellipse cx={W / 2} cy={H * 0.86} rx={W * 0.8} ry={H * 0.42} fill={hue} opacity="0.09" />
@@ -80,7 +80,7 @@ function Network({ seed }: { seed: number }) {
   });
   return (
     <g>
-      <g fill="none" stroke="#eceefb" strokeOpacity="0.32" strokeWidth="1.2">
+      <g fill="none" stroke="#e4f1f3" strokeOpacity="0.32" strokeWidth="1.2">
         {edges.map(([i, j], k) => (
           <line
             key={k}
@@ -137,7 +137,7 @@ function Pulse({ seed }: { seed: number }) {
               cx={(spike + 10).toFixed(1)}
               cy={(y - amp).toFixed(1)}
               r={2.6}
-              fill="#eceefb"
+              fill="#e4f1f3"
               style={{ animationDelay: `${((i * 0.27) % 2.4).toFixed(2)}s` }}
             />
           </g>
