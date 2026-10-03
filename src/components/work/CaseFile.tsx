@@ -10,6 +10,7 @@ import { accentColor, readable, type Project } from "@/lib/content";
 import { useI18n } from "@/lib/i18n";
 import { CASE_EVENT, clearCase, readCase, replaceCase } from "@/lib/caseFile";
 import { playInkWipe } from "@/lib/inkWipe";
+import { setGroundCovered } from "@/lib/groundBus";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
 import { useOverlay } from "@/hooks/useOverlay";
 import { EASE_EXPO } from "@/lib/motion";
@@ -59,6 +60,13 @@ export function CaseFileHost() {
   }, []);
 
   const project = c.projects.find((p) => p.slug === slug) ?? null;
+
+  /* An open file is opaque over the whole screen: the ground behind it can
+     stop drawing until it closes. */
+  useEffect(() => {
+    setGroundCovered("case-file", !!slug);
+    return () => setGroundCovered("case-file", false);
+  }, [slug]);
 
   /* Closing is the same cut in reverse: ink floods over the dossier, and the
      page it was opened from is what drains back into view. */

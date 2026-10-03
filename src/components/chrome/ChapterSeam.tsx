@@ -12,6 +12,7 @@ import { useReducedMotion } from "@/hooks/useReducedMotion";
 import { useI18n } from "@/lib/i18n";
 import { cn, srand } from "@/lib/utils";
 import { GlowHorizon } from "@/components/ui/GlowHorizon";
+import { groundFocus, groundSurge } from "@/lib/groundBus";
 
 /**
  * The join between two sections.
@@ -75,6 +76,23 @@ export function ChapterSeam({
   });
 
   const rule = useTransform(scrollYProgress, [0, 0.8], [0, 1]);
+
+  /* The room feels the crossing (lib/groundBus). As the join passes the
+     middle of the screen going down, the floor haze swells and settles; and
+     the first time, the rain comes down hard over the chapter's heading — a
+     burst of signal arriving behind the masthead. Forward only: climbing
+     back up is not arriving. */
+  const arrived = useRef(false);
+  useMotionValueEvent(scrollYProgress, "change", (v) => {
+    const prev = scrollYProgress.getPrevious() ?? v;
+    if (prev >= 0.6 || v < 0.6) return;
+    groundSurge();
+    if (arrived.current) return;
+    arrived.current = true;
+    const heading = ref.current?.closest("section")?.querySelector("h2");
+    const r = heading?.getBoundingClientRect();
+    if (r && r.width > 0) groundFocus({ left: r.left, right: r.left + Math.min(r.width, window.innerWidth * 0.7) });
+  });
   const ruleOpacity = useTransform(scrollYProgress, [0, 0.15, 0.9, 1], [0, 1, 1, 0.35]);
 
   /* A generous margin so the arcs are mounted and settled before they can be
@@ -114,10 +132,10 @@ export function ChapterSeam({
           {near && <ChapterCard anchor={ref} progress={scrollYProgress} />}
 
           {/* The glow arc, as rings. The filled arc is a crest of light
-              against a *painted* void core — the ground colour — which is an
-              opaque dark disc over the film: it drew a hard-edged band under
-              every seam, and hollowing it with a mask showed the container's
-              box instead. The `ring` form has no core at all: only the
+              against a *painted* void core — the ground colour — which was an
+              opaque dark disc over the film, and over the neon ground would
+              be a rain-free band under every seam; hollowing it with a mask
+              showed the container's box instead. The `ring` form has no core at all: only the
               blurred rims exist, so there is nothing to paint dark and
               nothing to cut out. Intensity is measured, not chosen: the
               rim crosses the section kicker, and at 0.5 it pulled "01 —
