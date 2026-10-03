@@ -25,11 +25,18 @@ import { cn } from "@/lib/utils";
    table. The tilt is seeded by position, never random, so the row looks the
    same on every visit.
 
-   **Magnification.** The pointer's x along the row drives every tile at
-   once: the nearer a tile, the more it grows, lifts and straightens, and
-   the more room it pushes out around itself, so its neighbours part. Each of
-   those is a spring on the one pointer value — no React render per frame.
-   The tile under the pointer gets its name in a dark pill above it.
+   **Magnification.** The pointer drives every tile at once: the nearer a
+   tile, the more it grows, lifts and straightens, and its neighbours slide
+   apart. Each of those is a spring on the one pointer value — no React
+   render per frame. The biggest tile gets its name in a dark pill above it.
+
+   **Alignment.** Distances are measured from each tile's *rest* centre —
+   `offsetLeft/Top`, which ignore transforms — in the list's own box (the
+   list is `relative`, so it is every tile's offsetParent, the same origin
+   the pointer is measured in). Neighbours part by transform, never by
+   padding, so the layout the centres come from never moves under the
+   pointer. Only tiles on the pointer's row respond, and the name follows
+   the nearest centre, so the pill is always on the tile that grew.
 
    **Arrival.** The first time the row is seen the tiles deal out of a
    stacked deck at its centre and fan into place, left to right. Once.
@@ -52,6 +59,7 @@ export function LogoDock({
   title,
   className,
   align = "center",
+  play,
 }: {
   keys: TechKey[];
   labels?: Partial<Record<GlyphKey, string>>;
@@ -60,13 +68,18 @@ export function LogoDock({
   title?: string;
   className?: string;
   align?: "center" | "start";
+  /** When given, the deal-in follows this instead of first sight: true deals
+   *  the tiles in, false gathers them back (a drum face coming and going). */
+  play?: boolean;
 }) {
   const reduced = useReducedMotion();
   const px = SIZES[size];
   const listRef = useRef<HTMLUListElement>(null);
-  const seen = useInView(listRef, { once: true, amount: 0.4 });
+  const sighted = useInView(listRef, { once: true, amount: 0.4 });
+  const seen = play ?? sighted;
   /** Pointer x within the row; far away when the pointer is elsewhere. */
   const mx = useMotionValue(Number.POSITIVE_INFINITY);
+  const my = useMotionValue(Number.POSITIVE_INFINITY);
   const [named, setNamed] = useState<number | null>(null);
   const [fine, setFine] = useState(true);
 
@@ -77,17 +90,38 @@ export function LogoDock({
         ref={listRef}
         aria-label={title}
         onPointerMove={(e) => {
-          if (e.pointerType !== "mouse" || reduced) return;
+          if (e.pointerType !== "mouse") return;
+          const list = listRef.current;
+          if (!list) return;
           setFine(true);
-          const r = listRef.current?.getBoundingClientRect();
-          if (r) mx.set(e.clientX - r.left);
+          const r = list.getBoundingClientRect();
+          const x = e.clientX - r.left;
+          const y = e.clientY - r.top;
+          if (!reduced) {
+            mx.set(x);
+            my.set(y);
+          }
+          /* Name the nearest tile on the pointer's row. */
+          let best: number | null = null;
+          let bestD = px * 0.75;
+          Array.from(list.children).forEach((el, j) => {
+            const li = el as HTMLElement;
+            if (!onRow(li, y, px)) return;
+            const d = Math.abs(x - (li.offsetLeft + li.offsetWidth / 2));
+            if (d < bestD) {
+              bestD = d;
+              best = j;
+            }
+          });
+          setNamed(best);
         }}
         onPointerLeave={() => {
           mx.set(Number.POSITIVE_INFINITY);
+          my.set(Number.POSITIVE_INFINITY);
           setNamed(null);
         }}
         className={cn(
-          "flex flex-wrap items-end",
+          "relative flex flex-wrap items-end",
           align === "center" ? "justify-center" : "justify-start",
           /* Room for the lift and the pill above the row. */
           size === "lg" ? "pt-10" : "pt-8"
@@ -102,9 +136,9 @@ export function LogoDock({
             n={keys.length}
             px={px}
             mx={mx}
+            my={my}
             label={techLabel(k, labels)}
             named={named === i}
-            onName={(on) => setNamed(on ? i : (cur) => (cur === i ? null : cur))}
             onTouch={() => {
               setFine(false);
               setNamed(i);
@@ -125,9 +159,9 @@ function Tile({
   n,
   px,
   mx,
+  my,
   label,
   named,
-  onName,
   onTouch,
   fine,
   reduced,
@@ -138,9 +172,9 @@ function Tile({
   n: number;
   px: number;
   mx: MotionValue<number>;
+  my: MotionValue<number>;
   label: string;
   named: boolean;
-  onName: (on: boolean) => void;
   onTouch: () => void;
   fine: boolean;
   reduced: boolean;
@@ -150,14 +184,23 @@ function Tile({
   const tilt = reduced ? 0 : tiltOf(i);
   const { tile, ink } = brandTile(k);
 
-  /* 0 far away … 1 under the pointer, from the tile's laid-out centre (its
-     offset, not its transformed box, so the springs don't chase themselves). */
-  const near = useTransform(mx, (x) => {
+  /* 0 far away … 1 under the pointer, from the tile's rest centre (its
+     offset, not its transformed box, so the springs don't chase themselves),
+     and only on the pointer's own row. */
+  const near = useTransform([mx, my], ([x, y]: number[]) => {
     const el = ref.current;
-    if (!el || !Number.isFinite(x)) return 0;
+    if (!el || !Number.isFinite(x) || !onRow(el, y, px)) return 0;
     const c = el.offsetLeft + el.offsetWidth / 2;
     const d = Math.abs(x - c) / (px * 2.6);
     return d >= 1 ? 0 : Math.cos((d * Math.PI) / 2) ** 2;
+  });
+  /* Signed: neighbours part away from the pointer. A smooth step, so the
+     tiles far off all move the same amount and keep their spacing. */
+  const side = useTransform([mx, my], ([x, y]: number[]) => {
+    const el = ref.current;
+    if (!el || !Number.isFinite(x) || !onRow(el, y, px)) return 0;
+    const c = el.offsetLeft + el.offsetWidth / 2;
+    return Math.tanh((c - x) / (px * 0.9));
   });
   const spring = { stiffness: 420, damping: 30, mass: 0.6 };
   const p = useSpring(near, spring);
@@ -168,7 +211,8 @@ function Tile({
   const scale = useTransform(lift, (v) => 1 + v * 0.42);
   const y = useTransform(lift, (v) => -v * px * 0.32);
   const rotate = useTransform(lift, (v) => tilt * (1 - v));
-  const spread = useTransform(p, (v) => px * 0.16 * v);
+  const part = useSpring(side, spring);
+  const shift = useTransform(part, (v) => v * px * 0.3);
   const z = useTransform(p, (v) => Math.round(v * 100) + 1);
 
   /* Dealt from the middle of the row. */
@@ -180,14 +224,13 @@ function Tile({
       className="relative"
       style={{
         marginLeft: i === 0 ? 0 : -px * 0.2,
-        paddingInline: reduced ? 0 : spread,
         zIndex: z,
       }}
       initial={reduced ? false : { x: fromX, opacity: 0, rotate: tilt * 3 }}
-      animate={reduced || seen ? { x: 0, opacity: 1, rotate: 0 } : undefined}
+      animate={
+        reduced || seen ? { x: 0, opacity: 1, rotate: 0 } : { x: fromX, opacity: 0, rotate: tilt * 3 }
+      }
       transition={{ duration: 0.75, delay: 0.05 + i * 0.028, ease: EASE_EXPO }}
-      onPointerEnter={(e) => e.pointerType === "mouse" && onName(true)}
-      onPointerLeave={(e) => e.pointerType === "mouse" && onName(false)}
       onPointerDown={(e) => e.pointerType !== "mouse" && onTouch()}
     >
       <motion.span
@@ -201,6 +244,7 @@ function Tile({
           boxShadow:
             "inset 0 1px 0 rgba(255,255,255,0.18), inset 0 0 0 1px rgba(255,255,255,0.08), 0 8px 18px -8px rgba(0,0,0,0.85), 0 2px 4px rgba(0,0,0,0.5)",
           scale: reduced ? 1 : scale,
+          x: reduced ? 0 : shift,
           y: reduced ? 0 : y,
           rotate: reduced ? 0 : rotate,
           transformOrigin: "50% 100%",
@@ -209,21 +253,35 @@ function Tile({
         <TechMark name={k} size={Math.round(px * 0.54)} />
       </motion.span>
       <span className="sr-only">{label}</span>
-      <AnimatePresence>
-        {named && (
-          <motion.span
-            aria-hidden
-            className="dock-tip pointer-events-none absolute bottom-full left-1/2 z-[200] mb-[calc(var(--lift)+10px)] whitespace-nowrap rounded-md border border-white/10 bg-[#202329] px-2.5 py-1 font-sans text-[0.8125rem] font-medium text-white shadow-lg"
-            style={{ ["--lift" as string]: `${Math.round(px * 0.5)}px`, x: "-50%" }}
-            initial={{ opacity: 0, y: 6, scale: 0.9 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 4, scale: 0.95 }}
-            transition={{ duration: 0.16, ease: "easeOut" }}
-          >
-            {label}
-          </motion.span>
-        )}
-      </AnimatePresence>
+      {/* The pill rides the tile's sideways shift, so it stays centred on it. */}
+      <motion.span
+        aria-hidden
+        className="pointer-events-none absolute inset-x-0 bottom-full z-[200]"
+        style={{ x: reduced ? 0 : shift }}
+      >
+        <AnimatePresence>
+          {named && (
+            <motion.span
+              className="dock-tip absolute bottom-0 left-1/2 mb-[calc(var(--lift)+10px)] whitespace-nowrap rounded-md border border-white/10 bg-[#202329] px-2.5 py-1 font-sans text-[0.8125rem] font-medium text-white shadow-lg"
+              style={{ ["--lift" as string]: `${Math.round(px * 0.5)}px`, x: "-50%" }}
+              initial={{ opacity: 0, y: 6, scale: 0.9 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 4, scale: 0.95 }}
+              transition={{ duration: 0.16, ease: "easeOut" }}
+            >
+              {label}
+            </motion.span>
+          )}
+        </AnimatePresence>
+      </motion.span>
     </motion.li>
   );
+}
+
+/** Is a pointer at list-y `y` on this tile's row? Generous above (the tile
+    lifts and grows upward), tight below. */
+function onRow(el: HTMLElement, y: number, px: number): boolean {
+  if (!Number.isFinite(y)) return false;
+  const dy = y - (el.offsetTop + el.offsetHeight / 2);
+  return dy > -px * 1.25 && dy < px * 0.75;
 }

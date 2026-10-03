@@ -326,17 +326,15 @@ export const capabilities: Capability[] = [
 ];
 
 /**
- * Everything in the Skills dock, in reading order: languages, front end, back
- * end and data, ML, infrastructure, tools. Each is named in the resume or in a
- * project's own stack on this page.
+ * The Skills dock: the thirteen tools used most, in reading order —
+ * languages, front end, back end and data, ML, shipping. Narrower tools
+ * (ChromaDB, JWT, Actions, C++…) appear only on the skill they belong to.
  */
 export const techStack: TechKey[] = [
-  "java", "python", "javascript", "typescript", "cpp", "html5", "css",
-  "react", "nextjs", "tailwind", "gsap", "threejs",
-  "fastapi", "postgresql", "mysql", "supabase", "chromadb",
-  "scikitlearn",
-  "docker", "ubuntu", "linux", "githubactions", "jwt",
-  "git", "github", "androidstudio", "intellij", "claude",
+  "typescript", "javascript", "python", "java",
+  "react", "nextjs", "tailwind",
+  "fastapi", "postgresql", "supabase",
+  "scikitlearn", "docker", "github",
 ];
 
 export const projects: Project[] = [
