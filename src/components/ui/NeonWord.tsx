@@ -291,6 +291,7 @@ export function NeonWord({
           near: (x) => (Math.abs(x - px) < 70 ? 1 - Math.abs(x - px) / 70 : 0),
           glow,
           core: CORE,
+          dpr,
         });
         drawStrands(ctx, f.strands, { now, alpha: 0.24 * shown * level, glow });
       }

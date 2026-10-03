@@ -195,18 +195,99 @@ export interface RainFrame {
   /** A soft square of light under each head: the glow, without a canvas
       filter (a drop-shadow on a fullscreen canvas re-runs every frame). */
   halo?: boolean;
+  /** The canvas's device pixel ratio, so the sprites are drawn sharp. */
+  dpr?: number;
+}
+
+/*
+ * Sprites. A frame of rain is ~110 columns at 30 fps; building a gradient and
+ * setting a dash for each, and shaping a glyph with fillText for a third of
+ * them, was most of the ground's idle cost. So each trail is a pre-drawn
+ * dotted ramp (one per length bucket, lengths ×1.22 apart — rain lengths
+ * are random anyway, so the quantising never shows) and each head glyph is a
+ * cell of a pre-drawn atlas. A frame is then nothing but drawImage calls.
+ * Drawn at device scale, keyed by colour and pixel ratio, and redrawn once
+ * the page's fonts have arrived (the atlas is type).
+ */
+const TRAIL_LENS: number[] = [];
+for (let l = 24; l < 1600; l *= 1.22) TRAIL_LENS.push(Math.round(l));
+TRAIL_LENS.push(1600);
+
+interface RainSprites {
+  trails: (HTMLCanvasElement | undefined)[];
+  atlas: HTMLCanvasElement;
+  halo: HTMLCanvasElement;
+}
+const spriteCache = new Map<string, RainSprites>();
+let fontsHooked = false;
+
+function rainSprites(glow: [number, number, number], core: string, dpr: number): RainSprites {
+  if (!fontsHooked && typeof document !== "undefined" && document.fonts) {
+    fontsHooked = true;
+    document.fonts.ready.then(() => spriteCache.clear());
+  }
+  const key = `${glow.join(",")}|${core}|${dpr}`;
+  let s = spriteCache.get(key);
+  if (s) return s;
+  const [r, g, b] = glow;
+  // the atlas: every glyph, centred in a 12 × 14 cell
+  const atlas = document.createElement("canvas");
+  atlas.width = Math.ceil(12 * dpr) * RAIN_GLYPHS.length;
+  atlas.height = Math.ceil(14 * dpr);
+  const a = atlas.getContext("2d")!;
+  a.scale(dpr, dpr);
+  a.font = "11px " + MONO_STACK;
+  a.textAlign = "center";
+  a.fillStyle = core;
+  const cell = Math.ceil(12 * dpr) / dpr;
+  for (let i = 0; i < RAIN_GLYPHS.length; i++) a.fillText(RAIN_GLYPHS.charAt(i), i * cell + 6, 11);
+  // the head's soft square of light
+  const halo = document.createElement("canvas");
+  halo.width = halo.height = Math.ceil(10 * dpr);
+  const hc = halo.getContext("2d")!;
+  hc.fillStyle = `rgb(${r},${g},${b})`;
+  hc.fillRect(0, 0, halo.width, halo.height);
+  s = { trails: [], atlas, halo };
+  spriteCache.set(key, s);
+  return s;
+}
+
+function trailSprite(s: RainSprites, i: number, glow: [number, number, number], dpr: number) {
+  let c = s.trails[i];
+  if (c) return c;
+  const len = TRAIL_LENS[i];
+  const [r, g, b] = glow;
+  c = document.createElement("canvas");
+  c.width = Math.ceil(3 * dpr);
+  c.height = Math.ceil(len * dpr);
+  const x = c.getContext("2d")!;
+  x.scale(dpr, dpr);
+  const grad = x.createLinearGradient(0, 0, 0, len);
+  grad.addColorStop(0, `rgba(${r},${g},${b},0)`);
+  grad.addColorStop(1, `rgba(${r},${g},${b},1)`);
+  x.strokeStyle = grad;
+  x.lineWidth = 1.3;
+  x.setLineDash([1.4, 2.8]);
+  x.beginPath();
+  x.moveTo(1.5, 0);
+  x.lineTo(1.5, len);
+  x.stroke();
+  s.trails[i] = c;
+  return c;
+}
+
+function bucket(len: number) {
+  for (let i = 0; i < TRAIL_LENS.length; i++) if (TRAIL_LENS[i] >= len) return i;
+  return TRAIL_LENS.length - 1;
 }
 
 /** Advance and draw every column: a dotted trail fading up from its head. */
 export function drawRain(ctx: CanvasRenderingContext2D, cols: RainCol[], f: RainFrame) {
-  const [r, g, b] = f.glow;
-  const rgba = (a: number) => `rgba(${r},${g},${b},${a.toFixed(3)})`;
+  const dpr = f.dpr ?? 1;
+  const sp = rainSprites(f.glow, f.core, dpr);
   const speed = f.speed ?? 1;
   const stretch = f.stretch ?? 0;
-  ctx.lineWidth = 1.3;
-  ctx.setLineDash([1.4, 2.8]);
-  ctx.font = "11px " + MONO_STACK;
-  ctx.textAlign = "center";
+  const cell = Math.ceil(12 * dpr);
   for (let c = 0; c < cols.length; c++) {
     const col = cols[c];
     const near = f.near ? f.near(col.x) : 0;
@@ -215,33 +296,26 @@ export function drawRain(ctx: CanvasRenderingContext2D, cols: RainCol[], f: Rain
       col.head = -hash(f.now * 0.001 + c) * f.h * 0.4;
       col.len = 30 + f.h * 0.55 * hash(f.now * 0.0013 + c * 3.7) * (0.35 + col.weight);
     }
-    const len = col.len + stretch * (0.6 + col.seed * 0.8);
-    const top = col.head - len;
     const a = Math.min(1, (col.weight * 0.6 + near * 0.4) * f.level);
     if (a < 0.01) continue;
-    const grad = ctx.createLinearGradient(0, top, 0, col.head);
-    grad.addColorStop(0, rgba(0));
-    grad.addColorStop(1, rgba(a));
-    ctx.strokeStyle = grad;
-    ctx.beginPath();
-    ctx.moveTo(col.x, top);
-    ctx.lineTo(col.x, col.head);
-    ctx.stroke();
+    const bi = bucket(col.len + stretch * (0.6 + col.seed * 0.8));
+    const len = TRAIL_LENS[bi];
+    ctx.globalAlpha = a;
+    ctx.drawImage(trailSprite(sp, bi, f.glow, dpr), col.x - 1.5, col.head - len, 3, len);
     if (f.halo) {
-      ctx.fillStyle = rgba(Math.min(1, a) * 0.16);
-      ctx.fillRect(col.x - 5, col.head - 6, 10, 10);
+      ctx.globalAlpha = a * 0.16;
+      ctx.drawImage(sp.halo, col.x - 5, col.head - 6, 10, 10);
     }
-    ctx.fillStyle = f.core;
     ctx.globalAlpha = Math.min(1, a * 1.4);
     if (col.glyph) {
-      const glyph = RAIN_GLYPHS.charAt(Math.floor(f.now / 110 + c * 7) % RAIN_GLYPHS.length);
-      ctx.fillText(glyph, col.x, col.head + 4);
+      const gi = Math.floor(f.now / 110 + c * 7) % RAIN_GLYPHS.length;
+      ctx.drawImage(sp.atlas, gi * cell, 0, cell, sp.atlas.height, col.x - 6, col.head - 7, 12, 14);
     } else {
+      ctx.fillStyle = f.core;
       ctx.fillRect(col.x - 1.1, col.head - 1.1, 2.2, 2.2);
     }
-    ctx.globalAlpha = 1;
   }
-  ctx.setLineDash([]);
+  ctx.globalAlpha = 1;
 }
 
 // ---------------------------------------------------------------------------

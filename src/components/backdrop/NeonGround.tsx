@@ -29,15 +29,15 @@ import { buildRain, drawRain, hash, type RainCol } from "@/lib/neonField";
  * into streaks, the cursor stirs the columns it passes, a chapter's title card
  * brings it down hard over the heading.
  *
- * **Budget.** Half display rate (rain reads as rain at 30), a device-pixel
+ * **Budget.** 24 fps (rain reads as rain well below display rate), a device-pixel
  * ceiling instead of a DPR cap, and no frames at all while the tab is hidden,
  * while the intro curtain is up, or while something opaque covers the screen.
  * Under reduced motion it draws one still frame and stops.
  */
 
-const FPS = 30;
+const FPS = 24;
 /** Device pixels the canvas may have, whatever the screen. */
-const MAX_PIXELS = 2_400_000;
+const MAX_PIXELS = 2_000_000;
 const GLOW: [number, number, number] = [126, 234, 255]; // --color-holo
 const CORE = "#dcfbff";
 /** Overall strength of the rain behind the page (the gate runs at 1). */
@@ -90,7 +90,12 @@ export function NeonGround() {
     let H = 0;
     let dpr = 1;
     let cols: RainCol[] = [];
-    let strands: { x: number; top: number; bottom: number; seed: number }[] = [];
+    /* The strands and the roll band never change shape, so each is drawn
+       once into its own sprite; a frame only places them (see drawRain's
+       note on sprites — per-frame dashes and gradients were the idle cost). */
+    const strandLayer = document.createElement("canvas");
+    let hasStrands = false;
+    const band = document.createElement("canvas");
     let raf = 0;
     let last = 0;
     let drawnAt = 0;
@@ -101,27 +106,44 @@ export function NeonGround() {
     const build = () => {
       W = window.innerWidth;
       H = window.innerHeight;
-      dpr = Math.min(1.5, window.devicePixelRatio || 1, Math.sqrt(MAX_PIXELS / Math.max(1, W * H)));
+      dpr = Math.min(1.25, window.devicePixelRatio || 1, Math.sqrt(MAX_PIXELS / Math.max(1, W * H)));
       canvas.width = Math.round(W * dpr);
       canvas.height = Math.round(H * dpr);
       /* Fewer, wider-spaced columns on a phone: the same picture at the
          scale of a thumb, not a curtain. */
       cols = buildRain(W, H, { gap: W < 768 ? 16 : 13, weight: W < 768 ? phoneWeight : gutterWeight });
-      strands = [];
       /* No strands on a phone: they hang still, and over edge-to-edge text a
          still line is a permanent mark under a label, not weather. */
       const count = W < 768 ? 0 : Math.round(6 + W / 110);
+      strandLayer.width = canvas.width;
+      strandLayer.height = canvas.height;
+      const sl = strandLayer.getContext("2d")!;
+      sl.scale(dpr, dpr);
+      sl.lineWidth = 1;
+      sl.setLineDash([1.2, 3.6]);
+      sl.strokeStyle = `rgb(${GLOW[0]},${GLOW[1]},${GLOW[2]})`;
+      hasStrands = false;
       for (let i = 0; i < count; i++) {
         const s = hash(i + 41.3);
         const xn = hash(i + 17.9);
         if (gutterWeight(xn) < 0.5 && s < 0.7) continue; // keep the middle clear
-        strands.push({
-          x: Math.round(xn * W) + 0.5,
-          top: H * (0.05 + 0.5 * hash(i + 3.3)),
-          bottom: H * (0.55 + 0.5 * hash(i + 9.1)),
-          seed: s,
-        });
+        const x = Math.round(xn * W) + 0.5;
+        sl.beginPath();
+        sl.moveTo(x, H * (0.05 + 0.5 * hash(i + 3.3)));
+        sl.lineTo(x, H * (0.55 + 0.5 * hash(i + 9.1)));
+        sl.stroke();
+        hasStrands = true;
       }
+      // the roll band, one pixel wide: stretched across the screen per frame
+      band.width = 1;
+      band.height = Math.max(2, Math.round(H * 0.18 * dpr));
+      const bc = band.getContext("2d")!;
+      const g = bc.createLinearGradient(0, 0, 0, band.height);
+      g.addColorStop(0, "rgba(255,255,255,0)");
+      g.addColorStop(0.5, "rgba(255,255,255,0.022)");
+      g.addColorStop(1, "rgba(255,255,255,0)");
+      bc.fillStyle = g;
+      bc.fillRect(0, 0, 1, band.height);
     };
 
     const near = (now: number) => {
@@ -150,19 +172,12 @@ export function NeonGround() {
       const stretch = v > 0 ? Math.min(150, v * 7) : 0;
       const swell = Math.max(0, 1 - (now - surgeAt) / 1400);
 
-      // the threads hanging through the room
-      ctx.lineWidth = 1;
-      ctx.setLineDash([1.2, 3.6]);
-      for (const s of strands) {
-        const a = 0.07 + 0.05 * Math.sin(now * 0.0016 + s.seed * 40);
-        ctx.strokeStyle = `rgba(${GLOW[0]},${GLOW[1]},${GLOW[2]},${a.toFixed(3)})`;
-        ctx.lineDashOffset = -now * 0.02 * (0.5 + s.seed);
-        ctx.beginPath();
-        ctx.moveTo(s.x, s.top);
-        ctx.lineTo(s.x, s.bottom);
-        ctx.stroke();
+      // the threads hanging through the room, breathing
+      if (hasStrands) {
+        ctx.globalAlpha = 0.085 + 0.035 * Math.sin(now * 0.0016);
+        ctx.drawImage(strandLayer, 0, 0, W, H);
+        ctx.globalAlpha = 1;
       }
-      ctx.lineDashOffset = 0;
 
       drawRain(ctx, cols, {
         now,
@@ -175,16 +190,12 @@ export function NeonGround() {
         glow: GLOW,
         core: CORE,
         halo: true,
+        dpr,
       });
 
       // the roll band: a soft bar of light drifting down the glass
       const y = ((now % ROLL_MS) / ROLL_MS) * (H * 1.36) - H * 0.18;
-      const band = ctx.createLinearGradient(0, y - H * 0.09, 0, y + H * 0.09);
-      band.addColorStop(0, "rgba(255,255,255,0)");
-      band.addColorStop(0.5, "rgba(255,255,255,0.022)");
-      band.addColorStop(1, "rgba(255,255,255,0)");
-      ctx.fillStyle = band;
-      ctx.fillRect(0, y - H * 0.09, W, H * 0.18);
+      ctx.drawImage(band, 0, y - H * 0.09, W, H * 0.18);
     };
 
     const running = () =>
