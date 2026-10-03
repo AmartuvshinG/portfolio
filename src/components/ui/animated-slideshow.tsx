@@ -73,6 +73,7 @@ export function TextStaggerHover({
   dim = 0.2,
   className,
   onClick,
+  hoverActivates = true,
 }: {
   text: string;
   index: number;
@@ -81,6 +82,9 @@ export function TextStaggerHover({
   dim?: number;
   className?: string;
   onClick?: (index: number) => void;
+  /** False: the pointer resting on a title changes nothing — only focus
+   *  and click do. For sliders the page scroll also drives. */
+  hoverActivates?: boolean;
 }) {
   const { activeSlide, changeSlide } = useHoverSliderContext();
   const isActive = activeSlide === index;
@@ -93,8 +97,12 @@ export function TextStaggerHover({
     <button
       type="button"
       aria-pressed={isActive}
-      onMouseEnter={() => changeSlide(index)}
-      onFocus={() => changeSlide(index)}
+      onMouseEnter={hoverActivates ? () => changeSlide(index) : undefined}
+      /* With hover off, a click is a request to glide there (onClick), not to
+         jump: only keyboard focus turns it directly. */
+      onFocus={(e) => {
+        if (hoverActivates || e.currentTarget.matches(":focus-visible")) changeSlide(index);
+      }}
       onClick={() => onClick?.(index)}
       className={cn(
         "relative inline-block cursor-pointer text-left",

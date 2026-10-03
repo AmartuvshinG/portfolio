@@ -26,10 +26,13 @@ import { cn, pad } from "@/lib/utils";
 
 /** Scroll per capability, in viewport heights. */
 const STEP_VH = 60;
-/** Degrees between neighbouring faces of the drum. */
-const FACE_DEG = 42;
-/** Share of each step the drum holds still, so a face can be read at rest. */
-const HOLD = 0.45;
+/** How far a neighbouring face is tipped back, in degrees. */
+const TILT_DEG = 10;
+/** How far a neighbouring face sits below (or above) the one being read, in
+ *  its own heights. */
+const SHIFT = 0.08;
+/** Share of each step the stack holds still, so a face can be read at rest. */
+const HOLD = 0.55;
 
 /** Scroll position (0…n-1, continuous) → drum position: whole numbers held,
  *  the turns between them eased. */
@@ -42,22 +45,24 @@ function stepped(v: number): number {
 }
 
 /**
- * Skills, as a drum.
+ * Skills, as a stack of panels.
  *
  * The section pins. The six skills are a column of titles on the left and,
- * on the right, six panels set round a drum that the page scroll turns: the
- * face in front is the one being read, the next waits below, tipped back,
- * and the last one rolls away over the top. Each turn is eased and each face
- * holds still for a moment, so a reader who stops scrolling always stops on
- * a flat, sharp panel — at rest a face's transform is exactly `none`.
+ * on the right, six panels the page scroll rolls through: the face in front
+ * is the one being read, the next waits just below, tipped back a little,
+ * and the last one lifts away as it fades. The roll is small on purpose — a
+ * cross-fade with a hint of depth, not a spin. Each change is eased and each
+ * face holds still for a while, so a reader who stops scrolling always stops
+ * on a flat, sharp panel — at rest a face's transform is exactly `none`.
  *
  * A large outlined numeral rolls with the drum like an odometer, and each
  * title's underline fills as its face comes round, so the scroll position is
  * always readable.
  *
- * **Three ways to drive it, one drum.** Scroll turns it; hovering or focusing
- * a title turns it straight to that face until the scroll moves on to the
- * next step; clicking a title glides the page to that face's step.
+ * **Scroll drives it; the pointer never does.** A pointer resting on the
+ * titles changes nothing, so it can't fight the scroll. Clicking a title
+ * glides the page to that face's step; keyboard focus on a title turns it
+ * straight there until the scroll moves on to the next step.
  *
  * Transform and opacity only, from one scroll value — no React render per
  * frame. Phones keep the stack (CraftTrack); reduced motion keeps the grid.
@@ -139,6 +144,7 @@ export function CraftIndex({ items }: { items: Capability[] }) {
                     index={i}
                     text={item.title}
                     onClick={goTo}
+                    hoverActivates={false}
                     dim={0.5}
                     className="font-display text-[clamp(1.2rem,2.05vw,2.6rem)] uppercase leading-[1.2] tracking-tight text-fg"
                   />
@@ -192,10 +198,9 @@ export function CraftIndex({ items }: { items: Capability[] }) {
   );
 }
 
-/** One face of the drum, turned about an axis one radius behind the panel
- *  (radius ≈ panel height / 2·sin(FACE_DEG/2), so neighbouring faces meet
- *  edge to edge instead of cutting through each other),
- *  so the faces travel round a cylinder rather than hinging. */
+/** One panel of the stack: a neighbour sits a little below, tipped back
+ *  and a touch smaller, and fades well before it could overlap the one
+ *  being read. */
 function Face({
   view,
   i,
@@ -210,17 +215,17 @@ function Face({
   const transform = useTransform(view, (v) => {
     const d = Math.max(-2, Math.min(2, v - i));
     if (Math.abs(d) < 1e-3) return "none";
-    return `translateZ(calc(var(--drum-r) * -1)) rotateX(${(d * FACE_DEG).toFixed(2)}deg) translateZ(var(--drum-r))`;
+    return `translateY(${(d * SHIFT * 100).toFixed(2)}%) rotateX(${(-d * TILT_DEG).toFixed(2)}deg) scale(${(1 - Math.abs(d) * 0.04).toFixed(4)})`;
   });
   /* Solid near the front, gone well before a face could sit beside the one
      being read: two half-faded faces overlapping is noise, not depth. */
-  const opacity = useTransform(view, (v) => Math.min(1, Math.max(0, (0.92 - Math.abs(v - i)) / 0.55)));
-  const visibility = useTransform(view, (v) => (Math.abs(v - i) >= 0.92 ? "hidden" : "visible"));
+  const opacity = useTransform(view, (v) => Math.min(1, Math.max(0, (0.55 - Math.abs(v - i)) / 0.4)));
+  const visibility = useTransform(view, (v) => (Math.abs(v - i) >= 0.55 ? "hidden" : "visible"));
   return (
     <motion.div
       aria-hidden={!live}
       inert={!live}
-      className="[grid-area:1/1] [backface-visibility:hidden] [--drum-r:104svh]"
+      className="[grid-area:1/1] [backface-visibility:hidden]"
       style={{ transform, opacity, visibility, zIndex: live ? 2 : 1 }}
     >
       {children}
@@ -284,27 +289,8 @@ function Slide({ item, index, live }: { item: Capability; index: number; live: b
       </div>
 
       <div className="flex flex-col gap-4 p-6 lg:px-8 lg:py-6">
-        <h3 className="relative font-tech text-[clamp(1.4rem,1.9vw,2rem)] font-bold uppercase leading-tight text-fg">
-          {/* The change lands with a split: the two ramp ends pull in onto
-              the title and vanish. Once, on the incoming slide only. Generated
-              content, not text nodes: axe would measure them mid-fade. */}
-          <motion.span
-            aria-hidden
-            data-text={item.title}
-            className="pointer-events-none absolute inset-0 text-[var(--spectrum-1)] mix-blend-screen before:content-[attr(data-text)]"
-            initial={false}
-            animate={live ? { x: [-7, 0], opacity: [0.9, 0] } : { opacity: 0 }}
-            transition={{ duration: 0.22, ease: "easeOut" }}
-          />
-          <motion.span
-            aria-hidden
-            data-text={item.title}
-            className="pointer-events-none absolute inset-0 text-[var(--spectrum-3)] mix-blend-screen before:content-[attr(data-text)]"
-            initial={false}
-            animate={live ? { x: [7, 0], opacity: [0.9, 0] } : { opacity: 0 }}
-            transition={{ duration: 0.22, ease: "easeOut" }}
-          />
-          <span className="relative">{item.title}</span>
+        <h3 className="font-tech text-[clamp(1.4rem,1.9vw,2rem)] font-bold uppercase leading-tight text-fg">
+          {item.title}
         </h3>
         <p className="max-w-[60ch] text-base leading-relaxed text-fg/85 lg:text-lg">{item.description}</p>
         {item.courses && item.courses.length > 0 && (
