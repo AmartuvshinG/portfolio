@@ -51,6 +51,10 @@ const gutterWeight = (xn: number) => {
   return 1 - 0.68 * Math.exp(-d * d);
 };
 
+/* A phone has no gutters: its text runs edge to edge, so the rain is thin
+   everywhere rather than thick at the sides. */
+const phoneWeight = () => 0.34;
+
 export function NeonGround() {
   const rootRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -102,9 +106,11 @@ export function NeonGround() {
       canvas.height = Math.round(H * dpr);
       /* Fewer, wider-spaced columns on a phone: the same picture at the
          scale of a thumb, not a curtain. */
-      cols = buildRain(W, H, { gap: W < 768 ? 16 : 13, weight: gutterWeight });
+      cols = buildRain(W, H, { gap: W < 768 ? 16 : 13, weight: W < 768 ? phoneWeight : gutterWeight });
       strands = [];
-      const count = Math.round(6 + W / 110);
+      /* No strands on a phone: they hang still, and over edge-to-edge text a
+         still line is a permanent mark under a label, not weather. */
+      const count = W < 768 ? 0 : Math.round(6 + W / 110);
       for (let i = 0; i < count; i++) {
         const s = hash(i + 41.3);
         const xn = hash(i + 17.9);

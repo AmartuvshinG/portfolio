@@ -66,7 +66,9 @@ export function CardBody({
         >
           <Icon size={26} strokeWidth={1.6} aria-hidden />
         </span>
-        <span className="micro tabular">{item.code}</span>
+        {/* Bone, not muted: on a phone the code sits over the card's own
+            outlined numeral and the rain, where muted measured 4.3–4.6:1. */}
+        <span className="micro tabular !text-fg/85">{item.code}</span>
       </motion.div>
 
       <h3 className="relative mt-7 font-tech text-[clamp(1.875rem,3.2vw,3rem)] font-bold uppercase leading-[1.04] text-fg text-balance">
