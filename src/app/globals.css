@@ -765,73 +765,88 @@ html.hud-cursor * {
   100% { opacity: 0; transform: translateY(400%); }
 }
 
-/* ---- Signal (sections/Connect) ------------------------------------------
-   A panel is a terminal: a CRT's dark glass, a faint raster and a vignette
-   that curls the corners in. Static layers — nothing here animates. */
-.signal-crt::after {
-  content: "";
+/* ---- Links (sections/Connect): the cartridges ---------------------------
+   Hover is a halftone bloom: the spectrum ramp seen through a dot screen,
+   cut to a circle that grows from the pointer. The circle's radius is a
+   registered property so it can transition; the centre follows the pointer
+   (--x/--y, written per card). The edge traces once round in the ramp. Mask,
+   opacity and transform only — no filters. */
+@property --cart-r {
+  syntax: "<length>";
+  inherits: true;
+  initial-value: 0px;
+}
+@property --cart-a {
+  syntax: "<angle>";
+  inherits: true;
+  initial-value: 0deg;
+}
+.cart {
+  --x: 50%;
+  --y: 50%;
+  --cart-r: 0px;
+  --cart-a: 0deg;
+  transition:
+    --cart-r 650ms cubic-bezier(0.22, 1, 0.36, 1),
+    --cart-a 0s,
+    border-color 300ms;
+}
+.cart:hover,
+.cart:focus-visible {
+  --cart-r: 170px;
+  --cart-a: 360deg;
+  border-color: color-mix(in srgb, var(--color-fg) 22%, transparent);
+  transition:
+    --cart-r 900ms cubic-bezier(0.22, 1, 0.36, 1),
+    --cart-a 1100ms cubic-bezier(0.45, 0, 0.2, 1),
+    border-color 300ms;
+}
+.cart:focus-visible {
+  --x: 50%;
+  --y: 50%;
+}
+.cart-bloom {
   position: absolute;
   inset: 0;
-  z-index: 2;
   pointer-events: none;
-  background:
-    radial-gradient(120% 90% at 50% 45%, transparent 55%, rgba(0, 0, 0, 0.55) 100%),
-    repeating-linear-gradient(180deg, rgba(0, 0, 0, 0) 0 2px, rgba(0, 0, 0, 0.18) 2px 3px);
+  background-image: var(--gradient-spectrum);
+  opacity: 0.42;
+  -webkit-mask-image:
+    radial-gradient(circle at var(--x) var(--y), #000 0, #000 calc(var(--cart-r) * 0.3), transparent var(--cart-r)),
+    radial-gradient(circle, #000 1.25px, transparent 1.75px);
+  mask-image:
+    radial-gradient(circle at var(--x) var(--y), #000 0, #000 calc(var(--cart-r) * 0.3), transparent var(--cart-r)),
+    radial-gradient(circle, #000 1.25px, transparent 1.75px);
+  -webkit-mask-size: 100% 100%, 9px 9px;
+  mask-size: 100% 100%, 9px 9px;
+  -webkit-mask-composite: source-in;
+  mask-composite: intersect;
 }
-
-/* The tuner's band: a ruler of fine ticks with a longer one every fifth,
-   between two hairlines. Background only. */
-.tuner-band {
-  border-block: 1px solid var(--color-line);
-  background-image:
-    repeating-linear-gradient(90deg, rgba(228, 241, 243, 0.22) 0 1px, transparent 1px 50px),
-    repeating-linear-gradient(90deg, rgba(228, 241, 243, 0.1) 0 1px, transparent 1px 10px);
-  background-size: 100% 9px, 100% 5px;
-  background-position: 0 100%, 0 100%;
-  background-repeat: repeat-x;
-}
-.tuner-needle {
+/* The edge: a short arc of the ramp riding the border once round. */
+.cart-edge {
   position: absolute;
-  top: -4px;
-  bottom: -4px;
-  width: 2px;
-  margin-left: -1px;
-  background: var(--color-holo);
-  box-shadow: 0 0 10px var(--color-holo), 0 0 22px color-mix(in srgb, var(--color-holo) 45%, transparent);
+  inset: 0;
+  border-radius: inherit;
+  padding: 1.5px;
   pointer-events: none;
+  background: conic-gradient(from var(--cart-a) at 50% 50%, transparent 0 78%, #ff3b30 86%, #ff8a6b 92%, #9fe3ec 99%, transparent 100%);
+  opacity: 0;
+  transition: opacity 400ms;
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
 }
-/* Scanning: the needle sweeps the band and back. A transform, so it costs
-   nothing; paused by Connect while the section is off screen. */
-.tuner-sweep {
-  left: 0;
-  animation: tuner-sweep 6s cubic-bezier(0.45, 0, 0.55, 1) infinite alternate;
+.cart:hover .cart-edge,
+.cart:focus-visible .cart-edge { opacity: 1; }
+.cart-mark {
+  transition: transform 450ms cubic-bezier(0.22, 1, 0.36, 1);
 }
-@keyframes tuner-sweep {
-  from { transform: translateX(0); }
-  to { transform: translateX(var(--sweep, calc(100cqw - 2px))); }
-}
-.tuner-band { container-type: inline-size; }
-
-/* The live feed's scan: one soft holo band down the screenshot every few
-   seconds while its panel is open. */
-.feed-scan {
-  position: absolute;
-  inset-inline: 0;
-  top: 0;
-  height: 30%;
-  pointer-events: none;
-  background: linear-gradient(180deg, transparent, color-mix(in srgb, var(--color-holo) 16%, transparent) 85%, color-mix(in srgb, var(--color-holo) 55%, transparent));
-  mix-blend-mode: screen;
-  animation: feed-scan 3.6s cubic-bezier(0.45, 0, 0.3, 1) infinite;
-}
-@keyframes feed-scan {
-  0% { transform: translateY(-110%); opacity: 0; }
-  10% { opacity: 1; }
-  70% { transform: translateY(340%); opacity: 1; }
-  71%, 100% { transform: translateY(340%); opacity: 0; }
-}
+.cart:hover .cart-mark,
+.cart:focus-visible .cart-mark { transform: translateY(-4px) scale(1.06); }
 @media (prefers-reduced-motion: reduce) {
-  .tuner-sweep, .feed-scan { animation: none; }
+  .cart, .cart:hover, .cart:focus-visible { transition: none; }
+  .cart-mark { transition: none; }
+  .cart:hover .cart-mark, .cart:focus-visible .cart-mark { transform: none; }
 }
 
 /* The frame a vertical sign hangs in: a hairline box with sodium corner
@@ -1600,6 +1615,4 @@ html.hud-cursor * {
 }
 .group:hover .monitor-reticle,
 .group:focus-visible .monitor-reticle { opacity: 1; transform: scale(0.985); }
-/* The same reticle on a Signal panel: closed onto the panel that is open. */
-.monitor-reticle[data-on] { opacity: 0.9; transform: scale(0.985); }
 
