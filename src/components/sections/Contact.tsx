@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { AnimatePresence, motion, useAnimationControls } from "framer-motion";
+import { AnimatePresence, motion, useAnimationControls, useInView } from "framer-motion";
+import { Clock, MapPin } from "lucide-react";
 import { sectionIndex } from "@/lib/content";
 import { useI18n } from "@/lib/i18n";
 import { Reveal } from "@/components/motion/Reveal";
@@ -12,9 +13,10 @@ import { InkSign } from "@/components/ui/InkSign";
 import { IconCheck, IconCopy, IconMail } from "@/components/ui/HudIcons";
 import { Cta } from "@/components/ui/Cta";
 import { Seal } from "@/components/ui/Seal";
-import { UbClock } from "@/components/chrome/Navbar";
+import { MagneticButton } from "@/components/motion/MagneticButton";
 import { ScriptLabel } from "@/components/ui/ScriptLabel";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
+import { EASE_EXPO } from "@/lib/motion";
 
 /**
  * The closing block: the address, large, and the two ways in.
@@ -27,10 +29,11 @@ import { useReducedMotion } from "@/hooks/useReducedMotion";
  * the whole block now: the email set as the headline act with a copy button,
  * then mail and LinkedIn as buttons, and when to expect a reply.
  *
- * Copying the address is answered the way the intro ends: his seal stamps
- * beside it, with the same thud. The facts beside it are a status board —
- * availability on a lamp, the reply window, the base, and the time it is
- * there now (so a recruiter in another zone knows whether he is awake).
+ * The address arrives letter by letter, each rising out of its own slot,
+ * and its underline draws in from whichever side the pointer came from.
+ * Copying it is answered the way the intro ends: his seal stamps beside it,
+ * with the same thud. Under it, three plain facts in one line: open to
+ * work, when to expect a reply, and where he is.
  */
 export function Contact() {
   const { c, t } = useI18n();
@@ -94,117 +97,139 @@ export function Contact() {
           </p>
         </Reveal>
 
-        <div className="mt-16 grid gap-14 border-t border-line pt-14 lg:grid-cols-12">
-          <Reveal className="min-w-0 lg:col-span-8">
-            <p className="micro">{t.contact.email}</p>
+        <Reveal className="mt-16 min-w-0 border-t border-line pt-14">
+          <p className="micro">{t.contact.email}</p>
 
-            {/* The address is the headline. It breaks anywhere rather than
-                overflowing a phone, and the copy button sits on its baseline. */}
-            {/* The thud: the line dips a hair as the seal lands. Driven by
-                controls, never by re-keying — a remount would take the Copy
-                button, and keyboard focus with it. */}
-            <motion.div className="mt-3 flex flex-wrap items-end gap-x-5 gap-y-3" animate={thud}>
-              <a
-                href={`mailto:${contact.email}`}
-                className="spectrum-underline min-w-0 break-all font-tech text-[clamp(1.75rem,4.6vw,4rem)] font-semibold leading-[1.05] text-fg"
-              >
-                {contact.email}
-              </a>
-              <Cta
-                variant="secondary"
-                onClick={copy}
-                className="mb-1 shrink-0"
-                icon={copied ? <IconCheck size={15} /> : <IconCopy size={15} />}
-                label={copied ? t.contact.copied : t.contact.copy}
+          {/* The address is the headline. It breaks anywhere rather than
+              overflowing a phone, and the copy button sits on its baseline.
+              The thud: the line dips a hair as the seal lands. Driven by
+              controls, never by re-keying — a remount would take the Copy
+              button, and keyboard focus with it. */}
+          <motion.div className="mt-3 flex flex-wrap items-end gap-x-5 gap-y-3" animate={thud}>
+            <Address email={contact.email} reduced={reduced} />
+            <Cta
+              variant="secondary"
+              onClick={copy}
+              className="mb-1 shrink-0"
+              icon={copied ? <IconCheck size={15} /> : <IconCopy size={15} />}
+              label={copied ? t.contact.copied : t.contact.copy}
+            />
+            <span aria-live="polite" className="sr-only">
+              {copied ? t.contact.copiedLive(contact.email) : ""}
+            </span>
+            {/* His seal, pressed beside the address: falls in large, lands
+                with the intro's ease, holds while "Copied" does. */}
+            <AnimatePresence>
+              {copied && (
+                <motion.span
+                  key={stamps}
+                  aria-hidden
+                  className="mb-1 block h-12 w-12 shrink-0 md:h-14 md:w-14"
+                  initial={reduced ? { opacity: 0 } : { opacity: 0, scale: 1.5, rotate: -14 }}
+                  animate={{ opacity: 0.95, scale: 1, rotate: -6 }}
+                  exit={{ opacity: 0, transition: { duration: 0.5 } }}
+                  transition={{ duration: 0.16, ease: [0.55, 0, 0.9, 0.4] }}
+                >
+                  <Seal className="h-full w-full" />
+                </motion.span>
+              )}
+            </AnimatePresence>
+          </motion.div>
+
+          {/* Three facts, one line: what a recruiter checks before writing. */}
+          <ul className="mt-8 flex flex-wrap gap-x-8 gap-y-3 text-base text-fg/90 md:text-lg">
+            <li className="flex items-center gap-2.5">
+              <span
+                aria-hidden
+                /* Steady, not blinking: an infinite animation keeps the page
+                   producing frames even off screen. */
+                className="h-2 w-2 shrink-0 rounded-full bg-[var(--color-hazard)] shadow-[0_0_10px_var(--color-hazard)]"
               />
-              <span aria-live="polite" className="sr-only">
-                {copied ? t.contact.copiedLive(contact.email) : ""}
-              </span>
-              {/* His seal, pressed beside the address: falls in large, lands
-                  with the intro's ease, holds while "Copied" does. */}
-              <AnimatePresence>
-                {copied && (
-                  <motion.span
-                    key={stamps}
-                    aria-hidden
-                    className="mb-1 block h-12 w-12 shrink-0 md:h-14 md:w-14"
-                    initial={reduced ? { opacity: 0 } : { opacity: 0, scale: 1.5, rotate: -14 }}
-                    animate={{ opacity: 0.95, scale: 1, rotate: -6 }}
-                    exit={{ opacity: 0, transition: { duration: 0.5 } }}
-                    transition={{ duration: 0.16, ease: [0.55, 0, 0.9, 0.4] }}
-                  >
-                    <Seal className="h-full w-full" />
-                  </motion.span>
-                )}
-              </AnimatePresence>
-            </motion.div>
+              {contact.availability}
+            </li>
+            <li className="flex items-center gap-2.5">
+              <Clock aria-hidden size={18} className="shrink-0 text-[var(--color-holo)]" />
+              {t.contact.responseTime}
+            </li>
+            <li className="flex items-center gap-2.5">
+              <MapPin aria-hidden size={18} className="shrink-0 text-[var(--color-holo)]" />
+              {profile.location}
+            </li>
+          </ul>
 
-            <div className="mt-10 flex flex-wrap gap-3">
-              {/* The ramp carries the colour and the label stays dark on it:
-                  bone on magenta is only ~3:1. */}
+          <div className="mt-10 flex flex-wrap gap-3">
+            {/* The ramp carries the colour and the label stays dark on it:
+                bone on magenta is only ~3:1. */}
+            <MagneticButton strength={0.25}>
               <Cta
                 href={`mailto:${contact.email}`}
                 icon={<IconMail size={15} />}
                 label={t.contact.emailMe}
                 className="h-12 px-7"
               />
-              {linkedin && (
+            </MagneticButton>
+            {linkedin && (
+              <MagneticButton strength={0.25}>
                 <Cta
                   variant="secondary"
                   href={linkedin.href}
                   external
                   icon={<LinkedInMark className="h-4 w-auto" />}
-                  label="LinkedIn"
+                  label={linkedin.label === "LINKEDIN" ? "LinkedIn" : linkedin.label}
                   className="h-12 px-6"
                 />
-              )}
-            </div>
-          </Reveal>
-
-          <Reveal className="lg:col-span-4" delay={0.1}>
-            {/* The status board: a readout, so its values are lit in holo;
-                the one lamp, on availability, is sodium — the site's
-                "available" call. */}
-            <div className="relative border border-line bg-[#061317]/60 px-5 py-4">
-              <span
-                aria-hidden
-                className="hud-brackets pointer-events-none absolute inset-0 [--hud-c:color-mix(in_srgb,var(--color-holo)_70%,transparent)] [--hud-l:10px]"
-              />
-              <p className="micro mb-3">{t.contact.board}</p>
-              <dl className="divide-y divide-line">
-                {[
-                  { k: t.contact.availability, v: contact.availability, lamp: true },
-                  { k: t.contact.response, v: t.contact.responseTime, lamp: false },
-                  { k: t.contact.based, v: profile.location, lamp: false },
-                ].map((row) => (
-                  <div key={row.k} className="grid grid-cols-[minmax(0,2fr)_minmax(0,3fr)] items-baseline gap-4 py-3">
-                    <dt className="micro">{row.k}</dt>
-                    <dd className="flex items-baseline gap-2 font-mono text-sm uppercase leading-snug tracking-[0.08em] text-[var(--color-holo)]">
-                      {row.lamp && (
-                        <span
-                          aria-hidden
-                          /* Steady, not blinking: an infinite animation keeps
-                             the page producing frames even off screen. */
-                          className="h-1.5 w-1.5 shrink-0 -translate-y-px rounded-full bg-[var(--color-hazard)] shadow-[0_0_8px_var(--color-hazard)]"
-                        />
-                      )}
-                      {row.v}
-                    </dd>
-                  </div>
-                ))}
-                <div className="grid grid-cols-[minmax(0,2fr)_minmax(0,3fr)] items-baseline gap-4 py-3">
-                  <dt className="micro">{t.contact.localTime}</dt>
-                  <dd className="font-mono text-sm">
-                    {/* Aria-hidden ticking digits; the row's label is enough
-                        and nobody needs the seconds read out. */}
-                    <UbClock className="flex [&_span:last-child]:!text-[var(--color-holo)]" />
-                  </dd>
-                </div>
-              </dl>
-            </div>
-          </Reveal>
-        </div>
+              </MagneticButton>
+            )}
+          </div>
+        </Reveal>
       </div>
     </section>
+  );
+}
+
+/**
+ * The address as a mailto link. Each letter rises out of its own slot, in a
+ * wave, the first time it is seen; the underline draws in from the side the
+ * pointer entered on. The letters are decoration — the whole address is a
+ * visually hidden text node inside the link, so it is read once, whole.
+ */
+function Address({ email, reduced }: { email: string; reduced: boolean }) {
+  const ref = useRef<HTMLAnchorElement>(null);
+  const seen = useInView(ref, { once: true, amount: 0.6 });
+  const [from, setFrom] = useState<"left" | "right">("left");
+  return (
+    <a
+      ref={ref}
+      href={`mailto:${email}`}
+      onPointerEnter={(e) => {
+        const r = e.currentTarget.getBoundingClientRect();
+        setFrom(e.clientX - r.left < r.width / 2 ? "left" : "right");
+      }}
+      className="group relative min-w-0 break-all pb-[0.12em] font-tech text-[clamp(1.75rem,4.6vw,4rem)] font-semibold leading-[1.05] text-fg"
+    >
+      <span className="sr-only">{email}</span>
+      <span aria-hidden>
+        {Array.from(email).map((ch, i) => (
+          <span key={i} className="inline-block overflow-hidden align-bottom">
+            <motion.span
+              className="inline-block"
+              initial={reduced ? false : { y: "105%" }}
+              animate={reduced || seen ? { y: "0%" } : undefined}
+              transition={{ duration: 0.7, delay: 0.1 + i * 0.022, ease: EASE_EXPO }}
+            >
+              {ch}
+            </motion.span>
+          </span>
+        ))}
+      </span>
+      {/* Resting: a faint ramp. Hovered or focused: the full ramp, drawn in
+          from the pointer's side. */}
+      <span aria-hidden className="spectrum-rule absolute inset-x-0 bottom-0 h-[0.08em] opacity-30" />
+      <span
+        aria-hidden
+        className="spectrum-rule absolute inset-x-0 bottom-0 h-[0.08em] scale-x-0 transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-x-100 group-focus-visible:scale-x-100"
+        style={{ transformOrigin: from }}
+      />
+    </a>
   );
 }

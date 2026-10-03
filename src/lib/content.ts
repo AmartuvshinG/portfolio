@@ -674,9 +674,9 @@ export function getCourse(code: string): Course | undefined {
 
 export const contact = {
   heading: "CONTACT",
-  lead: "Want to talk about a role or a project? Email me and I'll reply within 48 hours.",
+  lead: "Hiring for an entry-level software role, or want to talk about a project? Email me.",
   email: "amaraajunior@gmail.com",
-  availability: "OPEN · AVAILABLE NOW",
+  availability: "Open to work",
 };
 
 export const socials: SocialLink[] = [

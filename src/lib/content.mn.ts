@@ -316,8 +316,8 @@ export const mn: SiteContent = {
   contact: {
     ...en.contact,
     heading: "ХОЛБОГДОХ",
-    lead: "Ажлын байр эсвэл төслийн талаар ярилцах уу? И-мэйл бичээрэй — 48 цагийн дотор хариу өгнө.",
-    availability: "НЭЭЛТТЭЙ · ОДОО АЖИЛЛАХ БОЛОМЖТОЙ",
+    lead: "Анхан шатны програм хангамжийн ажлын байранд хүн хайж байна уу, эсвэл төслийн талаар ярилцах уу? И-мэйл бичээрэй.",
+    availability: "Ажилд орох боломжтой",
   },
   socials: en.socials.map((s) => ({ ...s, ...(socials[s.code] ?? {}) })),
   navLinks: en.navLinks.map((l) => ({ ...l, label: nav[l.href] ?? l.label })),
