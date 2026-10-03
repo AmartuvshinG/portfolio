@@ -52,3 +52,9 @@ docs/reference/video/
 # while verifying a change. Regenerated every session, useful to nobody later.
 .playwright-mcp/
 /*.png
+
+# Personal source material (résumé, the capstone's final report): read for
+# facts, never published with the site.
+docs/private/
+# Screenshots dropped in for direction (palette refs, phone captures).
+docs/reference/images/
