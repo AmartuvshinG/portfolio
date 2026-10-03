@@ -259,10 +259,12 @@
 html {
   scroll-behavior: auto; /* Lenis owns smooth scroll */
   -webkit-text-size-adjust: 100%;
-  /* Reserve the scrollbar track permanently. Without this, every scroll lock
-     (preloader, dossier, mobile menu) removes the scrollbar and shifts the
-     whole layout sideways — which also desyncs GSAP's pinned triggers. */
-  scrollbar-gutter: stable;
+  /* No native scrollbar: the chapter spine in the right gutter is the page's
+     scrollbar (drag to scrub, click to glide — chrome/ChapterFrame). With no
+     track there is nothing for a scroll lock (preloader, case file, mobile
+     menu) to remove, so the old `scrollbar-gutter: stable` guard against the
+     layout jumping sideways went with it. */
+  scrollbar-width: none;
   /* The floor, and deliberately NOT `--color-bg`: this element spans every act,
      so binding it to a per-act token is exactly the repaint the backdrop exists
      to remove. It is only ever seen for the frame before SiteBackdrop paints. */
@@ -282,9 +284,11 @@ body {
 
 ::selection {
   background: var(--color-signal);
-  color: #05060d;
+  color: #061317;
 }
 
+/* Inner scrollers (the case file, the palette) keep a thin bar; the page's
+   own is hidden — see `html` above. */
 ::-webkit-scrollbar {
   width: 9px;
   height: 9px;
@@ -298,6 +302,9 @@ body {
 }
 ::-webkit-scrollbar-thumb:hover {
   background: var(--color-fg);
+}
+html::-webkit-scrollbar {
+  display: none;
 }
 
 :focus-visible {
