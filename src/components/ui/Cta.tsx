@@ -1,6 +1,6 @@
 "use client";
 
-import { forwardRef, type ReactNode } from "react";
+import { forwardRef, useState, type ReactNode } from "react";
 import { MagneticButton } from "@/components/motion/MagneticButton";
 import { IconArrowLeft, IconArrowRight, IconExternal } from "@/components/ui/HudIcons";
 import { useScramble } from "@/hooks/useScramble";
@@ -24,7 +24,9 @@ import { cn } from "@/lib/utils";
  *              leading edge (transform only); the label decodes through its
  *              own script; the arrow slides on and leaves a ghost behind; the
  *              icon strokes redraw; the whole control leans toward the cursor
- *   press      a 0.97 "thunk" and a flash, 150 ms
+ *   press      a 0.97 "thunk" and a flash, 150 ms; and the signal locks:
+ *              one holo scan line drops through the control, once per press
+ *              (keyed, so a second press runs it again, never a loop)
  *   focus      the site's unlayered focus ring, untouched
  *
  * `href` renders a link (with `external`, a new tab and the sr-only notice);
@@ -58,6 +60,11 @@ export const Cta = forwardRef<HTMLAnchorElement | HTMLButtonElement, AsLink | As
   const { variant = "primary", label, icon, className, magnetic = true } = props;
   const arrow = props.arrow === undefined ? (props.href && "external" in props && props.external ? "external" : variant === "primary" ? "right" : null) : props.arrow;
   const { ref: labelRef, run } = useScramble(label ?? "");
+  const [locks, setLocks] = useState(0);
+  const press = () => {
+    setLocks((n) => n + 1);
+    props.onClick?.();
+  };
 
   const Arrow = arrow === "left" ? IconArrowLeft : arrow === "external" ? IconExternal : arrow === "right" ? IconArrowRight : null;
 
@@ -66,6 +73,7 @@ export const Cta = forwardRef<HTMLAnchorElement | HTMLButtonElement, AsLink | As
       {/* The light curtain: a wash with a hot leading edge, parked off the
           left side, sliding across on hover. */}
       <span aria-hidden className="cta-curtain" />
+      {locks > 0 && <span key={locks} aria-hidden className="cta-lock" />}
       {icon}
       {label && (
         <>
@@ -96,7 +104,7 @@ export const Cta = forwardRef<HTMLAnchorElement | HTMLButtonElement, AsLink | As
         className={cls}
         onMouseEnter={onEnter}
         onFocus={onEnter}
-        onClick={props.onClick}
+        onClick={press}
         aria-label={props["aria-label"]}
         {...(props.external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
       >
@@ -109,7 +117,7 @@ export const Cta = forwardRef<HTMLAnchorElement | HTMLButtonElement, AsLink | As
         className={cls}
         onMouseEnter={onEnter}
         onFocus={onEnter}
-        onClick={props.onClick}
+        onClick={press}
         disabled={props.disabled}
         aria-label={props["aria-label"]}
       >

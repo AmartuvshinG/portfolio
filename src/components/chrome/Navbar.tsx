@@ -449,6 +449,14 @@ function HudLink({
   go: (href: string) => void;
 }) {
   const { ref: scrambleRef, run: runScramble } = useScramble(link.label);
+  /* A language switch decodes the label into its new script, the way a
+     hover does (see lib/localeDecode for the headings). */
+  const shownLabel = useRef(link.label);
+  useEffect(() => {
+    if (shownLabel.current === link.label) return;
+    shownLabel.current = link.label;
+    runScramble();
+  }, [link.label, runScramble]);
   const linkClass = cn(
     "group/hud relative flex items-baseline gap-2 whitespace-nowrap px-2.5 py-3 font-nav text-[1.0625rem] font-semibold uppercase tracking-[0.2em] transition-colors duration-300 @[76rem]:px-3.5",
     /* Exo 2 caps in Cyrillic run long; mixed case keeps the Mongolian row. */

@@ -12,6 +12,7 @@ import {
 import { en, type Locale, type SiteContent } from "@/lib/content";
 import { mn } from "@/lib/content.mn";
 import { ui, type UiStrings } from "@/lib/ui";
+import { decodeVisibleHeadings } from "@/lib/localeDecode";
 
 /**
  * Language, as one client context.
@@ -90,6 +91,8 @@ export function LocaleProvider({ children }: { children: ReactNode }) {
   const setLocale = useCallback((next: Locale) => {
     if (!isLocale(next)) return;
     setLocaleState(next);
+    /* Play the new words in once React has written them (lib/localeDecode). */
+    requestAnimationFrame(() => requestAnimationFrame(decodeVisibleHeadings));
     try {
       window.localStorage.setItem(STORAGE_KEY, next);
       /* Drop a stale `?lang=` so it does not override the choice just made on

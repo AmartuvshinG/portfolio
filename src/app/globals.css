@@ -1459,6 +1459,38 @@ html.hud-cursor * {
 
 /* Press: a thunk and a flash. */
 .cta:active { transform: scale(0.97); filter: brightness(1.3); transition-duration: 60ms; }
+/* …and the signal locks: one holo scan line drops through the control and
+   a cold wash fades behind it. Mounted per press (keyed), so it runs once. */
+.cta-lock {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background: linear-gradient(180deg, transparent 0 46%, color-mix(in srgb, var(--color-holo) 22%, transparent) 50%, transparent 54%);
+  animation: cta-lock 0.55s cubic-bezier(0.45, 0, 0.2, 1) forwards;
+}
+.cta-lock::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 2px;
+  background: #dcfbff;
+  box-shadow: 0 0 10px 1px var(--color-holo);
+  animation: cta-lock-line 0.55s cubic-bezier(0.45, 0, 0.2, 1) forwards;
+}
+@keyframes cta-lock {
+  0% { opacity: 1; transform: translateY(-50%); }
+  100% { opacity: 0; transform: translateY(50%); }
+}
+@keyframes cta-lock-line {
+  0% { transform: translateY(0); opacity: 1; }
+  100% { transform: translateY(2.75rem); opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cta-lock { display: none; }
+}
 .cta:disabled { opacity: 0.3; pointer-events: none; }
 
 /* HUD icons redraw their strokes when the control is hovered or focused. */

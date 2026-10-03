@@ -10,6 +10,7 @@ import {
   useMotionValueEvent,
   useScroll,
   useTransform,
+  type MotionValue,
 } from "framer-motion";
 import { sectionIndex, timeline as baseTimeline, type TimelineEntry } from "@/lib/content";
 import { useI18n } from "@/lib/i18n";
@@ -257,6 +258,7 @@ function Stage({ sectionRef: ref }: { sectionRef: React.RefObject<HTMLElement | 
           <Board
             entries={entries}
             moment={moment}
+            pos={pos}
             words={P}
             goTo={goTo}
             className="pointer-events-auto w-[min(56%,620px)] lg:w-[min(46%,660px)]"
@@ -319,12 +321,15 @@ function Extra({
 function Board({
   entries,
   moment,
+  pos,
   words,
   goTo,
   className,
 }: {
   entries: TimelineEntry[];
   moment: Moment;
+  /** Where the stage is, in entry units: a flight's packet runs on it. */
+  pos: MotionValue<number>;
   words: PathWords;
   goTo: (i: number) => void;
   className?: string;
@@ -354,7 +359,7 @@ function Board({
           const legOn = !!leg && moment.kind === "leg" && BEATS.legs[moment.k] === leg;
           return (
             <li key={`${e.title}-${i}`}>
-              {leg && <LegRow leg={leg} on={legOn} done={i <= reached} words={words} />}
+              {leg && <LegRow leg={leg} on={legOn} done={i <= reached} words={words} pos={pos} />}
               <div className="relative">
                 <button
                   type="button"
@@ -415,7 +420,19 @@ function Board({
 }
 
 /** A flight between cities, as a board row; while it is flown, it opens. */
-function LegRow({ leg, on, done, words }: { leg: Leg; on: boolean; done: boolean; words: PathWords }) {
+function LegRow({
+  leg,
+  on,
+  done,
+  words,
+  pos,
+}: {
+  leg: Leg;
+  on: boolean;
+  done: boolean;
+  words: PathWords;
+  pos: MotionValue<number>;
+}) {
   return (
     <div aria-hidden className="border-b border-line">
       <div
@@ -452,10 +469,44 @@ function LegRow({ leg, on, done, words }: { leg: Leg; on: boolean; done: boolean
               >
                 {words.distance(KM)}
               </p>
+              <Packet leg={leg} pos={pos} />
             </div>
           </motion.div>
         )}
       </AnimatePresence>
+    </div>
+  );
+}
+
+/**
+ * The flight as a packet on a dotted line — the ground's rain turned on its
+ * side: the trail fills behind it and the head runs the distance as the leg
+ * is flown. Scrubbed by the leg's own progress, so it is driven and
+ * reversible, and still when the scroll is.
+ */
+function Packet({ leg, pos }: { leg: Leg; pos: MotionValue<number> }) {
+  const p = useTransform(pos, (v) => span(v, leg.start, leg.end));
+  const x = useTransform(p, (v) => `${v * 100}%`);
+  return (
+    <div aria-hidden className="relative mt-4 h-2 w-full">
+      <span
+        className="absolute inset-x-0 top-1/2 h-[3px] -translate-y-1/2 opacity-50"
+        style={{
+          backgroundImage: "radial-gradient(circle, var(--color-holo) 0 1px, transparent 1.4px)",
+          backgroundSize: "6px 3px",
+          backgroundRepeat: "repeat-x",
+        }}
+      />
+      <motion.span
+        className="absolute inset-x-0 top-1/2 h-px origin-left -translate-y-1/2"
+        style={{ scaleX: p, background: "linear-gradient(90deg, transparent, var(--color-holo))" }}
+      />
+      <motion.span className="absolute inset-0" style={{ x }}>
+        <span
+          className="absolute left-0 top-1/2 h-2 w-2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#dcfbff]"
+          style={{ boxShadow: "0 0 10px 2px var(--color-holo)" }}
+        />
+      </motion.span>
     </div>
   );
 }
