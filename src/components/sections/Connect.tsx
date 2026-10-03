@@ -192,7 +192,7 @@ function Cartridge({
             <span className="block font-tech text-2xl font-bold uppercase leading-tight text-fg md:text-3xl">
               {social.label}
             </span>
-            <span className="mt-1 block font-mono text-sm lowercase tracking-wider text-fg/75">{social.handle}</span>
+            <span className="mt-1 block font-mono text-sm lowercase tracking-wider text-fg/90">{social.handle}</span>
             <Fact kind={kind} github={github} />
             <span className="sr-only">{t.common.newTab}</span>
           </div>
