@@ -10,11 +10,12 @@ import { NeonGround } from "./NeonGround";
  * The site's ground: two loops of footage, and one dive between them.
  *
  *   sakura   a blossoming tree on a cliff against a blue full moon. Behind the
- *            hero, About and Connect: who he is, where to find him.
- *   tunnel   a red hexagonal corridor flying forward. Behind Work, Craft,
- *            Inside, Path and Contact: the machine room.
+ *            hero, About, Links and Projects: who he is, where to find
+ *            him, what he built.
+ *   tunnel   a red hexagonal corridor flying forward. Behind Skills,
+ *            Capstone, Journey and Contact: the machine room.
  *
- * **The dive.** As Work's top edge rises from the bottom of the screen to 40%
+ * **The dive.** As Skills' top edge rises from the bottom of the screen to 20%
  * up, the camera pushes into the moon and the corridor opens out of it: the
  * sakura plate scales about a point on the moon's clear face, and the tunnel
  * shows through a circle at that same point that grows with it. A circle in a
@@ -59,6 +60,9 @@ const DISC = 0.15;
 const POS_X = 0.46;
 /** How deep the sakura plate scales by the end of the dive. */
 const DEPTH = 5;
+/** The section the camera dives at. Projects stays on the cliff: the sakura
+ *  plate is the site's face, and the tunnel had most of the page. */
+const DIVE_INTO = "#capabilities";
 
 /**
  * The dim over the footage, keyed through the page. `at` is a section, `edge`
@@ -72,9 +76,10 @@ const VEIL: { at: string; edge: number; veil: number }[] = [
   { at: "#hero", edge: 0.7, veil: 0.36 },
   { at: "#about", edge: 0.1, veil: 0.76 },
   { at: "#connect", edge: 0.8, veil: 0.78 },
-  { at: "#work", edge: 0, veil: 0.4 },
-  { at: "#work", edge: 0.12, veil: 0.58 },
-  { at: "#capabilities", edge: 0.1, veil: 0.6 },
+  { at: "#work", edge: 0.05, veil: 0.76 },
+  { at: "#work", edge: 0.94, veil: 0.76 },
+  { at: "#capabilities", edge: 0, veil: 0.4 },
+  { at: "#capabilities", edge: 0.08, veil: 0.6 },
   { at: "#timeline", edge: 0.5, veil: 0.62 },
   { at: "#contact", edge: 0.3, veil: 0.7 },
   { at: "end", edge: 1, veil: 0.74 },
@@ -118,7 +123,7 @@ export function VideoGround() {
     let oy = 0;
     let disc = 0;
     let reach = 0;
-    let workTop = 0;
+    let diveTop = 0;
     let heroEnd = 0;
     let keys: { y: number; veil: number }[] = [];
     let raf = 0;
@@ -141,8 +146,8 @@ export function VideoGround() {
       tun.style.transformOrigin = sak.style.transformOrigin;
 
       const sy = window.scrollY;
-      const work = document.querySelector<HTMLElement>("#work");
-      workTop = work ? work.getBoundingClientRect().top + sy : 1e9;
+      const dive = document.querySelector<HTMLElement>(DIVE_INTO);
+      diveTop = dive ? dive.getBoundingClientRect().top + sy : 1e9;
       const hero = document.querySelector<HTMLElement>("#hero");
       heroEnd = hero ? hero.getBoundingClientRect().bottom + sy : H;
       const end = document.documentElement.scrollHeight - H;
@@ -177,8 +182,8 @@ export function VideoGround() {
     const paint = () => {
       raf = 0;
       const y = window.scrollY;
-      // Work's top: at the bottom of the screen → 40% up.
-      const p = clamp((y + H - workTop) / (H * 0.6));
+      // The dive section's top: at the bottom of the screen → 20% up.
+      const p = clamp((y + H - diveTop) / (H * 0.8));
       veil.style.opacity = veilAt(y).toFixed(3);
       if (scrimRef.current) scrimRef.current.style.opacity = clamp(1 - y / Math.max(1, heroEnd - H * 0.5)).toFixed(3);
       setDive(p);
@@ -234,12 +239,12 @@ export function VideoGround() {
     };
   }, [reduced]);
 
-  /* --- Fetch the tunnel only once Work is within two screens. -------------- */
+  /* --- Fetch the tunnel only once the dive is within three screens. --------- */
   useEffect(() => {
     if (reduced) return;
     const near = () => {
-      const work = document.querySelector<HTMLElement>("#work");
-      const top = work ? work.getBoundingClientRect().top : 0;
+      const dive = document.querySelector<HTMLElement>(DIVE_INTO);
+      const top = dive ? dive.getBoundingClientRect().top : 0;
       if (top <= window.innerHeight * 3) {
         window.removeEventListener("scroll", near);
         setWantTunnel(true);
