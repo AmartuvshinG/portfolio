@@ -1,12 +1,11 @@
 "use client";
 
 import { motion } from "framer-motion";
-import type { UiStrings } from "@/lib/ui";
+import type { BeatShow, UiStrings } from "@/lib/ui";
 import { EASE_DEVELOP } from "@/lib/motion";
 import { cn } from "@/lib/utils";
 
 type Words = UiStrings["anatomy"];
-type Stride = keyof Words["threats"];
 
 /**
  * The example the chapter runs through the pipeline. Invented for the
@@ -64,64 +63,51 @@ export const MATRIX = [
   [88, 32, 334, 44189],
 ];
 
-/** The beats that carry a drawing. Copy alone for the rest. */
+/** A step's drawings, stacked in the order the step lists them. */
 export function BeatDetail({ i, words, animate }: { i: number; words: Words; animate: boolean }) {
-  switch (i) {
-    case 0:
+  const show = words.beats[i].show;
+  return (
+    <div className="space-y-7">
+      {show.map((k) => (
+        <Drawing key={k} k={k} words={words} animate={animate} />
+      ))}
+    </div>
+  );
+}
+
+function Drawing({ k, words, animate }: { k: BeatShow; words: Words; animate: boolean }) {
+  switch (k) {
+    case "input":
       return <InputField words={words} animate={animate} />;
-    case 1:
-      return <Threats keys={["S", "D"]} words={words} animate={animate} />;
-    case 2:
-      return <Threats keys={["T", "I", "E", "R"]} words={words} animate={animate} />;
-    case 3:
+    case "access":
+      return <Access words={words} animate={animate} />;
+    case "forest":
       return <Forest words={words} animate={animate} />;
-    case 4:
+    case "override":
       return <Override words={words} animate={animate} />;
-    case 5:
+    case "neighbours":
       return <Neighbours words={words} animate={animate} />;
-    case 6:
-      return <Result words={words} animate={animate} />;
-    case 7:
+    case "timing":
+      return <Timing words={words} animate={animate} />;
+    case "measured":
       return <Measured words={words} animate={animate} />;
-    case 8:
-      return <Alternatives words={words} animate={animate} />;
-    case 9:
-      return <Design words={words} animate={animate} />;
-    case 10:
+    case "usability":
       return <Usability words={words} />;
-    case 11:
+    case "fixes":
       return <Fixes words={words} animate={animate} />;
-    default:
-      return null;
   }
 }
 
-/**
- * Under a beat's lead: the same thing without the jargon, and the jargon it
- * does use, defined. Both come from the team's own plain-language slides.
- */
+/** Under a step's lead: the same thing without the jargon, in the team's own
+ *  plain-language words from their slides. */
 export function BeatNotes({ i, words, className }: { i: number; words: Words; className?: string }) {
   const b = words.beats[i];
-  if (!b.plain && !b.terms) return null;
+  if (!b.plain) return null;
   return (
-    <div className={cn("space-y-3", className)}>
-      {b.plain && (
-        <p className="border-l-2 border-[var(--color-holo)] pl-4 text-base leading-relaxed text-fg/90">
-          <span className="tag mr-2 text-[var(--color-holo)]">{words.plainLabel}</span>
-          {b.plain}
-        </p>
-      )}
-      {b.terms && (
-        <dl className="space-y-1.5">
-          {b.terms.map((t) => (
-            <div key={t.term} className="flex flex-wrap items-baseline gap-x-3">
-              <dt className="tag shrink-0 text-[var(--color-holo)]">{t.term}</dt>
-              <dd className="text-sm leading-snug text-muted">{t.def}</dd>
-            </div>
-          ))}
-        </dl>
-      )}
-    </div>
+    <p className={cn("border-l-2 border-[var(--color-holo)] pl-4 text-base leading-relaxed text-fg/90", className)}>
+      <span className="tag mr-2 text-[var(--color-holo)]">{words.plainLabel}</span>
+      {b.plain}
+    </p>
   );
 }
 
@@ -160,32 +146,33 @@ function InputField({ words, animate }: { words: Words; animate: boolean }) {
         </motion.span>
         <span aria-hidden className="ml-0.5 inline-block h-[1.1em] w-[2px] translate-y-[2px] bg-[var(--color-holo)]" />
       </div>
-      <p className="tag mt-3 text-[var(--color-holo)]">POST /analyze_bug</p>
     </div>
   );
 }
 
-function Threats({ keys, words, animate }: { keys: Stride[]; words: Words; animate: boolean }) {
+/** The three risks the security step guards against, and what stops each. */
+function Access({ words, animate }: { words: Words; animate: boolean }) {
+  const keys = ["S", "I", "E"] as const;
   return (
     <ul className="divide-y divide-line border-y border-line">
-      {keys.map((k, n) => (
-        <motion.li
-          key={k}
-          className="grid grid-cols-[2.75rem_minmax(0,1fr)] gap-4 py-2.5"
-          initial={animate ? { opacity: 0, x: -8 } : false}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.4, delay: 0.08 * n, ease: EASE_DEVELOP }}
-        >
-          <span className="grid h-10 w-10 place-items-center border border-[var(--color-holo)] font-mono text-base font-bold text-[var(--color-holo)]">
-            {k}
-          </span>
-          <div className="min-w-0">
-            <p className="tag text-muted">{words.stride[k]}</p>
-            <p className="mt-0.5 text-base leading-snug text-fg">{words.threats[k].threat}</p>
-            <p className="mt-0.5 text-base leading-snug text-[var(--color-holo)]">→ {words.threats[k].control}</p>
-          </div>
-        </motion.li>
-      ))}
+      {keys.map((k, n) => {
+        const r = words.risks[k];
+        return (
+          <motion.li
+            key={k}
+            className="grid grid-cols-[minmax(0,9rem)_minmax(0,1fr)] gap-4 py-3"
+            initial={animate ? { opacity: 0, x: -8 } : false}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.4, delay: 0.08 * n, ease: EASE_DEVELOP }}
+          >
+            <span className="tag pt-0.5 text-[var(--color-holo)]">{r.name}</span>
+            <span className="min-w-0">
+              <span className="block text-base leading-snug text-fg">{r.threat}</span>
+              <span className="mt-0.5 block text-base leading-snug text-fg/80">→ {r.control}</span>
+            </span>
+          </motion.li>
+        );
+      })}
     </ul>
   );
 }
@@ -329,57 +316,30 @@ function Neighbours({ words, animate }: { words: Words; animate: boolean }) {
   );
 }
 
-function Result({ words, animate }: { words: Words; animate: boolean }) {
-  const R = words.result;
+/** Measured averages against the 5 s goal (report §15.2). */
+function Timing({ words, animate }: { words: Words; animate: boolean }) {
   const T = words.timing;
   const bars: [string, number][] = [
     [T.prediction, 3.4],
     [T.similarity, 1.2],
   ];
   return (
-    <div>
-      <dl className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-5 gap-y-2 border border-line-strong px-4 py-3">
-        <dt className="micro self-center">{R.severity}</dt>
-        <dd className="display-caps text-2xl text-[var(--color-hazard)]">S1</dd>
-        <dt className="micro self-center">{R.keywords}</dt>
-        <dd className="font-mono text-base text-[var(--color-hazard)]">{KEYWORD}</dd>
-        <dt className="micro self-center">{R.confidence}</dt>
-        <dd className="text-base text-fg/85">{R.confidenceValue}</dd>
-        <dt className="micro self-center">{R.team}</dt>
-        <dd className="self-center">
-          <span className="block h-1.5 w-24 bg-[var(--color-line-strong)]" />
-        </dd>
-        <dt className="micro self-center">{R.similar}</dt>
-        <dd className="font-mono text-base text-fg">3</dd>
-      </dl>
-
-      {/* Measured averages against the 5 s target (report §15.2). */}
-      <div className="mt-5 space-y-3">
-        {bars.map(([k, s], n) => (
-          <div key={k} className="grid grid-cols-[minmax(0,11rem)_minmax(0,1fr)_4rem] items-center gap-3">
-            <span className="micro">{k}</span>
-            <span className="relative h-2 bg-[var(--color-line)]">
-              <Grow to={s / 5} animate={animate} delay={0.15 * n} className="bg-[var(--color-holo)]" />
-              <span aria-hidden className="absolute -top-1.5 right-0 h-5 w-px bg-[var(--color-hazard)]" />
-            </span>
-            <span className="tabular text-right font-mono text-base text-fg">
-              {s} {T.unit}
-            </span>
-          </div>
-        ))}
-        <p className="tag text-right text-[var(--color-hazard)]">
-          {T.target} &lt; 5 {T.unit}
-        </p>
-      </div>
-
-      <dl className="mt-4 flex flex-wrap gap-x-8 gap-y-2">
-        {words.extras.map((e) => (
-          <div key={e.k} className="flex flex-col-reverse">
-            <dt className="micro">{e.k}</dt>
-            <dd className="display-caps tabular text-2xl text-fg">{e.v}</dd>
-          </div>
-        ))}
-      </dl>
+    <div className="space-y-3">
+      {bars.map(([k, s], n) => (
+        <div key={k} className="grid grid-cols-[minmax(0,11rem)_minmax(0,1fr)_4rem] items-center gap-3">
+          <span className="micro">{k}</span>
+          <span className="relative h-2 bg-[var(--color-line)]">
+            <Grow to={s / 5} animate={animate} delay={0.15 * n} className="bg-[var(--color-holo)]" />
+            <span aria-hidden className="absolute -top-1.5 right-0 h-5 w-px bg-[var(--color-hazard)]" />
+          </span>
+          <span className="tabular text-right font-mono text-base text-fg">
+            {s} {T.unit}
+          </span>
+        </div>
+      ))}
+      <p className="tag text-right text-[var(--color-hazard)]">
+        {T.target} &lt; 5 {T.unit}
+      </p>
     </div>
   );
 }
@@ -503,73 +463,6 @@ export function MatrixTable({ words }: { words: Words }) {
         ))}
       </tbody>
     </table>
-  );
-}
-
-function Alternatives({ words, animate }: { words: Words; animate: boolean }) {
-  return (
-    <ul className="divide-y divide-line border-y border-line">
-      {words.alternatives.map((a, n) => (
-        <motion.li
-          key={a.name}
-          className="py-3"
-          initial={animate ? { opacity: 0, x: -8 } : false}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.4, delay: 0.08 * n, ease: EASE_DEVELOP }}
-        >
-          <p className="flex flex-wrap items-baseline justify-between gap-x-4">
-            <span className="font-tech text-xl font-semibold uppercase tracking-wide text-fg/90 line-through decoration-[var(--color-faint)] decoration-1">
-              {a.name}
-            </span>
-            <span className="tag text-muted">{words.notChosen}</span>
-          </p>
-          <p className="mt-1 text-base leading-snug text-fg/85">{a.why}</p>
-        </motion.li>
-      ))}
-    </ul>
-  );
-}
-
-/** His interface rules: the three flows it is built around, and the roles its tabs follow. */
-function Design({ words, animate }: { words: Words; animate: boolean }) {
-  const D = words.design;
-  return (
-    <div>
-      <Label>{D.flowsLabel}</Label>
-      <ol className="mt-2 space-y-2">
-        {D.flows.map((f, n) => (
-          <motion.li
-            key={f.join()}
-            className="flex flex-wrap items-center gap-x-2 gap-y-1 border border-line px-3 py-1.5"
-            initial={animate ? { opacity: 0, x: -8 } : false}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.4, delay: 0.08 * n, ease: EASE_DEVELOP }}
-          >
-            {f.map((step, k) => (
-              <span key={step + k} className="flex items-center gap-2">
-                {k > 0 && (
-                  <span aria-hidden className="text-[var(--color-hazard)]">
-                    →
-                  </span>
-                )}
-                <span className="font-tech text-lg font-semibold uppercase tracking-wide text-fg">{step}</span>
-              </span>
-            ))}
-          </motion.li>
-        ))}
-      </ol>
-      <p className="mt-4">
-        <Label>{D.rolesLabel}</Label>
-      </p>
-      <dl className="mt-2 divide-y divide-line border-y border-line">
-        {D.roles.map((r) => (
-          <div key={r.name} className="grid gap-x-4 py-2 sm:grid-cols-[11rem_minmax(0,1fr)]">
-            <dt className="tag self-center text-[var(--color-holo)]">{r.name}</dt>
-            <dd className="text-base leading-snug text-fg/85">{r.can}</dd>
-          </div>
-        ))}
-      </dl>
-    </div>
   );
 }
 

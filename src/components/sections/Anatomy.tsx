@@ -1,12 +1,20 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { AnimatePresence, motion, useInView, useMotionValueEvent, useScroll, useTransform } from "framer-motion";
+import {
+  AnimatePresence,
+  motion,
+  useInView,
+  useMotionValueEvent,
+  useScroll,
+  useTransform,
+  type MotionValue,
+} from "framer-motion";
 import { sectionIndex } from "@/lib/content";
 import { useI18n } from "@/lib/i18n";
 import { openCase } from "@/lib/caseFile";
 import { isInteractive, modalOpen } from "@/lib/keys";
-import { EASE_DEVELOP } from "@/lib/motion";
+import { EASE_EXPO } from "@/lib/motion";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
 import { useSmoothScroll } from "@/components/chrome/SmoothScroll";
 import { ChapterSeam } from "@/components/chrome/ChapterSeam";
@@ -14,29 +22,28 @@ import { SectionHeader } from "@/components/ui/SectionHeader";
 import { ScriptLabel } from "@/components/ui/ScriptLabel";
 import { IconArrowRight } from "@/components/ui/HudIcons";
 import { ScrambleText } from "@/components/motion/ScrambleText";
-import { Schematic } from "@/components/anatomy/Schematic";
 import { BeatDetail, BeatNotes, DUPLICATE, MatrixTable } from "@/components/anatomy/BeatDetail";
 import type { UiStrings } from "@/lib/ui";
 import { cn } from "@/lib/utils";
 
 /* ---------------------------------------------------------------------------
-   Inside: the anatomy of one Spotfixes prediction.
+   Capstone: how Spotfixes works, in six plain steps.
 
-   Built from the team's final capstone report (Spring 2026), which the case
-   file only summarises. One example report travels the system as the reader
-   scrolls — through the two trust boundaries and their STRIDE threats, the
-   Random Forest and the keyword override, the RAG lane beside it — and lands
-   as a result measured against its target. Then the designs the team turned
-   down, and last his own part: the usability test he ran and what it found,
-   including the target it missed.
+   Built from the team's final capstone report (Spring 2026). A bug report
+   travels a single rail of six stations — report, security, severity,
+   duplicates, results, and his own part — and a glowing packet runs along
+   it with the scroll, lighting each station as it passes. Under the rail
+   sits one card: the step's headline, two sentences a non-engineer can
+   follow, and the step's drawing. A new step wipes in sideways, the same
+   direction the packet travels.
 
-   The architecture was the team's; the chapter says so on screen. The
-   example input, the tree votes, the token weights and the neighbours are
-   illustrations and are labelled as such; every figure is the report's.
+   The architecture was the team's; the chapter says so. The example input,
+   the votes, the word scores and the neighbours are illustrations and are
+   labelled so; every figure is the report's (or the deck's, and said so).
 
-   Same stage as Work and Path: a pinned screen where each beat sits on a
-   resting plateau, ←/→ between beats, and one `useScroll` driving it. Phones
-   and reduced motion get the beats as a list.
+   A pinned stage with a resting plateau per step, ←/→ between steps, one
+   `useScroll` driving it. Short screens, phones and reduced motion get the
+   steps as a list.
    ------------------------------------------------------------------------- */
 
 /** Half-width of each resting plateau, in beats. */
@@ -44,31 +51,22 @@ const HOLD = 0.26;
 /** Extra rest before the first beat and after the last. */
 const EDGE = 0.3;
 /** Scroll per beat, in viewport heights. */
-const STEP_VH = 52;
+const STEP_VH = 60;
 
 export function Anatomy() {
   const { t } = useI18n();
   const reduced = useReducedMotion();
   const ref = useRef<HTMLElement>(null);
-  const [roomy, setRoomy] = useState(false);
-  /* The pinned stage shows a whole beat at once at full reading size, which
-     takes a tall screen. Below this (a 1366×768 laptop, a tablet) the beats
-     read as a list instead of shrinking or scrolling inside the stage. */
+  /* The pinned stage shows a whole step at full reading size. Six short
+     steps fit a laptop; below this the steps read as a list instead of
+     shrinking. */
   const [stageRoom, setStageRoom] = useState(false);
   useEffect(() => {
-    const mq = window.matchMedia("(min-width: 768px) and (min-height: 600px)");
-    const big = window.matchMedia("(min-width: 1200px) and (min-height: 860px)");
-    const update = () => {
-      setRoomy(mq.matches);
-      setStageRoom(big.matches);
-    };
+    const big = window.matchMedia("(min-width: 1024px) and (min-height: 700px)");
+    const update = () => setStageRoom(big.matches);
     update();
-    mq.addEventListener("change", update);
     big.addEventListener("change", update);
-    return () => {
-      mq.removeEventListener("change", update);
-      big.removeEventListener("change", update);
-    };
+    return () => big.removeEventListener("change", update);
   }, []);
   const pinned = stageRoom && !reduced;
   const n = t.anatomy.beats.length;
@@ -84,7 +82,7 @@ export function Anatomy() {
       style={pinned ? { height: `${(n - 1 + 2 * EDGE) * STEP_VH + 100}vh` } : undefined}
     >
       <ChapterSeam />
-      {pinned ? <Stage sectionRef={ref} /> : <Sequence reduced={reduced} roomy={roomy} />}
+      {pinned ? <Stage sectionRef={ref} /> : <Sequence reduced={reduced} />}
     </section>
   );
 }
@@ -135,107 +133,141 @@ function Stage({ sectionRef: ref }: { sectionRef: React.RefObject<HTMLElement | 
     return () => window.removeEventListener("keydown", onKey);
   }, [beat, goTo, ref]);
 
+  /* The packet's place on the rail: whole stations held on their plateaus,
+     the runs between them eased, so it rests on a station while you read. */
+  const along = useTransform(pos, (v) => {
+    const c = Math.min(n - 1, Math.max(0, v));
+    const i = Math.floor(c);
+    const f = c - i;
+    const t = Math.min(1, Math.max(0, (f - HOLD) / (1 - 2 * HOLD)));
+    return (i + t * t * (3 - 2 * t)) / (n - 1);
+  });
+  const b = A.beats[beat];
+
   return (
     <div className="sticky top-0 h-dvh w-full overflow-hidden">
-      {/* The footage falls off behind the text column, so the prose sits on
-          dark rather than on the tunnel's brightest edges. */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-y-0 right-0 w-[62%] bg-[linear-gradient(to_right,transparent,color-mix(in_srgb,var(--color-bg)_78%,transparent)_30%)]"
-      />
-      <div className="relative mx-auto flex h-full max-w-[1800px] flex-col px-5 pb-6 pt-20 md:px-8 lg:px-16">
-        {/* Two columns the full height of the screen: the masthead heads the
-            drawing, so the beat's text gets every line below the navbar. */}
-        <div className="grid min-h-0 flex-1 grid-cols-[minmax(0,5fr)_minmax(0,7fr)] gap-8 pt-3 lg:gap-12 xl:grid-cols-[minmax(0,5fr)_minmax(0,6fr)]">
-          <div className="flex min-h-0 flex-col">
-            <header className="relative">
-              <ScriptLabel href="#anatomy" />
-              <span className="eyebrow kicker-plate">
-                {sectionIndex("#anatomy")} — {A.eyebrow}
-              </span>
-              <h2 className="display-caps mt-3 text-[clamp(1.75rem,2.6vw,2.75rem)] text-fg [@media(max-height:820px)]:text-[clamp(1.5rem,2.2vw,2.25rem)]">
-                {A.title}
-              </h2>
-              <p className="mt-2 flex flex-wrap gap-x-4 gap-y-1">
-                <span className="micro !text-[var(--color-hazard)]">{A.credit}</span>
-                <span className="micro">{A.source}</span>
-              </p>
-            </header>
-            <div className="relative min-h-0 flex-1 py-3">
-              <Schematic pos={pos} hold={HOLD} beat={beat} words={A} />
-            </div>
+      <div className="relative mx-auto flex h-full max-w-[1500px] flex-col px-5 pb-6 pt-20 md:px-8 lg:px-16">
+        <header className="relative flex flex-wrap items-end justify-between gap-x-10 gap-y-2 pt-3">
+          <div>
+            <ScriptLabel href="#anatomy" />
+            <span className="eyebrow kicker-plate">
+              {sectionIndex("#anatomy")} — {A.eyebrow}
+            </span>
+            <h2 className="display-caps mt-3 text-[clamp(1.75rem,2.8vw,3rem)] text-fg">{A.title}</h2>
           </div>
+          <p className="flex flex-col items-end gap-1 pb-1 text-right">
+            <span className="micro !text-[var(--color-hazard)]">{A.credit}</span>
+            <span className="micro">{A.source}</span>
+          </p>
+        </header>
 
-          <div className="flex min-h-0 flex-col pt-1">
-            <Ticks n={n} beat={beat} words={A} goTo={goTo} />
-            <p className="micro mt-1 hidden !text-fg/85 lg:block">{A.hint}</p>
-            {/* The beat on screen. Decoration for assistive tech, which reads
-                the full sequence below instead. It never shrinks its type to
-                fit: on a short screen a long beat scrolls inside itself
-                (Lenis leaves it alone). */}
-            <div
-              aria-hidden
-              data-lenis-prevent
-              className="relative mt-4 min-h-0 flex-1 overflow-y-auto overscroll-contain pr-2 [scrollbar-width:thin]"
+        <Rail words={A} along={along} beat={beat} goTo={goTo} />
+
+        {/* The step on screen. Decoration for assistive tech, which reads the
+            full sequence below instead. On a short screen a long step
+            scrolls inside itself (Lenis leaves it alone). */}
+        <div
+          aria-hidden
+          data-lenis-prevent
+          className="relative mt-6 min-h-0 flex-1 overflow-y-auto overflow-x-hidden overscroll-contain [scrollbar-width:thin]"
+        >
+          <AnimatePresence mode="popLayout" initial={false}>
+            <motion.article
+              key={beat}
+              className="liquid-glass absolute inset-x-0 top-0 grid grid-cols-[minmax(0,5fr)_minmax(0,6fr)] gap-10 rounded-[20px] p-7 lg:gap-14 lg:p-9"
+              initial={{ clipPath: "inset(0 100% 0 0 round 20px)", x: 24 }}
+              animate={{ clipPath: "inset(0 0% 0 0 round 20px)", x: 0 }}
+              exit={{ clipPath: "inset(0 0 0 100% round 20px)", x: -24, transition: { duration: 0.35, ease: EASE_EXPO } }}
+              transition={{ duration: 0.7, ease: EASE_EXPO }}
             >
-              <AnimatePresence mode="popLayout" initial={false}>
-                <motion.div
-                  key={beat}
-                  className="absolute inset-x-0 top-0 pb-2 pr-2"
-                  initial={{ opacity: 0, y: 14 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10, transition: { duration: 0.16 } }}
-                  transition={{ duration: 0.45, ease: EASE_DEVELOP }}
-                >
-                  <h3 className="font-tech text-3xl font-bold uppercase leading-[1.05] text-fg lg:text-4xl">
-                    <ScrambleText key={`t${beat}-${A.beats[beat].title}`} text={A.beats[beat].title} immediate speed={26} />
-                  </h3>
-                  <p className="mt-3 max-w-2xl text-lg leading-relaxed text-fg/85">{A.beats[beat].body}</p>
-                  <BeatNotes i={beat} words={A} className="mt-4 max-w-2xl" />
-                  <div className="mt-5 max-w-2xl">
-                    <BeatDetail i={beat} words={A} animate />
-                  </div>
-                  {beat === n - 1 && <CaseLink words={A} className="mt-5" />}
-                </motion.div>
-              </AnimatePresence>
-            </div>
-          </div>
+              <div className="min-w-0">
+                <span className="display-caps tabular text-[clamp(3rem,5vw,5.5rem)] leading-none text-[var(--color-holo)] [text-shadow:0_0_28px_color-mix(in_srgb,var(--color-holo)_45%,transparent)]">
+                  {String(beat + 1).padStart(2, "0")}
+                </span>
+                <h3 className="mt-4 font-tech text-3xl font-bold uppercase leading-[1.05] text-fg lg:text-4xl">
+                  <ScrambleText key={`t${beat}-${b.title}`} text={b.title} immediate speed={26} />
+                </h3>
+                <p className="mt-4 text-lg leading-relaxed text-fg/85">{b.body}</p>
+                <BeatNotes i={beat} words={A} className="mt-5" />
+                {beat === n - 1 && <CaseLink words={A} className="mt-5" />}
+              </div>
+              <div className="min-w-0 self-center">
+                <BeatDetail i={beat} words={A} animate />
+              </div>
+            </motion.article>
+          </AnimatePresence>
         </div>
 
+        <p className="micro mt-3 !text-fg/85">{A.hint}</p>
         <SrSequence words={A} />
       </div>
     </div>
   );
 }
 
-/** One tick per beat: where you are, and a way to any other. */
-function Ticks({ n, beat, words, goTo }: { n: number; beat: number; words: UiStrings["anatomy"]; goTo: (i: number) => void }) {
+/**
+ * The pipeline: six stations on one line, a lit track that fills behind the
+ * packet, and the packet itself. Every station is a button to its step.
+ */
+function Rail({
+  words,
+  along,
+  beat,
+  goTo,
+}: {
+  words: UiStrings["anatomy"];
+  along: MotionValue<number>;
+  beat: number;
+  goTo: (i: number) => void;
+}) {
+  const n = words.beats.length;
+  const fill = along;
+  const packet = useTransform(along, (v) => `${v * 100}%`);
   return (
-    <div className="flex items-center gap-4">
-      <span className="micro tabular !text-[var(--color-holo)]">{words.step(beat + 1, n)}</span>
-      <ol className="flex flex-1 items-center gap-1.5">
-        {words.beats.map((b, i) => (
-          <li key={i} className="flex-1">
-            <button
-              type="button"
-              onClick={() => goTo(i)}
-              aria-label={words.goTo(b.title)}
-              aria-current={i === beat ? "step" : undefined}
-              className="group flex h-6 w-full items-center"
-            >
-              <span
-                className={cn(
-                  "block h-[3px] w-full transition-colors duration-300",
-                  i === beat
-                    ? "bg-[var(--color-holo)]"
-                    : i < beat
-                      ? "bg-[color-mix(in_srgb,var(--color-holo)_45%,transparent)]"
-                      : "bg-[var(--color-line-strong)] group-hover:bg-[var(--color-fg)]/50"
-                )}
-              />
-            </button>
-          </li>
-        ))}
+    <div className="relative mt-7">
+      {/* The track runs station centre to station centre. */}
+      <div aria-hidden className="absolute top-[11px] h-[2px] bg-[var(--color-line-strong)]" style={{ left: `${50 / n}%`, right: `${50 / n}%` }}>
+        <motion.span className="spectrum-rule absolute inset-0 origin-left" style={{ scaleX: fill }} />
+        <motion.span className="absolute inset-0" style={{ x: packet }}>
+          <span className="absolute -left-[7px] -top-[6px] block h-[14px] w-[14px] rounded-full bg-[var(--color-holo)] shadow-[0_0_0_4px_color-mix(in_srgb,var(--color-holo)_25%,transparent),0_0_24px_4px_color-mix(in_srgb,var(--color-holo)_70%,transparent)]" />
+        </motion.span>
+      </div>
+      <ol className="relative grid" style={{ gridTemplateColumns: `repeat(${n}, minmax(0, 1fr))` }}>
+        {words.beats.map((s, i) => {
+          const done = i < beat;
+          const on = i === beat;
+          return (
+            <li key={i} className="flex justify-center">
+              <button
+                type="button"
+                onClick={() => goTo(i)}
+                aria-label={words.goTo(s.title)}
+                aria-current={on ? "step" : undefined}
+                className="group flex min-h-11 flex-col items-center gap-2"
+              >
+                <span
+                  className={cn(
+                    "grid h-6 w-6 place-items-center rounded-full border-2 transition-[border-color,background-color,transform] duration-300",
+                    on
+                      ? "scale-110 border-[var(--color-holo)] bg-[var(--color-bg)]"
+                      : done
+                        ? "border-[var(--color-holo)] bg-[color-mix(in_srgb,var(--color-holo)_35%,var(--color-bg))]"
+                        : "border-[var(--color-line-strong)] bg-[var(--color-bg)] group-hover:border-[var(--color-fg)]"
+                  )}
+                />
+                <span
+                  className={cn(
+                    "tag whitespace-nowrap transition-colors duration-300",
+                    on ? "text-fg" : done ? "text-fg/80" : "text-muted group-hover:text-fg"
+                  )}
+                >
+                  <span className="tabular mr-1.5 text-[var(--color-holo)]">{String(i + 1).padStart(2, "0")}</span>
+                  {s.station}
+                </span>
+              </button>
+            </li>
+          );
+        })}
       </ol>
     </div>
   );
@@ -278,124 +310,96 @@ function SrSequence({ words }: { words: UiStrings["anatomy"] }) {
   );
 }
 
-/** The parts of a beat's drawing that are facts, as plain text. */
+/** The parts of a step's drawings that are facts, as plain text. */
 function SrDetail({ i, words }: { i: number; words: UiStrings["anatomy"] }) {
-  const T = words.threats;
-  const threat = (k: keyof typeof T) => (
-    <li key={k}>
-      {words.stride[k]}: {T[k].threat}. {words.controlLabel}: {T[k].control}.
-    </li>
+  return (
+    <>
+      {words.beats[i].show.map((k) => {
+        if (k === "access")
+          return (
+            <ul key={k}>
+              {(["S", "I", "E"] as const).map((r) => (
+                <li key={r}>
+                  {words.risks[r].name}: {words.risks[r].threat}. {words.controlLabel}: {words.risks[r].control}.
+                </li>
+              ))}
+            </ul>
+          );
+        if (k === "timing") {
+          const T = words.timing;
+          return (
+            <p key={k}>
+              {T.prediction}: 3.4 {T.unit}. {T.similarity}: 1.2 {T.unit}. {T.target}: &lt; 5 {T.unit}.
+            </p>
+          );
+        }
+        if (k === "neighbours") {
+          const X = words.example2;
+          return (
+            <p key={k}>
+              {X.label}. {X.newBug}: “{DUPLICATE.query}”. {X.matches}:{" "}
+              {DUPLICATE.matches.map((m) => `“${m.text}”, ${Math.round(m.score * 100)}% ${X.similar}`).join("; ")}.
+            </p>
+          );
+        }
+        if (k === "measured") {
+          const M = words.measured;
+          return (
+            <div key={k}>
+              <p>
+                {M.report.v} {M.report.k}. {M.scope}: {M.metrics.map((m) => `${m.k} ${m.v}`).join(", ")}. {M.caveat}{" "}
+                {M.loop}
+              </p>
+              <MatrixTable words={words} />
+            </div>
+          );
+        }
+        if (k === "usability") {
+          const U = words.usability;
+          return (
+            <p key={k}>
+              {U.target}: {U.targetText}. {U.result}: {U.status}. {U.figures.map((f) => `${f.v} ${f.k}`).join(". ")}.{" "}
+              {U.blockedBy}
+            </p>
+          );
+        }
+        if (k === "fixes") {
+          const U = words.usability;
+          return (
+            <ul key={k}>
+              {U.fixes.map((f) => (
+                <li key={f.problem}>
+                  {U.priority[f.priority]}: {f.problem}. {f.fix}. {f.open ? U.open : U.fixed}.
+                </li>
+              ))}
+            </ul>
+          );
+        }
+        return null;
+      })}
+    </>
   );
-  if (i === 1) return <ul>{(["S", "D"] as const).map(threat)}</ul>;
-  if (i === 2) return <ul>{(["T", "I", "E", "R"] as const).map(threat)}</ul>;
-  if (i === 6)
-    return (
-      <p>
-        {words.timing.prediction}: 3.4 {words.timing.unit}. {words.timing.similarity}: 1.2 {words.timing.unit}.{" "}
-        {words.timing.target}: &lt; 5 {words.timing.unit}. {words.extras.map((e) => `${e.v} ${e.k}`).join(". ")}.
-      </p>
-    );
-  if (i === 5) {
-    const X = words.example2;
-    return (
-      <p>
-        {X.label}. {X.newBug}: “{DUPLICATE.query}”. {X.matches}:{" "}
-        {DUPLICATE.matches.map((m) => `“${m.text}”, ${Math.round(m.score * 100)}% ${X.similar}`).join("; ")}.
-      </p>
-    );
-  }
-  if (i === 7) {
-    const M = words.measured;
-    return (
-      <>
-        <p>
-          {M.report.v} {M.report.k}. {M.scope}: {M.metrics.map((m) => `${m.k} ${m.v}`).join(", ")}. {M.caveat} {M.loop}
-        </p>
-        <MatrixTable words={words} />
-      </>
-    );
-  }
-  if (i === 8)
-    return (
-      <ul>
-        {words.alternatives.map((a) => (
-          <li key={a.name}>
-            {a.name}: {a.why}
-          </li>
-        ))}
-      </ul>
-    );
-  if (i === 9) {
-    const D = words.design;
-    return (
-      <>
-        <p>
-          {D.flowsLabel}: {D.flows.map((f) => f.join(" → ")).join("; ")}.
-        </p>
-        <ul>
-          {D.roles.map((r) => (
-            <li key={r.name}>
-              {r.name}: {r.can}
-            </li>
-          ))}
-        </ul>
-      </>
-    );
-  }
-  if (i === 10) {
-    const U = words.usability;
-    return (
-      <p>
-        {U.target}: {U.targetText}. {U.result}: {U.status}. {U.figures.map((f) => `${f.v} ${f.k}`).join(". ")}.{" "}
-        {U.blockedBy}
-      </p>
-    );
-  }
-  if (i === 11) {
-    const U = words.usability;
-    return (
-      <ul>
-        {U.fixes.map((f) => (
-          <li key={f.problem}>
-            {U.priority[f.priority]}: {f.problem}. {f.fix}. {f.open ? U.open : U.fixed}.
-          </li>
-        ))}
-      </ul>
-    );
-  }
-  return null;
 }
 
 /* -------------------------------------------------------------------------- */
 /* Phones and reduced motion: the beats as a list                             */
 /* -------------------------------------------------------------------------- */
 
-function Sequence({ reduced, roomy }: { reduced: boolean; roomy: boolean }) {
+function Sequence({ reduced }: { reduced: boolean }) {
   const { t } = useI18n();
   const A = t.anatomy;
   return (
-    <div className="mx-auto max-w-[1800px] px-5 pb-24 pt-24 md:px-8 md:pb-36 md:pt-36 lg:px-16">
+    <div className="mx-auto max-w-[1500px] px-5 pb-24 pt-24 md:px-8 md:pb-36 md:pt-36 lg:px-16">
       <SectionHeader index={sectionIndex("#anatomy")} label={A.eyebrow} title={A.title} chapter="#anatomy" voice="tech" />
       <p className="mt-6 flex flex-col gap-1">
         <span className="micro !text-[var(--color-hazard)]">{A.credit}</span>
         <span className="micro">{A.source}</span>
       </p>
-
-      <div className={cn(roomy && "grid grid-cols-[minmax(0,5fr)_minmax(0,6fr)] gap-14")}>
-        {/* The drawing needs room to be read: on phones the beats carry it. */}
-        {roomy && (
-          <div className="relative">
-            <div className="sticky top-24 mt-12 h-[min(78vh,760px)]">
-              <Schematic pos={null} beat={null} words={A} />
-            </div>
-          </div>
-        )}
-        <ol className="mt-6">
-          {A.beats.map((b, i) => (
-            <Step key={i} i={i} reduced={reduced} words={A} />
-          ))}
-        </ol>
-      </div>
+      <ol className="mt-6">
+        {A.beats.map((b, i) => (
+          <Step key={i} i={i} reduced={reduced} words={A} />
+        ))}
+      </ol>
       <CaseLink words={A} className="mt-8" />
     </div>
   );
@@ -406,14 +410,18 @@ function Step({ i, reduced, words }: { i: number; reduced: boolean; words: UiStr
   const seen = useInView(ref, { once: true });
   const b = words.beats[i];
   return (
-    <li className="border-b border-line py-9 md:py-12">
-      <span className="micro tabular !text-[var(--color-holo)]">{words.step(i + 1, words.beats.length)}</span>
-      <h3 className="mt-3 font-tech text-3xl font-bold uppercase leading-[1.05] text-fg md:text-4xl">{b.title}</h3>
-      <p className="mt-3 max-w-2xl text-lg leading-relaxed text-fg/85 md:text-xl">{b.body}</p>
-      <BeatNotes i={i} words={words} className="mt-4 max-w-2xl" />
+    <li className="grid gap-x-14 border-b border-line py-9 md:py-12 lg:grid-cols-[minmax(0,5fr)_minmax(0,6fr)]">
+      <div>
+        <span className="micro tabular !text-[var(--color-holo)]">
+          {words.step(i + 1, words.beats.length)} · {b.station}
+        </span>
+        <h3 className="mt-3 font-tech text-3xl font-bold uppercase leading-[1.05] text-fg md:text-4xl">{b.title}</h3>
+        <p className="mt-3 max-w-2xl text-lg leading-relaxed text-fg/85 md:text-xl">{b.body}</p>
+        <BeatNotes i={i} words={words} className="mt-4 max-w-2xl" />
+      </div>
       {/* Always in the document (its words are content), finished; it is
           drawn on again, once, as it scrolls in. Reduced motion: still. */}
-      <div ref={ref} className="mt-6 max-w-2xl">
+      <div ref={ref} className="mt-6 max-w-2xl lg:mt-0">
         <BeatDetail key={seen ? "on" : "off"} i={i} words={words} animate={seen && !reduced} />
       </div>
     </li>
