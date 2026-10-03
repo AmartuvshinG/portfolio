@@ -13,8 +13,15 @@ import { IconArrowUp, IconReplay } from "@/components/ui/HudIcons";
 import { replayIntro } from "@/lib/intro";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
 
-/** The ground — the red haze and the dotted rain — is ported from this
-    component (repo root: `cyberpunk neon preloaer.txt`). */
+/** The two loops behind the page (backdrop/VideoGround): the sakura cliff and
+    the red tunnel. */
+const FOOTAGE = {
+  names: "Sakura On The Cliff · Red Future Tunnel",
+  by: "Infinite Visual",
+  href: "https://www.youtube.com/@infinite.visual",
+};
+/** The tunnel's rain — and the red haze — is ported from this component
+    (docs/reference: `cyberpunk neon preloaer.txt`). */
 const GROUND = { name: "Neon Katakana Preloader", via: "21st.dev" };
 /** The Path's globe is Natural Earth's land, lakes and borders, baked (scripts/bake-globe-mask). */
 const MAP = { name: "Natural Earth", href: "https://www.naturalearthdata.com" };
@@ -26,8 +33,8 @@ const MAP = { name: "Natural Earth", href: "https://www.naturalearthdata.com" };
  * like one: the LED sign running the name as the house lights come up, then
  * end credits, set the way a film sets them, roles right-aligned against names
  * on a centre line. Every credit is a fact about how the site was made: who
- * designed and built it, the faces, the stack, and where the ground behind
- * the page and the map on the Path come from. Then the seal, the
+ * designed and built it, the faces, the stack, and where the footage and
+ * the rain behind the page and the map on the Path come from. Then the seal, the
  * brushed name, and the house index for anyone who wants to go back in.
  *
  * Carries `data-act="void"` so the chrome above stays inverted to the bottom.
@@ -44,6 +51,21 @@ export function Footer() {
     { role: cr.design, value: profile.fullName },
     { role: cr.type, value: "Michroma · Chakra Petch · Archivo · Rajdhani · JetBrains Mono · Noto Sans Mongolian" },
     { role: cr.built, value: "Next.js · React · Tailwind CSS · Framer Motion · GSAP · Lenis · WebGL" },
+    {
+      role: cr.footage,
+      value: (
+        <>
+          {FOOTAGE.names}
+          <span className="text-muted">
+            {" — "}
+            <a href={FOOTAGE.href} target="_blank" rel="noopener noreferrer" className="spectrum-underline">
+              {FOOTAGE.by}
+              <span className="sr-only">{t.common.newTab}</span>
+            </a>
+          </span>
+        </>
+      ),
+    },
     {
       role: cr.ground,
       value: (

@@ -1,6 +1,6 @@
 "use client";
 
-import { NeonGround } from "./NeonGround";
+import { VideoGround } from "./VideoGround";
 import { Grain } from "./Grain";
 
 /**
@@ -15,12 +15,13 @@ import { Grain } from "./Grain";
  *
  * Layer order, back to front:
  *
- *   1  base          — near-black, a hair warm: the room the haze lights.
- *   2  neon ground   — the red floor haze, the dotted data-rain, scanlines
- *                      (NeonGround). It replaced the film (city → station),
- *                      which replaced the aurora; Aurora.tsx is kept,
- *                      unmounted. Under reduced motion the rain is one still
- *                      frame, so the ground looks the same and never moves.
+ *   1  base          — the void colour, for the frame before the footage paints.
+ *   2  video ground  — the sakura cliff under a blue moon, a dive into the
+ *                      moon at Work, then the red tunnel; the neon rain
+ *                      (NeonGround) is the tunnel's weather (VideoGround).
+ *                      Before it: the neon room, the film (city → station),
+ *                      the aurora — Aurora.tsx is kept, unmounted. Reduced
+ *                      motion gets the two posters and a dissolve.
  *   3  grain + vignette
  *
  * Everything here is `pointer-events-none` and sits at z-0; content is z-10.
@@ -28,8 +29,8 @@ import { Grain } from "./Grain";
 export function SiteBackdrop() {
   return (
     <div aria-hidden className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
-      <div className="absolute inset-0" style={{ background: "#040306" }} />
-      <NeonGround />
+      <div className="absolute inset-0" style={{ background: "var(--color-void)" }} />
+      <VideoGround />
       <Grain />
     </div>
   );

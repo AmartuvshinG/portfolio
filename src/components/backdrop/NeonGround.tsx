@@ -5,7 +5,16 @@ import { useBootReady } from "@/hooks/useBootReady";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
 import { registerScrollPause } from "@/lib/scrollPause";
 import { pointerEnabled, retainPointer, stepPointer } from "@/lib/pointer";
-import { FOCUS_MS, groundCovered, onCover, onSurge, readFocuses, readVelocity } from "@/lib/groundBus";
+import {
+  FOCUS_MS,
+  groundCovered,
+  onCover,
+  onDive,
+  onSurge,
+  readDive,
+  readFocuses,
+  readVelocity,
+} from "@/lib/groundBus";
 import { buildRain, drawRain, hash, type RainCol } from "@/lib/neonField";
 
 /**
@@ -13,8 +22,10 @@ import { buildRain, drawRain, hash, type RainCol } from "@/lib/neonField";
  * dotted data-rain falling through it. The background of the Neon Katakana
  * Preloader (repo root, `cyberpunk neon preloaer.txt`), behind every section.
  *
- * It replaced the film (the city → station reels), and kept the film's one
- * rule: it is the *only* ground, fixed at z-0, and no section paints its own.
+ * It was the whole ground for a while (after the film, before the footage).
+ * Now it lives inside VideoGround and only in the tunnel half: it fades in as
+ * the moon dive opens the corridor (lib/groundBus `dive`) and does not draw a
+ * single frame while the sakura cliff is the ground.
  *
  * Layers, back to front (the base gradient and the grain are SiteBackdrop's):
  *
@@ -25,8 +36,9 @@ import { buildRain, drawRain, hash, type RainCol } from "@/lib/neonField";
  *              the gutters and thin over the middle, where the text is.
  *   scanlines  a static repeating gradient, painted once.
  *
- * The rain listens to the page through lib/groundBus: scrolling down drives it
- * into streaks, the cursor stirs the columns it passes, a chapter's title card
+ * The rain listens to the page through lib/groundBus: scrolling down leans it
+ * into short streaks — eased, so it drifts into the scroll and back rather
+ * than snapping — the cursor stirs the columns it passes, a chapter's title card
  * brings it down hard over the heading.
  *
  * **Budget.** 24 fps (rain reads as rain well below display rate), a device-pixel
@@ -38,7 +50,7 @@ import { buildRain, drawRain, hash, type RainCol } from "@/lib/neonField";
 const FPS = 24;
 /** Device pixels the canvas may have, whatever the screen. */
 const MAX_PIXELS = 2_000_000;
-const GLOW: [number, number, number] = [126, 234, 255]; // --color-holo
+const GLOW: [number, number, number] = [143, 233, 240]; // --color-holo
 const CORE = "#dcfbff";
 /** Overall strength of the rain behind the page (the gate runs at 1). */
 const LEVEL = 0.75;
@@ -101,6 +113,9 @@ export function NeonGround() {
     let drawnAt = 0;
     let surgeAt = -1e9;
     let stopped = false;
+    /* The scroll velocity, followed rather than taken raw: the rain leans into
+       a scroll and settles back over ~half a second instead of jumping. */
+    let vs = 0;
     const fine = pointerEnabled();
 
     const build = () => {
@@ -167,9 +182,10 @@ export function NeonGround() {
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       ctx.clearRect(0, 0, W, H);
 
-      const v = readVelocity(now);
-      const speed = v >= 0 ? 1 + Math.min(3, v * 0.14) : Math.max(0.3, 1 + v * 0.08);
-      const stretch = v > 0 ? Math.min(150, v * 7) : 0;
+      vs += (readVelocity(now) - vs) * Math.min(1, dt / 200);
+      const v = vs;
+      const speed = v >= 0 ? 1 + Math.min(0.6, v * 0.04) : Math.max(0.6, 1 + v * 0.03);
+      const stretch = v > 0 ? Math.min(40, v * 2.2) : 0;
       const swell = Math.max(0, 1 - (now - surgeAt) / 1400);
 
       // the threads hanging through the room, breathing
@@ -199,7 +215,12 @@ export function NeonGround() {
     };
 
     const running = () =>
-      !stopped && !reduced && booted && document.visibilityState === "visible" && !groundCovered();
+      !stopped &&
+      !reduced &&
+      booted &&
+      readDive() > 0.02 &&
+      document.visibilityState === "visible" &&
+      !groundCovered();
 
     /* What the diagnostics panel reads (` key): written on change only. */
     let reported = "";
@@ -245,6 +266,13 @@ export function NeonGround() {
     window.addEventListener("resize", onResize);
     document.addEventListener("visibilitychange", wake);
     const unCover = onCover(wake);
+    /* Opacity tracks the dive: one style write per change, no layout. */
+    const fade = () => {
+      root.style.opacity = readDive().toFixed(3);
+      wake();
+    };
+    fade();
+    const unDive = onDive(fade);
     const unSurge = onSurge(() => {
       surgeAt = performance.now();
     });
@@ -257,13 +285,14 @@ export function NeonGround() {
       window.removeEventListener("resize", onResize);
       document.removeEventListener("visibilitychange", wake);
       unCover();
+      unDive();
       unSurge();
       release();
     };
   }, [booted, reduced]);
 
   return (
-    <div ref={rootRef} className="neon-ground absolute inset-0" data-ground-renderer="2D canvas">
+    <div ref={rootRef} className="neon-ground absolute inset-0" style={{ opacity: 0 }} data-ground-renderer="2D canvas">
       <div className="ground-haze absolute inset-0" />
       <canvas ref={canvasRef} className="absolute inset-0 h-full w-full" />
       <div className="ground-scan absolute inset-0" />

@@ -1,8 +1,9 @@
 /**
  * What the page tells its ground.
  *
- * The ground (NeonGround: dotted rain over a red floor haze) is one fixed
- * canvas behind every section, so it cannot see the page. These are the few
+ * The ground (VideoGround: the sakura cliff, then the tunnel, with the
+ * NeonGround rain in the tunnel half) is fixed behind every section, so it
+ * cannot see the page. These are the few
  * things the page says to it, as plain module state the ground reads from its
  * own frame loop — never a custom property on `<html>`, which would invalidate
  * style for the whole document every scroll frame (perf budget, item 4).
@@ -108,5 +109,28 @@ export function onCover(l: Listener) {
   coverListeners.add(l);
   return () => {
     coverListeners.delete(l);
+  };
+}
+
+/* --- The dive: how far the ground has gone from the sakura cliff into the
+   tunnel, 0–1. Written by VideoGround from scroll (a pure function of where
+   the page is); read by the rain, which only lives in the tunnel half. */
+let dive = 0;
+const diveListeners = new Set<Listener>();
+
+export function setDive(p: number) {
+  if (Math.abs(p - dive) < 0.001) return;
+  dive = p;
+  for (const l of diveListeners) l();
+}
+
+export function readDive() {
+  return dive;
+}
+
+export function onDive(l: Listener) {
+  diveListeners.add(l);
+  return () => {
+    diveListeners.delete(l);
   };
 }
