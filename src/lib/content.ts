@@ -160,7 +160,7 @@ export const profile = {
   role: "Software Engineer",
   discipline: "Full-stack · Machine Learning · UI/UX",
   location: "Ulaanbaatar, Mongolia · GMT+8",
-  status: "OPEN TO ENTRY-LEVEL SOFTWARE ENGINEERING ROLES",
+  status: "OPEN TO ENTRY-LEVEL SOFTWARE ENGINEERING JOBS",
   /** Set in the editorial serif under the name. */
   heroLead: "Hi, I'm Amartuvshin. Welcome to my portfolio.",
   /**
@@ -172,8 +172,8 @@ export const profile = {
    */
   heroLeadLines: ["Hi, I'm Amartuvshin.", "Welcome to my portfolio."],
   heroSub:
-    "Software engineering graduate. I build full-stack web apps and machine learning tools, most recently an AI bug triage platform trained on 222,000+ Mozilla Firefox bug reports.",
-  kicker: "PORTFOLIO — 2026",
+    "Software engineering graduate. I build websites, web apps and machine learning tools. Most recently: an app that sorts bug reports by how serious they are, trained on 222,000+ real Firefox bugs.",
+  kicker: "PORTFOLIO · 2026",
   /**
    * The name in classical Mongolian script (Mongol bichig), set vertically as
    * the hero's neon sign. Spelling confirmed by Amartuvshin (2026-09-30):
@@ -241,13 +241,13 @@ export const about = {
   lead: "Gannon University graduate, now back home in Ulaanbaatar.",
   paragraphs: [
     "I graduated from Gannon University (Erie, Pennsylvania) in May 2026 with a B.S. in Software Engineering. My capstone, Spotfixes, is a live web platform that predicts how serious a software bug is and finds duplicate reports, built on real Mozilla Firefox data with feedback from Firefox developers. I led its UI/UX and usability testing.",
-    "I work mainly in Java, Python and React, and I care about the parts of software people notice: clear interfaces, reliable behaviour, and testing that catches problems before users do. I'm back in Ulaanbaatar, fluent in Mongolian and English, and looking for my first full-time software engineering role.",
+    "I work mostly in Java, Python and React. I like making software that is easy to use, works every time, and gets tested before anyone else finds the bugs. I'm back in Ulaanbaatar, I speak Mongolian and English, and I'm looking for my first full-time job as a software engineer.",
   ],
   signature: [
     { k: "FOCUS", v: "Full-stack · ML" },
-    { k: "STACK", v: "Java · Python · React" },
+    { k: "LANGUAGES", v: "Java · Python · React" },
     { k: "DEGREE", v: "B.S. SE · Dean's List ×3" },
-    { k: "BASE", v: "Ulaanbaatar, MN" },
+    { k: "LIVES IN", v: "Ulaanbaatar, MN" },
   ],
 };
 
@@ -342,12 +342,12 @@ export const projects: Project[] = [
     slug: "spotfixes",
     index: "01",
     title: "SPOTFIXES",
-    category: "AI Bug Triage Platform",
+    category: "Bug-sorting web app",
     year: "2026",
     role: "UI/UX Lead & QA · Team of 3",
     status: "Live",
     summary:
-      "A live web platform that predicts software bug severity and finds duplicate reports, trained on 222,000+ Mozilla Firefox bugs.",
+      "A live web app that tells you how serious a bug report is and finds duplicates, trained on 222,000+ real Firefox bugs.",
     description:
       "Spotfixes was our year-long senior design capstone at Gannon University (Fall 2025 – Spring 2026), built with feedback from Mozilla Firefox developers and our faculty mentor. It predicts a bug's severity (S1–S4) with a TF-IDF + Random Forest model plus a critical-keyword rule engine, and uses RAG similarity search to surface the three most similar past bugs. Companies get isolated workspaces (multi-tenant, Supabase row-level security), can bulk-upload their own bugs, and retrain the model on them. I led the React UI/UX, ran usability testing and QA logging, and assessed the Docker deployment on Ubuntu.",
     stack: ["React", "FastAPI", "Python", "scikit-learn", "ChromaDB", "Supabase", "Docker"],
@@ -404,7 +404,7 @@ export const projects: Project[] = [
     highlights: [
       "Two complete concept sites, both deployed",
       "AI-assisted workflow: Claude Code with Firecrawl, Nano Banana, Magic and Stitch",
-      "Fictional brands — the studio, universe and claims are part of the design brief",
+      "Fictional brands: the studio, the universe and their claims were all part of the brief",
     ],
     accent: "accent-2",
     shot: "/work/web-design.webp",
@@ -446,7 +446,7 @@ export const projects: Project[] = [
     role: "Designer & Developer",
     status: "In progress",
     summary:
-      "The site you're on: a cinematic, scroll-driven portfolio built in Next.js with an accessibility check in CI.",
+      "The site you're on: a portfolio that moves as you scroll, built in Next.js, with an accessibility check on every update.",
     description:
       "Designed and built from scratch with Next.js 16, React 19, TypeScript, Tailwind CSS v4, GSAP and Framer Motion. Every push runs type-checking, linting, a production build and an automated axe accessibility sweep in GitHub Actions, and every animation has a reduced-motion fallback.",
     stack: ["Next.js", "TypeScript", "Tailwind", "GSAP", "GitHub Actions"],
@@ -462,13 +462,13 @@ export const projects: Project[] = [
     gallery: [
       {
         src: "/work/portfolio-work.webp",
-        alt: "This site's work section: case-file cards floating in a scroll-driven 3D world, with a roster of project links.",
-        caption: "The work world",
+        alt: "This site's projects section: project cards floating in a 3D space that moves as you scroll, with a list of project links.",
+        caption: "The projects section",
       },
       {
         src: "/work/portfolio-path.webp",
         alt: "This site's path section: an LED globe zoomed onto the Great Lakes, a lit route arriving at Erie from over the pole, and a route log with the 2022 entry open.",
-        caption: "The route",
+        caption: "The journey map",
       },
     ],
   },
@@ -521,7 +521,7 @@ export const timeline: TimelineEntry[] = [
     crop: { x: 0.48, y: 0.6, scale: 1.3 },
     title: "Summer Student Conference Assistant",
     org: "Auxiliary Services · Gannon University",
-    description: "Prepared residence halls and supported conference guests, tracking workflows in Excel and Word.",
+    description: "Got residence halls ready for summer conferences and helped guests, keeping track of the work in Excel and Word.",
   },
   {
     start: { year: 2023, month: 8 },
@@ -535,7 +535,7 @@ export const timeline: TimelineEntry[] = [
     title: "Front Desk Student Attendant",
     org: "Office of Residence Life · Gannon University",
     description:
-      "Maintained student housing records in StarRez and resolved resident inquiries by phone, email and in person.",
+      "Kept student housing records up to date in StarRez and answered residents' questions by phone, email and in person.",
   },
   {
     start: { year: 2024, month: 1 },
@@ -547,7 +547,7 @@ export const timeline: TimelineEntry[] = [
     photo: "zurn",
     title: "Android Apps · Mobile App Development II",
     org: "Gannon University · Coursework",
-    description: "Built Android apps in Android Studio with real-time device simulations and APIs.",
+    description: "Built Android apps in Android Studio, tested on simulated phones, using live data from APIs.",
   },
   {
     start: { year: 2024, month: 8 },
@@ -561,7 +561,7 @@ export const timeline: TimelineEntry[] = [
     title: "Test Suite · Software Testing & QA",
     org: "Gannon University · Coursework",
     description:
-      "Designed and ran test cases for a Java calculator app, resolving the bugs they found through GitHub collaboration.",
+      "Wrote and ran tests for a Java calculator app, then fixed the bugs they found with my team on GitHub.",
   },
   {
     start: { year: 2025, month: 5 },
@@ -573,7 +573,7 @@ export const timeline: TimelineEntry[] = [
     photo: "chickfila",
     title: "Foodservice Student Worker",
     org: "Metz Culinary Management · Chick-fil-A",
-    description: "High-volume food preparation and inventory restocking at peak hours, to food safety standards.",
+    description: "Prepared food and restocked supplies during the busiest hours, following food safety rules.",
   },
   {
     start: { year: 2025, month: 8 },
@@ -587,7 +587,7 @@ export const timeline: TimelineEntry[] = [
     title: "Spotfixes · Senior Design Capstone",
     org: "Gannon University · Team of 3",
     description:
-      "A live platform that predicts bug severity, trained on 222,000+ Mozilla Firefox bug records. I led the React UI/UX and the usability testing and QA.",
+      "A live web app that rates how serious a bug report is, trained on 222,000+ real Firefox bugs. I led the design and the testing.",
   },
   {
     start: { year: 2026, month: 5 },
@@ -614,7 +614,7 @@ export const timeline: TimelineEntry[] = [
     title: "Corporate Logistics Coordinator",
     org: "Oyu Tolgoi LLC · Contractor, Ulaanbaatar",
     description:
-      "Central contact for freight and transport between the Ulaanbaatar headquarters and the mine site, across teams and contractors; monitored logistics data for routing inefficiencies under strict safety standards.",
+      "The main contact for shipping and transport between the Ulaanbaatar head office and the mine site, working with many teams and contractors. I tracked logistics data to find slow or wasteful routes, under strict safety rules.",
   },
 ];
 
