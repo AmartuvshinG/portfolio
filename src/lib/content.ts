@@ -240,7 +240,7 @@ export const about = {
   heading: "ABOUT ME",
   lead: "Gannon University graduate, now back home in Ulaanbaatar.",
   paragraphs: [
-    "I graduated from Gannon University (Erie, Pennsylvania) in May 2026 with a B.S. in Software Engineering. My capstone, Spotfixes, is a live web platform that predicts how serious a software bug is and finds duplicate reports, built on real Mozilla Firefox data with feedback from Firefox developers. I led its UI/UX and usability testing.",
+    "I graduated from Gannon University (Erie, Pennsylvania) in May 2026 with a B.S. in Software Engineering. My capstone, Spotfixes, is a live web platform that predicts how serious a software bug is and finds duplicate reports, built on real Mozilla Firefox data with feedback from Firefox developers. I built much of its backend, tenant system and deployment, and led its UI/UX and testing.",
     "I work mostly in Java, Python and React. I like making software that is easy to use, works every time, and gets tested before anyone else finds the bugs. I'm back in Ulaanbaatar, I speak Mongolian and English, and I'm looking for my first full-time job as a software engineer.",
   ],
   signature: [
@@ -249,6 +249,12 @@ export const about = {
     { k: "DEGREE", v: "B.S. SE · Dean's List ×3" },
     { k: "LIVES IN", v: "Ulaanbaatar, MN" },
   ],
+  /** Titles as Amartuvshin gave them (2026-10-04); add none they did not name. */
+  offHours: {
+    label: "OFF HOURS",
+    note: "What I play when I'm not shipping.",
+    games: ["Call of Duty", "Marvel Rivals", "Cyberpunk 2077", "Diablo IV", "Apex Legends", "Overwatch"],
+  },
 };
 
 /** No self-rated proficiency numbers: a 0–100 bar reads as padding. */
@@ -257,7 +263,7 @@ export const capabilities: Capability[] = [
     code: "SYS/01",
     title: "Full-stack Web",
     description:
-      "React frontends on FastAPI backends with PostgreSQL (Supabase), REST APIs, and multi-tenant data isolation.",
+      "React frontends on FastAPI backends with PostgreSQL (Supabase): for Spotfixes, most of the company and admin API, per-company data tables, and a live Bugzilla sync.",
     tags: ["React", "FastAPI", "PostgreSQL"],
     stack: ["react", "fastapi", "postgresql", "supabase"],
     courses: ["CIS 255", "CIS 390", "CIS 240"],
@@ -316,7 +322,7 @@ export const capabilities: Capability[] = [
     code: "SYS/06",
     title: "DevOps & Security",
     description:
-      "Docker on Ubuntu, GitHub Actions CI/CD, and authentication with OAuth2, JWT, MFA and row-level security.",
+      "Wrote the Spotfixes Docker setup and GitHub Actions CI/CD, deployed it with SSL on Ubuntu, and hardened its API; OAuth2, JWT, MFA and row-level security.",
     tags: ["Docker", "CI/CD", "OAuth2"],
     stack: ["docker", "ubuntu", "githubactions", "jwt"],
     courses: ["CIS 387", "SOFT 410", "CIS 219", "CSC 330"],
@@ -344,20 +350,22 @@ export const projects: Project[] = [
     title: "SPOTFIXES",
     category: "Bug-sorting web app",
     year: "2026",
-    role: "UI/UX Lead & QA · Team of 3",
+    role: "Full-stack Engineer · UI/UX Lead · Team of 3",
     status: "Live",
     summary:
       "A live web app that tells you how serious a bug report is and finds duplicates, trained on 222,000+ real Firefox bugs.",
     description:
-      "Spotfixes was our year-long senior design capstone at Gannon University (Fall 2025 – Spring 2026), built with feedback from Mozilla Firefox developers and our faculty mentor. It predicts a bug's severity (S1–S4) with a TF-IDF + Random Forest model plus a critical-keyword rule engine, and uses RAG similarity search to surface the three most similar past bugs. Companies get isolated workspaces (multi-tenant, Supabase row-level security), can bulk-upload their own bugs, and retrain the model on them. I led the React UI/UX, ran usability testing and QA logging, and assessed the Docker deployment on Ubuntu.",
+      "Spotfixes was our year-long senior design capstone at Gannon University (Fall 2025 – Spring 2026), built with feedback from Mozilla Firefox developers and our faculty mentor. It predicts a bug's severity (S1–S4) with a TF-IDF + Random Forest model plus a critical-keyword rule engine, and uses RAG similarity search to surface the three most similar past bugs. Companies get isolated workspaces (multi-tenant, Supabase row-level security), can bulk-upload their own bugs, and retrain the model on them. On the backend I built most of the company and admin API (per-company bug tables, invites, approvals), the per-company retraining pipeline with live progress, a consent switch that keeps opted-out data out of the shared model, and a live sync with Mozilla's Bugzilla. I wrote the Docker setup and GitHub Actions pipeline, deployed it with SSL on Ubuntu, and ran a security pass over the API. I also led the React UI/UX, usability testing and QA logging, and merged my teammates' features into the release.",
     stack: ["React", "FastAPI", "Python", "scikit-learn", "ChromaDB", "Supabase", "Docker"],
     highlights: [
       "89% severity-prediction accuracy (final report); 97.6% when scored across the full dataset, training data included",
       "Multi-tenant: three roles, each company's data isolated at the database row level",
       "Duplicate detection by meaning, not keywords (ChromaDB + RAG)",
       "3.4 s average prediction, 1.2 s similarity search (target: under 5 s)",
+      "Each company retrains its own model; a consent switch keeps opted-out bugs out of the shared one",
+      "Live Bugzilla sync pulls new Firefox bugs every 48 hours",
       "Usability testing found duplicate-admin and retraining-progress bugs, both fixed",
-      "Deployed live at spotfixes.com with GitHub Actions CI/CD",
+      "Deployed live at spotfixes.com: my Docker setup, GitHub Actions CI/CD and SSL on Ubuntu",
     ],
     accent: "accent",
     shot: "/work/spotfixes.webp",
@@ -587,7 +595,7 @@ export const timeline: TimelineEntry[] = [
     title: "Spotfixes · Senior Design Capstone",
     org: "Gannon University · Team of 3",
     description:
-      "A live web app that rates how serious a bug report is, trained on 222,000+ real Firefox bugs. I led the design and the testing.",
+      "A live web app that rates how serious a bug report is, trained on 222,000+ real Firefox bugs. I built much of the backend and deployment, and led the design and the testing.",
   },
   {
     start: { year: 2026, month: 5 },

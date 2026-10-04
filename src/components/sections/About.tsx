@@ -134,6 +134,27 @@ export function About() {
             </div>
           </div>
         </Reveal>
+
+        {/* Off hours: one row under the file, not a chapter of its own. Plain
+            text titles: no game logos, and nothing here is clickable. */}
+        <Reveal className="mt-8 md:mt-10">
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:gap-8">
+            <div className="flex shrink-0 flex-col gap-1">
+              <span className="micro text-[var(--color-holo)]">{about.offHours.label}</span>
+              <span className="text-sm text-muted">{about.offHours.note}</span>
+            </div>
+            <ul className="flex flex-wrap gap-2" aria-label={about.offHours.label}>
+              {about.offHours.games.map((g) => (
+                <li
+                  key={g}
+                  className="border border-line bg-[#061317]/60 px-3 py-2 font-tech text-sm font-semibold uppercase tracking-wide text-fg"
+                >
+                  {g}
+                </li>
+              ))}
+            </ul>
+          </div>
+        </Reveal>
       </div>
     </section>
   );
