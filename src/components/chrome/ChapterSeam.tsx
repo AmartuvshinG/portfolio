@@ -118,8 +118,11 @@ export function ChapterSeam({
            sections are `overflow-hidden`, and anything hanging above the top
            edge gets clipped in half. The horizon variant already rests half off
            its own container's top, which puts the crown where the join is
-           without needing to escape the box. */
-        "pointer-events-none absolute inset-x-0 top-0 z-0",
+           without needing to escape the box. Clipped on x only: the card's
+           nowrap ghost word slides past the right edge, and Work does not
+           clip, so it widened the page by ~170px (and a phone's layout
+           viewport to 528px). `clip`, not `hidden`, so y stays visible. */
+        "pointer-events-none absolute inset-x-0 top-0 z-0 overflow-x-clip",
         reduced ? "h-px" : "h-[42vh]",
         className
       )}

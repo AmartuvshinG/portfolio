@@ -11,6 +11,7 @@ import { ChapterSeam } from "@/components/chrome/ChapterSeam";
 import { GitHubMark, LinkedInMark } from "@/components/ui/BrandMarks";
 import { ScriptLabel } from "@/components/ui/ScriptLabel";
 import type { GitHubSummary } from "@/lib/github";
+import imageLoader from "@/lib/imageLoader";
 
 /**
  * Links: the three places to find him, as three compact cartridges.
@@ -241,8 +242,9 @@ function Fact({ kind, github }: { kind: Kind; github: GitHubSummary | null }) {
 function LiveThumb({ src }: { src: string }) {
   return (
     <span className="relative block h-full overflow-hidden rounded-md ring-1 ring-white/15">
-      {/* eslint-disable-next-line @next/next/no-img-element -- decorative, fixed asset */}
-      <img src={src} alt="" loading="lazy" className="block h-full w-auto object-cover object-top" />
+      {/* eslint-disable-next-line @next/next/no-img-element -- decorative, fixed asset; the
+          smallest baked width, since it is drawn ~90px wide */}
+      <img src={imageLoader({ src, width: 640 })} alt="" loading="lazy" className="block h-full w-auto object-cover object-top" />
     </span>
   );
 }
