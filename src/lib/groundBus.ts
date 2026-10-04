@@ -17,6 +17,8 @@
  *   - **focus** — a chapter's title card arriving. The rain over the heading
  *     comes down hard for a moment, like a burst of signal behind the
  *     masthead. Once per chapter.
+ *   - **strike** — the hero name's tube has caught. Its light spills over the
+ *     footage: a stutter in step with the tube, then a low warm cast.
  *   - **cover** — something opaque fills the screen (the Path's pinned globe,
  *     an open case file, the intro). The ground stops drawing until it is
  *     uncovered: nothing behind an opaque surface needs a frame.
@@ -132,5 +134,24 @@ export function onDive(l: Listener) {
   diveListeners.add(l);
   return () => {
     diveListeners.delete(l);
+  };
+}
+
+/* --- The strike: the hero's neon name has just caught. The ground answers
+   with the sign's light spilling over the cliff and the moon, stuttering in
+   step with the tube, then holding as a low warm cast. Once per page load. */
+let struck = false;
+const strikeListeners = new Set<Listener>();
+
+export function groundStrike() {
+  if (struck) return;
+  struck = true;
+  for (const l of strikeListeners) l();
+}
+
+export function onStrike(l: Listener) {
+  strikeListeners.add(l);
+  return () => {
+    strikeListeners.delete(l);
   };
 }

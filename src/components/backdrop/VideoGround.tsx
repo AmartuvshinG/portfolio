@@ -3,7 +3,8 @@
 import { useEffect, useRef, useState } from "react";
 import { useBootReady } from "@/hooks/useBootReady";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
-import { groundCovered, onCover, setDive } from "@/lib/groundBus";
+import { usePointerDrift } from "@/hooks/usePointerDrift";
+import { groundCovered, onCover, onStrike, setDive } from "@/lib/groundBus";
 import { NeonGround } from "./NeonGround";
 
 /**
@@ -32,6 +33,21 @@ import { NeonGround } from "./NeonGround";
  * paused once the dive is through. Both stop for a hidden tab, the intro
  * curtain, and anything opaque over the screen (lib/groundBus `cover`). The
  * transforms are written per scroll frame only inside the dive range.
+ *
+ * **The arrival.** The cliff is not simply there when the curtain lifts: it
+ * starts pushed in and out of focus and settles over ~3.2s, a camera pulling
+ * back to find the frame as the name rises into it. Blur is costly on a
+ * fullscreen video, so it runs once and the filter is then removed outright.
+ *
+ * **The sign's light.** When the hero name strikes (groundBus `strike`), its
+ * sodium light spills onto the cliff and the moon: a warm cast centred on the
+ * name, stuttering in step with the tube (the same keyframes as
+ * `neon-strike`), then holding low. It fades with the hero, like the scrim,
+ * and sits under the scrim, so it never lifts the floor the copy stands on.
+ *
+ * **Depth.** The cliff drifts a little against the cursor, at under half the
+ * name's travel, so the frame has two planes before anyone scrolls. The plate
+ * rests at 1.03× so the drift never shows an edge.
  *
  * The rain (NeonGround) is the tunnel's weather: it fades in with the dive and
  * draws nothing before it. Reduced motion: posters only, and the dive is a
@@ -85,6 +101,27 @@ const VEIL: { at: string; edge: number; veil: number }[] = [
   { at: "end", edge: 1, veil: 0.74 },
 ];
 
+/** The plate's resting scale: margin for the drift to travel into. */
+const REST = 1.03;
+/** Where the arrival starts: pushed in and soft. */
+const ARRIVE_FROM = { transform: "scale(1.16)", filter: "blur(9px)" };
+/** The cliff's drift at full deflection, px. The name's is 30. */
+const DRIFT = 13;
+/** The sign's light once it holds, as a fraction of its peak. */
+const CAST = 0.5;
+/** `neon-strike` (globals.css) as WAAPI keyframes over the same 0.9s. */
+const STRIKE: Keyframe[] = [
+  { opacity: 0.05, offset: 0 },
+  { opacity: 1, offset: 0.06 },
+  { opacity: 0.25, offset: 0.1 },
+  { opacity: 1, offset: 0.18 },
+  { opacity: 0.35, offset: 0.22 },
+  { opacity: 1, offset: 0.34 },
+  { opacity: 0.65, offset: 0.4 },
+  { opacity: 1, offset: 0.46 },
+  { opacity: 1, offset: 1 },
+];
+
 const clamp = (v: number, lo = 0, hi = 1) => Math.min(hi, Math.max(lo, v));
 const easeInOut = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
 
@@ -95,6 +132,10 @@ export function VideoGround() {
   const tunnelLayer = useRef<HTMLDivElement>(null);
   const veilRef = useRef<HTMLDivElement>(null);
   const scrimRef = useRef<HTMLDivElement>(null);
+  const arriveRef = useRef<HTMLDivElement>(null);
+  const castRef = useRef<HTMLDivElement>(null);
+  const lightRef = useRef<HTMLDivElement>(null);
+  const drift = usePointerDrift(DRIFT);
   const booted = useBootReady();
   const reduced = useReducedMotion();
   const [phone, setPhone] = useState(false);
@@ -185,7 +226,9 @@ export function VideoGround() {
       // The dive section's top: at the bottom of the screen → 20% up.
       const p = clamp((y + H - diveTop) / (H * 0.8));
       veil.style.opacity = veilAt(y).toFixed(3);
-      if (scrimRef.current) scrimRef.current.style.opacity = clamp(1 - y / Math.max(1, heroEnd - H * 0.5)).toFixed(3);
+      const heroUp = clamp(1 - y / Math.max(1, heroEnd - H * 0.5)).toFixed(3);
+      if (scrimRef.current) scrimRef.current.style.opacity = heroUp;
+      if (castRef.current) castRef.current.style.opacity = heroUp;
       setDive(p);
       if (p === lastP) return;
       lastP = p;
@@ -236,6 +279,56 @@ export function VideoGround() {
       ro.disconnect();
       window.removeEventListener("scroll", onScroll);
       window.removeEventListener("resize", onScroll);
+    };
+  }, [reduced]);
+
+  /* --- The arrival: settle from pushed-in and soft to rest. ---------------- */
+  useEffect(() => {
+    const el = arriveRef.current;
+    if (!el || reduced || !booted) return;
+    const anim = el.animate([ARRIVE_FROM, { transform: `scale(${REST})`, filter: "blur(0px)" }], {
+      duration: 3200,
+      easing: "cubic-bezier(0.16, 1, 0.3, 1)",
+      fill: "forwards",
+    });
+    /* Commit the end state with no filter at all: a filter left on a
+       fullscreen video, even blur(0), keeps it on the slow path. */
+    anim.onfinish = () => {
+      el.style.transform = `scale(${REST})`;
+      el.style.filter = "";
+      anim.cancel();
+    };
+    return () => anim.cancel();
+  }, [booted, reduced]);
+
+  /* --- The sign's light: stutter with the tube, then hold low. ------------ */
+  useEffect(() => {
+    const el = lightRef.current;
+    if (!el) return;
+    if (reduced) {
+      el.style.opacity = String(CAST);
+      return;
+    }
+    const running: Animation[] = [];
+    const off = onStrike(() => {
+      const strike = el.animate(STRIKE, { duration: 900, fill: "forwards" });
+      running.push(strike);
+      strike.onfinish = () => {
+        const settle = el.animate([{ opacity: 1 }, { opacity: CAST }], {
+          duration: 1600,
+          easing: "cubic-bezier(0.33, 0, 0.2, 1)",
+          fill: "forwards",
+        });
+        running.push(settle);
+        settle.onfinish = () => {
+          el.style.opacity = String(CAST);
+          running.forEach((a) => a.cancel());
+        };
+      };
+    });
+    return () => {
+      off();
+      running.forEach((a) => a.cancel());
     };
   }, [reduced]);
 
@@ -290,22 +383,31 @@ export function VideoGround() {
 
   return (
     <>
+      {/* Three planes, one transform each: the dive (scroll), the arrival
+          (once, on boot) and the drift (pointer). On one element they would
+          overwrite each other. */}
       <div ref={sakuraLayer} className="absolute inset-0 will-change-transform">
         {reduced ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={SET.poster.sakura} alt="" className="h-full w-full object-cover" style={fit} />
         ) : (
-          <video
-            ref={sakuraRef}
-            className="h-full w-full object-cover"
-            style={fit}
-            src={src.sakura}
-            poster={SET.poster.sakura}
-            muted
-            loop
-            playsInline
-            preload="auto"
-          />
+          /* Held at the arrival's first frame until boot, so what the lifting
+             curtain uncovers is already the start of the move. */
+          <div ref={arriveRef} className="absolute inset-0" style={ARRIVE_FROM}>
+            <div ref={drift} className="absolute inset-0">
+              <video
+                ref={sakuraRef}
+                className="h-full w-full object-cover"
+                style={fit}
+                src={src.sakura}
+                poster={SET.poster.sakura}
+                muted
+                loop
+                playsInline
+                preload="auto"
+              />
+            </div>
+          </div>
         )}
       </div>
       <div
@@ -333,6 +435,21 @@ export function VideoGround() {
       {/* The veil: the ground's own colour, so the footage sinks into the
           page rather than going grey. */}
       <div ref={veilRef} className="absolute inset-0 bg-void" style={{ opacity: 0.5 }} />
+      {/* The sign's light, centred on the name (≈31% down on a phone, 43%
+          from md) and wide and low like a tube's spill. `screen` adds light
+          rather than tinting: the moon warms, the shadows stay dark. The
+          outer layer fades with the hero; the inner one strikes. */}
+      <div ref={castRef} className="pointer-events-none absolute inset-0">
+        <div
+          ref={lightRef}
+          className="absolute inset-0 mix-blend-screen [--cast-y:31%] md:[--cast-y:43%]"
+          style={{
+            opacity: 0,
+            background:
+              "radial-gradient(ellipse 62% 30% at 50% var(--cast-y), rgb(255 106 61 / 0.78), rgb(255 106 61 / 0.3) 46%, transparent 80%)",
+          }}
+        />
+      </div>
       {/* The hero's copy sits over the lit moon (3.2:1 on desktop once the
           lead rises to mid-screen, 3.5:1 on a portrait phone), so the floor
           of the frame darkens under it — and only while the hero is up. */}

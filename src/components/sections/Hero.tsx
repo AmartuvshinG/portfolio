@@ -11,6 +11,7 @@ import { ScrambleText } from "@/components/motion/ScrambleText";
 import { WordRevealLines } from "@/components/motion/WordReveal";
 import { Focus } from "@/components/hero/Entrance";
 import { InkSign } from "@/components/ui/InkSign";
+import { groundStrike } from "@/lib/groundBus";
 
 /**
  * The opening frame: the name at a scale that has to break to fit, over the
@@ -81,7 +82,11 @@ export function Hero() {
      the city does, not something the screen does wrong. */
   useEffect(() => {
     if (!play) return;
-    const on = setTimeout(() => setStruck(true), STRIKE_AT);
+    const on = setTimeout(() => {
+      setStruck(true);
+      /* The ground lights with it: the sign's glow spills over the footage. */
+      groundStrike();
+    }, STRIKE_AT);
     return () => clearTimeout(on);
   }, [play]);
   const lit = reduced || struck;
