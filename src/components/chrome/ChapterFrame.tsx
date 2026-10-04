@@ -226,7 +226,7 @@ function ChapterSpine({ chapters, active }: { chapters: string[]; active: number
   return (
     <div
       ref={trackRef}
-      className="group/spine absolute bottom-[18vh] right-1.5 top-[18vh] w-px translate-x-1/2 lg:right-5"
+      className="group/spine absolute bottom-[18vh] right-[max(0.375rem,env(safe-area-inset-right))] top-[18vh] w-px translate-x-1/2 lg:right-5"
       /* On the track, not the strip, so a press that lands on a chapter tick
          can still become a drag; a tick that is only clicked goes to its
          chapter. */

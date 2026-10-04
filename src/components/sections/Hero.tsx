@@ -151,8 +151,8 @@ export function Hero() {
       <div
         className={
           reduced
-            ? "relative flex min-h-dvh w-full flex-col justify-end overflow-hidden"
-            : "sticky top-0 flex h-dvh w-full flex-col justify-end overflow-hidden"
+            ? "relative flex min-h-svh w-full flex-col justify-end overflow-hidden"
+            : "sticky top-0 flex h-svh w-full flex-col justify-end overflow-hidden"
         }
       >
         {/* ---- THE NAME ---------------------------------------------- */}

@@ -153,7 +153,7 @@ function PinnedStatement({ lead, heading, stats }: { lead: string; heading: stri
 
   return (
     <div ref={ref} className="relative" style={{ height: `${STAGE_VH}vh` }}>
-      <div className="sticky top-0 flex h-dvh flex-col justify-center">
+      <div className="sticky top-0 flex h-svh flex-col justify-center">
         <StatementBody lead={lead} heading={heading} stats={stats} litCount={lit} progress={leadP} />
       </div>
     </div>

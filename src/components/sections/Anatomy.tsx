@@ -1,6 +1,7 @@
 "use client";
 
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from "react";
+import { frameHeight } from "@/lib/viewport";
 import {
   AnimatePresence,
   motion,
@@ -115,7 +116,7 @@ function Stage({ sectionRef: ref }: { sectionRef: React.RefObject<HTMLElement | 
       if (!el) return;
       const k = Math.min(n - 1, Math.max(0, i));
       const top = el.getBoundingClientRect().top + window.scrollY;
-      const travel = el.offsetHeight - window.innerHeight;
+      const travel = el.offsetHeight - frameHeight();
       scrollTo(top + ((k + EDGE) / span) * travel);
     },
     [n, span, scrollTo, ref]
@@ -128,7 +129,7 @@ function Stage({ sectionRef: ref }: { sectionRef: React.RefObject<HTMLElement | 
       if (e.metaKey || e.ctrlKey || e.altKey) return;
       if (modalOpen() || isInteractive(document.activeElement)) return;
       const r = ref.current?.getBoundingClientRect();
-      if (!r || r.top > 1 || r.bottom < window.innerHeight - 1) return;
+      if (!r || r.top > 1 || r.bottom < frameHeight() - 1) return;
       e.preventDefault();
       goTo(beat + (e.key === "ArrowRight" ? 1 : -1));
     };
@@ -149,7 +150,7 @@ function Stage({ sectionRef: ref }: { sectionRef: React.RefObject<HTMLElement | 
   const boxRef = useRef<HTMLDivElement>(null);
 
   return (
-    <div className="sticky top-0 h-dvh w-full overflow-hidden">
+    <div className="sticky top-0 h-svh w-full overflow-hidden">
       <div className="relative mx-auto flex h-full max-w-[93.75rem] flex-col px-5 pb-6 pt-20 md:px-8 lg:px-16">
         <header className="relative flex flex-wrap items-end justify-between gap-x-10 gap-y-2 pt-3">
           <div>

@@ -244,7 +244,7 @@ export function LandingPhotos({
         />
         <rect ref={tipRef} width={6} height={6} fill="var(--color-holo)" opacity={0} />
       </svg>
-      <div className="absolute bottom-[6dvh] left-5 md:left-8 lg:left-[max(4rem,calc(50%-900px+4rem))]">
+      <div className="absolute bottom-[6svh] left-5 md:left-8 lg:left-[max(4rem,calc(50%-900px+4rem))]">
         {keys.map((k) => {
           const meta = PHOTOS[k];
           return (
@@ -253,7 +253,7 @@ export function LandingPhotos({
               ref={(el) => {
                 figs.current[k] = el;
               }}
-              className="absolute bottom-0 left-0 w-[min(30vw,var(--max),calc(40dvh*var(--a)))] [@media(max-height:820px)]:w-[min(30vw,var(--max),calc(34dvh*var(--a)))]"
+              className="absolute bottom-0 left-0 w-[min(30vw,var(--max),calc(40svh*var(--a)))] [@media(max-height:820px)]:w-[min(30vw,var(--max),calc(34svh*var(--a)))]"
               style={{ visibility: "hidden", ["--a" as string]: meta.aspect, ["--max" as string]: `${meta.maxCss}px` }}
             >
               <PhotoPlate

@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { iconStroke } from "@/lib/icon";
+import { frameHeight } from "@/lib/viewport";
 import Image from "next/image";
 import {
   animate,
@@ -114,7 +116,7 @@ export function CraftIndex({ items }: { items: Capability[] }) {
     const pin = pinRef.current;
     if (!pin || n < 2) return;
     const top = pin.getBoundingClientRect().top + window.scrollY;
-    const travel = pin.offsetHeight - window.innerHeight;
+    const travel = pin.offsetHeight - frameHeight();
     scrollTo(top + (travel * i) / (n - 1));
   };
 
@@ -314,6 +316,7 @@ function Slide({ item, index, live }: { item: Capability; index: number; live: b
               {proof.title}
               <ArrowRight
                 size={18}
+                strokeWidth={iconStroke(18)}
                 aria-hidden
                 className="text-muted transition-transform duration-200 group-hover:translate-x-1 group-hover:text-fg"
               />
@@ -356,7 +359,7 @@ function Schematic({ item, index }: { item: Capability; index: number }) {
               "linear-gradient(135deg, color-mix(in srgb, var(--spectrum-1) 34%, transparent), color-mix(in srgb, var(--spectrum-3) 24%, transparent))",
           }}
         >
-          <Icon className="h-1/2 w-1/2" strokeWidth={1.25} aria-hidden />
+          <Icon className="h-1/2 w-1/2" strokeWidth={iconStroke(56, "light")} aria-hidden />
         </span>
         <ul className="grid grid-cols-2 gap-x-6 gap-y-4">
           {item.stack.map((key) => (

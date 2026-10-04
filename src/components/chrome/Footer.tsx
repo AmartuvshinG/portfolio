@@ -87,7 +87,7 @@ export function Footer() {
   ];
 
   return (
-    <footer data-act="void" className="relative z-10 overflow-hidden text-fg" aria-label={t.footer.aria}>
+    <footer data-act="void" className="relative z-10 overflow-hidden pb-[env(safe-area-inset-bottom)] pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)] text-fg" aria-label={t.footer.aria}>
       {/* The intro's name again, as a lit street sign: his name in Mongol
           bichig running through a dot-matrix band (LedTicker). It steps only
           while on screen. */}

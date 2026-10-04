@@ -133,6 +133,14 @@ export const metadata: Metadata = {
   title: site.title,
   description: site.description,
   metadataBase: new URL(site.url),
+  /* Saved to an iPhone's Home Screen it opens with no Safari chrome, the
+     status bar laid over the page (the viewport is `cover`, so the ground
+     already runs under it). */
+  appleWebApp: {
+    capable: true,
+    title: "Amartuvshin",
+    statusBarStyle: "black-translucent",
+  },
   openGraph: {
     title: site.title,
     description: site.description,
@@ -153,6 +161,11 @@ export const viewport: Viewport = {
   themeColor: "#061317",
   width: "device-width",
   initialScale: 1,
+  /* Edge to edge. Without it every `env(safe-area-inset-*)` on the page is 0
+     and iOS letterboxes the site inside its toolbars. With it the ground runs
+     under Safari's glass bars the way a native page does, and fixed chrome
+     pads itself with the insets. */
+  viewportFit: "cover",
 };
 
 export default function RootLayout({
@@ -228,7 +241,7 @@ export default function RootLayout({
               <CommandPalette />
             </div>
             <ChapterKeys />
-            <main id="main" className="relative z-10">
+            <main id="main" className="relative z-10 pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)]">
               {children}
             </main>
             <Footer />

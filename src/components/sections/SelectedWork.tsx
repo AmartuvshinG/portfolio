@@ -1,6 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { iconStroke } from "@/lib/icon";
+import { frameHeight } from "@/lib/viewport";
 import Image from "next/image";
 import {
   cubicBezier,
@@ -149,7 +151,7 @@ function Theatre({ sectionRef: ref }: { sectionRef: React.RefObject<HTMLElement 
       if (!el) return;
       const i = Math.min(n - 1, Math.max(0, k));
       const top = el.getBoundingClientRect().top + window.scrollY;
-      const travel = el.offsetHeight - window.innerHeight;
+      const travel = el.offsetHeight - frameHeight();
       scrollTo(top + ((i + EDGE) / span) * travel);
     },
     [n, span, scrollTo, ref]
@@ -162,7 +164,7 @@ function Theatre({ sectionRef: ref }: { sectionRef: React.RefObject<HTMLElement 
       if (e.metaKey || e.ctrlKey || e.altKey) return;
       if (modalOpen() || isInteractive(document.activeElement)) return;
       const r = ref.current?.getBoundingClientRect();
-      if (!r || r.top > 1 || r.bottom < window.innerHeight - 1) return;
+      if (!r || r.top > 1 || r.bottom < frameHeight() - 1) return;
       e.preventDefault();
       goTo(active + (e.key === "ArrowRight" ? 1 : -1));
     };
@@ -177,7 +179,7 @@ function Theatre({ sectionRef: ref }: { sectionRef: React.RefObject<HTMLElement 
       {/* The pinned stage had no seam, so Work was the one chapter without a
           join or a chapter card. */}
       <ChapterSeam />
-      <div className="sticky top-0 h-dvh w-full overflow-hidden">
+      <div className="sticky top-0 h-svh w-full overflow-hidden">
         {/* Per-file light. A radial gradient each, crossfaded on opacity — no
             blur filter, so nothing here is re-rasterised on scroll. */}
         {projects.map((p, i) => (
@@ -210,7 +212,7 @@ function Theatre({ sectionRef: ref }: { sectionRef: React.RefObject<HTMLElement 
 
             {/* Monitor */}
             <div className="relative flex items-center justify-center">
-              <div className="relative w-full" style={{ maxWidth: "min(100%, calc((100dvh - 17rem) * 1.6))" }}>
+              <div className="relative w-full" style={{ maxWidth: "min(100%, calc((100svh - 17rem) * 1.6))" }}>
                 {projects.map((p, i) => (
                   <Plates key={p.slug} project={p} pos={pos} i={i} n={n} live={live} />
                 ))}
@@ -241,7 +243,7 @@ function Theatre({ sectionRef: ref }: { sectionRef: React.RefObject<HTMLElement 
                         ))}
                       </div>
                       <span className="micro flex items-center gap-1.5 !text-fg opacity-0 transition-opacity duration-300 group-hover:opacity-100" aria-hidden>
-                        {t.work.open} <ArrowUpRight size={13} />
+                        {t.work.open} <ArrowUpRight size={13} strokeWidth={iconStroke(13, "medium")} />
                       </span>
                     </div>
 
