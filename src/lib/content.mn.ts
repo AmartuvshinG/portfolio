@@ -106,7 +106,7 @@ const projects: Record<string, ProjectWords> = {
     title: "ЭНЭ САЙТ",
     category: "Хувийн портфолио",
     role: "Дизайнер, хөгжүүлэгч",
-    status: "Хөгжүүлж байна",
+    status: "Ажиллаж байна",
     summary:
       "Таны үзэж буй сайт: гүйлгэхэд хөдөлдөг, Next.js дээр бүтээсэн, шинэчлэл бүрт хүртээмжийг шалгадаг портфолио.",
     description:

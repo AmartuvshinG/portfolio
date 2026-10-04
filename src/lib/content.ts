@@ -74,7 +74,8 @@ export interface Project {
    * `shot`. Captured from the live sites by `scripts/capture-shots.mjs`.
    */
   gallery?: { src: string; alt: string; caption?: string }[];
-  /** True for the portfolio itself — its address is wherever it is served. */
+  /** True for the portfolio itself. Its link is the canonical domain; without
+   *  one, the address bar shows wherever it is being served. */
   self?: boolean;
 }
 
@@ -451,7 +452,7 @@ export const projects: Project[] = [
     category: "Personal Portfolio",
     year: "2026",
     role: "Designer & Developer",
-    status: "In progress",
+    status: "Live",
     summary:
       "The site you're on: a portfolio that moves as you scroll, built in Next.js, with an accessibility check on every update.",
     description:
@@ -466,10 +467,11 @@ export const projects: Project[] = [
     shot: "/work/portfolio.webp",
     // Only put numbers here once they are measured on the deployed site.
     metrics: [],
+    links: [{ label: "AMARTUVSHIN.WORK", href: "https://amartuvshin.work" }],
     gallery: [
       {
         src: "/work/portfolio-work.webp",
-        alt: "This site's projects section: project cards floating in a 3D space that moves as you scroll, with a list of project links.",
+        alt: "This site's projects section: the Spotfixes story and figures on the left, its live site in a browser frame on a scroll-driven stage, and the project index below.",
         caption: "The projects section",
       },
       {
