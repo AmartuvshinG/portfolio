@@ -96,7 +96,7 @@ export function Footer() {
       </div>
 
       {/* ---- the credits --------------------------------------------- */}
-      <div className="relative mx-auto max-w-[1800px] px-5 pb-10 pt-24 md:px-8 md:pt-32">
+      <div className="relative mx-auto max-w-[112.5rem] px-5 pb-10 pt-24 md:px-8 md:pt-32">
         <InkSign
           tone="ghost"
           className="pointer-events-none absolute left-[4%] top-16 hidden h-[min(80%,34rem)] lg:block"
@@ -125,7 +125,7 @@ export function Footer() {
       </div>
 
       {/* ---- the house index ------------------------------------------- */}
-      <div className="mx-auto grid max-w-[1800px] gap-10 px-5 pb-12 pt-8 md:grid-cols-2 md:px-8">
+      <div className="mx-auto grid max-w-[112.5rem] gap-10 px-5 pb-12 pt-8 md:grid-cols-2 md:px-8">
         <FooterCol title={t.footer.index}>
           {navLinks.map((l) => (
             <li key={l.href}>

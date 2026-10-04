@@ -228,7 +228,7 @@ export function Navbar() {
             background: "linear-gradient(180deg, rgba(2,3,6,0.88) 0%, rgba(2,3,6,0.55) 45%, rgba(2,3,6,0) 100%)",
           }}
         />
-        <nav className="@container relative mx-auto flex h-16 max-w-[1800px] flex-nowrap items-center justify-between gap-3 px-5 sm:gap-6 md:px-8 lg:px-10">
+        <nav className="@container relative mx-auto flex h-16 max-w-[112.5rem] flex-nowrap items-center justify-between gap-3 px-5 sm:gap-6 md:px-8 lg:px-10">
           {/* Top-left: the brand. A real link off-route so it navigates home
               rather than scrolling a page that has no #hero. */}
           <div className="flex min-w-0 shrink-0 items-center gap-5">

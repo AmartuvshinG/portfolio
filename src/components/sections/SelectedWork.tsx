@@ -184,7 +184,7 @@ function Theatre({ sectionRef: ref }: { sectionRef: React.RefObject<HTMLElement 
           <Glow key={p.slug} pos={pos} i={i} n={n} live={live} color={accentColor[p.accent]} />
         ))}
 
-        <div className="relative mx-auto flex h-full max-w-[1800px] flex-col px-5 pb-8 pt-24 md:px-8 lg:px-16">
+        <div className="relative mx-auto flex h-full max-w-[112.5rem] flex-col px-5 pb-8 pt-24 md:px-8 lg:px-16">
           {/* Masthead */}
           <div className="flex items-end justify-between gap-6">
             <div className="relative">
@@ -601,7 +601,7 @@ function Stack({ reduced }: { reduced: boolean }) {
   return (
     <>
       <ChapterSeam />
-      <div className="relative mx-auto max-w-[1800px] px-5 md:px-8 lg:px-16">
+      <div className="relative mx-auto max-w-[112.5rem] px-5 md:px-8 lg:px-16">
         <ScriptLabel href="#work" className="lg:left-7" />
         <span className="eyebrow kicker-plate">
           {sectionIndex("#work")} — {t.work.eyebrow}

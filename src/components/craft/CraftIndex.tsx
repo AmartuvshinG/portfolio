@@ -126,7 +126,7 @@ export function CraftIndex({ items }: { items: Capability[] }) {
         <HoverSlider
           active={active}
           onActiveChange={choose}
-          className="relative mx-auto grid w-full max-w-[1800px] grid-cols-[minmax(0,5fr)_minmax(0,7fr)] items-center gap-10 px-8 lg:gap-16 lg:px-16"
+          className="relative mx-auto grid w-full max-w-[112.5rem] grid-cols-[minmax(0,5fr)_minmax(0,7fr)] items-center gap-10 px-8 lg:gap-16 lg:px-16"
         >
           <ol className="flex flex-col gap-[clamp(0.5rem,1.6svh,1.25rem)]">
             {items.map((item, i) => (
@@ -166,7 +166,7 @@ export function CraftIndex({ items }: { items: Capability[] }) {
           </div>
         </HoverSlider>
 
-        <div className="relative mx-auto mt-8 flex w-full max-w-[1800px] items-center gap-5 px-8 lg:px-16">
+        <div className="relative mx-auto mt-8 flex w-full max-w-[112.5rem] items-center gap-5 px-8 lg:px-16">
           {/* The odometer: the step number on a strip that rolls with the drum. */}
           <span className="flex items-baseline gap-2 tabular">
             <span className="sr-only">

@@ -37,9 +37,7 @@ import { ScriptLabel } from "@/components/ui/ScriptLabel";
  *   3. **The story.** The two paragraphs beside his ID: the old dossier plate
  *      as a card that tilts toward the pointer, with its scan and decode.
  *
- * Then a band of what he does, scrubbed sideways by the scroll (not an idle
- * marquee: it moves only when the page does). It sits on the shared ground,
- * like every section.
+ * It sits on the shared ground, like every section.
  */
 
 /** Room for the pinned frame: the statement and the numbers at full size. */
@@ -90,7 +88,7 @@ export function About() {
       )}
 
       {/* ---- 3. THE STORY ------------------------------------------------- */}
-      <div className="relative mx-auto max-w-[1800px] px-5 pb-20 pt-6 md:px-8 md:pb-28 lg:px-16">
+      <div className="relative mx-auto max-w-[112.5rem] px-5 pb-20 pt-6 md:px-8 md:pb-28 lg:px-16">
         <div className="grid items-start gap-12 lg:grid-cols-12 lg:gap-16">
           <Reveal className="lg:col-span-5 lg:pt-10">
             <RevealStagger className="space-y-6">
@@ -128,8 +126,6 @@ export function About() {
           </div>
         </Reveal>
       </div>
-
-      <Band text={`${profile.discipline} · ${profile.location.split(",")[0]}`} reduced={reduced} />
     </section>
   );
 }
@@ -212,7 +208,7 @@ function StatementBody({
   rowRef?: React.RefObject<HTMLDivElement | null>;
 }) {
   return (
-    <div className="relative mx-auto w-full max-w-[1800px] px-5 md:px-8 lg:px-16">
+    <div className="relative mx-auto w-full max-w-[112.5rem] px-5 md:px-8 lg:px-16">
       <div className="relative">
         <ScriptLabel href="#about" />
         <span className="micro kicker-plate">
@@ -334,30 +330,6 @@ function IdCard() {
           <InkSign tone="neon" lit="write" idle rewritable className="h-[min(78%,20rem)]" />
         </div>
       </GlareCard>
-    </div>
-  );
-}
-
-/* -------------------------------------------------------------------------- */
-/* The band                                                                   */
-/* -------------------------------------------------------------------------- */
-
-/** What he does, as one line too wide for the screen, outlined in the ramp
- *  and slid sideways by the scroll. Decorative: every word of it is in the
- *  card above. Moves only when the page does, so it costs idle nothing. */
-function Band({ text, reduced }: { text: string; reduced: boolean }) {
-  const ref = useRef<HTMLDivElement>(null);
-  const { scrollYProgress } = useScroll({ target: ref, offset: ["start end", "end start"] });
-  const x = useTransform(scrollYProgress, [0, 1], ["4%", "-38%"]);
-  const line = `${text} · ${text}`;
-  return (
-    <div ref={ref} aria-hidden className="relative overflow-hidden py-8 md:py-12">
-      <motion.p
-        className="band-outline display-caps w-max whitespace-nowrap text-[clamp(3rem,9vw,9.5rem)] leading-none"
-        style={reduced ? undefined : { x }}
-      >
-        {line}
-      </motion.p>
     </div>
   );
 }

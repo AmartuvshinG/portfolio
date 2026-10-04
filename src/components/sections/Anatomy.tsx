@@ -150,7 +150,7 @@ function Stage({ sectionRef: ref }: { sectionRef: React.RefObject<HTMLElement | 
 
   return (
     <div className="sticky top-0 h-dvh w-full overflow-hidden">
-      <div className="relative mx-auto flex h-full max-w-[1500px] flex-col px-5 pb-6 pt-20 md:px-8 lg:px-16">
+      <div className="relative mx-auto flex h-full max-w-[93.75rem] flex-col px-5 pb-6 pt-20 md:px-8 lg:px-16">
         <header className="relative flex flex-wrap items-end justify-between gap-x-10 gap-y-2 pt-3">
           <div>
             <ScriptLabel href="#anatomy" />
@@ -441,7 +441,7 @@ function Sequence({ reduced }: { reduced: boolean }) {
   const { t } = useI18n();
   const A = t.anatomy;
   return (
-    <div className="mx-auto max-w-[1500px] px-5 pb-24 pt-24 md:px-8 md:pb-36 md:pt-36 lg:px-16">
+    <div className="mx-auto max-w-[93.75rem] px-5 pb-24 pt-24 md:px-8 md:pb-36 md:pt-36 lg:px-16">
       <SectionHeader index={sectionIndex("#anatomy")} label={A.eyebrow} title={A.title} chapter="#anatomy" voice="tech" />
       <p className="mt-6 flex flex-col gap-1">
         <span className="micro !text-[var(--color-hazard)]">{A.credit}</span>

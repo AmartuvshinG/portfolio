@@ -259,7 +259,7 @@ function CaseFile({
                 initial={reduced ? false : { opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.45, ease: EASE_EXPO, delay: reduced ? 0 : 0.08 }}
-                className="mx-auto max-w-[1280px] px-5 pb-16 pt-10 md:px-10 md:pt-14"
+                className="mx-auto max-w-[80rem] px-5 pb-16 pt-10 md:px-10 md:pt-14"
               >
                 <header>
                   <span className="micro">{project.category}</span>

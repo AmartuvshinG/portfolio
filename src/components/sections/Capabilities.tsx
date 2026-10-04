@@ -41,7 +41,7 @@ export function Capabilities() {
     >
       <ChapterSeam wipe />
 
-      <div className="relative mx-auto max-w-[1800px] px-5 md:px-8 lg:px-16">
+      <div className="relative mx-auto max-w-[112.5rem] px-5 md:px-8 lg:px-16">
         <div className="flex flex-col justify-between gap-8 md:flex-row md:items-end">
           <SectionHeader
             index={sectionIndex("#capabilities")}

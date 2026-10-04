@@ -261,6 +261,13 @@
 }
 
 html {
+  /* Big screens get a bigger rem. Everything is sized in rem, so at 100%
+     browser zoom a 2560px monitor drew the type and panels at laptop size
+     and the page read as zoomed out. Unchanged up to 1600px wide, then
+     grows linearly to 125% at 2560 (what that screen was being zoomed to by
+     hand), and holds there. Relative to the user's own default size, never
+     a fixed px. Display type is in vw and already fills any screen. */
+  font-size: clamp(100%, 0.41667vw + 0.58333rem, 125%);
   scroll-behavior: auto; /* Lenis owns smooth scroll */
   -webkit-text-size-adjust: 100%;
   /* No native scrollbar: the chapter spine in the right gutter is the page's
@@ -1631,18 +1638,6 @@ html.hud-cursor * {
   -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
   -webkit-mask-composite: xor;
   mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
-}
-
-/* About's band: what he does, outlined in the ramp. The gradient is clipped
-   to the glyphs including their stroke; the fill then paints the ground's own
-   colour over the inside, so only the stroke's outer half shows the ramp. */
-.band-outline {
-  background-image: var(--gradient-spectrum);
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-stroke: 3px transparent;
-  -webkit-text-fill-color: var(--color-void);
-  opacity: 0.85;
 }
 
 /* The hero's signature (hero/Signature): while it writes, only the light

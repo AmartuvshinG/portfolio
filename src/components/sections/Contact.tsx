@@ -81,7 +81,7 @@ export function Contact() {
         className="pointer-events-none absolute right-[1.5%] top-[14%] hidden h-[min(64vh,40rem)] opacity-45 md:block"
       />
 
-      <div className="relative mx-auto max-w-[1800px] px-5 md:px-8 lg:px-16">
+      <div className="relative mx-auto max-w-[112.5rem] px-5 md:px-8 lg:px-16">
         <Reveal className="relative flex flex-col gap-4">
           <ScriptLabel href="#contact" />
           <span className="micro kicker-plate w-fit">

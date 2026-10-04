@@ -301,7 +301,7 @@ function Stage({ sectionRef: ref }: { sectionRef: React.RefObject<HTMLElement | 
         aria-hidden
         className="pointer-events-none absolute inset-y-0 right-0 w-[58%] bg-[linear-gradient(to_right,transparent,color-mix(in_srgb,var(--color-bg)_70%,transparent)_38%)]"
       />
-      <div className="pointer-events-none relative mx-auto flex h-full max-w-[1800px] flex-col px-5 pb-6 pt-20 md:px-8 lg:px-16">
+      <div className="pointer-events-none relative mx-auto flex h-full max-w-[112.5rem] flex-col px-5 pb-6 pt-20 md:px-8 lg:px-16">
         {/* The masthead on the left, the board on the right from the top:
             the board needs the height more than the hint does. */}
         <div className="flex min-h-0 flex-1 items-start justify-between gap-6 pt-3">
@@ -825,7 +825,7 @@ function Record({ reduced }: { reduced: boolean }) {
   });
 
   return (
-    <div className="mx-auto max-w-[1800px] px-5 pb-24 pt-24 md:px-8 md:pb-36 md:pt-36 lg:px-16">
+    <div className="mx-auto max-w-[112.5rem] px-5 pb-24 pt-24 md:px-8 md:pb-36 md:pt-36 lg:px-16">
       <SectionHeader index={sectionIndex("#timeline")} label={P.eyebrow} title={P.title} chapter="#timeline" />
 
       {!noGlobe && (

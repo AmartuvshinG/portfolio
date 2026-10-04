@@ -263,7 +263,7 @@ export function Hero() {
           /* The bottom padding takes the larger of the design value and the
              home-indicator inset, so the footer row is never under a gesture
              bar on a phone and is unchanged everywhere else. */
-          className="relative z-[90] mx-auto flex w-full max-w-[1800px] flex-col gap-10 px-5 pb-[max(2rem,env(safe-area-inset-bottom))] pt-28 md:px-8 md:pb-[max(2.5rem,env(safe-area-inset-bottom))] lg:px-16"
+          className="relative z-[90] mx-auto flex w-full max-w-[112.5rem] flex-col gap-10 px-5 pb-[max(2rem,env(safe-area-inset-bottom))] pt-28 md:px-8 md:pb-[max(2.5rem,env(safe-area-inset-bottom))] lg:px-16"
           style={reduced ? undefined : { opacity: copyOpacity, y: copyY }}
         >
           <div className="flex flex-col gap-8 md:flex-row md:items-end md:justify-between">
