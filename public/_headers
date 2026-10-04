@@ -1,0 +1,33 @@
+# Cloudflare Workers Static Assets headers (copied into out/ by the export).
+# Hashed build output and baked image widths never change under a name.
+
+/*
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(), microphone=(), geolocation=(), interest-cohort=()
+  Strict-Transport-Security: max-age=31536000
+  X-Frame-Options: SAMEORIGIN
+
+/_next/static/*
+  Cache-Control: public, max-age=31536000, immutable
+
+/opt/*
+  Cache-Control: public, max-age=31536000, immutable
+
+/ground/*
+  Cache-Control: public, max-age=2592000
+
+/path/*
+  Cache-Control: public, max-age=2592000
+
+/work/*
+  Cache-Control: public, max-age=2592000
+
+/intro/*
+  Cache-Control: public, max-age=2592000
+
+
+# Next emits the OG card without an extension; say what it is.
+/opengraph-image
+  Content-Type: image/png
+  Cache-Control: public, max-age=86400

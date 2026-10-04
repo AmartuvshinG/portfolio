@@ -9,9 +9,6 @@ import { Contact } from "@/components/sections/Contact";
 import { CaseFileHost } from "@/components/work/CaseFile";
 import { getGitHubSummary } from "@/lib/github";
 
-/* The Signal panel's GitHub numbers are fetched here and refreshed daily. */
-export const revalidate = 86400;
-
 /**
  * The descent.
  *

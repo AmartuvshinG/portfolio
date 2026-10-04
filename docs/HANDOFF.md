@@ -107,20 +107,50 @@ npm run dev          # dev server, opens a browser
 npm run dev:no-open  # dev server, no browser
 npm run typecheck    # tsc --noEmit
 npm run lint         # eslint
-npm run build        # next build — catches what dev mode forgives
-npm run axe          # accessibility sweep (dev server must be running)
+npm run build        # bake image widths, then the static export into out/
+npm run preview      # build, then serve out/ exactly as production does (:3000)
+npm run deploy       # build, then wrangler deploy to Cloudflare
+npm run axe          # accessibility sweep (dev server or preview must be running)
 ```
 
-`npm run axe` drives real Chrome across all three acts (`void`, `deck`, `bloom`)
-and both motion modes, and exits non-zero on any violation.
+`npm run axe` drives real Chrome across the hero and all three acts (`void`,
+`deck`, `bloom`), both motion modes, both languages, desktop and a 390 phone,
+and exits non-zero on any violation.
 
-**It currently fails, on purpose, on one real bug** — see §5.
+---
+
+## 3½. Hosting
+
+**amartuvshin.work is a static export on Cloudflare Workers Static Assets.**
+There is no server at request time.
+
+- `next.config.ts` sets `output: "export"`. `wrangler.jsonc` serves `out/`,
+  uses `404.html` for unknown paths, and binds the apex as a custom domain.
+  `www` redirects to the apex through a Cloudflare Redirect Rule (dashboard).
+- **Images.** No optimiser runs at request time. `scripts/bake-images.mjs`
+  (`prebuild`) writes `public/opt/work/<name>.w{640,960,1280,1920}.webp`, which is
+  gitignored, and `src/lib/imageLoader.ts` points next/image at them. Keep the
+  widths equal in that script, the loader and `images.deviceSizes`.
+- **GitHub numbers** are fetched at build. CI rebuilds and deploys daily at
+  03:00 UTC to keep them fresh.
+- **Headers** live in `public/_headers`: security headers, immutable caching
+  for `/_next/static` and `/opt`, and the OG card's `image/png` type.
+- **Deploys.** The `deploy` job in CI runs on push to `main`, daily and on
+  demand, once the repo variable `DEPLOY_ENABLED=true` and the secrets
+  `CLOUDFLARE_API_TOKEN` / `CLOUDFLARE_ACCOUNT_ID` exist. Locally:
+  `npx wrangler login` once, then `npm run deploy`.
+- **Rollback.** `npx wrangler rollback` restores the previous version
+  instantly; `npx wrangler deployments list` shows the history. Or revert on
+  `main` and let CI redeploy.
+- **Branches.** `main` is what ships. `dev` is for work in progress.
+- `kryos.` and `voidgate.amartuvshin.work` are separate Cloudflare projects in
+  the same zone. Don't touch their DNS records.
 
 ---
 
 ## 4. CI
 
-`.github/workflows/ci.yml` runs on every push to `main` and every pull request:
+`.github/workflows/ci.yml` runs on every push to `main` or `dev` and every pull request, and then deploys `main` (§3½):
 
 ```
 npm ci → typecheck → lint → build → axe
@@ -175,15 +205,13 @@ the element preserves the heading level when `WordReveal` is used `as="h1"`.
 `npm run axe` went 6 → **0** violations and now exits clean in all three acts,
 both motion modes. The sweep it was blocking is now wired into CI — see §4.
 
-**Vercel MCP — unanswered.** Worth adding only if Vercel is the host. There is no
-`vercel.json` and no deploy config in the repo, so nobody has confirmed where
-this deploys. If it is Vercel, that server gives deployment status and build logs.
+**Hosting — decided.** Cloudflare Workers, as a static export (§3½).
 
 ---
 
 ## 6. Git state
 
-- Remote: `github.com/AmartuvshinG/portfolio` (private). Branch **`main`**.
+- Remote: `github.com/AmartuvshinG/portfolio` (private). Branch **`main`** ships; **`dev`** is for work in progress.
 - Auth is Git Credential Manager and already works. The `gh` CLI is **not**
   installed — install it if you want PR commands from the terminal.
 - Five checkpoint tags are pushed, so rollback points survive losing this machine:

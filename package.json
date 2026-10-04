@@ -5,8 +5,11 @@
   "scripts": {
     "dev": "node scripts/dev-open.mjs",
     "dev:no-open": "next dev",
+    "prebuild": "node scripts/bake-images.mjs",
     "build": "next build",
-    "start": "next start",
+    "start": "wrangler dev --port 3000",
+    "preview": "npm run build && wrangler dev --port 3000",
+    "deploy": "npm run build && wrangler deploy",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
     "axe": "node scripts/axe.mjs"
@@ -34,7 +37,9 @@
     "eslint": "^9",
     "eslint-config-next": "16.2.10",
     "playwright-core": "^1.62.1",
+    "sharp": "^0.34.5",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "wrangler": "^4.147.0"
   }
 }

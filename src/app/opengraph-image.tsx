@@ -11,6 +11,9 @@ import { profile } from "@/lib/content";
  * wash, never in the type.
  */
 
+/* Rendered once at build into the static export. */
+export const dynamic = "force-static";
+
 export const alt = `${profile.fullName} — ${profile.role}`;
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";

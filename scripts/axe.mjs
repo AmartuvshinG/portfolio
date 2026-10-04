@@ -36,6 +36,8 @@ const BASE = process.env.AXE_BASE ?? "http://localhost:3000";
  * ground, so contrast is a property of the act and one sample per act covers it.
  */
 const ACTS = [
+  // The hero at rest: its panel and signature only exist in view.
+  ["hero", "#hero"],
   ["void", "#work"],
   ["deck", "#capabilities"],
   ["bloom", "#about"],

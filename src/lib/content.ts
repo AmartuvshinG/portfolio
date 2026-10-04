@@ -135,16 +135,13 @@ export interface SocialLink {
 /* -------------------------------------------------------------------------- */
 
 /**
- * The canonical URL. The deploy domain isn't decided yet, so it comes from the
- * environment rather than being written down: an explicit
- * `NEXT_PUBLIC_SITE_URL` wins, then Vercel's production host, then localhost.
- * Only the server reads this (metadata), so the non-public env var is fine.
+ * The canonical URL, baked into the static export's metadata (OG card,
+ * sitemap, robots). An explicit `NEXT_PUBLIC_SITE_URL` wins; otherwise a
+ * production build is for amartuvshin.work and dev is localhost.
  */
 const siteUrl =
   process.env.NEXT_PUBLIC_SITE_URL ??
-  (process.env.VERCEL_PROJECT_PRODUCTION_URL
-    ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
-    : "http://localhost:3000");
+  (process.env.NODE_ENV === "production" ? "https://amartuvshin.work" : "http://localhost:3000");
 
 export const site = {
   name: "AMARTUVSHIN",

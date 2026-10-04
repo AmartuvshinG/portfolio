@@ -1,7 +1,8 @@
 /**
- * Live GitHub facts for the Signal panel, fetched on the server.
+ * Live GitHub facts for the Signal panel, fetched at build time.
  *
- * Revalidated daily, so the numbers are real without a request per visit and
+ * Fetched once at build (the site is a static export); a daily scheduled deploy
+ * rebuilds it, so the numbers are real without a request per visit and
  * without the unauthenticated rate limit (60/hour) ever mattering. Any failure
  * — network, rate limit, a renamed account — returns `null`, and the panel
  * simply shows the handle as it did before. Nothing here is ever invented.
@@ -26,7 +27,7 @@ export interface GitHubSummary {
 
 export async function getGitHubSummary(): Promise<GitHubSummary | null> {
   try {
-    const opts = { next: { revalidate: 86400 }, headers: { Accept: "application/vnd.github+json" } };
+    const opts = { cache: "force-cache" as const, headers: { Accept: "application/vnd.github+json" } };
     const [userRes, reposRes] = await Promise.all([
       fetch(`https://api.github.com/users/${USER}`, opts),
       fetch(`https://api.github.com/users/${USER}/repos?sort=pushed&per_page=100`, opts),

@@ -15,8 +15,13 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, dev]
   pull_request:
+  # The site is a static export, so the GitHub numbers in the Signal panel are
+  # whatever the last build fetched. A daily rebuild keeps them a day fresh.
+  schedule:
+    - cron: "0 3 * * *"
+  workflow_dispatch:
 
 # A second push to the same branch makes the first run irrelevant. Cancel it
 # rather than queueing behind it.
@@ -26,6 +31,9 @@ concurrency:
 
 jobs:
   check:
+    # The scheduled run only refreshes the data; the code it ships was checked
+    # on the push that put it on main.
+    if: github.event_name != 'schedule'
     runs-on: ubuntu-latest
     # The static checks are ~2 minutes. The accessibility sweep adds a browser
     # download, a server boot and six passes with a 2.6s settle each.
@@ -69,7 +77,8 @@ jobs:
         run: npx --yes playwright install --with-deps chrome
 
       # Last, and the only step that needs a running server. `npm run start`
-      # serves the build produced above — it will not work without it.
+      # is `wrangler dev` over the out/ produced above — the same Static Assets
+      # handler, _headers and 404 page production gets.
       #
       # Under xvfb rather than switching the script to headless: axe.mjs
       # launches headed on purpose, and giving CI a virtual display keeps one
@@ -81,3 +90,36 @@ jobs:
           npm run start &
           npx --yes wait-on http://localhost:3000 --timeout 60000
           xvfb-run -a npm run axe
+
+  # Ships out/ to Cloudflare Workers Static Assets (wrangler.jsonc) on every push
+  # to main, on the daily refresh and on demand. Off until the repo variable
+  # DEPLOY_ENABLED is "true", so main stays green before the Cloudflare secrets
+  # (CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID) exist.
+  deploy:
+    needs: check
+    if: >-
+      always() && vars.DEPLOY_ENABLED == 'true' && github.ref == 'refs/heads/main' &&
+      github.event_name != 'pull_request' &&
+      (needs.check.result == 'success' || needs.check.result == 'skipped')
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    concurrency:
+      group: deploy-production
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci
+      - name: Build
+        run: npm run build
+        env:
+          NEXT_PUBLIC_SITE_URL: https://amartuvshin.work
+      - name: Deploy
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: deploy

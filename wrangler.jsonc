@@ -1,0 +1,14 @@
+// Cloudflare Workers: the static export in out/ served as Static Assets, with
+// no Worker script. `npm run deploy` builds and ships it; CI does the same on
+// push to main and once a day (see .github/workflows/ci.yml).
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "amartuvshin-portfolio",
+  "compatibility_date": "2026-10-01",
+  "assets": {
+    "directory": "./out",
+    "not_found_handling": "404-page",
+    "html_handling": "auto-trailing-slash"
+  },
+  "routes": [{ "pattern": "amartuvshin.work", "custom_domain": true }]
+}
