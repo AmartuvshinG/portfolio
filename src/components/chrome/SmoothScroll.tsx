@@ -94,8 +94,18 @@ export function SmoothScroll({ children }: { children: ReactNode }) {
     };
   }, [reduced]);
 
+  /* A glide asked for while the page is locked. A stopped Lenis drops a
+     non-forced scrollTo, and an overlay's links (the phone menu, the palette)
+     navigate first and close second, so the jump was lost and the page stayed
+     put. It is replayed when the last lock is released instead. */
+  const pending = useRef<{ target: string | number | HTMLElement; offset: number } | null>(null);
+
   const scrollTo = useCallback<LenisContextValue["scrollTo"]>(
     (target, offset = 0, immediate = false) => {
+      if (locks.current > 0 && !immediate) {
+        pending.current = { target, offset };
+        return;
+      }
       if (lenisRef.current) {
         lenisRef.current.scrollTo(
           target,
@@ -128,7 +138,10 @@ export function SmoothScroll({ children }: { children: ReactNode }) {
     if (locks.current !== 0) return;
     lenisRef.current?.start();
     document.body.style.overflow = "";
-  }, []);
+    const next = pending.current;
+    pending.current = null;
+    if (next) scrollTo(next.target, next.offset);
+  }, [scrollTo]);
 
   const value = useMemo(
     () => ({ scrollTo, stop, start }),
