@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { iconStroke } from "@/lib/icon";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, motion, useDragControls } from "framer-motion";
 import { X } from "lucide-react";
 import { navLinks as sectionLinks, type NavLink } from "@/lib/content";
 import { useI18n } from "@/lib/i18n";
@@ -59,6 +59,10 @@ export function Navbar() {
   const [open, setOpen] = useState(false);
   const toggleRef = useRef<HTMLButtonElement>(null);
   const sheetRef = useRef<HTMLDivElement>(null);
+  /* The sheet drags from its grabber and header only. Dragging from
+     anywhere claimed every vertical touch, so the link list could never
+     scroll when it did not fit. */
+  const sheetDrag = useDragControls();
 
   const closeSheet = useCallback(() => setOpen(false), []);
 
@@ -359,6 +363,8 @@ export function Navbar() {
             animate={{ y: 0, transition: { type: "spring", stiffness: 420, damping: 42, mass: 0.9 } }}
             exit={{ y: "100%", transition: { duration: 0.28, ease: [0.32, 0.72, 0, 1] } }}
             drag="y"
+            dragControls={sheetDrag}
+            dragListener={false}
             dragConstraints={{ top: 0, bottom: 0 }}
             dragElastic={{ top: 0.04, bottom: 0.85 }}
             onDragEnd={(_, info) => {
@@ -369,28 +375,42 @@ export function Navbar() {
               mn ? "min-[1280px]:hidden" : "min-[1080px]:hidden"
             )}
           >
-            {/* The grabber: says "this pulls down" before anyone tries. */}
-            <span aria-hidden className="relative mx-auto mt-2 block h-[5px] w-9 shrink-0 rounded-full bg-white/30" />
             {/* The name, brushed, as a ghost down the sheet's right edge. */}
             <InkSign tone="ghost" className="pointer-events-none absolute -right-2 top-[10%] h-[80%]" />
 
-            <div className="relative flex h-14 shrink-0 items-center justify-between">
-              <span className="flex items-center gap-3">
-                <Monogram className="shrink-0" />
-                <span className="font-display text-lg text-fg">{profile.wordmark}</span>
-              </span>
-              <button
-                type="button"
-                data-autofocus
-                onClick={closeSheet}
-                aria-label={t.nav.closeMenu}
-                className="hud-brackets -mr-1 flex h-11 w-11 items-center justify-center text-fg"
-              >
-                <X size={18} strokeWidth={iconStroke(18, "medium")} />
-              </button>
+            {/* The handle: the grabber and the header row under it. The
+                grabber says "this pulls down" before anyone tries. */}
+            <div
+              onPointerDown={(e) => sheetDrag.start(e)}
+              className="relative -mx-6 shrink-0 touch-none px-6"
+            >
+              <span aria-hidden className="relative mx-auto mt-2 block h-[5px] w-9 shrink-0 rounded-full bg-white/30" />
+              <div className="relative flex h-14 shrink-0 items-center justify-between">
+                <span className="flex items-center gap-3">
+                  <Monogram className="shrink-0" />
+                  <span className="font-display text-lg text-fg">{profile.wordmark}</span>
+                </span>
+                <button
+                  type="button"
+                  data-autofocus
+                  onClick={closeSheet}
+                  aria-label={t.nav.closeMenu}
+                  className="hud-brackets -mr-1 flex h-11 w-11 items-center justify-center text-fg"
+                >
+                  <X size={18} strokeWidth={iconStroke(18, "medium")} />
+                </button>
+              </div>
             </div>
 
-            <ul className="relative mt-2">
+            {/* The links take what is left and scroll if it is not enough, so
+                the language row below can never be pushed off the sheet.
+                Mongolian labels run longer and wrap; on a short phone with
+                Safari's bars showing, the toggle used to land below the
+                screen, and once switched there was no way back. */}
+            <ul
+              data-lenis-prevent
+              className="relative mt-1 min-h-0 flex-1 overflow-y-auto overscroll-contain"
+            >
               {navLinks.map((link, i) => {
                 const isActive = active === link.href;
                 const inner = (
@@ -403,7 +423,7 @@ export function Navbar() {
                     >
                       {link.code}
                     </span>
-                    <span className="font-tech text-[clamp(1.5rem,min(9vw,6.2svh),3.25rem)] font-semibold uppercase leading-none tracking-[0.04em] text-fg [:root:lang(mn)_&]:normal-case [:root:lang(mn)_&]:tracking-normal">
+                    <span className="font-tech text-[clamp(1.375rem,min(9vw,5.2svh),3.25rem)] font-semibold uppercase leading-none tracking-[0.04em] text-fg [:root:lang(mn)_&]:normal-case [:root:lang(mn)_&]:tracking-normal">
                       {link.label}
                     </span>
                     {isActive && (
@@ -432,7 +452,7 @@ export function Navbar() {
                           go(link.href);
                         }}
                         aria-current={isActive ? "location" : undefined}
-                        className="flex items-baseline gap-4 py-3.5"
+                        className="flex items-baseline gap-4 py-[clamp(0.5rem,1.5svh,0.875rem)]"
                       >
                         {inner}
                       </a>
@@ -440,7 +460,7 @@ export function Navbar() {
                       <Link
                         href={`/${link.href}`}
                         onClick={() => setOpen(false)}
-                        className="flex items-baseline gap-4 py-3.5"
+                        className="flex items-baseline gap-4 py-[clamp(0.5rem,1.5svh,0.875rem)]"
                       >
                         {inner}
                       </Link>
@@ -449,7 +469,7 @@ export function Navbar() {
                 );
               })}
             </ul>
-            <div className="relative mt-5 flex shrink-0 flex-wrap items-center justify-between gap-4">
+            <div className="relative mt-3 flex shrink-0 flex-wrap items-center justify-between gap-x-4">
               <a href={`mailto:${contact.email}`} className="hud-label flex h-11 items-center">
                 {contact.email}
               </a>
