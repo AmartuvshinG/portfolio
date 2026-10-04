@@ -161,6 +161,8 @@ export const profile = {
   discipline: "Full-stack · Machine Learning · UI/UX",
   location: "Ulaanbaatar, Mongolia · GMT+8",
   status: "OPEN TO ENTRY-LEVEL SOFTWARE ENGINEERING JOBS",
+  /** The hero panel's degree row. Same facts as the page description. */
+  degree: "B.S. Software Engineering · Gannon University, 2026",
   /** Set in the editorial serif under the name. */
   heroLead: "Hi, I'm Amartuvshin. Welcome to my portfolio.",
   /**

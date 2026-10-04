@@ -1616,3 +1616,54 @@ html.hud-cursor * {
 .group:hover .monitor-reticle,
 .group:focus-visible .monitor-reticle { opacity: 1; transform: scale(0.985); }
 
+
+/* About's ID card (sections/About): a 1px rim in the ramp, drawn on the card
+   itself so it tilts with it. The mask cuts the content box out of a padded
+   gradient, leaving only the padding — the rim. */
+.id-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 30;
+  padding: 1px;
+  pointer-events: none;
+  background: var(--gradient-spectrum);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+}
+
+/* About's band: what he does, outlined in the ramp. The gradient is clipped
+   to the glyphs including their stroke; the fill then paints the ground's own
+   colour over the inside, so only the stroke's outer half shows the ramp. */
+.band-outline {
+  background-image: var(--gradient-spectrum);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-stroke: 3px transparent;
+  -webkit-text-fill-color: var(--color-void);
+  opacity: 0.85;
+}
+
+/* The hero's signature (hero/Signature): while it writes, only the light
+   shows. The unlit tube at its usual 0.12 would preview the whole stroke
+   over the name before the brush has drawn it. */
+.signature-flyer .ink-sign:not([data-lit]) { opacity: 0; }
+
+/* The hero's panel (sections/Hero): a KPR instrument ruler under its ramp
+   edge, a hairline every 8px and a taller one every 40px. Static. */
+.hud-ruler {
+  height: 7px;
+  background:
+    repeating-linear-gradient(90deg, var(--color-line-strong) 0 1px, transparent 1px 40px) 0 0 / 100% 7px no-repeat,
+    repeating-linear-gradient(90deg, var(--color-line) 0 1px, transparent 1px 8px) 0 0 / 100% 4px no-repeat;
+}
+/* A lamp that is simply on: sodium, steady, with a still glow. No blink, so
+   it costs idle nothing. */
+.hud-lamp {
+  width: 6px;
+  height: 6px;
+  border-radius: 9999px;
+  background: var(--color-hazard);
+  box-shadow: 0 0 6px color-mix(in srgb, var(--color-hazard) 70%, transparent);
+}

@@ -46,8 +46,11 @@ const en = {
   },
   hero: {
     aria: "Introduction",
-    currently: "Currently",
     scroll: "Scroll",
+    /** The hero panel's row labels. */
+    statusLabel: "Status",
+    emailLabel: "Email",
+    degreeLabel: "Degree",
   },
   about: {
     aria: "Profile",
@@ -57,6 +60,12 @@ const en = {
     languagesValue: "Mongolian · English",
     status: "Status",
     file: "About me",
+    /** The four figures under the statement. Values come from
+     *  content.ts (`education`, the heroSub's 222,000+ Firefox bugs). */
+    statGpa: "GPA · final 4 terms",
+    statBugs: "Firefox bug reports my capstone learned from",
+    statDeans: "Terms on the Dean's List",
+    statLangs: "Languages · Mongolian, English",
   },
   connect: {
     aria: "Find me elsewhere",
@@ -403,8 +412,10 @@ const mn: UiStrings = {
   },
   hero: {
     aria: "Танилцуулга",
-    currently: "Одоо",
     scroll: "Гүйлгэх",
+    statusLabel: "Төлөв",
+    emailLabel: "Имэйл",
+    degreeLabel: "Зэрэг",
   },
   about: {
     aria: "Танилцуулга",
@@ -412,6 +423,11 @@ const mn: UiStrings = {
     languagesValue: "Монгол · Англи",
     status: "Төлөв",
     file: "Миний тухай",
+    /* Drafts: awaiting Amartuvshin's proofread. */
+    statGpa: "Голч · сүүлийн 4 улирал",
+    statBugs: "Төгсөлтийн төслийн суралцсан Firefox-ийн алдааны тайлан",
+    statDeans: "Деканы жагсаалтад орсон улирал",
+    statLangs: "Хэл · Монгол, Англи",
   },
   connect: {
     aria: "Бусад сувгууд",

@@ -37,6 +37,9 @@ import { cn } from "@/lib/utils";
  *                  One sign writes at a time (lib/inkWriteQueue). With
  *                  `rewritable`, a click writes it again; so does the
  *                  palette's "Rewrite signs". Without WebGL it strikes on.
+ *                  With `written`, it starts already written: a sign whose
+ *                  light was handed to it (the hero's signature lands on it)
+ *                  lights with no stutter and can still be rewritten.
  *
  * Decorative: always aria-hidden. Height comes from `className`; the width
  * follows the bake's aspect ratio.
@@ -54,6 +57,8 @@ export function InkSign({
   lit = true,
   idle = false,
   rewritable = false,
+  written = false,
+  onWritten,
   className,
   style,
 }: {
@@ -62,6 +67,10 @@ export function InkSign({
   idle?: boolean;
   /** Click to write it again (a `lit="write"` sign only). */
   rewritable?: boolean;
+  /** Start as already written (see above). Read on mount only. */
+  written?: boolean;
+  /** Called once a write has run to its end and the light has settled. */
+  onWritten?: () => void;
   className?: string;
   style?: React.CSSProperties;
 }) {
@@ -70,10 +79,14 @@ export function InkSign({
   const ref = useRef<HTMLSpanElement>(null);
   const [seen, setSeen] = useState(false);
   const [inView, setInView] = useState(false);
-  const [phase, setPhaseState] = useState<Phase>("dark");
+  const [phase, setPhaseState] = useState<Phase>(written ? "lit" : "dark");
   /* The effect below must not re-run on the phases it sets itself — that
      would cancel the write the moment it started — so it reads this. */
-  const phaseRef = useRef<Phase>("dark");
+  const phaseRef = useRef<Phase>(written ? "lit" : "dark");
+  const onWrittenRef = useRef(onWritten);
+  useEffect(() => {
+    onWrittenRef.current = onWritten;
+  });
   const setPhase = useCallback((p: Phase) => {
     phaseRef.current = p;
     setPhaseState(p);
@@ -102,11 +115,15 @@ export function InkSign({
     const box = ref.current;
     let cancelled = false;
     let raf = 0;
-    let finish = () => {};
+    let finish: (complete?: boolean) => void = () => {};
     const cancel = enqueueWrite(async (done) => {
       const image = await loadInkImage(INK_NAME.src);
       if (cancelled || !box) return done();
-      const rect = box.getBoundingClientRect();
+      /* The layout box, not getBoundingClientRect: a sign laid on its side
+         (the hero's signature) has a rotated bounding box with w and h
+         swapped, and the light would be drawn squashed across it. */
+      const w = box.offsetWidth;
+      const h = box.offsetHeight;
       /* A fresh canvas for every write. A context released with
          loseContext stays lost on its canvas, so a rewrite (or React's
          dev double-run) on the same element would get a dead one. */
@@ -119,19 +136,21 @@ export function InkSign({
         height: `calc(100% + ${LIGHT_PAD * 2}px)`,
         transition: "opacity 450ms",
       });
-      const renderer = image && rect.width > 4 ? createLightBrush(canvas, image, INK_NAME, rect.width, rect.height) : null;
+      const renderer = image && w > 4 ? createLightBrush(canvas, image, INK_NAME, w, h) : null;
       if (!renderer) {
         setPhase("struck");
+        onWrittenRef.current?.();
         return done();
       }
       box.appendChild(canvas);
       setPhase("writing");
       const t0 = performance.now();
       let ended = false;
-      finish = () => {
+      finish = (complete = false) => {
         if (ended) return;
         ended = true;
         cancelAnimationFrame(raf);
+        if (complete) onWrittenRef.current?.();
         // Also on leaving mid-write: come back to a finished sign.
         setPhase("lit");
         // Let the canvas fade over the static sign before the context goes.
@@ -154,7 +173,7 @@ export function InkSign({
           tipLift: b.lift,
           tipVis: Math.min(1, Math.max(0, (wt + 0.04) / 0.04)) * Math.max(0, 1 - Math.max(0, wt - 1) / 0.05),
         });
-        if (s > WRITE_SECS + SETTLE_SECS) return finish();
+        if (s > WRITE_SECS + SETTLE_SECS) return finish(true);
         raf = requestAnimationFrame(frame);
       };
       raf = requestAnimationFrame(frame);
