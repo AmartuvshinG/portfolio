@@ -41,7 +41,7 @@ const MAP = { name: "Natural Earth", href: "https://www.naturalearthdata.com" };
 export function Footer() {
   const { c, t } = useI18n();
   const { navLinks, socials, profile, contact } = c;
-  const { scrollTo } = useSmoothScroll();
+  const { goTo } = useSmoothScroll();
   const reduced = useReducedMotion();
   const year = new Date().getFullYear();
   const cr = t.footer.credits;
@@ -133,7 +133,7 @@ export function Footer() {
                 href={l.href}
                 onClick={(e) => {
                   e.preventDefault();
-                  scrollTo(l.href);
+                  goTo(l.href);
                 }}
                 className="group inline-flex min-h-11 items-center gap-3 font-mono text-xs uppercase tracking-widest text-muted transition-colors hover:text-fg md:min-h-0"
               >
@@ -195,7 +195,7 @@ export function Footer() {
           {!reduced && (
             <Cta variant="secondary" onClick={replayIntro} icon={<IconReplay size={14} />} label={t.footer.replay} arrow={null} />
           )}
-          <Cta variant="secondary" onClick={() => scrollTo(0)} icon={<IconArrowUp size={14} />} label={t.footer.top} arrow={null} />
+          <Cta variant="secondary" onClick={() => goTo(0)} icon={<IconArrowUp size={14} />} label={t.footer.top} arrow={null} />
         </div>
       </div>
     </footer>

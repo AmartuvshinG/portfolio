@@ -210,15 +210,23 @@ export default function RootLayout({
             {/* Case files open through it (lib/neonGate). */}
             <NeonGateHost />
             <Letterbox />
-            <HudCursor />
-            <Diagnostics />
+            {/* The fixed chrome, which sits over every act and so has none of
+                its own: ActTheme mirrors the act under the navbar onto this
+                box. Never onto <html> — the act blocks redefine inherited
+                tokens, so a flip there restyled the whole document once per
+                chapter boundary. `contents`: no box, so nothing about
+                positioning or stacking changes. */}
+            <div data-chrome data-act="void" className="contents">
+              <HudCursor />
+              <Diagnostics />
 
-            <Navbar />
-            <ChapterFrame />
+              <Navbar />
+              <ChapterFrame />
 
-            {/* Keyboard surfaces. Both headless, both stand down while a field
-                has focus or an overlay is open. */}
-            <CommandPalette />
+              {/* Keyboard surfaces. Both headless, both stand down while a field
+                  has focus or an overlay is open. */}
+              <CommandPalette />
+            </div>
             <ChapterKeys />
             <main id="main" className="relative z-10">
               {children}

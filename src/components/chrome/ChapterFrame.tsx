@@ -16,7 +16,7 @@ import { useI18n } from "@/lib/i18n";
  * itself it just reads as decoration.
  *
  * Colours come entirely from `--color-fg` / `--color-line`, so the whole frame
- * inverts for free when ActTheme switches `<html data-act>`.
+ * inverts for free when ActTheme switches the chrome's `data-act`.
  *
  * **Names and numbers come from the nav, not from counting sections.** It used
  * to number chapters 1-based by DOM order and print each section's
@@ -134,7 +134,7 @@ export function ChapterFrame() {
  */
 function ChapterSpine({ chapters, active }: { chapters: string[]; active: number }) {
   const { c } = useI18n();
-  const { scrollTo } = useSmoothScroll();
+  const { scrollTo, goTo } = useSmoothScroll();
   const trackRef = useRef<HTMLDivElement>(null);
   const fillRef = useRef<HTMLSpanElement>(null);
   const handleRef = useRef<HTMLSpanElement>(null);
@@ -218,7 +218,7 @@ function ChapterSpine({ chapters, active }: { chapters: string[]; active: number
     if (!p || p.id !== e.pointerId) return;
     press.current = null;
     setDragging(false);
-    if (!p.moved && e.type === "pointerup" && !(e.target as Element).closest("button")) scrollTo(toScroll(e.clientY));
+    if (!p.moved && e.type === "pointerup" && !(e.target as Element).closest("button")) goTo(toScroll(e.clientY));
   };
 
   /* Symmetric in the gutter on desktop; hard against the edge on a phone,
@@ -266,7 +266,7 @@ function ChapterSpine({ chapters, active }: { chapters: string[]; active: number
             key={id}
             type="button"
             tabIndex={-1}
-            onClick={() => scrollTo(`#${id}`)}
+            onClick={() => goTo(`#${id}`)}
             className="group pointer-events-auto absolute left-1/2 hidden h-5 w-5 -translate-x-1/2 -translate-y-1/2 items-center justify-center lg:flex"
             style={{ top: `${m * 100}%` }}
           >

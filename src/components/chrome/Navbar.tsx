@@ -49,7 +49,7 @@ export function Navbar() {
      Written out in full because Tailwind only sees literal class names. */
   const mn = locale === "mn";
   const deskQuery = mn ? "(min-width: 1280px)" : "(min-width: 1080px)";
-  const { scrollTo } = useSmoothScroll();
+  const { scrollTo, goTo } = useSmoothScroll();
   const pathname = usePathname();
   const isHome = pathname === "/";
 
@@ -195,7 +195,7 @@ export function Navbar() {
   }, [open, deskQuery]);
 
   const go = (href: string) => {
-    scrollTo(href);
+    goTo(href);
     setOpen(false);
   };
 

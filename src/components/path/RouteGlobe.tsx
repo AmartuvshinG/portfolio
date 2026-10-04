@@ -35,8 +35,8 @@ const MARKS: PlaceKey[] = ["ub", "erie"];
  * The Path's globe: the shader (lib/globeShader) on a canvas, with the cities
  * as DOM over it — their names are text, and translate.
  *
- * **Lifecycle.** The GL context exists only while the globe is near the
- * screen, on a canvas made fresh each time and removed after (a canvas whose
+ * **Lifecycle.** The GL context exists only while the globe is within a few
+ * screens, on a canvas made fresh each time and removed after (a canvas whose
  * context was lost cannot be trusted to hand back a new one). It draws when
  * `frame` changes — the Path drives that from scroll — and at no other time.
  * The cities move with it, positioned imperatively, so a frame costs no React
@@ -77,12 +77,47 @@ export function RouteGlobe({
     failed.current = onUnavailable;
   });
 
+  /* Built well ahead and released well behind. Building is a shader compile
+     and a texture upload, ~95ms of one frame at a 4x throttle; at a 60% margin
+     that landed mid-scroll on every approach, as a stutter just before the
+     Path. Now it is asked for 2.5 screens out, in an idle moment where there
+     is one, and dropped only past 4 screens, so going back and forth near the
+     Path never rebuilds it. */
   useEffect(() => {
     const box = boxRef.current;
     if (!box) return;
-    const io = new IntersectionObserver(([e]) => setNear(e.isIntersecting), { rootMargin: "60% 0px" });
-    io.observe(box);
-    return () => io.disconnect();
+    let pending = 0;
+    // Safari has no requestIdleCallback.
+    const hasIdle = typeof window.requestIdleCallback === "function";
+    const idle = (fn: () => void) =>
+      hasIdle ? window.requestIdleCallback(fn, { timeout: 600 }) : window.setTimeout(fn, 120);
+    const cancel = (id: number) => (hasIdle ? window.cancelIdleCallback(id) : clearTimeout(id));
+    const ahead = new IntersectionObserver(
+      ([e]) => {
+        if (!e.isIntersecting || pending) return;
+        pending = idle(() => {
+          pending = 0;
+          setNear(true);
+        });
+      },
+      { rootMargin: "250% 0px" }
+    );
+    const behind = new IntersectionObserver(
+      ([e]) => {
+        if (e.isIntersecting) return;
+        if (pending) cancel(pending);
+        pending = 0;
+        setNear(false);
+      },
+      { rootMargin: "400% 0px" }
+    );
+    ahead.observe(box);
+    behind.observe(box);
+    return () => {
+      if (pending) cancel(pending);
+      ahead.disconnect();
+      behind.disconnect();
+    };
   }, []);
 
   useEffect(() => {

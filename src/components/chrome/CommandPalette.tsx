@@ -48,7 +48,7 @@ export function CommandPalette() {
   const { navLinks, projects, contact } = c;
   const router = useRouter();
   const pathname = usePathname();
-  const { scrollTo } = useSmoothScroll();
+  const { goTo } = useSmoothScroll();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [cursor, setCursor] = useState(0);
@@ -63,10 +63,10 @@ export function CommandPalette() {
 
   const go = useCallback(
     (href: string) => {
-      if (isHome) scrollTo(href);
+      if (isHome) goTo(href);
       else router.push(`/${href}`);
     },
-    [isHome, scrollTo, router]
+    [isHome, goTo, router]
   );
 
   const commands = useMemo<Command[]>(() => {

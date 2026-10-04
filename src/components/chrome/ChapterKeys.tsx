@@ -28,7 +28,7 @@ import { useSmoothScroll } from "@/components/chrome/SmoothScroll";
  */
 export function ChapterKeys() {
   const pathname = usePathname();
-  const { scrollTo } = useSmoothScroll();
+  const { goTo } = useSmoothScroll();
   /* The index the *scroll* last reported, kept in a ref rather than state: it
      changes at scroll frequency and nothing renders from it. */
   const current = useRef(0);
@@ -97,7 +97,7 @@ export function ChapterKeys() {
       if (next < 0 || next >= sections.length) return;
       e.preventDefault();
       current.current = next;
-      scrollTo(sections[next].href);
+      goTo(sections[next].href);
     };
 
     window.addEventListener("keydown", onKey);
@@ -105,7 +105,7 @@ export function ChapterKeys() {
       observer.disconnect();
       window.removeEventListener("keydown", onKey);
     };
-  }, [pathname, scrollTo]);
+  }, [pathname, goTo]);
 
   return null;
 }

@@ -12,8 +12,10 @@ import { gsap, ScrollTrigger } from "@/lib/gsap";
  *
  * What JS is for is the *fixed* chrome — navbar, chapter frame, cursor — which
  * lives outside every section and therefore has no act to inherit from. This
- * component mirrors whichever act currently sits under the navbar onto
- * `<html data-act>`, so that chrome shifts as boundaries pass beneath it.
+ * component mirrors whichever act currently sits under the navbar onto the
+ * chrome's own box (`[data-chrome]` in the layout), so that chrome shifts as
+ * boundaries pass beneath it. Not onto `<html>`: the act blocks redefine
+ * inherited tokens, and a flip there restyled the whole document.
  *
  * The three acts are *depths of one dark theme*, not modes. The site used to
  * invert between a light and a dark palette here; that is what made it read as
@@ -37,7 +39,8 @@ const listeners = new Set<() => void>();
 function setAct(act: Act) {
   if (act === current) return;
   current = act;
-  document.documentElement.dataset.act = act;
+  const chrome = document.querySelector<HTMLElement>("[data-chrome]");
+  if (chrome) chrome.dataset.act = act;
   listeners.forEach((l) => l());
 }
 

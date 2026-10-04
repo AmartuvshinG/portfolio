@@ -165,7 +165,7 @@
 /* ---------------------------------------------------------------------------
    Depth system
    ---------------------------------------------------------------------------
-   Sections declare data-act; ActTheme.tsx mirrors the active one onto <html>.
+   Sections declare data-act; ActTheme.tsx mirrors the active one onto the fixed chrome ([data-chrome]).
    Everything fixed (nav, frame, cursor) reads from that single attribute.
 
    These blocks are unlayered ON PURPOSE — they must outrank Tailwind's layers
@@ -290,7 +290,10 @@ body {
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   overflow-x: hidden;
-  transition: color var(--act-fade) var(--ease-power);
+  /* No transition on `color`. Every element inherits it, so a 620ms fade at
+     each act flip restyled the whole document (~2,400 elements) on every
+     frame of it, which on a phone was the scroll's worst hitch. The acts'
+     foregrounds differ by a few levels at most, so the snap is unseen. */
 }
 
 ::selection {
