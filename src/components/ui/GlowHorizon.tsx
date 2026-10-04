@@ -138,6 +138,9 @@ export interface GlowHorizonProps {
   intensity?: number;
   /** Scrub the entrance off this instead of playing it once on mount. */
   progress?: MotionValue<number>;
+  /** Run that scrub as a CSS scroll timeline instead (`.seam-glow`, top
+      variant only): the caller has a `--seam` view timeline in scope. */
+  scrollCss?: boolean;
   /** Delay the whole stack, e.g. to sit behind a curtain lift. */
   delay?: number;
   /** Use the cheaper three-arc stack. Every scroll-mounted instance should. */
@@ -160,6 +163,7 @@ export function GlowHorizon({
   lite = false,
   palette = "spectrum",
   form = "fill",
+  scrollCss = false,
 }: GlowHorizonProps) {
   const reduced = useReducedMotion();
   const arcs = form === "ring" ? RING_ARCS : palette === "sodium" ? SODIUM_ARCS : lite ? SEAM_ARCS : ARCS;
@@ -180,6 +184,7 @@ export function GlowHorizon({
           restPct={restPct}
           variant={variant}
           arcs={arcs}
+          css={scrollCss && variant === "top"}
         />
       ) : (
         <motion.div
@@ -225,10 +230,12 @@ function ScrubbedStack({
   restPct,
   variant,
   arcs,
+  css,
 }: {
   progress: MotionValue<number>;
   variant: GlowHorizonVariant;
   arcs: ArcSpec[];
+  css: boolean;
 } & Axis) {
   const offset = useTransform(progress, [0, 1], [enterPct, restPct]);
   const scale = useTransform(progress, [0, 1], [1.5, 1]);
@@ -236,8 +243,10 @@ function ScrubbedStack({
 
   return (
     <motion.div
-      className="absolute inset-0 h-full w-full"
-      style={{ [axis]: offset, [scaleAxis]: scale, opacity }}
+      /* Promoted: the arcs are blurred, and a scale on an unpromoted parent
+         re-runs every blur on every frame (perf budget, item 2). */
+      className={cn("absolute inset-0 h-full w-full will-change-transform", css && "seam-glow")}
+      style={css ? undefined : { [axis]: offset, [scaleAxis]: scale, opacity }}
     >
       {arcs.map((arc) => (
         <Arc key={arc.color} arc={arc} variant={variant} reduced static />

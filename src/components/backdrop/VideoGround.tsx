@@ -169,6 +169,8 @@ export function VideoGround() {
     let keys: { y: number; veil: number }[] = [];
     let raf = 0;
     let lastP = -1;
+    let lastVeil = "";
+    let lastUp = "";
 
     const measure = () => {
       W = window.innerWidth;
@@ -207,6 +209,7 @@ export function VideoGround() {
         .filter((k): k is { y: number; veil: number } => k !== null)
         .sort((a, b) => a.y - b.y);
       lastP = -1;
+      lastVeil = lastUp = "";
     };
 
     const veilAt = (y: number) => {
@@ -225,10 +228,16 @@ export function VideoGround() {
       const y = window.scrollY;
       // The dive section's top: at the bottom of the screen → 20% up.
       const p = clamp((y + H - diveTop) / (H * 0.8));
-      veil.style.opacity = veilAt(y).toFixed(3);
+      /* Written only when they change: these are fullscreen layers, and a
+         style write is a style pass even when the value is the same. */
+      const v = veilAt(y).toFixed(3);
+      if (v !== lastVeil) veil.style.opacity = lastVeil = v;
       const heroUp = clamp(1 - y / Math.max(1, heroEnd - H * 0.5)).toFixed(3);
-      if (scrimRef.current) scrimRef.current.style.opacity = heroUp;
-      if (castRef.current) castRef.current.style.opacity = heroUp;
+      if (heroUp !== lastUp) {
+        lastUp = heroUp;
+        if (scrimRef.current) scrimRef.current.style.opacity = heroUp;
+        if (castRef.current) castRef.current.style.opacity = heroUp;
+      }
       setDive(p);
       if (p === lastP) return;
       lastP = p;
@@ -439,15 +448,21 @@ export function VideoGround() {
       </div>
       {/* The veil: the ground's own colour, so the footage sinks into the
           page rather than going grey. */}
-      <div ref={veilRef} className="absolute inset-0 bg-void" style={{ opacity: 0.5 }} />
+      {/* The veil, the cast and the scrim each fade with the scroll, so each
+          is its own layer: the fade composites instead of repainting the
+          screen. */}
+      <div ref={veilRef} className="absolute inset-0 bg-void will-change-[opacity]" style={{ opacity: 0.5 }} />
       {/* The sign's light, centred on the name (≈31% down on a phone, 43%
           from md) and wide and low like a tube's spill. `screen` adds light
           rather than tinting: the moon warms, the shadows stay dark. The
-          outer layer fades with the hero; the inner one strikes. */}
-      <div ref={castRef} className="pointer-events-none absolute inset-0">
+          outer layer fades with the hero; the inner one strikes. The blend
+          is on the outer one: a fading wrapper is a stacking context, which
+          isolated an inner blend from the footage for the whole fade, and
+          the wrapper's every opacity step repainted the blended screen. */}
+      <div ref={castRef} className="pointer-events-none absolute inset-0 mix-blend-screen will-change-[opacity]">
         <div
           ref={lightRef}
-          className="absolute inset-0 mix-blend-screen [--cast-y:31%] md:[--cast-y:43%]"
+          className="absolute inset-0 [--cast-y:31%] md:[--cast-y:43%]"
           style={{
             opacity: 0,
             background:
@@ -460,7 +475,7 @@ export function VideoGround() {
           of the frame darkens under it — and only while the hero is up. */}
       <div
         ref={scrimRef}
-        className="absolute inset-0"
+        className="absolute inset-0 will-change-[opacity]"
         style={{
           background:
             "linear-gradient(180deg, transparent 38%, color-mix(in srgb, var(--color-void) 72%, transparent) 62%, color-mix(in srgb, var(--color-void) 88%, transparent) 100%)",

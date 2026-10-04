@@ -735,6 +735,173 @@ html.hud-cursor * {
   .neon-tube[data-lit][data-idle]::before { animation: none; }
 }
 
+/* ---------------------------------------------------------------------------
+   Scroll-driven, on the compositor (hooks/useScrollTimelines)
+   Where the browser runs `animation-timeline`, these replace framer's
+   per-frame JS for motion that is a pure function of scroll. The ranges and
+   keyframes are framer's own, converted: the hero's `pin` is
+   ["start start", "end end"], which for a section taller than the screen is
+   exactly the view timeline's `contain` range.
+   ------------------------------------------------------------------------- */
+.hero-timeline {
+  view-timeline: --hero block;
+}
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    /* Copy: lifts 14vh over pin 0 -> 0.45, fades out over 0.05 -> 0.3
+       (11.1% and 66.7% of that range). */
+    .hero-copy-out {
+      animation: hero-copy-out linear both;
+      animation-timeline: --hero;
+      animation-range: contain 0% contain 45%;
+    }
+    /* The name: lifts 8vh and grows 4% over the same stretch. */
+    .hero-mark-out {
+      animation: hero-mark-out linear both;
+      animation-timeline: --hero;
+      animation-range: contain 0% contain 45%;
+    }
+    /* The edge sign travels with the copy. */
+    .hero-lift-out {
+      animation: hero-lift-out linear both;
+      animation-timeline: --hero;
+      animation-range: contain 0% contain 45%;
+    }
+    /* The spine: its fill and its head are page progress, nothing else. */
+    .spine-fill {
+      animation: spine-fill linear both;
+      animation-timeline: scroll(root block);
+    }
+    .spine-run {
+      animation: spine-run linear both;
+      animation-timeline: scroll(root block);
+    }
+  }
+}
+/* Chapter seams. framer's range was ["start 95%", "start 25%"]: the seam's
+   top from 95% of the screen up to 25%, which is 5 to 75 screen-heights-%
+   into the view timeline's `cover` range. `dvh`, not `vh`: framer measured
+   the live viewport, and on iOS `vh` is the toolbar-collapsed height. */
+.seam-timeline {
+  view-timeline: --seam block;
+}
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .seam-rule,
+    .seam-card,
+    .seam-glow {
+      animation-timeline: --seam;
+      animation-range: cover 5dvh cover 75dvh;
+      animation-timing-function: linear;
+      animation-fill-mode: both;
+    }
+    .seam-rule { animation-name: seam-rule; }
+    .seam-card { animation-name: seam-card; }
+    .seam-glow { animation-name: seam-glow; }
+    /* Each slat opens over its own half of the crossing, from its seeded
+       offset `--sa` (0 to 0.42 of the way through). */
+    .seam-slat {
+      animation: seam-slat linear both;
+      animation-timeline: --seam;
+      animation-range:
+        cover calc(5dvh + var(--sa) * 70dvh)
+        cover calc(5dvh + (var(--sa) + 0.5) * 70dvh);
+    }
+  }
+}
+@keyframes seam-rule {
+  0% { transform: scaleX(0); opacity: 0; }
+  15% { opacity: 1; }
+  80% { transform: scaleX(1); }
+  90% { opacity: 1; }
+  100% { transform: scaleX(1); opacity: 0.35; }
+}
+@keyframes seam-card {
+  0% { transform: translateX(14%); opacity: 0; }
+  30% { opacity: 0.32; }
+  70% { opacity: 0.32; }
+  100% { transform: translateX(-10%); opacity: 0; }
+}
+/* The top arc stack: in from a full height above, half-landed at rest,
+   settling from 1.5x tall. The stack is blurred rings, so this must stay a
+   compositor scale of an already-drawn layer: re-running those blurs on
+   every frame was the seams' worst cost. */
+@keyframes seam-glow {
+  0% { transform: translateY(-100%) scaleY(1.5); opacity: 0; }
+  25% { opacity: 1; }
+  100% { transform: translateY(-50%) scaleY(1); opacity: 1; }
+}
+@keyframes seam-slat {
+  from { transform: scaleY(1); opacity: 0.5; }
+  to { transform: scaleY(0); opacity: 0; }
+}
+/* Links: each cartridge powers on over its own window of the section's
+   crossing. framer's range was ["start 85%", "start 30%"], so cover 15dvh to
+   70dvh; a card's window starts `--ca` (its index's share of 0.3) in and
+   lasts 0.62 of it. X opens first (0 to 32%), Y after (26% to 76%), each on
+   ease-out cubic, so they are separate properties: `transform` for X and
+   `scale` for Y, which compose. On the compositor the card is drawn once;
+   scrubbed in JS, its dot-grid bloom mask and blended flash re-rasterised
+   on every frame of the power-on, three cards at a time. */
+.links-timeline {
+  view-timeline: --links block;
+}
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .cart-on,
+    .cart-flash {
+      animation-timeline: --links;
+      animation-fill-mode: both;
+      animation-range:
+        cover calc(15dvh + var(--ca) * 55dvh)
+        cover calc(15dvh + (var(--ca) + 0.62) * 55dvh);
+    }
+    .cart-on { animation-name: cart-on-x, cart-on-y; animation-timing-function: linear; }
+    .cart-flash { animation-name: cart-flash; animation-timing-function: linear; }
+  }
+}
+/* Two animations, not one: Lightning CSS folds `scale` into `transform`
+   wherever both sit in the same keyframe, which erased Y's later start. */
+@keyframes cart-on-x {
+  0% { transform: scaleX(0.04); opacity: 0; animation-timing-function: cubic-bezier(0.33, 1, 0.68, 1); }
+  6% { opacity: 1; }
+  32%, 100% { transform: scaleX(1); opacity: 1; }
+}
+@keyframes cart-on-y {
+  0%, 26% { scale: 1 0.02; animation-timing-function: cubic-bezier(0.33, 1, 0.68, 1); }
+  76%, 100% { scale: 1 1; }
+}
+@keyframes cart-flash {
+  0% { opacity: 0; }
+  20% { opacity: 0.9; }
+  42% { opacity: 0.5; }
+  85%, 100% { opacity: 0; }
+}
+@keyframes hero-copy-out {
+  0% { transform: translateY(0); opacity: 1; }
+  11.11% { opacity: 1; }
+  66.67% { opacity: 0; }
+  100% { transform: translateY(-14vh); opacity: 0; }
+}
+@keyframes hero-mark-out {
+  from { transform: translateY(0) scale(1); }
+  to { transform: translateY(-8vh) scale(1.04); }
+}
+@keyframes hero-lift-out {
+  from { transform: translateY(0); }
+  to { transform: translateY(-14vh); }
+}
+@keyframes spine-fill {
+  from { transform: scaleY(0); }
+  to { transform: scaleY(1); }
+}
+/* The head rides a box the track's height, so 100% of its own height is the
+   track's: no measured px in the keyframes. */
+@keyframes spine-run {
+  from { transform: translateY(0); }
+  to { transform: translateY(100%); }
+}
+
 /* A split-flap cell turning over (motion/SplitFlap): the new character
    drops in from the top half, as a flap falls. Transform and opacity only. */
 .flap-tick {

@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { cn } from "@/lib/utils";
+import { useScrollTimelines } from "@/hooks/useScrollTimelines";
 import { iconStroke } from "@/lib/icon";
 import { motion, useScroll, useSpring, useTransform, type MotionValue } from "framer-motion";
 import { ArrowUpRight } from "lucide-react";
@@ -46,6 +48,9 @@ export function Connect({ github }: { github: GitHubSummary | null }) {
   const { socials } = c;
   const ref = useRef<HTMLElement>(null);
   const reduced = useReducedMotion();
+  /* With scroll timelines the power-on is CSS on the compositor (.cart-on,
+     .cart-flash in globals.css). */
+  const css = useScrollTimelines() && !reduced;
 
   const { scrollYProgress } = useScroll({
     target: ref,
@@ -58,7 +63,7 @@ export function Connect({ github }: { github: GitHubSummary | null }) {
       data-act="deck"
       data-chapter="LINKS"
       ref={ref}
-      className="relative overflow-hidden py-24 md:py-32"
+      className={cn("relative overflow-hidden py-24 md:py-32", !reduced && "links-timeline")}
       aria-label={t.connect.aria}
     >
       <ChapterSeam />
@@ -87,6 +92,7 @@ export function Connect({ github }: { github: GitHubSummary | null }) {
               count={socials.length}
               progress={scrollYProgress}
               reduced={reduced}
+              css={css}
               github={social.mark === "github" ? github : null}
             />
           ))}
@@ -102,6 +108,7 @@ function Cartridge({
   count,
   progress,
   reduced,
+  css,
   github,
 }: {
   social: SocialLink;
@@ -109,6 +116,7 @@ function Cartridge({
   count: number;
   progress: MotionValue<number>;
   reduced: boolean;
+  css: boolean;
   github: GitHubSummary | null;
 }) {
   const { t } = useI18n();
@@ -154,8 +162,14 @@ function Cartridge({
   return (
     <li className="relative min-w-0">
       <motion.div
-        className="relative h-full"
-        style={reduced ? undefined : { scaleX: sx, scaleY: sy, opacity: shown }}
+        className={cn("relative h-full", css && "cart-on will-change-transform")}
+        style={
+          reduced
+            ? undefined
+            : css
+              ? ({ "--ca": a.toFixed(4) } as React.CSSProperties)
+              : { scaleX: sx, scaleY: sy, opacity: shown }
+        }
       >
         <a
           ref={cardRef}
@@ -204,8 +218,8 @@ function Cartridge({
           {!reduced && (
             <motion.span
               aria-hidden
-              className="pointer-events-none absolute inset-0 z-20 bg-[#eafcff] mix-blend-screen"
-              style={{ opacity: flash }}
+              className={cn("pointer-events-none absolute inset-0 z-20 bg-[#eafcff] mix-blend-screen", css && "cart-flash")}
+              style={css ? ({ "--ca": a.toFixed(4) } as React.CSSProperties) : { opacity: flash }}
             />
           )}
         </a>

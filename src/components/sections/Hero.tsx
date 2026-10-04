@@ -7,6 +7,7 @@ import { useReducedMotion } from "@/hooks/useReducedMotion";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { usePointerDrift } from "@/hooks/usePointerDrift";
 import { useBootReady } from "@/hooks/useBootReady";
+import { useScrollTimelines } from "@/hooks/useScrollTimelines";
 import { NeonSign } from "@/components/ui/NeonSign";
 import { ScrambleText } from "@/components/motion/ScrambleText";
 import { WordRevealLines } from "@/components/motion/WordReveal";
@@ -139,13 +140,20 @@ export function Hero() {
 
   const promote = active && !reduced ? "transform" : "auto";
 
+  /* Where the browser has scroll timelines, the way out (copy, name, edge
+     sign) is CSS on the compositor (.hero-*-out in globals.css), and framer
+     only drives what has no CSS form: the fly-through and the tube's fade on
+     wide screens. On a phone this was the stutter: three layers moved by JS
+     a frame behind iOS's own scroll, on a busy main thread. */
+  const css = useScrollTimelines() && !reduced;
+
   return (
     <section
       ref={ref}
       id="hero"
       data-act="void"
       data-chapter="INDEX"
-      className={reduced ? "relative" : `relative ${RUN}`}
+      className={reduced ? "relative" : `hero-timeline relative ${RUN}`}
       aria-label={t.hero.aria}
     >
       <div
@@ -157,11 +165,16 @@ export function Hero() {
       >
         {/* ---- THE NAME ---------------------------------------------- */}
         <motion.div
-          className="pointer-events-none absolute inset-x-0 top-[27vh] z-10 flex justify-center md:top-[36vh]"
+          className={cn(
+            "pointer-events-none absolute inset-x-0 top-[27vh] z-10 flex justify-center md:top-[36vh]",
+            css && "hero-mark-out"
+          )}
           style={
             reduced
               ? undefined
-              : { y: markY, scale: markScale, willChange: promote }
+              : css
+                ? { willChange: promote }
+                : { y: markY, scale: markScale, willChange: promote }
           }
         >
           {/* Two wrappers, and they are not interchangeable. The outer one is
@@ -233,8 +246,8 @@ export function Hero() {
           initial={reduced ? false : { opacity: 0 }}
           animate={{ opacity: lit ? 1 : 0 }}
           transition={{ duration: 0.3 }}
-          className="pointer-events-none absolute right-[5.5%] top-[13vh] z-10 hidden md:block"
-          style={reduced ? undefined : { y: copyY }}
+          className={cn("pointer-events-none absolute right-[5.5%] top-[13vh] z-10 hidden md:block", css && "hero-lift-out")}
+          style={reduced || css ? undefined : { y: copyY }}
         >
           <motion.div
             className="script-sign relative px-3 py-5"
@@ -263,8 +276,13 @@ export function Hero() {
           /* The bottom padding takes the larger of the design value and the
              home-indicator inset, so the footer row is never under a gesture
              bar on a phone and is unchanged everywhere else. */
-          className="relative z-[90] mx-auto flex w-full max-w-[112.5rem] flex-col gap-10 px-5 pb-[max(2rem,env(safe-area-inset-bottom))] pt-28 md:px-8 md:pb-[max(2.5rem,env(safe-area-inset-bottom))] lg:px-16"
-          style={reduced ? undefined : { opacity: copyOpacity, y: copyY }}
+          className={cn(
+            "relative z-[90] mx-auto flex w-full max-w-[112.5rem] flex-col gap-10 px-5 pb-[max(2rem,env(safe-area-inset-bottom))] pt-28 md:px-8 md:pb-[max(2.5rem,env(safe-area-inset-bottom))] lg:px-16",
+            css && "hero-copy-out"
+          )}
+          /* Its own layer while the hero is on screen: the fade and lift then
+             composite instead of repainting the frame under the copy. */
+          style={reduced ? undefined : css ? { willChange: active ? "transform, opacity" : "auto" } : { opacity: copyOpacity, y: copyY }}
         >
           <div className="flex flex-col gap-8 md:flex-row md:items-end md:justify-between">
             <HeroPanel play={play} reduced={reduced} />

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useScrollTimelines } from "@/hooks/useScrollTimelines";
 import {
   motion,
   useMotionValueEvent,
@@ -66,6 +67,10 @@ export function ChapterSeam({
   const ref = useRef<HTMLDivElement>(null);
   const reduced = useReducedMotion();
   const [near, setNear] = useState(false);
+  /* With scroll timelines every moving part below is CSS on the compositor
+     (.seam-* in globals.css); framer's progress still drives the surge, the
+     focus burst and the card's split-flap letters, which are not styles. */
+  const css = useScrollTimelines() && !reduced;
 
   /* Runs from just below the fold to a quarter up the viewport, so the crossing
      resolves while the boundary is still on screen. Ending at `start 0%` would
@@ -123,7 +128,7 @@ export function ChapterSeam({
            clip, so it widened the page by ~170px (and a phone's layout
            viewport to 528px). `clip`, not `hidden`, so y stays visible. */
         "pointer-events-none absolute inset-x-0 top-0 z-0 overflow-x-clip",
-        reduced ? "h-px" : "h-[42vh]",
+        reduced ? "h-px" : "seam-timeline h-[42vh]",
         className
       )}
     >
@@ -131,8 +136,8 @@ export function ChapterSeam({
         <div className="spectrum-rule absolute inset-x-0 top-0 h-px opacity-40" />
       ) : (
         <>
-          {near && wipe && <Shutter progress={scrollYProgress} />}
-          {near && <ChapterCard anchor={ref} progress={scrollYProgress} />}
+          {near && wipe && <Shutter progress={scrollYProgress} css={css} />}
+          {near && <ChapterCard anchor={ref} progress={scrollYProgress} css={css} />}
 
           {/* The glow arc, as rings. The filled arc is a crest of light
               against a *painted* void core — the ground colour — which was an
@@ -151,6 +156,7 @@ export function ChapterSeam({
               variant="top"
               intensity={0.3}
               progress={scrollYProgress}
+              scrollCss={css}
             />
           )}
 
@@ -158,8 +164,8 @@ export function ChapterSeam({
               something opening rather than something sliding in from one side.
               Cheap enough to leave mounted always — it is one 1px element. */}
           <motion.div
-            className="spectrum-rule absolute inset-x-0 top-[4.25rem] h-px origin-center md:top-1/3"
-            style={{ scaleX: rule, opacity: ruleOpacity }}
+            className={cn("spectrum-rule absolute inset-x-0 top-[4.25rem] h-px origin-center md:top-1/3", css && "seam-rule")}
+            style={css ? undefined : { scaleX: rule, opacity: ruleOpacity }}
           />
         </>
       )}
@@ -196,8 +202,10 @@ const SLATS = 18;
  */
 function Shutter({
   progress,
+  css,
 }: {
   progress: import("framer-motion").MotionValue<number>;
+  css: boolean;
 }) {
   return (
     <div
@@ -205,7 +213,7 @@ function Shutter({
       className="absolute inset-x-0 top-0 flex h-[16vh] gap-px overflow-hidden"
     >
       {Array.from({ length: SLATS }, (_, i) => (
-        <Slat key={i} index={i} progress={progress} />
+        <Slat key={i} index={i} progress={progress} css={css} />
       ))}
     </div>
   );
@@ -214,9 +222,11 @@ function Shutter({
 function Slat({
   index,
   progress,
+  css,
 }: {
   index: number;
   progress: import("framer-motion").MotionValue<number>;
+  css: boolean;
 }) {
   /* Seeded rather than random: a `Math.random()` here would give the server and
      the client different offsets and desynchronise on hydration. `srand` is an
@@ -231,10 +241,9 @@ function Slat({
 
   return (
     <motion.span
-      className="h-full flex-1"
+      className={cn("h-full flex-1", css && "seam-slat")}
       style={{
-        scaleY,
-        opacity,
+        ...(css ? ({ "--sa": offset.toFixed(4) } as React.CSSProperties) : { scaleY, opacity }),
         transformOrigin: fromTop ? "50% 0%" : "50% 100%",
         background:
           index % 3 === 0
@@ -269,9 +278,11 @@ const FLIPS = 22;
 function ChapterCard({
   anchor,
   progress,
+  css,
 }: {
   anchor: React.RefObject<HTMLDivElement | null>;
   progress: MotionValue<number>;
+  css: boolean;
 }) {
   const { c } = useI18n();
   const textRef = useRef<HTMLSpanElement>(null);
@@ -310,15 +321,21 @@ function ChapterCard({
   return (
     <motion.span
       style={{
-        x,
-        opacity,
+        ...(css ? {} : { x, opacity }),
         backgroundImage:
           "linear-gradient(100deg, var(--color-hazard), var(--spectrum-1) 42%, var(--spectrum-3))",
       }}
-      /* Below `md` the card and its hairline sit higher. At `top-1/3` of 42vh
+      /* Its own layer, always: this is a screen-wide gradient-clipped,
+         stroked headline, and sliding it unpromoted repainted all of it on
+         every frame of the crossing. Only the split-flap steps repaint now.
+
+         Below `md` the card and its hairline sit higher. At `top-1/3` of 42vh
          the join lands ~118px down a phone, where sections start their kicker
          at `pt-24`, so the card was drawn straight over "04 — WHAT I DO". */
-      className="pointer-events-none absolute bottom-[calc(100%-4.25rem-0.12em)] md:bottom-[calc(67%-0.12em)] left-0 block whitespace-nowrap bg-clip-text font-display text-[clamp(2.5rem,8.5vw,9.5rem)] uppercase leading-none tracking-tight text-transparent [-webkit-text-stroke:1px_rgba(255,255,255,0.18)]"
+      className={cn(
+        css && "seam-card",
+        "will-change-[transform,opacity] pointer-events-none absolute bottom-[calc(100%-4.25rem-0.12em)] md:bottom-[calc(67%-0.12em)] left-0 block whitespace-nowrap bg-clip-text font-display text-[clamp(2.5rem,8.5vw,9.5rem)] uppercase leading-none tracking-tight text-transparent [-webkit-text-stroke:1px_rgba(255,255,255,0.18)]"
+      )}
     >
       <span ref={textRef} />
     </motion.span>

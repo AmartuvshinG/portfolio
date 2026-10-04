@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
+import { useScrollTimelines } from "@/hooks/useScrollTimelines";
+import { cn } from "@/lib/utils";
 import { useSmoothScroll } from "@/components/chrome/SmoothScroll";
 import { gsap, ScrollTrigger } from "@/lib/gsap";
 import { sectionIndex } from "@/lib/content";
@@ -140,6 +142,7 @@ function ChapterSpine({ chapters, active }: { chapters: string[]; active: number
   const handleRef = useRef<HTMLSpanElement>(null);
   const [marks, setMarks] = useState<number[]>([]);
   const [dragging, setDragging] = useState(false);
+  const css = useScrollTimelines();
 
   useEffect(() => {
     let raf = 0;
@@ -160,6 +163,10 @@ function ChapterSpine({ chapters, active }: { chapters: string[]; active: number
       raf = 0;
       const max = document.documentElement.scrollHeight - window.innerHeight;
       const p = max > 0 ? Math.min(1, window.scrollY / max) : 0;
+      /* With scroll timelines the CSS runs the fill and the head on the
+         compositor (.spine-fill / .spine-run); writing here too would only
+         cost a style pass per frame for a value the animation overrides. */
+      if (css) return;
       if (fillRef.current) fillRef.current.style.transform = `scaleY(${p.toFixed(4)})`;
       if (handleRef.current) handleRef.current.style.transform = `translate(-50%, -50%) translateY(${(p * h).toFixed(1)}px)`;
     };
@@ -167,6 +174,9 @@ function ChapterSpine({ chapters, active }: { chapters: string[]; active: number
       if (!raf) raf = requestAnimationFrame(paint);
     };
     measure();
+    /* Handing over to the CSS after hydration: clear any offset the JS
+       already wrote, or the head keeps it under the animation. */
+    if (css && handleRef.current) handleRef.current.style.transform = "translate(-50%, -50%)";
     paint();
     let t: ReturnType<typeof setTimeout> | undefined;
     const ro = new ResizeObserver(() => {
@@ -184,7 +194,7 @@ function ChapterSpine({ chapters, active }: { chapters: string[]; active: number
       ro.disconnect();
       window.removeEventListener("scroll", onScroll);
     };
-  }, [chapters]);
+  }, [chapters, css]);
 
   /* --- Scrubbing. A press that moves more than a few px is a drag, and the
      page follows the pointer exactly; one that does not is a click, and
@@ -241,22 +251,27 @@ function ChapterSpine({ chapters, active }: { chapters: string[]; active: number
       <span className="pointer-events-none absolute inset-0 bg-current opacity-[0.14] transition-opacity group-hover/spine:opacity-30" />
       <span
         ref={fillRef}
-        className="pointer-events-none absolute inset-0 origin-top"
+        className={cn("pointer-events-none absolute inset-0 origin-top will-change-transform", css && "spine-fill")}
         style={{
           transform: "scaleY(0)",
           background: "linear-gradient(180deg, color-mix(in srgb, var(--color-hazard) 30%, transparent), var(--color-hazard))",
           boxShadow: "0 0 8px color-mix(in srgb, var(--color-hazard) 60%, transparent)",
         }}
       />
-      {/* The grab handle, riding the head of the fill. */}
-      <span
-        ref={handleRef}
-        className={
-          "pointer-events-none absolute left-1/2 top-0 h-7 rounded-full bg-[var(--color-hazard)] shadow-[0_0_12px_var(--color-hazard)] transition-[width] duration-200 lg:h-9 " +
-          (dragging ? "w-[5px]" : "w-[3px] group-hover/spine:w-[5px]")
-        }
-        style={{ transform: "translate(-50%, -50%)" }}
-      />
+      {/* The grab handle, riding the head of the fill. Its runner is a box
+          the track's height that the scroll timeline slides down by its own
+          height; without timelines the runner sits still and the JS above
+          moves the handle. */}
+      <span aria-hidden className={cn("pointer-events-none absolute inset-0 will-change-transform", css && "spine-run")}>
+        <span
+          ref={handleRef}
+          className={
+            "pointer-events-none absolute left-1/2 top-0 h-7 rounded-full bg-[var(--color-hazard)] shadow-[0_0_12px_var(--color-hazard)] transition-[width] duration-200 lg:h-9 " +
+            (dragging ? "w-[5px]" : "w-[3px] group-hover/spine:w-[5px]")
+          }
+          style={{ transform: "translate(-50%, -50%)" }}
+        />
+      </span>
       {marks.map((m, i) => {
         const id = chapters[i];
         const link = c.navLinks.find((l) => l.href === `#${id}`);
