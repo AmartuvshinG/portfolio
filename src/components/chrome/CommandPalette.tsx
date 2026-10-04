@@ -1,6 +1,7 @@
 "use client";
 
 import { toggleDiagnostics } from "@/lib/diagnostics";
+import { iconStroke } from "@/lib/icon";
 import { replayIntro } from "@/lib/intro";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
 import { requestRewrite } from "@/lib/inkWriteQueue";
@@ -240,7 +241,7 @@ export function CommandPalette() {
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.2 }}
-          className="fixed inset-0 z-[110] flex items-start justify-center bg-void/80 px-5 pt-[12vh]"
+          className="fixed inset-0 z-[110] flex items-start justify-center bg-void/80 px-5 pt-[max(12svh,calc(env(safe-area-inset-top)+1rem))]"
           onClick={close}
         >
           <motion.div
@@ -294,15 +295,18 @@ export function CommandPalette() {
                    focusable element gets a ring, and unlayered CSS outranks
                    every cascade layer — so a plain utility here loses no
                    matter what its specificity is. Same hazard the two `@layer
-                   base` comments in that file describe. */
-                className="w-full bg-transparent py-4 font-mono text-sm text-fg caret-[var(--color-holo)] placeholder:text-faint focus-visible:[outline-offset:-4px]!"
+                   base` comments in that file describe.
+
+                   16px on touch: iOS zooms the page into any field set
+                   smaller than that, and does not zoom back out. */
+                className="w-full bg-transparent py-4 font-mono text-sm text-fg pointer-coarse:text-base caret-[var(--color-holo)] placeholder:text-faint focus-visible:[outline-offset:-4px]!"
               />
               <kbd className="hud-label shrink-0 border border-line px-1.5 py-0.5">
                 ESC
               </kbd>
             </div>
 
-            <ul id="palette-results" role="listbox" aria-label={t.palette.results} className="max-h-[46vh] overflow-y-auto py-2">
+            <ul id="palette-results" role="listbox" aria-label={t.palette.results} className="max-h-[46svh] overflow-y-auto overscroll-contain py-2">
               {results.length === 0 && (
                 <li className="px-5 py-6 text-sm text-muted">
                   {t.palette.none(query)}
@@ -339,10 +343,10 @@ export function CommandPalette() {
                         />
                       )}
                       <span className="flex items-center gap-3">
-                        {cmd.id === "a-power" && <Zap size={14} />}
-                        {cmd.id === "a-lang" && <Languages size={14} />}
+                        {cmd.id === "a-power" && <Zap size={14} strokeWidth={iconStroke(14)} />}
+                        {cmd.id === "a-lang" && <Languages size={14} strokeWidth={iconStroke(14)} />}
                         {cmd.id === "a-copy" &&
-                          (copied ? <Check size={14} /> : <Copy size={14} />)}
+                          (copied ? <Check size={14} strokeWidth={iconStroke(14)} /> : <Copy size={14} strokeWidth={iconStroke(14)} />)}
                         <span className="font-tech text-sm font-semibold uppercase">
                           {cmd.id === "a-copy" && copied ? t.palette.copiedEmail : cmd.label}
                         </span>

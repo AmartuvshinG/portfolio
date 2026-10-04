@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { iconStroke } from "@/lib/icon";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
@@ -217,12 +218,15 @@ export function Navbar() {
 
   return (
     <>
-      <header className="fixed inset-x-0 top-0 z-[60]">
+      {/* Padded by the safe-area insets: the viewport is `cover`, so on an
+          iPhone the header would otherwise sit under the status bar and, in
+          landscape, under the notch. */}
+      <header className="fixed inset-x-0 top-0 z-[60] pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)] pt-[env(safe-area-inset-top)]">
         {/* The scrim: only past the fold, and only a gradient — the frame
             stays open; the HUD just keeps its legibility over the film. */}
         <span
           aria-hidden
-          className="pointer-events-none absolute inset-x-0 top-0 h-28 transition-opacity duration-500"
+          className="pointer-events-none absolute inset-x-0 top-0 h-[calc(7rem+env(safe-area-inset-top))] transition-opacity duration-500"
           style={{
             opacity: scrolled ? 1 : 0,
             background: "linear-gradient(180deg, rgba(2,3,6,0.88) 0%, rgba(2,3,6,0.55) 45%, rgba(2,3,6,0) 100%)",
@@ -281,10 +285,15 @@ export function Navbar() {
               aria-expanded={open}
               aria-controls="mobile-nav"
               className={cn(
-                "hud-brackets flex h-11 items-center gap-3 px-3 font-mono text-[0.875rem] uppercase tracking-[0.16em] text-fg",
+                "hud-brackets relative isolate flex h-11 items-center gap-3 px-3 font-mono text-[0.875rem] uppercase tracking-[0.16em] text-fg",
                 mn ? "min-[1280px]:hidden" : "min-[1080px]:hidden"
               )}
             >
+              {/* On touch, the button floats on a small pane of glass, as
+                  iOS 26's own floating controls do. Its own element, because
+                  `hud-brackets` owns the button's background. 44px of
+                  backdrop is nothing to blur. */}
+              <span aria-hidden className="glass-ios pointer-events-none absolute inset-0 -z-10 hidden rounded-[3px] bg-[#020a0c]/35 pointer-coarse:block" />
               <span aria-hidden className="hidden min-[420px]:inline [:root:lang(mn)_&]:normal-case [:root:lang(mn)_&]:tracking-[0.08em]">
                 {/* Below 420px the wordmark needs the room; the button keeps
                     its accessible name either way. */}
@@ -310,38 +319,62 @@ export function Navbar() {
         </nav>
       </header>
 
-      {/* The phone index: a full-screen sheet of big, developing links.
-          A real modal: `z-80` so it is over the header rather than under it,
-          and `aria-modal` so the page behind is gone from the a11y tree. That
-          is why it carries its own wordmark and close button — the header's
-          copies are outside the dialog and unreachable to a screen reader. */}
+      {/* The phone index: an iOS sheet of big, developing links.
+          It rises from the bottom edge on a spring, sits on a dimmed page,
+          and goes away the way a native sheet does: tap the dim, tap close,
+          or throw it down. A real modal: `z-80` so it is over the header
+          rather than under it, and `aria-modal` so the page behind is gone
+          from the a11y tree. That is why it carries its own wordmark and
+          close button; the header's copies are outside the dialog and
+          unreachable to a screen reader. The page behind does not scale back
+          the way Apple's card stack does: a transform on <main> would break
+          every sticky pin and fixed layer inside it. */}
       <AnimatePresence>
         {open && (
           <motion.div
+            key="nav-dim"
+            aria-hidden
+            onClick={closeSheet}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1, transition: { duration: 0.3, ease: "easeOut" } }}
+            exit={{ opacity: 0, transition: { duration: 0.22, ease: "easeIn" } }}
+            className={cn(
+              "fixed inset-0 z-[79] bg-[#020a0c]/60",
+              mn ? "min-[1280px]:hidden" : "min-[1080px]:hidden"
+            )}
+          />
+        )}
+        {open && (
+          <motion.div
+            key="nav-sheet"
             ref={sheetRef}
             id="mobile-nav"
             role="dialog"
             aria-modal="true"
             aria-label={t.nav.siteMenu}
-            /* A quiet fade, not a curtain: opacity only, quick in, quicker
-               out, so the page dims under the glass instead of being
-               swept away. */
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1, transition: { duration: 0.28, ease: [0.22, 1, 0.36, 1] } }}
-            exit={{ opacity: 0, transition: { duration: 0.18, ease: [0.4, 0, 1, 1] } }}
+            /* UIKit's sheet: a critically damped spring up, its own curve
+               down. A downward throw dismisses on distance or speed; upward
+               it barely gives, as a sheet at full height does. */
+            initial={{ y: "100%" }}
+            animate={{ y: 0, transition: { type: "spring", stiffness: 420, damping: 42, mass: 0.9 } }}
+            exit={{ y: "100%", transition: { duration: 0.28, ease: [0.32, 0.72, 0, 1] } }}
+            drag="y"
+            dragConstraints={{ top: 0, bottom: 0 }}
+            dragElastic={{ top: 0.04, bottom: 0.85 }}
+            onDragEnd={(_, info) => {
+              if (info.offset.y > 110 || info.velocity.y > 600) closeSheet();
+            }}
             className={cn(
-              "liquid-glass-live fixed inset-0 z-[80] flex flex-col overflow-hidden bg-[#020a0c]/85 px-6",
+              "glass-ios fixed inset-x-0 bottom-0 z-[80] flex max-h-[calc(100svh-env(safe-area-inset-top)-0.75rem)] flex-col overflow-hidden rounded-t-[28px] bg-[#020a0c]/72 px-6 pb-[max(1.25rem,env(safe-area-inset-bottom))] pl-[max(1.5rem,env(safe-area-inset-left))] pr-[max(1.5rem,env(safe-area-inset-right))]",
               mn ? "min-[1280px]:hidden" : "min-[1080px]:hidden"
             )}
-            style={{
-              paddingTop: "env(safe-area-inset-top)",
-              paddingBottom: "env(safe-area-inset-bottom)",
-            }}
           >
+            {/* The grabber: says "this pulls down" before anyone tries. */}
+            <span aria-hidden className="relative mx-auto mt-2 block h-[5px] w-9 shrink-0 rounded-full bg-white/30" />
             {/* The name, brushed, as a ghost down the sheet's right edge. */}
-            <InkSign tone="ghost" className="pointer-events-none absolute -right-2 top-[12%] h-[70%]" />
+            <InkSign tone="ghost" className="pointer-events-none absolute -right-2 top-[10%] h-[80%]" />
 
-            <div className="relative flex h-16 shrink-0 items-center justify-between">
+            <div className="relative flex h-14 shrink-0 items-center justify-between">
               <span className="flex items-center gap-3">
                 <Monogram className="shrink-0" />
                 <span className="font-display text-lg text-fg">{profile.wordmark}</span>
@@ -353,11 +386,11 @@ export function Navbar() {
                 aria-label={t.nav.closeMenu}
                 className="hud-brackets -mr-1 flex h-11 w-11 items-center justify-center text-fg"
               >
-                <X size={18} strokeWidth={1.5} />
+                <X size={18} strokeWidth={iconStroke(18, "medium")} />
               </button>
             </div>
 
-            <ul className="relative my-auto">
+            <ul className="relative mt-2">
               {navLinks.map((link, i) => {
                 const isActive = active === link.href;
                 const inner = (
@@ -370,7 +403,7 @@ export function Navbar() {
                     >
                       {link.code}
                     </span>
-                    <span className="font-tech text-[clamp(2rem,9vw,3.25rem)] font-semibold uppercase leading-none tracking-[0.04em] text-fg [:root:lang(mn)_&]:normal-case [:root:lang(mn)_&]:tracking-normal">
+                    <span className="font-tech text-[clamp(1.5rem,min(9vw,6.2svh),3.25rem)] font-semibold uppercase leading-none tracking-[0.04em] text-fg [:root:lang(mn)_&]:normal-case [:root:lang(mn)_&]:tracking-normal">
                       {link.label}
                     </span>
                     {isActive && (
@@ -416,7 +449,7 @@ export function Navbar() {
                 );
               })}
             </ul>
-            <div className="relative mb-6 flex shrink-0 flex-wrap items-center justify-between gap-4">
+            <div className="relative mt-5 flex shrink-0 flex-wrap items-center justify-between gap-4">
               <a href={`mailto:${contact.email}`} className="hud-label flex h-11 items-center">
                 {contact.email}
               </a>

@@ -3,7 +3,8 @@
 import { useEffect } from "react";
 
 /**
- * The refraction behind every `liquid-glass-live` surface.
+ * The refraction behind every `liquid-glass-live` surface (none at the moment:
+ * the phone sheet moved to `glass-ios`, which reads better in WebKit).
  *
  * One hidden SVG filter for the whole document. It displaces whatever is
  * behind the glass through a soft noise map, three times at slightly different

@@ -260,6 +260,33 @@
   }
 }
 
+/* Press feedback on touch, the iOS way: whatever you put your finger on
+   sinks a little and brightens, instantly, and springs back when you let go.
+   Desktop has hover and a pointer and does not get it.
+   - `scale`, not `transform`, so it composes with any transform or framer
+     motion already on the element.
+   - In `@layer base` on purpose: an element that sets its own transition or
+     scale with a utility keeps it (it still sinks, just without the spring).
+   - Inline text links are untouched for free: `scale` does nothing to an
+     inline box, so only blocks, buttons and cards move.
+   - The release overshoots very slightly (the 1.3 in the curve); the press
+     itself is 80ms ease-out, faster than a tap can register as slow. */
+@layer base {
+  @media (pointer: coarse) {
+    :where(a[href], button:not(:disabled), [role="button"], summary, label[for]) {
+      transition:
+        scale 0.36s cubic-bezier(0.2, 0.9, 0.3, 1.3),
+        filter 0.36s ease-out;
+    }
+    :where(a[href], button:not(:disabled), [role="button"], summary, label[for]):active {
+      scale: 0.97;
+      filter: brightness(1.22);
+      transition-duration: 0.08s;
+      transition-timing-function: ease-out;
+    }
+  }
+}
+
 html {
   /* Big screens get a bigger rem. Everything is sized in rem, so at 100%
      browser zoom a 2560px monitor drew the type and panels at laptop size
@@ -270,12 +297,15 @@ html {
   font-size: clamp(100%, 0.41667vw + 0.58333rem, 125%);
   scroll-behavior: auto; /* Lenis owns smooth scroll */
   -webkit-text-size-adjust: 100%;
-  /* No native scrollbar: the chapter spine in the right gutter is the page's
-     scrollbar (drag to scrub, click to glide — chrome/ChapterFrame). With no
-     track there is nothing for a scroll lock (preloader, case file, mobile
-     menu) to remove, so the old `scrollbar-gutter: stable` guard against the
-     layout jumping sideways went with it. */
-  scrollbar-width: none;
+  /* iOS paints a grey box over anything tapped. The press rule above gives
+     touch its own feedback, shaped like the thing pressed, so the box goes. */
+  -webkit-tap-highlight-color: transparent;
+  /* No native scrollbar with a mouse (the `pointer: fine` block below): the
+     chapter spine in the right gutter is the page's scrollbar (drag to scrub,
+     click to glide — chrome/ChapterFrame). With no track there is nothing for
+     a scroll lock (preloader, case file, mobile menu) to remove, so the old
+     `scrollbar-gutter: stable` guard against the layout jumping sideways went
+     with it. Touch scrollbars are overlays and take no room either. */
   /* The floor, and deliberately NOT `--color-bg`: this element spans every act,
      so binding it to a per-act token is exactly the repaint the backdrop exists
      to remove. It is only ever seen for the frame before SiteBackdrop paints. */
@@ -317,8 +347,17 @@ body {
 ::-webkit-scrollbar-thumb:hover {
   background: var(--color-fg);
 }
-html::-webkit-scrollbar {
-  display: none;
+/* Only where there is a pointer to drag the spine with. On a phone the spine
+   is a thin index, and iOS's own scroll indicator (the thin bar that appears
+   while you fling and fades after) is part of how scrolling feels native, so
+   it stays. */
+@media (pointer: fine) {
+  html {
+    scrollbar-width: none;
+  }
+  html::-webkit-scrollbar {
+    display: none;
+  }
 }
 
 :focus-visible {
@@ -515,8 +554,8 @@ html.hud-cursor * {
    ------------------------------------------------------------------------- */
 @utility glass {
   background: color-mix(in srgb, var(--color-bg) 74%, transparent);
-  backdrop-filter: blur(16px) saturate(1.25);
   -webkit-backdrop-filter: blur(16px) saturate(1.25);
+  backdrop-filter: blur(16px) saturate(1.25);
   border: 1px solid var(--color-line);
 }
 
@@ -547,11 +586,47 @@ html.hud-cursor * {
    filter inside backdrop-filter; everything else gets the blur alone. Only
    `.lg-live` elements pay for it — callers drop the class while scrolling. */
 @utility liquid-glass-live {
-  backdrop-filter: blur(14px) saturate(1.5);
   -webkit-backdrop-filter: blur(14px) saturate(1.5);
+  backdrop-filter: blur(14px) saturate(1.5);
 }
 :root[data-lg="svg"] .liquid-glass-live {
   backdrop-filter: url(#lg) blur(5px) saturate(1.6) brightness(1.06);
+}
+
+/* The glass for WebKit, which is every iPhone browser. Safari cannot bend the
+   backdrop (no SVG filter inside backdrop-filter), so blur alone read as
+   frosted plastic. What makes Apple's material read as glass is the light on
+   it, not the refraction:
+     - saturation pushed past natural, so colour behind it glows through;
+     - a specular sheen across the top, brightest at the edge;
+     - a lit top rim and a cool lower rim (the `liquid-glass` vocabulary);
+     - a slight lift in brightness, so the pane is never just a darker hole.
+   All of it is background-image and inset shadow on the element itself: no
+   pseudo-element and no second backdrop pass. The tint stays the caller's
+   `background-color`, so it composes with `bg-*`. Only single-instance,
+   idle surfaces take this (the phone sheet, the menu button). */
+@utility glass-ios {
+  /* Prefixed first: Lightning CSS folds an unprefixed declaration into a
+     prefixed one that follows it, and Chromium reads only the unprefixed. */
+  -webkit-backdrop-filter: blur(22px) saturate(1.9) brightness(1.08);
+  backdrop-filter: blur(22px) saturate(1.9) brightness(1.08);
+  background-image:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.13) 0%, rgba(255, 255, 255, 0.035) 18%, rgba(255, 255, 255, 0) 42%),
+    radial-gradient(120% 60% at 50% 0%, rgba(159, 227, 236, 0.08), transparent 70%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.28),
+    inset 0 0 0 1px rgba(228, 241, 243, 0.1),
+    inset 0 -1px 0 rgba(159, 227, 236, 0.16),
+    0 24px 60px -24px rgba(0, 0, 0, 0.75);
+}
+/* Reduce Transparency (iOS Settings > Accessibility) means a solid pane. */
+@media (prefers-reduced-transparency: reduce) {
+  .glass-ios,
+  .liquid-glass-live {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    background-color: #041013;
+  }
 }
 
 /* A tool chip. At rest a faint glass pill; inside a card whose `--live` is 1
