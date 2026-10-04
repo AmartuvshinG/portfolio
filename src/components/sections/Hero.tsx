@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { motion, useScroll, useTransform } from "framer-motion";
 import { useI18n } from "@/lib/i18n";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
+import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { usePointerDrift } from "@/hooks/usePointerDrift";
 import { useBootReady } from "@/hooks/useBootReady";
 import { NeonSign } from "@/components/ui/NeonSign";
@@ -51,8 +52,10 @@ import { cn } from "@/lib/utils";
 /** Scroll runway. The frame is pinned for all but one viewport of it, and the
  *  fly-through needs that pinned stretch: at the old 130/180vh the frame was
  *  pinned for only 30/80vh and the window would have opened as it slid away.
- *  Shorter on a phone, where a viewport is more of a thumb's travel. */
-const RUN = "h-[200vh] md:h-[260vh]";
+ *  A phone has no fly-through (its SVG mask re-rasterises every frame and
+ *  dropped phones well under 60fps), so it keeps the old short runway: the
+ *  copy clears and the lit name scrolls away with the frame. */
+const RUN = "h-[130vh] md:h-[260vh]";
 
 /** When the name's tube strikes, ms after the curtain starts to lift — just
  *  after it has finished rising out of its clip. */
@@ -63,6 +66,8 @@ export function Hero() {
   const { profile } = c;
   const ref = useRef<HTMLElement>(null);
   const reduced = useReducedMotion();
+  /* The fly-through is md and up only. Matches RUN's breakpoint. */
+  const fly = useMediaQuery("(min-width: 768px)") && !reduced;
   const [active, setActive] = useState(false);
   const [struck, setStruck] = useState(false);
   /* The signature has landed in the edge sign (or there was none to land). */
@@ -165,7 +170,9 @@ export function Hero() {
               drift's raw `transform` and framer's composed one overwrite each
               other at 60Hz. */}
           <div ref={drift} className="relative">
-            <motion.div style={reduced ? undefined : { opacity: tubeOpacity }}>
+            {/* Without the fly-through there is no window for the tube to
+                become, so on a phone it stays lit and leaves with the frame. */}
+            <motion.div style={fly ? { opacity: tubeOpacity } : undefined}>
             <Focus delay={0.45} amount={26} duration={0.95} play={play}>
               {/* 8vw at every width. Michroma sets AMARTUVSHIN at ~11.07× its
                   font size, so 8vw fills ~89% of the frame — one line from a
@@ -212,11 +219,7 @@ export function Hero() {
                 transition={{ duration: 1.1, ease: [0.3, 0, 0.2, 1], times: [0, 0.18, 0.6, 1] }}
               />
             )}
-            {!reduced && (
-              <>
-                <FlyThrough progress={pin} text={profile.wordmark} textRef={tubeRef} active={active} />
-              </>
-            )}
+            {fly && <FlyThrough progress={pin} text={profile.wordmark} textRef={tubeRef} active={active} />}
           </div>
         </motion.div>
 

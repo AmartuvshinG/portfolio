@@ -15,7 +15,6 @@ import { cn } from "@/lib/utils";
 import { Monogram } from "@/components/chrome/NavGlyphs";
 import { InkSign } from "@/components/ui/InkSign";
 import { useScramble } from "@/hooks/useScramble";
-import { playInkWipe } from "@/lib/inkWipe";
 
 /**
  * The HUD.
@@ -275,9 +274,9 @@ export function Navbar() {
             <button
               ref={toggleRef}
               type="button"
-              /* Opening inks the screen first and the sheet arrives under
-                 the ink (lib/inkWipe); closing is the sheet's own exit. */
-              onClick={() => (open ? setOpen(false) : playInkWipe({ onCovered: () => setOpen(true) }))}
+              /* The sheet opens on its own short fade. It used to be inked in
+                 by a full-screen flood, which read as heavy-handed for a menu. */
+              onClick={() => setOpen((o) => !o)}
               aria-label={open ? t.nav.closeMenu : t.nav.openMenu}
               aria-expanded={open}
               aria-controls="mobile-nav"
@@ -324,10 +323,12 @@ export function Navbar() {
             role="dialog"
             aria-modal="true"
             aria-label={t.nav.siteMenu}
-            initial={{ opacity: 0, clipPath: "inset(0 0 100% 0)" }}
-            animate={{ opacity: 1, clipPath: "inset(0 0 0% 0)" }}
-            exit={{ opacity: 0, clipPath: "inset(100% 0 0 0)" }}
-            transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+            /* A quiet fade, not a curtain: opacity only, quick in, quicker
+               out, so the page dims under the glass instead of being
+               swept away. */
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1, transition: { duration: 0.28, ease: [0.22, 1, 0.36, 1] } }}
+            exit={{ opacity: 0, transition: { duration: 0.18, ease: [0.4, 0, 1, 1] } }}
             className={cn(
               "liquid-glass-live fixed inset-0 z-[80] flex flex-col overflow-hidden bg-[#020a0c]/85 px-6",
               mn ? "min-[1280px]:hidden" : "min-[1080px]:hidden"
@@ -383,11 +384,11 @@ export function Navbar() {
                 return (
                   <motion.li
                     key={link.href}
-                    /* Each line develops top to bottom, one after another —
-                       the site's one entrance, as a list. */
-                    initial={{ opacity: 0, clipPath: "inset(0 0 100% 0)", y: 10 }}
-                    animate={{ opacity: 1, clipPath: "inset(0 0 0% 0)", y: 0 }}
-                    transition={{ delay: 0.12 + 0.06 * i, duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
+                    /* The lines settle in a short cascade: a few pixels and a
+                       fade each, all landed within ~0.6s of the tap. */
+                    initial={{ opacity: 0, y: 6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.08 + 0.03 * i, duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
                     className="border-b border-line"
                   >
                     {isHome ? (

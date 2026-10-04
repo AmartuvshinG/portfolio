@@ -12,7 +12,7 @@
  * to a slit of light over the file, the slit closes, the file is gone
  * (`onCovered`), and the dark lifts off the page it was opened from.
  *
- * Same contract as lib/inkWipe, which it replaced for case files (the ink
+ * Same contract as the old ink wipe, which it replaced for case files (the ink
  * still turns the phone index's page): under reduced motion, or with no host
  * mounted, both call straight through and the file simply appears or goes.
  */
