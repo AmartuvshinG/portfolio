@@ -300,12 +300,13 @@ html {
   /* iOS paints a grey box over anything tapped. The press rule above gives
      touch its own feedback, shaped like the thing pressed, so the box goes. */
   -webkit-tap-highlight-color: transparent;
-  /* No native scrollbar with a mouse (the `pointer: fine` block below): the
-     chapter spine in the right gutter is the page's scrollbar (drag to scrub,
-     click to glide — chrome/ChapterFrame). With no track there is nothing for
-     a scroll lock (preloader, case file, mobile menu) to remove, so the old
+  /* No native scrollbar, on any device: the chapter spine in the right
+     gutter is the page's scrollbar (drag to scrub, click to glide —
+     chrome/ChapterFrame). With no track there is nothing for a scroll lock
+     (preloader, case file, mobile menu) to remove, so the old
      `scrollbar-gutter: stable` guard against the layout jumping sideways went
-     with it. Touch scrollbars are overlays and take no room either. */
+     with it. */
+  scrollbar-width: none;
   /* The floor, and deliberately NOT `--color-bg`: this element spans every act,
      so binding it to a per-act token is exactly the repaint the backdrop exists
      to remove. It is only ever seen for the frame before SiteBackdrop paints. */
@@ -347,17 +348,11 @@ body {
 ::-webkit-scrollbar-thumb:hover {
   background: var(--color-fg);
 }
-/* Only where there is a pointer to drag the spine with. On a phone the spine
-   is a thin index, and iOS's own scroll indicator (the thin bar that appears
-   while you fling and fades after) is part of how scrolling feels native, so
-   it stays. */
-@media (pointer: fine) {
-  html {
-    scrollbar-width: none;
-  }
-  html::-webkit-scrollbar {
-    display: none;
-  }
+/* Hidden on every device, phones included. iOS's own indicator was tried
+   alongside the spine (2026-10-04) and two scrollbars on one edge read as a
+   fault; the spine is the site's scrollbar. */
+html::-webkit-scrollbar {
+  display: none;
 }
 
 :focus-visible {
