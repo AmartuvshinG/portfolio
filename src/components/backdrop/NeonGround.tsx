@@ -8,8 +8,10 @@ import { pointerEnabled, retainPointer, stepPointer } from "@/lib/pointer";
 import {
   FOCUS_MS,
   groundCovered,
+  isLowPower,
   onCover,
   onDive,
+  onLowPower,
   onSurge,
   readDive,
   readFocuses,
@@ -219,6 +221,7 @@ export function NeonGround() {
       !reduced &&
       booted &&
       readDive() > 0.02 &&
+      !isLowPower() &&
       document.visibilityState === "visible" &&
       !groundCovered();
 
@@ -266,6 +269,8 @@ export function NeonGround() {
     window.addEventListener("resize", onResize);
     document.addEventListener("visibilitychange", wake);
     const unCover = onCover(wake);
+    /* Low Power Mode stops the loop at its next frame; `wake` just reports. */
+    const unLow = onLowPower(wake);
     /* Opacity tracks the dive: one style write per change, no layout. */
     const fade = () => {
       root.style.opacity = readDive().toFixed(3);
@@ -285,6 +290,7 @@ export function NeonGround() {
       window.removeEventListener("resize", onResize);
       document.removeEventListener("visibilitychange", wake);
       unCover();
+      unLow();
       unDive();
       unSurge();
       release();

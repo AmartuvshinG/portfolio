@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { iconStroke } from "@/lib/icon";
 import { AnimatePresence, motion, useAnimationControls, useInView } from "framer-motion";
 import { Clock, MapPin } from "lucide-react";
 import { sectionIndex } from "@/lib/content";
@@ -148,11 +149,11 @@ export function Contact() {
               {contact.availability}
             </li>
             <li className="flex items-center gap-2.5">
-              <Clock aria-hidden size={18} className="shrink-0 text-[var(--color-holo)]" />
+              <Clock aria-hidden size={18} strokeWidth={iconStroke(18)} className="shrink-0 text-[var(--color-holo)]" />
               {t.contact.responseTime}
             </li>
             <li className="flex items-center gap-2.5">
-              <MapPin aria-hidden size={18} className="shrink-0 text-[var(--color-holo)]" />
+              <MapPin aria-hidden size={18} strokeWidth={iconStroke(18)} className="shrink-0 text-[var(--color-holo)]" />
               {profile.location}
             </li>
           </ul>

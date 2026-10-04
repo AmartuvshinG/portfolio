@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { iconStroke } from "@/lib/icon";
 import { motion, useScroll, useSpring, useTransform, type MotionValue } from "framer-motion";
 import { ArrowUpRight } from "lucide-react";
 import { sectionIndex, type SocialLink } from "@/lib/content";
@@ -184,6 +185,7 @@ function Cartridge({
               <ArrowUpRight
                 aria-hidden
                 size={24}
+                strokeWidth={iconStroke(24)}
                 className="text-fg/70 transition-colors duration-300 group-hover/cart:text-fg"
               />
             </motion.span>

@@ -38,6 +38,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { iconStroke } from "@/lib/icon";
 
 /**
  * The tools a capability names, as small marks.
@@ -147,7 +148,7 @@ function contrast(a: string, b: string): number {
 export function TechMark({ name, size = 20, className }: { name: TechKey; size?: number; className?: string }) {
   if (name in GLYPHS) {
     const Icon = GLYPHS[name as keyof typeof GLYPHS].icon;
-    return <Icon size={size} strokeWidth={1.7} aria-hidden className={cn("shrink-0", className)} />;
+    return <Icon size={size} strokeWidth={iconStroke(size)} aria-hidden className={cn("shrink-0", className)} />;
   }
   const icon = BRANDS[name as keyof typeof BRANDS];
   return (

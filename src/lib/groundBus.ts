@@ -155,3 +155,31 @@ export function onStrike(l: Listener) {
     strikeListeners.delete(l);
   };
 }
+
+/* --- Low power. -------------------------------------------------------------
+   iOS in Low Power Mode refuses to autoplay video (`play()` rejects with
+   NotAllowedError even muted and inline) and halves requestAnimationFrame to
+   30fps. There is no API that says so; the refused play is the tell. Once it
+   is seen, the ground holds its posters, the rain stops drawing, and
+   useQuality drops to `lite`: a phone saving its battery should not be asked
+   for weather. One-way for the session: the mode rarely flips mid-visit, and
+   a flapping ground would be worse than a still one. */
+let lowPower = false;
+const lowPowerListeners = new Set<Listener>();
+
+export function markLowPower() {
+  if (lowPower) return;
+  lowPower = true;
+  for (const l of lowPowerListeners) l();
+}
+
+export function isLowPower() {
+  return lowPower;
+}
+
+export function onLowPower(l: Listener) {
+  lowPowerListeners.add(l);
+  return () => {
+    lowPowerListeners.delete(l);
+  };
+}

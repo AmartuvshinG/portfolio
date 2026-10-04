@@ -1,6 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
+import { iconStroke } from "@/lib/icon";
 import {
   ArrowRight,
   Braces,
@@ -62,7 +63,7 @@ export function CapabilityCard({ item }: { item: Capability }) {
               "linear-gradient(135deg, color-mix(in srgb, var(--spectrum-1) 22%, transparent), color-mix(in srgb, var(--spectrum-3) 14%, transparent))",
           }}
         >
-          <Icon size={22} strokeWidth={1.6} aria-hidden />
+          <Icon size={22} strokeWidth={iconStroke(22)} aria-hidden />
         </span>
         <span className="micro tabular">{item.code.slice(-2)}</span>
       </div>
@@ -108,6 +109,7 @@ export function CapabilityCard({ item }: { item: Capability }) {
           </span>
           <ArrowRight
             size={18}
+            strokeWidth={iconStroke(18)}
             aria-hidden
             className="shrink-0 text-muted transition-transform duration-300 group-hover:translate-x-1 group-hover:text-fg"
           />

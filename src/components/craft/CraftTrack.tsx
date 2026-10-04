@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { iconStroke } from "@/lib/icon";
 import {
   motion,
   useScroll,
@@ -66,7 +67,7 @@ export function CardBody({
               "linear-gradient(135deg, color-mix(in srgb, var(--spectrum-1) 30%, transparent), color-mix(in srgb, var(--spectrum-3) 20%, transparent))",
           }}
         >
-          <Icon size={26} strokeWidth={1.6} aria-hidden />
+          <Icon size={26} strokeWidth={iconStroke(26)} aria-hidden />
         </span>
         {/* Bone, not muted: on a phone the code sits over the card's own
             outlined numeral and the rain, where muted measured 4.3–4.6:1. */}
@@ -120,6 +121,7 @@ export function CardBody({
           </span>
           <ArrowRight
             size={20}
+            strokeWidth={iconStroke(20)}
             aria-hidden
             className="shrink-0 text-muted transition-transform duration-200 group-hover:translate-x-1 group-hover:text-fg"
           />

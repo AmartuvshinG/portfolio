@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useReducedMotion } from "./useReducedMotion";
+import { isLowPower, onLowPower } from "@/lib/groundBus";
 
 /**
  * How much atmosphere this machine should be asked to render.
@@ -40,6 +41,8 @@ function measure(): Quality {
   if (typeof window === "undefined") return "lite";
 
   if (document.documentElement.dataset.power === "low") return "lite";
+  /* iOS Low Power Mode, seen through the ground's refused autoplay. */
+  if (isLowPower()) return "lite";
 
   const nav = navigator as NavigatorWithHints;
   const cores = nav.hardwareConcurrency ?? 4;
@@ -79,8 +82,10 @@ export function useQuality(): Quality {
     /* Width is an input now, so a resize across the threshold has to re-decide
        — otherwise dragging a window narrow keeps the full weather running. */
     window.addEventListener("resize", update, { passive: true });
+    const unLow = onLowPower(update);
 
     return () => {
+      unLow();
       observer.disconnect();
       mq.removeEventListener("change", update);
       window.removeEventListener("resize", update);

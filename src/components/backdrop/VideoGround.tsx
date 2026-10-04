@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useBootReady } from "@/hooks/useBootReady";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
 import { usePointerDrift } from "@/hooks/usePointerDrift";
-import { groundCovered, onCover, onStrike, setDive } from "@/lib/groundBus";
+import { groundCovered, markLowPower, onCover, onStrike, setDive } from "@/lib/groundBus";
 import { NeonGround } from "./NeonGround";
 
 /**
@@ -357,7 +357,12 @@ export function VideoGround() {
       const live = booted && document.visibilityState === "visible" && !groundCovered();
       const set = (v: HTMLVideoElement, on: boolean) => {
         if (!v.currentSrc && !v.getAttribute("src")) return;
-        if (on && v.paused) v.play().catch(() => {});
+        if (on && v.paused)
+          v.play().catch((e: unknown) => {
+            /* A muted inline loop refused outright is iOS Low Power Mode
+               (lib/groundBus). An AbortError is just a pause racing the play. */
+            if (e instanceof DOMException && e.name === "NotAllowedError") markLowPower();
+          });
         else if (!on && !v.paused) v.pause();
       };
       set(sakura, live && shown.current.sakura);
