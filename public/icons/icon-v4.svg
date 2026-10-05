@@ -3,8 +3,24 @@
        Outlined from Mongolian Baiti and turned upright, the way the script
        runs, so no font is needed to draw it. Lit with the ramp, a blurred copy
        under it as the glow, on an opaque void square so it holds on a light
-       tab bar too. Master for scripts/bake-favicons.mjs — rerun it after editing. -->
+       tab bar too. The ground carries the Home Screen tile's two blooms, coral
+       low-left and ice high-right, pushed harder so they survive 16 px.
+       Master for scripts/bake-favicons.mjs, which lifts only the part between
+       the mark comments into the touch tile — rerun it after editing. -->
+  <defs>
+    <radialGradient id="b1" cx="0.12" cy="0.9" r="0.85">
+      <stop offset="0" stop-color="#ff3b30" stop-opacity="0.6"/>
+      <stop offset="1" stop-color="#ff3b30" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="b2" cx="0.92" cy="0.08" r="0.75">
+      <stop offset="0" stop-color="#9fe3ec" stop-opacity="0.4"/>
+      <stop offset="1" stop-color="#9fe3ec" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
   <rect width="32" height="32" rx="7" fill="#061317"/>
+  <rect width="32" height="32" rx="7" fill="url(#b1)"/>
+  <rect width="32" height="32" rx="7" fill="url(#b2)"/>
+  <!-- mark -->
   <defs>
     <linearGradient id="r" x1="0" y1="0" x2="1" y2="1">
       <stop offset="0" stop-color="#ff3b30"/>
@@ -20,4 +36,5 @@
     <use href="#a" filter="url(#gm)" opacity="0.7"/>
     <use href="#a"/>
   </g>
+  <!-- /mark -->
 </svg>

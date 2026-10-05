@@ -3,16 +3,16 @@
  *
  *   node scripts/bake-favicons.mjs
  *
- * public/icons/icon-v3.svg is the mark (ᠠ, the Mongol-script a, outlined and
+ * public/icons/icon-v4.svg is the mark (ᠠ, the Mongol-script a, outlined and
  * turned upright). Browsers that take SVG use it as-is; this writes the rest:
  *
- *   public/icons/favicon-v3.ico        16, 32, 48 px, PNG-in-ICO — the one
+ *   public/icons/favicon-v4.ico        16, 32, 48 px, PNG-in-ICO — the one
  *   public/favicon.ico                 <link>ed, and a root copy for anything
  *                                      that asks /favicon.ico unprompted
- *   public/icons/icon-v3-32.png        the tab icon for Safari, which does
- *   public/icons/icon-v3-192.png       not take SVG favicons
- *   public/icons/icon-v3-512.png       the manifest's install icon
- *   public/icons/apple-touch-icon-v3.png  180 px, full bleed — iOS rounds the
+ *   public/icons/icon-v4-32.png        the tab icon for Safari, which does
+ *   public/icons/icon-v4-192.png       not take SVG favicons
+ *   public/icons/icon-v4-512.png       the manifest's install icon
+ *   public/icons/apple-touch-icon-v4.png  180 px, full bleed — iOS rounds the
  *   public/apple-touch-icon.png           corners itself and fills
  *   public/apple-touch-icon-precomposed.png  transparency with black, so the
  *                                      void runs to the edge and the letter sits
@@ -30,10 +30,11 @@
 import { readFile, writeFile } from "node:fs/promises";
 import sharp from "sharp";
 
-const master = await readFile(new URL("../public/icons/icon-v3.svg", import.meta.url), "utf8");
+const master = await readFile(new URL("../public/icons/icon-v4.svg", import.meta.url), "utf8");
 
-/* The master's two paths, lifted out so the touch icon can reframe them. */
-const inner = master.match(/<defs>[\s\S]*<\/svg>/)[0].replace("</svg>", "");
+/* The letter alone (between the master's mark comments), lifted out so the
+   touch icon can reframe it on its own, softer ground. */
+const inner = master.match(/<!-- mark -->([\s\S]*)<!-- \/mark -->/)[1];
 
 /* Touch icon: void ground with a coral bloom low-left and an ice one
    high-right — the ramp as light, the way the site uses it — then the mark at
@@ -89,12 +90,12 @@ const out = (p) => new URL(`../public/${p}`, import.meta.url);
 const sizes = [16, 32, 48];
 const images = await Promise.all(sizes.map(async (size) => ({ size, data: await png(master, size) })));
 const favicon = ico(images);
-await writeFile(out("icons/favicon-v3.ico"), favicon);
+await writeFile(out("icons/favicon-v4.ico"), favicon);
 await writeFile(out("favicon.ico"), favicon);
-for (const size of [32, 192, 512]) await writeFile(out(`icons/icon-v3-${size}.png`), await png(master, size));
+for (const size of [32, 192, 512]) await writeFile(out(`icons/icon-v4-${size}.png`), await png(master, size));
 const touch = await png(apple, 180, 180);
-await writeFile(out("icons/apple-touch-icon-v3.png"), touch);
+await writeFile(out("icons/apple-touch-icon-v4.png"), touch);
 await writeFile(out("apple-touch-icon.png"), touch);
 await writeFile(out("apple-touch-icon-precomposed.png"), touch);
 
-console.log("favicon.ico + icons/favicon-v3.ico, icons/icon-v3-{32,192,512}.png and the 180 px touch icons written.");
+console.log("favicon.ico + icons/favicon-v4.ico, icons/icon-v4-{32,192,512}.png and the 180 px touch icons written.");

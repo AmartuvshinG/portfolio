@@ -139,12 +139,12 @@ export const metadata: Metadata = {
      The 32 px PNG is what Safari's tabs use — it takes no SVG favicon. */
   icons: {
     icon: [
-      { url: "/icons/favicon-v3.ico", sizes: "48x48" },
-      { url: "/icons/icon-v3-32.png", type: "image/png", sizes: "32x32" },
-      { url: "/icons/icon-v3-192.png", type: "image/png", sizes: "192x192" },
-      { url: "/icons/icon-v3.svg", type: "image/svg+xml", sizes: "any" },
+      { url: "/icons/favicon-v4.ico", sizes: "48x48" },
+      { url: "/icons/icon-v4-32.png", type: "image/png", sizes: "32x32" },
+      { url: "/icons/icon-v4-192.png", type: "image/png", sizes: "192x192" },
+      { url: "/icons/icon-v4.svg", type: "image/svg+xml", sizes: "any" },
     ],
-    apple: [{ url: "/icons/apple-touch-icon-v3.png", sizes: "180x180" }],
+    apple: [{ url: "/icons/apple-touch-icon-v4.png", sizes: "180x180" }],
   },
   /* Saved to an iPhone's Home Screen it opens with no Safari chrome, the
      status bar laid over the page (the viewport is `cover`, so the ground
