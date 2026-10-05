@@ -194,9 +194,13 @@ export function RouteGlobe({
     canvas.addEventListener("webglcontextlost", onLost);
 
     loadMask(MASKS[mask])
-      .then((img) => {
-        if (stopped) return;
-        globe = createGlobe(canvas, img, { pitch });
+      .then((img) => (stopped ? null : createGlobe(canvas, img, { pitch })))
+      .then((built) => {
+        if (stopped) {
+          built?.dispose();
+          return;
+        }
+        globe = built;
         if (!globe) {
           failed.current?.();
           return;

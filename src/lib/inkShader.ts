@@ -38,6 +38,8 @@
  * and a sin-free hash (see the GLSL traps memory).
  */
 
+import { linkProgram } from "@/lib/glProgram";
+
 /**
  * The room's GLSL helpers: noise, shapes and the rain on the window, kept
  * apart from the intro's main shader (below) so they read on their own.
@@ -438,8 +440,13 @@ function hexToRgb(hex: string, fallback: [number, number, number]): [number, num
 
 /**
  * Build the renderer, or null without WebGL. `image` must be decoded.
+ *
+ * Async for the shader link (lib/glProgram): waited on in place it stalled
+ * the main thread ~350 ms (4× CPU) during the preloader, freezing the
+ * curtain's rain and anything else painting. The scene clock starts when
+ * the renderer is handed over, so the intro itself is unchanged.
  */
-export function createInkRenderer(
+export async function createInkRenderer(
   canvas: HTMLCanvasElement,
   image: HTMLImageElement,
   tex: { width: number; height: number; spread: number }
@@ -454,27 +461,8 @@ export function createInkRenderer(
   });
   if (!gl) return null;
 
-  const compile = (type: number, src: string) => {
-    const sh = gl.createShader(type)!;
-    gl.shaderSource(sh, src);
-    gl.compileShader(sh);
-    if (!gl.getShaderParameter(sh, gl.COMPILE_STATUS)) {
-      console.warn("[ink] shader:", gl.getShaderInfoLog(sh));
-      return null;
-    }
-    return sh;
-  };
-  const vs = compile(gl.VERTEX_SHADER, VERT);
-  const fs = compile(gl.FRAGMENT_SHADER, FRAG);
-  if (!vs || !fs) return null;
-  const prog = gl.createProgram()!;
-  gl.attachShader(prog, vs);
-  gl.attachShader(prog, fs);
-  gl.linkProgram(prog);
-  if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) {
-    console.warn("[ink] link:", gl.getProgramInfoLog(prog));
-    return null;
-  }
+  const prog = await linkProgram(gl, VERT, FRAG, "ink");
+  if (!prog) return null;
   gl.useProgram(prog);
 
   const buf = gl.createBuffer();

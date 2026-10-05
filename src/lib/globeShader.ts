@@ -39,6 +39,7 @@
  */
 
 import { arcAngle, cameraBasis, cross, FOV_Y, normalize, PLACES, toVec, type Shot, type Vec3 } from "@/lib/routeGeo";
+import { linkProgram } from "@/lib/glProgram";
 
 const VERT = `
 attribute vec2 aPos;
@@ -279,8 +280,12 @@ export interface GlobeOptions {
 /**
  * Build the globe on `canvas`, or null without WebGL. `mask` is the baked
  * image, already decoded.
+ *
+ * Async because of the shader compile: the two links are issued together and
+ * awaited off the main thread where the driver allows it (lib/glProgram).
+ * Waited on in place they stalled ~60 ms as Journey arrived.
  */
-export function createGlobe(canvas: HTMLCanvasElement, mask: HTMLImageElement, opts: GlobeOptions) {
+export async function createGlobe(canvas: HTMLCanvasElement, mask: HTMLImageElement, opts: GlobeOptions) {
   const gl = canvas.getContext("webgl", {
     alpha: true,
     premultipliedAlpha: true,
@@ -292,33 +297,10 @@ export function createGlobe(canvas: HTMLCanvasElement, mask: HTMLImageElement, o
   if (!gl) return null;
   const derivatives = !!gl.getExtension("OES_standard_derivatives");
 
-  const compile = (type: number, src: string) => {
-    const sh = gl.createShader(type)!;
-    gl.shaderSource(sh, src);
-    gl.compileShader(sh);
-    if (!gl.getShaderParameter(sh, gl.COMPILE_STATUS)) {
-      console.warn("[globe] shader:", gl.getShaderInfoLog(sh));
-      return null;
-    }
-    return sh;
-  };
-  const program = (frag: string) => {
-    const vs = compile(gl.VERTEX_SHADER, VERT);
-    const fs = compile(gl.FRAGMENT_SHADER, frag);
-    if (!vs || !fs) return null;
-    const p = gl.createProgram()!;
-    gl.attachShader(p, vs);
-    gl.attachShader(p, fs);
-    gl.bindAttribLocation(p, 0, "aPos");
-    gl.linkProgram(p);
-    if (!gl.getProgramParameter(p, gl.LINK_STATUS)) {
-      console.warn("[globe] link:", gl.getProgramInfoLog(p));
-      return null;
-    }
-    return p;
-  };
-  const cellsProg = program(CELLS_FRAG(derivatives));
-  const panelProg = program(PANEL_FRAG);
+  const [cellsProg, panelProg] = await Promise.all([
+    linkProgram(gl, VERT, CELLS_FRAG(derivatives), "globe", { aPos: 0 }),
+    linkProgram(gl, VERT, PANEL_FRAG, "globe", { aPos: 0 }),
+  ]);
   if (!cellsProg || !panelProg) return null;
 
   const quad = gl.createBuffer();
@@ -452,4 +434,4 @@ export function createGlobe(canvas: HTMLCanvasElement, mask: HTMLImageElement, o
   return { layout, draw, dispose };
 }
 
-export type Globe = NonNullable<ReturnType<typeof createGlobe>>;
+export type Globe = NonNullable<Awaited<ReturnType<typeof createGlobe>>>;

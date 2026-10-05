@@ -139,7 +139,7 @@ export function InkScroll({
     let cancelled = false;
     let raf = 0;
     let releasePointer = () => {};
-    let renderer: ReturnType<typeof createInkRenderer> = null;
+    let renderer: Awaited<ReturnType<typeof createInkRenderer>> = null;
 
     const image = new Image();
     image.decoding = "async";
@@ -153,10 +153,11 @@ export function InkScroll({
     };
 
     Promise.race([image.decode().then(() => "ok" as const), timeout])
-      .then((r) => {
+      .then(async (r) => {
         if (cancelled) return;
         if (r !== "ok") return goFallback();
-        renderer = createInkRenderer(canvas, image, INK_NAME);
+        renderer = await createInkRenderer(canvas, image, INK_NAME);
+        if (cancelled) return;
         if (!renderer) return goFallback();
         start();
       })
