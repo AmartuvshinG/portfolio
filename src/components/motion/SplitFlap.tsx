@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { cn } from "@/lib/utils";
 
 /* ---------------------------------------------------------------------------
    Split-flap: text that arrives the way a departures board updates.
@@ -9,8 +8,14 @@ import { cn } from "@/lib/utils";
    Every character is a cell. On `play` each cell flips through a few
    characters of its own script — Latin, Cyrillic or digits, whichever the
    final character is — and lands on it, left to right in a cascade, each
-   flip a short rotateX of the cell (one CSS keyframe, transform only). It
-   runs once per `play` and then the text is just text.
+   flip a short rotateX of the cell (transform and opacity only). It runs
+   once per `play` and then the text is just text.
+
+   **Each flip is a Web Animation, started fresh.** It used to restart a CSS
+   keyframe by removing its class, reading `offsetWidth` and adding the class
+   back — a forced layout per cell per flip, inside one rAF loop: a dozen
+   synchronous layouts of the whole page in a frame while a Journey row's
+   dates landed. `animate()` restarts without reading anything.
 
    **Width never shifts.** A cell is sized by its final character, set
    invisibly; the flipping character is laid over it, centred. Words are
@@ -32,6 +37,13 @@ function poolFor(ch: string): string | null {
   if (/[Ѐ-ӿ]/.test(ch)) return CYRILLIC;
   return null;
 }
+
+/** One flip: the new character drops in from the top half, as a flap falls. */
+const FLIP_KEYS: Keyframe[] = [
+  { transform: "rotateX(-82deg)", opacity: 0.35 },
+  { transform: "rotateX(0deg)", opacity: 1 },
+];
+const FLIP_TIMING: KeyframeAnimationOptions = { duration: 110, easing: "cubic-bezier(0.3, 0, 0.2, 1)" };
 
 /** A small deterministic PRNG: the same text flips the same way every time. */
 function mulberry(seed: number) {
@@ -76,8 +88,8 @@ export function SplitFlap({
     const finals = cells.map((c) => c.dataset.flap ?? "");
     const settle = () => cells.forEach((c, i) => {
       c.textContent = finals[i];
-      c.classList.remove("flap-tick");
     });
+    const knock = (c: HTMLSpanElement) => c.animate(FLIP_KEYS, FLIP_TIMING);
     if (instant || !play) {
       settle();
       return;
@@ -115,10 +127,7 @@ export function SplitFlap({
           if (p.shown !== p.n) {
             p.shown = p.n;
             c.textContent = finals[i];
-            /* Re-trigger the keyframe for the landing flip. */
-            c.classList.remove("flap-tick");
-            void c.offsetWidth;
-            c.classList.add("flap-tick");
+            knock(c); // the landing flip
           }
           return;
         }
@@ -126,9 +135,7 @@ export function SplitFlap({
         if (k !== p.shown) {
           p.shown = k;
           c.textContent = p.seq[k];
-          c.classList.remove("flap-tick");
-          void c.offsetWidth;
-          c.classList.add("flap-tick");
+          knock(c);
         }
       });
       if (busy) raf = requestAnimationFrame(tick);
@@ -162,7 +169,7 @@ export function SplitFlap({
               {w.map((ch, ci) => (
                 <span key={ci} className="relative inline-block">
                   <span className="invisible">{ch}</span>
-                  <span data-flap={ch} className={cn("absolute inset-0 text-center")}>
+                  <span data-flap={ch} className="flap-cell absolute inset-0 text-center">
                     {ch}
                   </span>
                 </span>

@@ -81,9 +81,17 @@ export function Shard({
         {...strike(play, instant, SEAT_AT, 0.5)}
       />
 
-      <motion.div
-        className="relative flex h-10 items-stretch overflow-hidden [clip-path:polygon(0_0,calc(100%-12px)_0,100%_12px,100%_100%,0_100%)]"
+      {/* The slide and the seat are a CSS animation (.shard-seat), not a
+          framer one: framer drives x/y from JS every frame, and ten rows
+          seating as Journey scrolled was main-thread work in every frame of
+          the chapter. This runs on the compositor. */}
+      <div
+        className={cn(
+          "relative flex h-10 items-stretch overflow-hidden [clip-path:polygon(0_0,calc(100%-12px)_0,100%_12px,100%_100%,0_100%)]",
+          !instant && play && "shard-seat"
+        )}
         style={{
+          ...(still && !instant ? { opacity: 0, transform: "translateX(28px)" } : null),
           /* A chip's face: the class tint, a fine diagonal etch, and a lit
              top edge. */
           background:
@@ -92,17 +100,6 @@ export function Shard({
             `color-mix(in srgb, ${cls.ink} 7%, #071316)`,
           boxShadow: `inset 0 0 0 1px color-mix(in srgb, ${cls.ink} 42%, transparent), inset 0 1px 0 color-mix(in srgb, ${cls.ink} 75%, transparent)`,
         }}
-        initial={false}
-        animate={still && !instant ? { x: 28, y: 0, opacity: 0 } : { x: [28, 0, 0, 0], y: [0, 0, 1, 0], opacity: 1 }}
-        transition={
-          instant || still
-            ? { duration: 0 }
-            : {
-                x: { duration: SEAT_AT, times: [0, 0.76, 0.88, 1], ease: EASE_EXPO, delay: 0.1 },
-                y: { duration: SEAT_AT, times: [0, 0.76, 0.88, 1], delay: 0.1 },
-                opacity: { duration: 0.18, delay: 0.1 },
-              }
-        }
       >
         {/* The contacts: the edge that goes into the reader. */}
         <span aria-hidden className="flex w-3.5 flex-col justify-center gap-[3px] border-r border-line pl-[4px]">
@@ -129,7 +126,7 @@ export function Shard({
             <span className="tag leading-none text-fg/85">· {words.graduated}</span>
           )}
         </span>
-      </motion.div>
+      </div>
     </div>
   );
 }
@@ -160,6 +157,12 @@ export function ReadLine({ play, instant }: { play: boolean; instant: boolean })
  * Cyrillic look-alikes, whichever the text is — then holds. Written straight
  * to the node, never through React; the real string is the node's text at
  * rest, and in a visually hidden copy for assistive tech.
+ *
+ * **The box never moves.** The real text is laid out invisibly and the
+ * decode is laid over it, so a scramble that happens to wrap differently
+ * (the org line did, on a phone) can't reflow the row and everything under
+ * it. And it is written only when the scramble changes — every 45 ms or as
+ * a letter settles — not every frame.
  */
 export function DecodeText({
   text,
@@ -185,10 +188,12 @@ export function DecodeText({
       return;
     }
     let raf = 0;
+    let last = "";
     const t0 = performance.now() + delay * 1000;
     const tick = (now: number) => {
       const p = (now - t0) / (duration * 1000);
-      el.textContent = p >= 1 ? text : decode(text, Math.max(0, p), Math.floor(now / 45));
+      const next = p >= 1 ? text : decode(text, Math.max(0, p), Math.floor(now / 45));
+      if (next !== last) el.textContent = last = next;
       if (p < 1) raf = requestAnimationFrame(tick);
     };
     raf = requestAnimationFrame(tick);
@@ -196,9 +201,12 @@ export function DecodeText({
   }, [text, play, instant, delay, duration]);
 
   return (
-    <span className={className}>
+    <span className={cn("relative block", className)}>
       <span className="sr-only">{text}</span>
-      <span ref={ref} aria-hidden>
+      <span aria-hidden className="invisible">
+        {text}
+      </span>
+      <span ref={ref} aria-hidden className="absolute inset-0">
         {text}
       </span>
     </span>

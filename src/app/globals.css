@@ -978,16 +978,31 @@ html::-webkit-scrollbar {
   to { transform: translateY(0); }
 }
 
-/* A split-flap cell turning over (motion/SplitFlap): the new character
-   drops in from the top half, as a flap falls. Transform and opacity only. */
-.flap-tick {
-  animation: flap-tick 0.11s cubic-bezier(0.3, 0, 0.2, 1) both;
+/* A Journey shard sliding into its reader (path/Shard): in from the right
+   on an expo ease, then a one-pixel knock as it seats. SEAT_AT (0.42 s) is
+   the duration; transform and opacity only. Two animations, not one, so the
+   fade can be shorter than the slide. */
+.shard-seat {
+  animation:
+    shard-seat 0.42s linear 0.1s both,
+    shard-in 0.18s linear 0.1s both;
+}
+@keyframes shard-seat {
+  0% { transform: translateX(28px); animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1); }
+  76% { transform: translateX(0); }
+  88% { transform: translateY(1px); }
+  100% { transform: translateY(0); }
+}
+@keyframes shard-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* A split-flap cell (motion/SplitFlap): pivots on its middle, and its back
+   never shows mid-flip. The flip itself is a Web Animation from the JS. */
+.flap-cell {
   transform-origin: 50% 50%;
   backface-visibility: hidden;
-}
-@keyframes flap-tick {
-  0% { transform: rotateX(-82deg); opacity: 0.35; }
-  100% { transform: rotateX(0deg); opacity: 1; }
 }
 
 /* A logo-dock tile's tooltip pointer (ui/LogoDock). */
