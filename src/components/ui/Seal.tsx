@@ -2,10 +2,11 @@
 
 import { useId } from "react";
 import { cn } from "@/lib/utils";
+import { MARK_D } from "@/components/chrome/NavGlyphs";
 
 /**
- * His mark as a seal: the navbar's hex-and-A monogram, cut into a vermilion
- * stone and printed. In calligraphy the seal is the signature; this one says
+ * His mark as a seal: the navbar's ᠠ (the Mongol-script a), cut into a
+ * vermilion stone and printed. In calligraphy the seal is the signature; this one says
  * nothing the site does not already say, so it invents no text.
  *
  * Carved in relief the traditional way round — the stone is the colour, the
@@ -33,22 +34,12 @@ export function Seal({ className, style }: { className?: string; style?: React.C
           <rect width="64" height="64" fill="#000" />
           {/* The stone. */}
           <rect x="4" y="4" width="56" height="56" rx="3" fill="#fff" />
-          {/* Cut away: an inner border, the hex, the A. */}
+          {/* Cut away: an inner border, then the letter, upright and centred. */}
           <rect x="8.5" y="8.5" width="47" height="47" rx="1.5" fill="none" stroke="#000" strokeWidth="1.6" />
           <path
-            d="M32 13.5 48.5 23v18L32 50.5 15.5 41V23Z"
-            fill="none"
-            stroke="#000"
-            strokeWidth="3"
-            strokeLinejoin="round"
-          />
-          <path
-            d="M24.5 41.5 32 22.5l7.5 19M27.6 34.8h8.8"
-            fill="none"
-            stroke="#000"
-            strokeWidth="3.6"
-            strokeLinecap="round"
-            strokeLinejoin="round"
+            d={MARK_D}
+            transform="translate(32 32.6) rotate(90) scale(0.025 -0.025) translate(-639.5 -1018.5)"
+            fill="#000"
           />
           {/* Wear: where the stone did not take ink. */}
           <rect width="64" height="64" fill="#000" filter={`url(#seal-wear-${id})`} />
