@@ -423,17 +423,21 @@ function CaseFile({
                         <button
                           type="button"
                           onClick={() => onGo(next)}
-                          className="cta cta-secondary group !h-auto !items-stretch !justify-start gap-0 p-0 normal-case tracking-normal"
+                          className="cta cta-secondary group !h-auto !items-stretch !justify-start gap-0 p-0 normal-case tracking-normal !whitespace-normal"
                         >
                           <span aria-hidden className="cta-curtain" />
                           <span className="grid w-full items-center gap-6 p-5 text-left sm:grid-cols-[minmax(0,1fr)_14rem] md:p-6">
-                            <span className="flex flex-col gap-3">
+                            {/* `.cta` is one nowrap line: the name has to be let wrap, or a
+                                long one ("WEB DESIGN LAB") runs off the card on a phone. */}
+                            <span className="flex min-w-0 flex-col gap-3">
                               <span className="micro flex items-center gap-2">
                                 {t.caseFile.nextFile} <IconArrowRight size={14} />
                               </span>
-                              <span className="flex items-baseline gap-4">
-                                <span className="font-mono text-sm tabular text-[var(--color-holo)]">{next.index}</span>
-                                <span className="display-caps text-2xl text-fg md:text-4xl">{next.title}</span>
+                              <span className="flex min-w-0 items-baseline gap-4">
+                                <span className="shrink-0 font-mono text-sm tabular text-[var(--color-holo)]">{next.index}</span>
+                                <span className="display-caps min-w-0 text-[clamp(1.25rem,6vw,1.5rem)] text-balance break-words text-fg md:text-4xl">
+                                  {next.title}
+                                </span>
                               </span>
                               <span className="font-mono text-xs uppercase tracking-[0.16em] text-muted">{next.category}</span>
                             </span>
