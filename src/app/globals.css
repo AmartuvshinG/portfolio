@@ -1363,7 +1363,7 @@ html[data-vt] [data-vt="hud"] { view-transition-name: hud; }
 .cf-node { transform-box: fill-box; transform-origin: center; }
 .cf-lit .cf-node { animation: cf-pulse 2.4s ease-in-out infinite; }
 
-/* The nav monogram's spark: one short dash runs the hexagon's perimeter. The
+/* The nav monogram's spark: one short dash runs the letter's outline. The
    motion itself is played from JS (NavGlyphs Monogram) once every 8s — as an
    infinite CSS loop it forced a style recalc on every frame, even at rest. */
 .monogram-spark {
