@@ -3,19 +3,40 @@
     "playwright": {
       "type": "stdio",
       "command": "npx",
-      "args": ["@playwright/mcp@latest"],
+      "args": [
+        "@playwright/mcp@latest"
+      ],
+      "env": {}
+    },
+    "playwright-ios": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "@playwright/mcp@latest",
+        "--browser",
+        "webkit",
+        "--device",
+        "iPhone 15 Pro"
+      ],
       "env": {}
     },
     "chrome-devtools": {
       "type": "stdio",
       "command": "npx",
-      "args": ["-y", "chrome-devtools-mcp@latest", "--isolated=true"],
+      "args": [
+        "-y",
+        "chrome-devtools-mcp@latest",
+        "--isolated=true"
+      ],
       "env": {}
     },
     "context7": {
       "type": "stdio",
       "command": "npx",
-      "args": ["-y", "@upstash/context7-mcp@latest"],
+      "args": [
+        "-y",
+        "@upstash/context7-mcp@latest"
+      ],
       "env": {}
     }
   }
