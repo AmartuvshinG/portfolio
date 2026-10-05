@@ -14,5 +14,8 @@
   // Production lives only at the custom domain. Every other branch's build
   // gets a preview URL; dev's alias is dev-amartuvshin-portfolio.amartuvshin.workers.dev.
   "workers_dev": false,
-  "preview_urls": true
+  "preview_urls": true,
+  // Workers Builds runs `npx wrangler preview` for non-production branches,
+  // which refuses to run without this block (it may stay empty).
+  "previews": {}
 }
