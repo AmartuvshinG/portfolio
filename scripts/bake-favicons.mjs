@@ -6,22 +6,25 @@
  * public/icons/icon-v2.svg is the mark (the navbar's hex-and-A monogram, recut
  * for a tab). Browsers that take SVG use it as-is; this writes the rest:
  *
- *   public/favicon.ico                 16, 32, 48 px, PNG-in-ICO — anything
- *                                      that asks /favicon.ico
+ *   public/icons/favicon-v2.ico        16, 32, 48 px, PNG-in-ICO — the one
+ *   public/favicon.ico                 <link>ed, and a root copy for anything
+ *                                      that asks /favicon.ico unprompted
  *   public/icons/icon-v2-32.png        the tab icon for Safari, which does
  *   public/icons/icon-v2-192.png       not take SVG favicons
  *   public/icons/icon-v2-512.png       the manifest's install icon
  *   public/icons/apple-touch-icon-v2.png  180 px, full bleed — iOS rounds the
  *   public/apple-touch-icon.png           corners itself and fills
- *                                      transparency with black, so the void
- *                                      runs to the edge and the hex sits
+ *   public/apple-touch-icon-precomposed.png  transparency with black, so the
+ *                                      void runs to the edge and the hex sits
  *                                      inside with room for the mask. The root
- *                                      copy is for iOS, which asks for that
- *                                      path without reading any <link>.
+ *                                      copies are for iOS, which asks for
+ *                                      those paths without reading any <link>.
  *
  * The names carry a version, and app/layout.tsx `metadata.icons` links them by
  * name: Safari keeps favicons in a database of its own, keyed by URL and blind
- * to query strings, so only a new path makes it fetch a new mark. Recut the
+ * to query strings, so only a new path makes it fetch a new mark. That goes
+ * for /favicon.ico too — it once came from app/ as /favicon.ico?<hash>, the
+ * same key to Safari — so no unversioned name is ever linked. Recut the
  * mark → bump the version in the names, here and in layout.tsx/manifest.ts.
  */
 import { readFile, writeFile } from "node:fs/promises";
@@ -85,10 +88,13 @@ function ico(images) {
 const out = (p) => new URL(`../public/${p}`, import.meta.url);
 const sizes = [16, 32, 48];
 const images = await Promise.all(sizes.map(async (size) => ({ size, data: await png(master, size) })));
-await writeFile(out("favicon.ico"), ico(images));
+const favicon = ico(images);
+await writeFile(out("icons/favicon-v2.ico"), favicon);
+await writeFile(out("favicon.ico"), favicon);
 for (const size of [32, 192, 512]) await writeFile(out(`icons/icon-v2-${size}.png`), await png(master, size));
 const touch = await png(apple, 180, 180);
 await writeFile(out("icons/apple-touch-icon-v2.png"), touch);
 await writeFile(out("apple-touch-icon.png"), touch);
+await writeFile(out("apple-touch-icon-precomposed.png"), touch);
 
-console.log("favicon.ico, icons/icon-v2-{32,192,512}.png and the 180 px touch icons written.");
+console.log("favicon.ico + icons/favicon-v2.ico, icons/icon-v2-{32,192,512}.png and the 180 px touch icons written.");

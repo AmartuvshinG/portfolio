@@ -37,6 +37,9 @@
 /apple-touch-icon.png
   Cache-Control: public, max-age=3600
 
+/apple-touch-icon-precomposed.png
+  Cache-Control: public, max-age=3600
+
 /manifest.webmanifest
   Cache-Control: public, max-age=3600
 

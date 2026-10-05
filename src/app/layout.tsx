@@ -134,11 +134,12 @@ export const metadata: Metadata = {
   description: site.description,
   metadataBase: new URL(site.url),
   /* Versioned paths (scripts/bake-favicons.mjs): Safari's favicon store is
-     keyed by URL and ignores query strings, so a recut mark needs a new name.
+     keyed by URL and ignores query strings, so a recut mark needs a new name —
+     the ICO included: /favicon.ico is the key the old mark is cached under.
      The 32 px PNG is what Safari's tabs use — it takes no SVG favicon. */
   icons: {
     icon: [
-      { url: "/favicon.ico", sizes: "48x48" },
+      { url: "/icons/favicon-v2.ico", sizes: "48x48" },
       { url: "/icons/icon-v2-32.png", type: "image/png", sizes: "32x32" },
       { url: "/icons/icon-v2-192.png", type: "image/png", sizes: "192x192" },
       { url: "/icons/icon-v2.svg", type: "image/svg+xml", sizes: "any" },
