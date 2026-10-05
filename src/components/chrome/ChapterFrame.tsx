@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
 import { useScrollTimelines } from "@/hooks/useScrollTimelines";
+import { useReducedMotion } from "@/hooks/useReducedMotion";
 import { cn } from "@/lib/utils";
 import { useSmoothScroll } from "@/components/chrome/SmoothScroll";
 import { gsap, ScrollTrigger } from "@/lib/gsap";
@@ -142,7 +143,11 @@ function ChapterSpine({ chapters, active }: { chapters: string[]; active: number
   const handleRef = useRef<HTMLSpanElement>(null);
   const [marks, setMarks] = useState<number[]>([]);
   const [dragging, setDragging] = useState(false);
-  const css = useScrollTimelines();
+  /* The timeline rules only exist without a reduced-motion preference
+     (globals.css); under one, the JS has to paint or the spine sits at 0. */
+  const timelines = useScrollTimelines();
+  const reduced = useReducedMotion();
+  const css = timelines && !reduced;
 
   useEffect(() => {
     let raf = 0;
@@ -170,8 +175,24 @@ function ChapterSpine({ chapters, active }: { chapters: string[]; active: number
       if (fillRef.current) fillRef.current.style.transform = `scaleY(${p.toFixed(4)})`;
       if (handleRef.current) handleRef.current.style.transform = `translate(-50%, -50%) translateY(${(p * h).toFixed(1)}px)`;
     };
+    /* On a phone the spine is an indicator, shown while the page moves and
+       gone a beat after, the way iOS's own is. One attribute on the track,
+       flipped only when it changes. */
+    let idle: ReturnType<typeof setTimeout> | undefined;
+    let shown = false;
+    const track = trackRef.current;
+    const settle = () => {
+      shown = false;
+      track?.removeAttribute("data-scrolling");
+    };
     const onScroll = () => {
       if (!raf) raf = requestAnimationFrame(paint);
+      if (!shown) {
+        shown = true;
+        track?.setAttribute("data-scrolling", "");
+      }
+      clearTimeout(idle);
+      idle = setTimeout(settle, 900);
     };
     measure();
     /* Handing over to the CSS after hydration: clear any offset the JS
@@ -191,6 +212,7 @@ function ChapterSpine({ chapters, active }: { chapters: string[]; active: number
     return () => {
       cancelAnimationFrame(raf);
       clearTimeout(t);
+      clearTimeout(idle);
       ro.disconnect();
       window.removeEventListener("scroll", onScroll);
     };
@@ -232,11 +254,14 @@ function ChapterSpine({ chapters, active }: { chapters: string[]; active: number
   };
 
   /* Symmetric in the gutter on desktop; hard against the edge on a phone,
-     where the gutter is the page's own padding. */
+     where the gutter is the page's own padding. `svh`, so the track does not
+     stretch and shrink as Safari's toolbar comes and goes. A finger never
+     grabs it: the strip it used to own along the right edge turned thumb
+     scrolls that began there into scrubs, and the page jumped. */
   return (
     <div
       ref={trackRef}
-      className="group/spine absolute bottom-[18vh] right-[max(0.375rem,env(safe-area-inset-right))] top-[18vh] w-px translate-x-1/2 lg:right-5"
+      className="group/spine absolute bottom-[18svh] right-[max(0.375rem,env(safe-area-inset-right))] top-[18svh] w-px translate-x-1/2 transition-opacity duration-500 pointer-coarse:opacity-0 pointer-coarse:data-scrolling:opacity-100 pointer-coarse:data-scrolling:duration-150 lg:right-5"
       /* On the track, not the strip, so a press that lands on a chapter tick
          can still become a drag; a tick that is only clicked goes to its
          chapter. */
@@ -245,9 +270,8 @@ function ChapterSpine({ chapters, active }: { chapters: string[]; active: number
       onPointerUp={onUp}
       onPointerCancel={onUp}
     >
-      {/* The hit strip: far wider than the hairline, and it owns the touch
-          gesture, so a drag on a phone scrubs instead of scrolling the page. */}
-      <div className="pointer-events-auto absolute -inset-y-3 -left-3 -right-3 cursor-grab touch-none active:cursor-grabbing" />
+      {/* The hit strip: far wider than the hairline, for a mouse. */}
+      <div className="pointer-events-auto absolute -inset-y-3 -left-3 -right-3 cursor-grab active:cursor-grabbing pointer-coarse:hidden" />
       <span className="pointer-events-none absolute inset-0 bg-current opacity-[0.14] transition-opacity group-hover/spine:opacity-30" />
       <span
         ref={fillRef}
