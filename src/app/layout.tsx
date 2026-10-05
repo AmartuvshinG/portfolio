@@ -133,6 +133,18 @@ export const metadata: Metadata = {
   title: site.title,
   description: site.description,
   metadataBase: new URL(site.url),
+  /* Versioned paths (scripts/bake-favicons.mjs): Safari's favicon store is
+     keyed by URL and ignores query strings, so a recut mark needs a new name.
+     The 32 px PNG is what Safari's tabs use — it takes no SVG favicon. */
+  icons: {
+    icon: [
+      { url: "/favicon.ico", sizes: "48x48" },
+      { url: "/icons/icon-v2-32.png", type: "image/png", sizes: "32x32" },
+      { url: "/icons/icon-v2-192.png", type: "image/png", sizes: "192x192" },
+      { url: "/icons/icon-v2.svg", type: "image/svg+xml", sizes: "any" },
+    ],
+    apple: [{ url: "/icons/apple-touch-icon-v2.png", sizes: "180x180" }],
+  },
   /* Saved to an iPhone's Home Screen it opens with no Safari chrome, the
      status bar laid over the page (the viewport is `cover`, so the ground
      already runs under it). */

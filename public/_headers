@@ -26,6 +26,20 @@
 /intro/*
   Cache-Control: public, max-age=2592000
 
+# Favicons: the versioned ones never change under a name; the fixed names a
+# browser asks for unprompted are kept short, so a recut reaches them.
+/icons/*
+  Cache-Control: public, max-age=31536000, immutable
+
+/favicon.ico
+  Cache-Control: public, max-age=3600
+
+/apple-touch-icon.png
+  Cache-Control: public, max-age=3600
+
+/manifest.webmanifest
+  Cache-Control: public, max-age=3600
+
 
 # Next emits the OG card without an extension; say what it is.
 /opengraph-image

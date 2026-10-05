@@ -3,23 +3,31 @@
  *
  *   node scripts/bake-favicons.mjs
  *
- * src/app/icon.svg is the mark (the navbar's hex-and-A monogram, recut for a
- * tab). Modern browsers take it as-is; this writes the two files that cannot
- * be SVG:
+ * public/icons/icon-v2.svg is the mark (the navbar's hex-and-A monogram, recut
+ * for a tab). Browsers that take SVG use it as-is; this writes the rest:
  *
- *   src/app/favicon.ico     16, 32 and 48 px, PNG-in-ICO — older browsers,
- *                           Windows shortcuts, anything that asks /favicon.ico
- *   src/app/apple-icon.png  180 px, full bleed — iOS rounds the corners
- *                           itself and fills transparency with black, so the
- *                           void runs to the edge and the hex sits inside with
- *                           room for the mask
+ *   public/favicon.ico                 16, 32, 48 px, PNG-in-ICO — anything
+ *                                      that asks /favicon.ico
+ *   public/icons/icon-v2-32.png        the tab icon for Safari, which does
+ *   public/icons/icon-v2-192.png       not take SVG favicons
+ *   public/icons/icon-v2-512.png       the manifest's install icon
+ *   public/icons/apple-touch-icon-v2.png  180 px, full bleed — iOS rounds the
+ *   public/apple-touch-icon.png           corners itself and fills
+ *                                      transparency with black, so the void
+ *                                      runs to the edge and the hex sits
+ *                                      inside with room for the mask. The root
+ *                                      copy is for iOS, which asks for that
+ *                                      path without reading any <link>.
  *
- * Next picks all three up by filename and writes the <link> tags.
+ * The names carry a version, and app/layout.tsx `metadata.icons` links them by
+ * name: Safari keeps favicons in a database of its own, keyed by URL and blind
+ * to query strings, so only a new path makes it fetch a new mark. Recut the
+ * mark → bump the version in the names, here and in layout.tsx/manifest.ts.
  */
 import { readFile, writeFile } from "node:fs/promises";
 import sharp from "sharp";
 
-const master = await readFile(new URL("../src/app/icon.svg", import.meta.url), "utf8");
+const master = await readFile(new URL("../public/icons/icon-v2.svg", import.meta.url), "utf8");
 
 /* The master's two paths, lifted out so the touch icon can reframe them. */
 const inner = master.match(/<defs>[\s\S]*<\/svg>/)[0].replace("</svg>", "");
@@ -74,9 +82,13 @@ function ico(images) {
   return Buffer.concat([head, ...images.map((i) => i.data)]);
 }
 
+const out = (p) => new URL(`../public/${p}`, import.meta.url);
 const sizes = [16, 32, 48];
 const images = await Promise.all(sizes.map(async (size) => ({ size, data: await png(master, size) })));
-await writeFile(new URL("../src/app/favicon.ico", import.meta.url), ico(images));
-await writeFile(new URL("../src/app/apple-icon.png", import.meta.url), await png(apple, 180, 180));
+await writeFile(out("favicon.ico"), ico(images));
+for (const size of [32, 192, 512]) await writeFile(out(`icons/icon-v2-${size}.png`), await png(master, size));
+const touch = await png(apple, 180, 180);
+await writeFile(out("icons/apple-touch-icon-v2.png"), touch);
+await writeFile(out("apple-touch-icon.png"), touch);
 
-console.log(`favicon.ico (${sizes.join(", ")} px) and apple-icon.png (180 px) written.`);
+console.log("favicon.ico, icons/icon-v2-{32,192,512}.png and the 180 px touch icons written.");
