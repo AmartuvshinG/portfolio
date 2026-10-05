@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <!-- ᠠ, the isolated Mongol-script a (U+1820): the first letter of Амар.
+       Outlined from Mongolian Baiti and turned upright, the way the script
+       runs, so no font is needed to draw it. Lit with the ramp, a blurred copy
+       under it as the glow, on an opaque void square so it holds on a light
+       tab bar too. Master for scripts/bake-favicons.mjs — rerun it after editing. -->
+  <rect width="32" height="32" rx="7" fill="#061317"/>
+  <defs>
+    <linearGradient id="r" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ff3b30"/>
+      <stop offset="0.5" stop-color="#ff8a6b"/>
+      <stop offset="1" stop-color="#9fe3ec"/>
+    </linearGradient>
+    <filter id="gm" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="90"/>
+    </filter>
+    <path id="a" d="M357 395Q337 444 318.5 508.0Q300 572 288.5 637.5Q277 703 277 755V909Q277 930 271.5 965.0Q266 1000 235 1000Q190 1000 166.0 983.5Q142 967 122.5 947.0Q103 927 69 917Q44 936 40 962Q70 994 112.0 1044.0Q154 1094 202.0 1133.5Q250 1173 296 1173Q339 1173 360.0 1143.0Q381 1113 388.0 1069.0Q395 1025 394.5 981.0Q394 937 394 909H628V796Q628 751 648.0 688.5Q668 626 698.0 567.5Q728 509 759 476Q756 494 756 513Q756 585 771.0 668.5Q786 752 809.5 834.5Q833 917 859 984Q878 1034 906.5 1102.5Q935 1171 963.5 1245.5Q992 1320 1011.0 1389.0Q1030 1458 1030 1507Q1030 1553 1016.0 1597.5Q1002 1642 1002 1688Q1002 1708 1005.5 1723.5Q1009 1739 1036 1739Q1046 1739 1067.0 1706.0Q1088 1673 1114.5 1623.5Q1141 1574 1167.0 1521.0Q1193 1468 1212.5 1426.0Q1232 1384 1239 1369Q1205 1315 1170.0 1261.5Q1135 1208 1103 1153Q986 953 922.5 741.0Q859 529 841 298Q772 335 709.5 405.5Q647 476 606.0 560.5Q565 645 558 723H431Q428 643 417.5 564.0Q407 485 394 405Z"/>
+  </defs>
+  <g transform="translate(16 16.4) rotate(90) scale(0.01735 -0.01735) translate(-639.5 -1018.5)" fill="url(#r)">
+    <use href="#a" filter="url(#gm)" opacity="0.7"/>
+    <use href="#a"/>
+  </g>
+</svg>
