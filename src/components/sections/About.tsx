@@ -52,7 +52,7 @@ const STAT_GAP = 0.06;
 
 export function About() {
   const { c, t } = useI18n();
-  const { about, profile } = c;
+  const { about } = c;
   const reduced = useReducedMotion();
   const [room, setRoom] = useState(false);
   useEffect(() => {
