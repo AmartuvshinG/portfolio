@@ -277,6 +277,22 @@ const en = {
         caption: "Monnis Tower · Ulaanbaatar",
         alt: "The glass Monnis Tower in Ulaanbaatar against a blue sky.",
       },
+      "gannon-arc": {
+        caption: "Gannon University · the arch",
+        alt: "The gold GANNON UNIVERSITY lettering on a black iron arch, brick campus buildings behind it and trees overhead.",
+      },
+      "erie-aerial": {
+        caption: "Erie, Pennsylvania",
+        alt: "Downtown Erie from the air, with the bay and Presque Isle beyond it.",
+      },
+      "gannon-autumn": {
+        caption: "Gannon University · autumn",
+        alt: "A dark Gannon University tower seen through yellow autumn leaves.",
+      },
+      "ihack-tower": {
+        caption: "I-HACK · Gannon",
+        alt: "Gannon's I-HACK building, the Institute for Health and Cyber Knowledge, seen from below against a blue sky.",
+      },
     },
   },
   caseFile: {
@@ -632,6 +648,22 @@ const mn: UiStrings = {
       monnis: {
         caption: "Monnis Tower · Улаанбаатар",
         alt: "Цэнхэр тэнгэрийн дор Улаанбаатар дахь шилэн Monnis Tower.",
+      },
+      "gannon-arc": {
+        caption: "Gannon их сургууль · нуман хаалга",
+        alt: "Хар төмөр нуман хаалган дээрх алтан GANNON UNIVERSITY бичиг, ард нь тоосгон барилгууд, дээгүүр нь модны мөчир.",
+      },
+      "erie-aerial": {
+        caption: "Эри, Пенсильвани",
+        alt: "Эри хотын төв агаараас, цаана нь булан болон Presque Isle.",
+      },
+      "gannon-autumn": {
+        caption: "Gannon их сургууль · намар",
+        alt: "Шар намрын навчсын цаанаас харагдах Gannon их сургуулийн бараан цамхаг.",
+      },
+      "ihack-tower": {
+        caption: "I-HACK · Gannon",
+        alt: "Gannon-ий I-HACK барилга (Institute for Health and Cyber Knowledge) доороос, цэнхэр тэнгэрийн дор.",
       },
     },
   },

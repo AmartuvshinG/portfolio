@@ -513,7 +513,7 @@ export const timeline: TimelineEntry[] = [
     kind: "education",
     stop: "erie",
     mark: "gannon",
-    photo: "gannon",
+    photo: "gannon-arc",
     title: "Began B.S. Software Engineering",
     org: "Gannon University · Erie, PA",
     description:
@@ -527,8 +527,7 @@ export const timeline: TimelineEntry[] = [
     kind: "work",
     stop: "erie",
     mark: "gannon",
-    photo: "gannon",
-    crop: { x: 0.48, y: 0.6, scale: 1.3 },
+    photo: "erie-aerial",
     title: "Summer Student Conference Assistant",
     org: "Auxiliary Services · Gannon University",
     description: "Got residence halls ready for summer conferences and helped guests, keeping track of the work in Excel and Word.",
@@ -541,7 +540,6 @@ export const timeline: TimelineEntry[] = [
     stop: "erie",
     mark: "gannon",
     photo: "gannon",
-    crop: { x: 0.6, y: 0.36, scale: 1.6 },
     title: "Front Desk Student Attendant",
     org: "Office of Residence Life · Gannon University",
     description:
@@ -566,8 +564,7 @@ export const timeline: TimelineEntry[] = [
     kind: "project",
     stop: "erie",
     mark: "gannon",
-    photo: "zurn",
-    crop: { x: 0.35, y: 0.5, scale: 1.45 },
+    photo: "ihack-tower",
     title: "Test Suite · Software Testing & QA",
     org: "Gannon University · Coursework",
     description:
@@ -593,7 +590,7 @@ export const timeline: TimelineEntry[] = [
     stop: "erie",
     extra: "spotfixes",
     mark: "gannon",
-    photo: "zurn",
+    photo: "gannon-autumn",
     title: "Spotfixes · Senior Design Capstone",
     org: "Gannon University · Team of 3",
     description:

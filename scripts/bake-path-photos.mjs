@@ -24,12 +24,23 @@ const SOURCES = {
   zurn: "gannon IT building.jpg",
   victor: "gannon mascot victor.jpg",
   monnis: "monnis tower.jpg",
+  /* The Journey's own frames (Timeline), so no two entries share a photo. */
+  "gannon-arc": "gannon-arc.jpg",
+  "erie-aerial": "erie-aerial.webp",
+  "gannon-autumn": "gannon-autumn.jpg",
+  "ihack-tower": "ihack-tower.jpg",
+};
+/* Sources that arrive letterboxed: the photo's own box, in source px. */
+const EXTRACT = {
+  /* The press shot sits on grey pillarbox bars, x 300–900. */
+  "ihack-tower": { left: 302, top: 0, width: 596, height: 800 },
 };
 const WIDTHS = [640, 1280];
 
 await mkdir(OUT, { recursive: true });
 for (const [key, file] of Object.entries(SOURCES)) {
-  const src = sharp(fileURLToPath(new URL(file, SRC)));
+  let src = sharp(fileURLToPath(new URL(file, SRC)));
+  if (EXTRACT[key]) src = sharp(await src.extract(EXTRACT[key]).toBuffer());
   const { width, height } = await src.metadata();
   const widths = [...new Set(WIDTHS.map((w) => Math.min(w, width)))];
   for (const w of widths) {
