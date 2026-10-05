@@ -146,11 +146,26 @@ function ChapterSpine({ chapters, active }: { chapters: string[]; active: number
      (globals.css); under one, the JS has to paint or the spine sits at 0. */
   const timelines = useScrollTimelines();
   const reduced = useReducedMotion();
-  const css = timelines && !reduced;
+  /* Touch paints the reel in JS. iPhone Safari's scroll timeline, sampled
+     on its own, still threw the whole reel back about every 0.75 s of a
+     fling for two or three frames, to a place the page never was: the
+     wrong rows fit 1.265 × the right ones, as if -100% had been resolved
+     against a box too tall (ScreenRecording 2026-10-05 11-27). On a phone
+     the spine is only an indicator, so a frame of lag is invisible; a
+     frame somewhere else is not. */
+  const [coarse, setCoarse] = useState(false);
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setCoarse(window.matchMedia("(pointer: coarse)").matches);
+  }, []);
+  const css = timelines && !reduced && !coarse;
+  /** The track's height in px: the JS reel moves by it, never by a %. */
+  const trackH = useRef(0);
 
   useEffect(() => {
     let raf = 0;
     const measure = () => {
+      trackH.current = trackRef.current?.clientHeight ?? 0;
       const max = document.documentElement.scrollHeight - window.innerHeight;
       if (max <= 0) return;
       setMarks(
@@ -169,7 +184,7 @@ function ChapterSpine({ chapters, active }: { chapters: string[]; active: number
       if (css) return;
       const max = document.documentElement.scrollHeight - window.innerHeight;
       const p = max > 0 ? Math.min(1, Math.max(0, window.scrollY / max)) : 0;
-      if (reelRef.current) reelRef.current.style.transform = `translateY(${((p - 1) * 100).toFixed(3)}%)`;
+      if (reelRef.current) reelRef.current.style.transform = `translate3d(0, ${((p - 1) * trackH.current).toFixed(2)}px, 0)`;
     };
     /* On a phone the spine is an indicator, shown while the page moves and
        gone a beat after, the way iOS's own is. One attribute on the track,
@@ -201,12 +216,20 @@ function ChapterSpine({ chapters, active }: { chapters: string[]; active: number
       }, 250);
     });
     ro.observe(document.body);
+    /* The track too: it is in svh/px, so the toolbar never resizes it, but a
+       rotation does, and the reel's px travel must follow at once. */
+    const trackRo = new ResizeObserver(() => {
+      measure();
+      paint();
+    });
+    if (trackRef.current) trackRo.observe(trackRef.current);
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => {
       cancelAnimationFrame(raf);
       clearTimeout(t);
       clearTimeout(idle);
       ro.disconnect();
+      trackRo.disconnect();
       window.removeEventListener("scroll", onScroll);
     };
   }, [chapters, css]);
