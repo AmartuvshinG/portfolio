@@ -67,7 +67,7 @@ function stepped(v: number): number {
  * straight there until the scroll moves on to the next step.
  *
  * Transform and opacity only, from one scroll value — no React render per
- * frame. Phones keep the stack (CraftTrack); reduced motion keeps the grid.
+ * frame. Phones get the list (CraftTrack); reduced motion keeps the grid.
  */
 export function CraftIndex({ items }: { items: Capability[] }) {
   const { t } = useI18n();

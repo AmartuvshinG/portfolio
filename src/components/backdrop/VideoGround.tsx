@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useBootReady } from "@/hooks/useBootReady";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
 import { usePointerDrift } from "@/hooks/usePointerDrift";
-import { groundCovered, markLowPower, onCover, onStrike, setDive } from "@/lib/groundBus";
+import { groundCovered, isLowPower, markLowPower, onCover, onStrike, setDive } from "@/lib/groundBus";
 import { NeonGround } from "./NeonGround";
 
 /**
@@ -146,8 +146,9 @@ export function VideoGround() {
 
   useEffect(() => {
     // Read once on mount: a desktop resized narrow keeps the set it loaded.
+    // A coarse pointer is a phone or tablet too: the 720 set, whatever the width.
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    setPhone(window.matchMedia("(max-width: 768px)").matches);
+    setPhone(window.matchMedia("(max-width: 768px), (pointer: coarse)").matches);
   }, []);
 
   /* --- Scroll → dive and veil. --------------------------------------------- */
@@ -377,18 +378,34 @@ export function VideoGround() {
       set(sakura, live && shown.current.sakura);
       set(tunnel, live && shown.current.tunnel);
     };
+    /* Warm the tunnel while it is still off screen: one play and pause, so
+       its decoder is up and its first frame is in hand before the dive.
+       Otherwise the first scroll into Skills paid for both — the hitch that
+       went away once the clip was running. */
+    let warmed = false;
+    const warm = () => {
+      if (warmed || shown.current.tunnel || !booted || isLowPower()) return sync();
+      warmed = true;
+      tunnel
+        .play()
+        .then(() => {
+          if (!shown.current.tunnel) tunnel.pause();
+        })
+        .catch(() => {});
+    };
     syncRef.current = sync;
     sync();
     document.addEventListener("visibilitychange", sync);
     const unCover = onCover(sync);
     sakura.addEventListener("loadeddata", sync);
-    tunnel.addEventListener("loadeddata", sync);
+    tunnel.addEventListener("loadeddata", warm);
+    if (tunnel.readyState >= 2) warm();
     return () => {
       syncRef.current = () => {};
       document.removeEventListener("visibilitychange", sync);
       unCover();
       sakura.removeEventListener("loadeddata", sync);
-      tunnel.removeEventListener("loadeddata", sync);
+      tunnel.removeEventListener("loadeddata", warm);
     };
   }, [booted, reduced, wantTunnel]);
 

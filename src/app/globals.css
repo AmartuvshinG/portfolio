@@ -743,6 +743,39 @@ html.hud-cursor * {
    ["start start", "end end"], which for a section taller than the screen is
    exactly the view timeline's `contain` range.
    ------------------------------------------------------------------------- */
+/* The logo dock's two forms (ui/LogoDock): the fanned, magnifying row for a
+   pointer that hovers, labelled chips for a thumb. Unlayered, so it beats the
+   chips' own `flex`. */
+.dock-fine {
+  display: none;
+}
+@media (hover: hover) and (pointer: fine) {
+  .dock-fine {
+    display: block;
+  }
+  .dock-touch {
+    display: none;
+  }
+}
+
+/* Skills on a phone (craft/CraftList): each row rises once as it enters,
+   scrubbed by its own entry on the compositor. Nowhere else does it move. */
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .craft-row {
+      animation: craft-row linear both;
+      animation-timeline: view();
+      animation-range: entry 0% entry 70%;
+    }
+  }
+}
+@keyframes craft-row {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+}
+
 .hero-timeline {
   view-timeline: --hero block;
 }

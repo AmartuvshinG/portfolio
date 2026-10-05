@@ -7,7 +7,7 @@ import { SectionHeader } from "@/components/ui/SectionHeader";
 import { CapabilityCard } from "@/components/ui/CapabilityCard";
 import { RevealStagger, Reveal } from "@/components/motion/Reveal";
 import { ChapterSeam } from "@/components/chrome/ChapterSeam";
-import { CraftStack, useWideCraft } from "@/components/craft/CraftTrack";
+import { CraftList, useWideCraft } from "@/components/craft/CraftTrack";
 import { CraftIndex } from "@/components/craft/CraftIndex";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
 
@@ -17,8 +17,8 @@ import { useReducedMotion } from "@/hooks/useReducedMotion";
  *
  * On a wide screen the section pins into an index (CraftIndex): six titles
  * whose letters roll over as the scroll — or the pointer — reaches them, and
- * one evidence panel that wipes to match. On a phone the cards stack, each
- * separating into its layers as it rises. Under reduced motion it is the
+ * one evidence panel that wipes to match. On a phone it is a list, one
+ * capability open at a time (CraftList). Wide under reduced motion it is the
  * static bento: full-stack and machine learning on the two wide cards, the
  * supporting skills under them.
  *
@@ -61,17 +61,17 @@ export function Capabilities() {
           {t.craft.degree(education.credits, education.deansList)}
         </p>
 
-        {(reduced || wide === null) && (
-          <RevealStagger className="mt-14 grid gap-4 pb-24 md:grid-cols-2 md:pb-36 lg:grid-cols-12">
+        {/* Phones get the list from the first paint: the layout is CSS's call,
+            so there is no grid rendered and then swapped out after hydration. */}
+        <div className="pb-24 md:hidden">
+          <CraftList items={c.capabilities} />
+        </div>
+        {(wide === null || (wide && reduced)) && (
+          <RevealStagger className="mt-14 hidden gap-4 pb-36 md:grid md:grid-cols-2 lg:grid-cols-12">
             {c.capabilities.map((item) => (
               <CapabilityCard key={item.code} item={item} />
             ))}
           </RevealStagger>
-        )}
-        {!reduced && wide === false && (
-          <div className="pb-24">
-            <CraftStack items={c.capabilities} />
-          </div>
         )}
       </div>
 

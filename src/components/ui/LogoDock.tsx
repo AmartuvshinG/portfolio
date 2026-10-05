@@ -41,8 +41,11 @@ import { cn } from "@/lib/utils";
    **Arrival.** The first time the row is seen the tiles deal out of a
    stacked deck at its centre and fan into place, left to right. Once.
 
-   Touch: a tap lifts a tile and names it; there is no magnification on a
-   coarse pointer. Reduced motion: a still, straight row. The names are
+   Touch: a pointer that cannot hover never sees this row at all — it gets
+   ToolChips, every tile with its name printed beside it. (Tapped, the
+   overlapped tiles were hard to tell apart and a long press raised iOS's
+   Copy / Look Up callout over the hidden names.) A tap on a hybrid laptop's
+   screen still lifts a tile and names it. Reduced motion: a still, straight row. The names are
    always in the DOM as text (visually hidden), so the dock is a list a
    screen reader can read; the pill is decoration.
    --------------------------------------------------------------------------- */
@@ -86,70 +89,136 @@ export function LogoDock({
   return (
     <div className={cn("flex flex-col", align === "center" ? "items-center" : "items-start", className)}>
       {title && <p className="micro mb-4 !text-fg/85">{title}</p>}
-      <ul
-        ref={listRef}
-        aria-label={title}
-        onPointerMove={(e) => {
-          if (e.pointerType !== "mouse") return;
-          const list = listRef.current;
-          if (!list) return;
-          setFine(true);
-          const r = list.getBoundingClientRect();
-          const x = e.clientX - r.left;
-          const y = e.clientY - r.top;
-          if (!reduced) {
-            mx.set(x);
-            my.set(y);
-          }
-          /* Name the nearest tile on the pointer's row. */
-          let best: number | null = null;
-          let bestD = px * 0.75;
-          Array.from(list.children).forEach((el, j) => {
-            const li = el as HTMLElement;
-            if (!onRow(li, y, px)) return;
-            const d = Math.abs(x - (li.offsetLeft + li.offsetWidth / 2));
-            if (d < bestD) {
-              bestD = d;
-              best = j;
+      {/* A thumb gets every name printed; the fanned, magnifying row needs a
+          pointer that hovers (globals.css `.dock-touch` / `.dock-fine`). */}
+      <ToolChips keys={keys} labels={labels} title={title} align={align} size={size === "lg" ? "md" : "sm"} className="dock-touch" />
+      <div className="dock-fine">
+        <ul
+          ref={listRef}
+          aria-label={title}
+          onPointerMove={(e) => {
+            if (e.pointerType !== "mouse") return;
+            const list = listRef.current;
+            if (!list) return;
+            setFine(true);
+            const r = list.getBoundingClientRect();
+            const x = e.clientX - r.left;
+            const y = e.clientY - r.top;
+            if (!reduced) {
+              mx.set(x);
+              my.set(y);
             }
-          });
-          setNamed(best);
-        }}
-        onPointerLeave={() => {
-          mx.set(Number.POSITIVE_INFINITY);
-          my.set(Number.POSITIVE_INFINITY);
-          setNamed(null);
-        }}
-        className={cn(
-          "relative flex flex-wrap items-end",
-          align === "center" ? "justify-center" : "justify-start",
-          /* Room for the lift and the pill above the row. */
-          size === "lg" ? "pt-10" : "pt-8"
-        )}
-        style={{ paddingLeft: px * 0.2, rowGap: px * 0.35 }}
-      >
-        {keys.map((k, i) => (
-          <Tile
-            key={k}
-            k={k}
-            i={i}
-            n={keys.length}
-            px={px}
-            mx={mx}
-            my={my}
-            label={techLabel(k, labels)}
-            named={named === i}
-            onTouch={() => {
-              setFine(false);
-              setNamed(i);
-            }}
-            fine={fine}
-            reduced={reduced}
-            seen={seen}
-          />
-        ))}
-      </ul>
+            /* Name the nearest tile on the pointer's row. */
+            let best: number | null = null;
+            let bestD = px * 0.75;
+            Array.from(list.children).forEach((el, j) => {
+              const li = el as HTMLElement;
+              if (!onRow(li, y, px)) return;
+              const d = Math.abs(x - (li.offsetLeft + li.offsetWidth / 2));
+              if (d < bestD) {
+                bestD = d;
+                best = j;
+              }
+            });
+            setNamed(best);
+          }}
+          onPointerLeave={() => {
+            mx.set(Number.POSITIVE_INFINITY);
+            my.set(Number.POSITIVE_INFINITY);
+            setNamed(null);
+          }}
+          className={cn(
+            "relative flex flex-wrap items-end",
+            align === "center" ? "justify-center" : "justify-start",
+            /* Room for the lift and the pill above the row. */
+            size === "lg" ? "pt-10" : "pt-8"
+          )}
+          style={{ paddingLeft: px * 0.2, rowGap: px * 0.35 }}
+        >
+          {keys.map((k, i) => (
+            <Tile
+              key={k}
+              k={k}
+              i={i}
+              n={keys.length}
+              px={px}
+              mx={mx}
+              my={my}
+              label={techLabel(k, labels)}
+              named={named === i}
+              onTouch={() => {
+                setFine(false);
+                setNamed(i);
+              }}
+              fine={fine}
+              reduced={reduced}
+              seen={seen}
+            />
+          ))}
+        </ul>
+      </div>
     </div>
+  );
+}
+
+/**
+ * The tools as labelled chips: each brand tile with its name beside it, so
+ * nobody has to know a logo to read the list. Not buttons — there is nothing
+ * to do with a tool name — and not selectable, so a long press on iOS does
+ * not raise the Copy / Look Up callout over it.
+ */
+export function ToolChips({
+  keys,
+  labels,
+  title,
+  align = "start",
+  size = "md",
+  className,
+}: {
+  keys: TechKey[];
+  labels?: Partial<Record<GlyphKey, string>>;
+  title?: string;
+  align?: "center" | "start";
+  size?: "md" | "sm";
+  className?: string;
+}) {
+  const tile = size === "md" ? 30 : 26;
+  return (
+    <ul
+      aria-label={title}
+      className={cn(
+        "flex select-none flex-wrap gap-2 [-webkit-touch-callout:none]",
+        align === "center" ? "justify-center" : "justify-start",
+        className
+      )}
+    >
+      {keys.map((k) => {
+        const { tile: bg, ink } = brandTile(k);
+        return (
+          <li
+            key={k}
+            className="flex items-center gap-2 rounded-full border border-line bg-[rgba(6,19,23,0.55)] py-1 pl-1 pr-3"
+          >
+            <span
+              aria-hidden
+              className="flex shrink-0 items-center justify-center rounded-full"
+              style={{
+                width: tile,
+                height: tile,
+                background: `linear-gradient(160deg, color-mix(in srgb, ${bg} 86%, white), ${bg} 55%)`,
+                color: ink,
+                boxShadow: "inset 0 0 0 1px rgba(255,255,255,0.14)",
+              }}
+            >
+              <TechMark name={k} size={Math.round(tile * 0.56)} />
+            </span>
+            <span className={cn("font-sans font-medium text-fg/90", size === "md" ? "text-[0.9375rem]" : "text-sm")}>
+              {techLabel(k, labels)}
+            </span>
+          </li>
+        );
+      })}
+    </ul>
   );
 }
 
