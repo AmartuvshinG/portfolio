@@ -127,8 +127,8 @@ export function ChapterFrame() {
  *
  * Tick positions are where each chapter starts as a fraction of the scroll
  * range, so the fill reaches a tick exactly as its chapter arrives. Measured on
- * resize and when the page height changes; the fill and the handle are one
- * transform each, written per scroll frame.
+ * resize and when the page height changes; the fill and the handle ride one
+ * transform together (the reel), run by a scroll timeline where there is one.
  *
  * Pointer only: the frame is aria-hidden and the ticks are out of the tab
  * order. Keyboard, wheel and touch scrolling are untouched — hiding the native
@@ -139,8 +139,7 @@ function ChapterSpine({ chapters, active }: { chapters: string[]; active: number
   const { c } = useI18n();
   const { scrollTo, goTo } = useSmoothScroll();
   const trackRef = useRef<HTMLDivElement>(null);
-  const fillRef = useRef<HTMLSpanElement>(null);
-  const handleRef = useRef<HTMLSpanElement>(null);
+  const reelRef = useRef<HTMLSpanElement>(null);
   const [marks, setMarks] = useState<number[]>([]);
   const [dragging, setDragging] = useState(false);
   /* The timeline rules only exist without a reduced-motion preference
@@ -151,9 +150,7 @@ function ChapterSpine({ chapters, active }: { chapters: string[]; active: number
 
   useEffect(() => {
     let raf = 0;
-    let h = 0;
     const measure = () => {
-      h = trackRef.current?.clientHeight ?? 0;
       const max = document.documentElement.scrollHeight - window.innerHeight;
       if (max <= 0) return;
       setMarks(
@@ -166,14 +163,13 @@ function ChapterSpine({ chapters, active }: { chapters: string[]; active: number
     };
     const paint = () => {
       raf = 0;
-      const max = document.documentElement.scrollHeight - window.innerHeight;
-      const p = max > 0 ? Math.min(1, window.scrollY / max) : 0;
-      /* With scroll timelines the CSS runs the fill and the head on the
-         compositor (.spine-fill / .spine-run); writing here too would only
-         cost a style pass per frame for a value the animation overrides. */
+      /* With a scroll timeline the CSS runs the reel on the compositor
+         (.spine-reel); writing here too would only cost a style pass per
+         frame for a value the animation overrides. */
       if (css) return;
-      if (fillRef.current) fillRef.current.style.transform = `scaleY(${p.toFixed(4)})`;
-      if (handleRef.current) handleRef.current.style.transform = `translate(-50%, -50%) translateY(${(p * h).toFixed(1)}px)`;
+      const max = document.documentElement.scrollHeight - window.innerHeight;
+      const p = max > 0 ? Math.min(1, Math.max(0, window.scrollY / max)) : 0;
+      if (reelRef.current) reelRef.current.style.transform = `translateY(${((p - 1) * 100).toFixed(3)}%)`;
     };
     /* On a phone the spine is an indicator, shown while the page moves and
        gone a beat after, the way iOS's own is. One attribute on the track,
@@ -195,9 +191,6 @@ function ChapterSpine({ chapters, active }: { chapters: string[]; active: number
       idle = setTimeout(settle, 900);
     };
     measure();
-    /* Handing over to the CSS after hydration: clear any offset the JS
-       already wrote, or the head keeps it under the animation. */
-    if (css && handleRef.current) handleRef.current.style.transform = "translate(-50%, -50%)";
     paint();
     let t: ReturnType<typeof setTimeout> | undefined;
     const ro = new ResizeObserver(() => {
@@ -273,28 +266,46 @@ function ChapterSpine({ chapters, active }: { chapters: string[]; active: number
       {/* The hit strip: far wider than the hairline, for a mouse. */}
       <div className="pointer-events-auto absolute -inset-y-3 -left-3 -right-3 cursor-grab active:cursor-grabbing pointer-coarse:hidden" />
       <span className="pointer-events-none absolute inset-0 bg-current opacity-[0.14] transition-opacity group-hover/spine:opacity-30" />
-      <span
-        ref={fillRef}
-        className={cn("pointer-events-none absolute inset-0 origin-top will-change-transform", css && "spine-fill")}
-        style={{
-          transform: "scaleY(0)",
-          background: "linear-gradient(180deg, color-mix(in srgb, var(--color-hazard) 30%, transparent), var(--color-hazard))",
-          boxShadow: "0 0 8px color-mix(in srgb, var(--color-hazard) 60%, transparent)",
-        }}
-      />
-      {/* The grab handle, riding the head of the fill. Its runner is a box
-          the track's height that the scroll timeline slides down by its own
-          height; without timelines the runner sits still and the JS above
-          moves the handle. */}
-      <span aria-hidden className={cn("pointer-events-none absolute inset-0 will-change-transform", css && "spine-run")}>
+      {/* The reel: the fill and the grab handle as ONE box the track's
+          height, slid from fully above the track (-100%) to resting on it
+          (0) by one transform. The fill's end and the handle are the same
+          row by construction. They used to be two scroll-timeline animations
+          (a scaleY fill and a translating runner), and iPhone Safari
+          sampled them on different frames: the handle sat a fifth of the
+          track short of the fill and flicked between the two
+          (ScreenRecording 2026-10-05).
+
+          The window clips what is above the track, outset by the handle's
+          half-height (h-7 / lg:h-9) so the handle shows whole at either
+          end; the fill's last few px above the top are under the handle,
+          which is wider. Sides outset for the glow. overflow, not
+          clip-path: a plain overflow clip is one the compositor keeps. */}
+      <span className="pointer-events-none absolute -inset-x-3.5 -inset-y-3.5 overflow-hidden lg:-inset-y-[18px]">
         <span
-          ref={handleRef}
-          className={
-            "pointer-events-none absolute left-1/2 top-0 h-7 rounded-full bg-[var(--color-hazard)] shadow-[0_0_12px_var(--color-hazard)] transition-[width] duration-200 lg:h-9 " +
-            (dragging ? "w-[5px]" : "w-[3px] group-hover/spine:w-[5px]")
-          }
-          style={{ transform: "translate(-50%, -50%)" }}
-        />
+          ref={reelRef}
+          className={cn(
+            "absolute inset-x-3.5 inset-y-3.5 will-change-transform lg:inset-y-[18px]",
+            css && "spine-reel"
+          )}
+          /* `transition: none`: the reduced-motion reset only shortens
+             durations, and a 1µs transition on the JS-written transform
+             still lands a frame late in WebKit. */
+          style={{ transform: "translateY(-100%)", transition: "none" }}
+        >
+          <span
+            className="absolute inset-0"
+            style={{
+              background: "linear-gradient(180deg, color-mix(in srgb, var(--color-hazard) 30%, transparent), var(--color-hazard))",
+              boxShadow: "0 0 8px color-mix(in srgb, var(--color-hazard) 60%, transparent)",
+            }}
+          />
+          <span
+            className={
+              "absolute bottom-0 left-1/2 h-7 -translate-x-1/2 translate-y-1/2 rounded-full bg-[var(--color-hazard)] shadow-[0_0_12px_var(--color-hazard)] transition-[width] duration-200 lg:h-9 " +
+              (dragging ? "w-[5px]" : "w-[3px] group-hover/spine:w-[5px]")
+            }
+          />
+        </span>
       </span>
       {marks.map((m, i) => {
         const id = chapters[i];

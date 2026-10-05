@@ -808,13 +808,10 @@ html.hud-cursor * {
       animation-timeline: --hero;
       animation-range: contain 0% contain 45%;
     }
-    /* The spine: its fill and its head are page progress, nothing else. */
-    .spine-fill {
-      animation: spine-fill linear both;
-      animation-timeline: scroll(root block);
-    }
-    .spine-run {
-      animation: spine-run linear both;
+    /* The spine: one reel, page progress and nothing else. One animation,
+       not two, so the fill and its head cannot be sampled apart. */
+    .spine-reel {
+      animation: spine-reel linear both;
       animation-timeline: scroll(root block);
     }
   }
@@ -932,15 +929,11 @@ html.hud-cursor * {
   from { transform: translateY(0); }
   to { transform: translateY(-14vh); }
 }
-@keyframes spine-fill {
-  from { transform: scaleY(0); }
-  to { transform: scaleY(1); }
-}
-/* The head rides a box the track's height, so 100% of its own height is the
+/* The reel is a box the track's height, so 100% of its own height is the
    track's: no measured px in the keyframes. */
-@keyframes spine-run {
-  from { transform: translateY(0); }
-  to { transform: translateY(100%); }
+@keyframes spine-reel {
+  from { transform: translateY(-100%); }
+  to { transform: translateY(0); }
 }
 
 /* A split-flap cell turning over (motion/SplitFlap): the new character
