@@ -159,7 +159,7 @@
   --z-overlay: 80;
   --z-modal: 90;
   --z-preloader: 120;
-  --z-cursor: 130; /* above the preloader and the route wipe, deliberately */
+  --z-cursor: 130; /* the cursor label: above the preloader and the route wipe */
 }
 
 /* ---------------------------------------------------------------------------
@@ -386,13 +386,55 @@ html::-webkit-scrollbar {
   font-feature-settings: "tnum";
 }
 
-/* Hide native cursor while the custom ring is active. Applied by HudCursor on
-   the same condition that mounts the ring — `(pointer: fine)` AND a wide
-   viewport. If those two ever diverge you get `cursor: none` with nothing
-   drawn, i.e. no cursor at all. */
-html.hud-cursor,
-html.hud-cursor * {
-  cursor: none !important;
+/* ---------------------------------------------------------------------------
+   Cursors
+   ---------------------------------------------------------------------------
+   Native CSS cursors in the Windows set's silhouettes, inked in the site's
+   palette (scripts/bake-cursors.mjs). They replaced the sodium reticle
+   (2026-10-05): a drawn cursor trails the pointer by a frame at best, hides
+   the real one, and needs JS on every move. These are the OS's own cursor
+   with our image in it — no lag, no script, and Reduce Motion gets them too.
+
+   Each rule says it twice: a plain 1× `url()` first, then `image-set()` for
+   the 2× PNG on HiDPI. A browser that can't parse the second keeps the first.
+   Hotspots are in 1× px. Unlayered on purpose, so they outrank Tailwind's
+   `cursor-*` utilities, which are restated here to point at the set. Only for
+   a fine pointer: a touch screen never shows a cursor. */
+@media (pointer: fine) {
+  html {
+    cursor: url("/cursors/arrow-v1.png") 2 2, auto;
+    cursor: image-set(url("/cursors/arrow-v1.png") 1x, url("/cursors/arrow-v1@2x.png") 2x) 2 2, auto;
+  }
+  a[href],
+  button,
+  [role="button"],
+  summary,
+  label[for],
+  select,
+  .cursor-pointer {
+    cursor: url("/cursors/hand-v1.png") 11 2, pointer;
+    cursor: image-set(url("/cursors/hand-v1.png") 1x, url("/cursors/hand-v1@2x.png") 2x) 11 2, pointer;
+  }
+  input:not([type="checkbox"], [type="radio"], [type="range"], [type="submit"], [type="button"]),
+  textarea,
+  [contenteditable="true"] {
+    cursor: url("/cursors/text-v1.png") 16 16, text;
+    cursor: image-set(url("/cursors/text-v1.png") 1x, url("/cursors/text-v1@2x.png") 2x) 16 16, text;
+  }
+  .cursor-grab {
+    cursor: url("/cursors/grab-v1.png") 15 15, grab;
+    cursor: image-set(url("/cursors/grab-v1.png") 1x, url("/cursors/grab-v1@2x.png") 2x) 15 15, grab;
+  }
+  .active\:cursor-grabbing:active,
+  .cursor-grabbing {
+    cursor: url("/cursors/grabbing-v1.png") 15 15, grabbing;
+    cursor: image-set(url("/cursors/grabbing-v1.png") 1x, url("/cursors/grabbing-v1@2x.png") 2x) 15 15, grabbing;
+  }
+  :disabled,
+  [aria-disabled="true"] {
+    cursor: url("/cursors/arrow-v1.png") 2 2, not-allowed;
+    cursor: image-set(url("/cursors/arrow-v1.png") 1x, url("/cursors/arrow-v1@2x.png") 2x) 2 2, not-allowed;
+  }
 }
 
 /* ---------------------------------------------------------------------------

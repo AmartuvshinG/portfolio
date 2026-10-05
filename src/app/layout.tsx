@@ -22,7 +22,7 @@ import { Preloader } from "@/components/chrome/Preloader";
 import { NeonGateHost } from "@/components/chrome/NeonGateHost";
 import { Letterbox } from "@/components/chrome/Letterbox";
 import { ChapterFrame } from "@/components/chrome/ChapterFrame";
-import { HudCursor } from "@/components/chrome/HudCursor";
+import { CursorLabel } from "@/components/chrome/CursorLabel";
 import { Diagnostics } from "@/components/chrome/Diagnostics";
 import { Navbar } from "@/components/chrome/Navbar";
 import { CommandPalette } from "@/components/chrome/CommandPalette";
@@ -242,7 +242,7 @@ export default function RootLayout({
                 chapter boundary. `contents`: no box, so nothing about
                 positioning or stacking changes. */}
             <div data-chrome data-act="void" className="contents">
-              <HudCursor />
+              <CursorLabel />
               <Diagnostics />
 
               <Navbar />
