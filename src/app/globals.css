@@ -978,6 +978,48 @@ html::-webkit-scrollbar {
   to { transform: translateY(0); }
 }
 
+/* Chapter jumps (SmoothScroll `goTo`): a far jump is a view transition. The
+   page cuts while rendering is held, and the two snapshots dissolve, so no
+   chapter in between is ever drawn, and nothing goes black (the phone's old
+   veil cut did). The new view is live: the short landing glide and the
+   chapter's own entrance play inside it.
+
+   Root only fades, with the new view settling from a hair larger. No
+   translate: the ground is in the root (html paints the void, so a named
+   ground would sit over the page or under an opaque snapshot), and an
+   offset would ghost two moons. The glide gives the direction.
+
+   The fixed chrome is named only while `html[data-vt]` is set, for the
+   jump: a view-transition-name makes a backdrop root, which would blind
+   the menu button's glass the rest of the time. */
+html[data-vt] [data-vt="nav"] { view-transition-name: nav; }
+html[data-vt] [data-vt="spine"] { view-transition-name: spine; }
+html[data-vt] [data-vt="hud"] { view-transition-name: hud; }
+@media (prefers-reduced-motion: no-preference) {
+  ::view-transition-old(root) {
+    animation: vt-out 340ms cubic-bezier(0.33, 0, 0.2, 1) both;
+  }
+  ::view-transition-new(root) {
+    animation: vt-in 560ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+  ::view-transition-group(nav),
+  ::view-transition-group(spine),
+  ::view-transition-group(hud) {
+    animation-duration: 220ms;
+  }
+  @media (pointer: coarse) {
+    ::view-transition-old(root) { animation-duration: 290ms; }
+    ::view-transition-new(root) { animation-duration: 470ms; }
+  }
+}
+@keyframes vt-out {
+  to { opacity: 0; }
+}
+@keyframes vt-in {
+  from { opacity: 0; transform: scale(1.025); }
+  to { opacity: 1; transform: none; }
+}
+
 /* A Journey shard sliding into its reader (path/Shard): in from the right
    on an expo ease, then a one-pixel knock as it seats. SEAT_AT (0.42 s) is
    the duration; transform and opacity only. Two animations, not one, so the

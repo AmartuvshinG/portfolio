@@ -78,12 +78,15 @@ export function ChapterFrame() {
     <>
       {/* The spine is the page's scrollbar now (the native one is hidden), so
           it shows at every width; the rest of the frame is desktop chrome. */}
-      <div aria-hidden className="pointer-events-none fixed inset-0 z-[70] text-fg">
+      {/* Named for chapter jumps (SmoothScroll's view transition): fixed
+          chrome stays put while the page travels under it. */}
+      <div aria-hidden className="pointer-events-none fixed inset-0 z-[70] text-fg" data-vt="spine">
         <ChapterSpine chapters={chapters} active={active} />
       </div>
     <div
       aria-hidden
       className="pointer-events-none fixed inset-0 z-[70] hidden text-fg transition-colors duration-[620ms] lg:block"
+      data-vt="hud"
     >
       {/* Hairline gutter rules. Inset rather than full-bleed so they read as
           registration marks on a print sheet, not as a layout grid. */}

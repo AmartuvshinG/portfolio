@@ -46,15 +46,24 @@ export const useSmoothScroll = () => useContext(LenisContext);
     distance in the first tenth of the time, which on a long trip is a burst
     of every chapter in between. */
 const easeInOutCubic = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
-/** Past this many viewports, a phone cuts instead of gliding. */
+/** Past this many viewports, a jump cuts instead of gliding. */
 const FAR_VH = 1.6;
 /** How much of the trip is left to glide after the cut, in viewports. */
-const LANDING_VH = 0.9;
-/** Where the cut applies. A phone's frame is small and its GPU is too: a long
-    glide there renders every pinned chapter in a burst. */
-const CUT_QUERY = "(max-width: 1023px), (pointer: coarse)";
+const LANDING_VH = 0.35;
 
 const nextFrame = () => new Promise<void>((r) => requestAnimationFrame(() => r()));
+
+/** Same-document view transitions (Chrome 111, Safari 18). Typed locally:
+    the DOM lib in use may not carry them yet. */
+type ViewTransitionLike = {
+  ready: Promise<void>;
+  finished: Promise<void>;
+  skipTransition: () => void;
+};
+const startViewTransition = (update: () => void): ViewTransitionLike | null => {
+  const doc = document as Document & { startViewTransition?: (cb: () => void) => ViewTransitionLike };
+  return typeof doc.startViewTransition === "function" ? doc.startViewTransition(update) : null;
+};
 
 function resolveY(target: string | number | HTMLElement): number | null {
   if (typeof target === "number") return target;
@@ -126,6 +135,7 @@ export function SmoothScroll({ children }: { children: ReactNode }) {
   const veilRef = useRef<HTMLDivElement>(null);
   /* Bumped by every new chapter jump, so a tap mid-cut abandons the last one. */
   const jump = useRef(0);
+  const transition = useRef<ViewTransitionLike | null>(null);
 
   const fadeVeil = useCallback((to: number, ms: number) => {
     const v = veilRef.current;
@@ -169,11 +179,14 @@ export function SmoothScroll({ children }: { children: ReactNode }) {
 
      - Near (within FAR_VH screens): a glide whose length follows the
        distance, on an in-out curve. No burst.
-     - Far, on a phone: a cut. The veil dips to black, the page jumps silently
-       to just short of the chapter, two frames let ScrollTrigger and the
-       ground repaint there, and the veil lifts while the last screen glides
-       in. Nothing in between is ever rendered.
-     - Far, on a desktop: the same in-out glide, just longer. */
+     - Far, anywhere: a view transition. The page cuts to a third of a
+       screen short of the chapter while rendering is held, the two views
+       dissolve (globals.css), and the last stretch glides in inside the
+       live new view, so the chapter's own entrance plays as it arrives.
+       Nothing in between is ever rendered. It replaced a 1.6 s glide on
+       desktop that played every chapter on the way, and a black veil on
+       phones that read as a second of dead screen.
+     - Far, with no view transitions: the veil cut, dipping only part way. */
   const goTo = useCallback<LenisContextValue["goTo"]>(
     (target) => {
       if (locks.current > 0) {
@@ -193,21 +206,57 @@ export function SmoothScroll({ children }: { children: ReactNode }) {
       const glide = (to: number, duration: number) =>
         lenis.scrollTo(to, { duration, easing: easeInOutCubic, force: true });
 
-      if (!far || !window.matchMedia(CUT_QUERY).matches) {
-        glide(y, Math.min(far ? 1.6 : 1.2, 0.6 + (Math.abs(d) / vh) * 0.35));
+      transition.current?.skipTransition();
+      if (!far) {
+        glide(y, Math.min(1.2, 0.6 + (Math.abs(d) / vh) * 0.35));
         void fadeVeil(0, 160);
         return;
       }
 
+      const land = y - Math.sign(d) * LANDING_VH * vh;
+      const root = document.documentElement;
+      // Names the fixed chrome for the snapshot (globals.css).
+      root.setAttribute("data-vt", d > 0 ? "down" : "up");
+      /* Synchronous only. Rendering is held while this runs, so a
+         requestAnimationFrame here would never fire and the transition would
+         hang to its timeout. ScrollTrigger is told directly, so the pins are
+         already right in the new snapshot. */
+      const vt = startViewTransition(() => {
+        lenis.scrollTo(land, { immediate: true, force: true });
+        ScrollTrigger.update();
+      });
+      if (vt) {
+        transition.current = vt;
+        void fadeVeil(0, 160);
+        vt.ready.then(
+          () => {
+            if (id === jump.current) glide(y, 0.8);
+          },
+          () => {
+            /* Skipped or refused: the cut has still happened (or will),
+               so land anyway. */
+            if (id === jump.current) glide(y, 0.8);
+          }
+        );
+        vt.finished.finally(() => {
+          if (transition.current === vt) {
+            transition.current = null;
+            root.removeAttribute("data-vt");
+          }
+        });
+        return;
+      }
+      root.removeAttribute("data-vt");
+
       void (async () => {
-        await fadeVeil(1, 180);
+        await fadeVeil(0.6, 120);
         if (id !== jump.current) return;
         // Land a screen short, on the side the trip came from.
-        lenis.scrollTo(y - Math.sign(d) * LANDING_VH * vh, { immediate: true, force: true });
+        lenis.scrollTo(land, { immediate: true, force: true });
         await nextFrame();
         await nextFrame();
         if (id !== jump.current) return;
-        glide(y, 0.9);
+        glide(y, 0.8);
         void fadeVeil(0, 260);
       })();
     },

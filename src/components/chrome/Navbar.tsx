@@ -225,7 +225,14 @@ export function Navbar() {
       {/* Padded by the safe-area insets: the viewport is `cover`, so on an
           iPhone the header would otherwise sit under the status bar and, in
           landscape, under the notch. */}
-      <header className="fixed inset-x-0 top-0 z-[60] pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)] pt-[env(safe-area-inset-top)]">
+      <header
+        className="fixed inset-x-0 top-0 z-[60] pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)] pt-[env(safe-area-inset-top)]"
+        /* Its own layer in a chapter jump (SmoothScroll), so it holds still
+           while the page dissolves under it. Named only during the jump
+           (globals.css): a view-transition-name makes a backdrop root, which
+           would blind the menu button's glass. */
+        data-vt="nav"
+      >
         {/* The scrim: only past the fold, and only a gradient — the frame
             stays open; the HUD just keeps its legibility over the film. */}
         <span
