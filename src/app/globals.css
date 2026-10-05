@@ -614,6 +614,14 @@ html.hud-cursor * {
     inset 0 -1px 0 rgba(159, 227, 236, 0.16),
     0 24px 60px -24px rgba(0, 0, 0, 0.75);
 }
+/* Low Power Mode (lib/groundBus) or the palette's low-power switch: a live
+   blur is the costliest paint on the phone, so the panes go solid too. */
+:root[data-low-power] .glass-ios,
+:root[data-power="low"] .glass-ios {
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  background-color: #041013;
+}
 /* Reduce Transparency (iOS Settings > Accessibility) means a solid pane. */
 @media (prefers-reduced-transparency: reduce) {
   .glass-ios,

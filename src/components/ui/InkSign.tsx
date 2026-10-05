@@ -219,7 +219,9 @@ export function InkSign({
       <span
         data-tone={tone}
         data-lit={on ? "" : undefined}
-        data-idle={idle ? "" : undefined}
+        // The idle dip only runs while the sign is on screen: an infinite
+        // animation off screen still costs a phone frames at rest.
+        data-idle={idle && (inView || (lit !== "view" && lit !== "write")) ? "" : undefined}
         // Written, not struck: the light already ran through it, so no stutter.
         data-written={phase === "lit" ? "" : undefined}
         className="ink-sign absolute inset-0 block"

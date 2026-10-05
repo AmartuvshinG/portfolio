@@ -43,23 +43,27 @@ export function NeonSign({
 }) {
   const ref = useRef<HTMLSpanElement>(null);
   const [seen, setSeen] = useState(false);
+  /* An idle sign keeps watching, so its dip only runs while it is on screen:
+     an infinite animation off screen still costs a phone frames at rest. */
+  const [visible, setVisible] = useState(false);
 
   useEffect(() => {
-    if (lit !== "view") return;
+    if (lit !== "view" && !idle) return;
     const el = ref.current;
     if (!el) return;
     const io = new IntersectionObserver(
       ([entry]) => {
-        if (entry.isIntersecting) {
+        if (idle) setVisible(entry.isIntersecting);
+        if (entry.isIntersecting && lit === "view") {
           setSeen(true);
-          io.disconnect();
+          if (!idle) io.disconnect();
         }
       },
       { rootMargin: "0px 0px -20% 0px" }
     );
     io.observe(el);
     return () => io.disconnect();
-  }, [lit]);
+  }, [lit, idle]);
 
   const on = lit === "view" ? seen : lit;
 
@@ -70,7 +74,7 @@ export function NeonSign({
       data-text={text}
       data-tone={tone}
       data-lit={on ? "" : undefined}
-      data-idle={idle ? "" : undefined}
+      data-idle={idle && visible ? "" : undefined}
       className={cn("neon-tube", className)}
       style={style}
     >

@@ -170,6 +170,8 @@ const lowPowerListeners = new Set<Listener>();
 export function markLowPower() {
   if (lowPower) return;
   lowPower = true;
+  /* Once, for the CSS: the phone's glass panes go solid (globals.css). */
+  document.documentElement.setAttribute("data-low-power", "");
   for (const l of lowPowerListeners) l();
 }
 
