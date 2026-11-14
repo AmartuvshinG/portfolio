@@ -293,7 +293,7 @@ export function SmoothScroll({ children }: { children: ReactNode }) {
       <div
         ref={veilRef}
         aria-hidden
-        className="pointer-events-none fixed inset-0 z-[58] bg-[#020a0c]"
+        className="pointer-events-none fixed inset-0 z-[58] bg-[#030208]"
         style={{ opacity: 0 }}
       />
     </LenisContext.Provider>

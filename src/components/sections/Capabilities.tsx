@@ -8,7 +8,7 @@ import { CapabilityCard } from "@/components/ui/CapabilityCard";
 import { RevealStagger, Reveal } from "@/components/motion/Reveal";
 import { ChapterSeam } from "@/components/chrome/ChapterSeam";
 import { CraftList, useWideCraft } from "@/components/craft/CraftTrack";
-import { CraftIndex } from "@/components/craft/CraftIndex";
+import { SkillTree } from "@/components/craft/SkillTree";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
 
 /**
@@ -75,7 +75,7 @@ export function Capabilities() {
         )}
       </div>
 
-      {!reduced && wide && <CraftIndex items={c.capabilities} />}
+      {!reduced && wide && <SkillTree items={c.capabilities} />}
     </section>
   );
 }

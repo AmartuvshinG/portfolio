@@ -39,7 +39,7 @@ export function ProjectVisual({
         className="absolute inset-0 opacity-40"
         style={{
           backgroundImage:
-            "linear-gradient(rgba(228,241,243,0.07) 1px, transparent 1px), linear-gradient(90deg, rgba(228,241,243,0.07) 1px, transparent 1px)",
+            "linear-gradient(rgba(243,241,255,0.07) 1px, transparent 1px), linear-gradient(90deg, rgba(243,241,255,0.07) 1px, transparent 1px)",
           backgroundSize: "48px 48px",
         }}
       />

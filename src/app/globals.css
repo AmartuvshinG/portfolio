@@ -1,56 +1,53 @@
 @import "tailwindcss";
 
 /* ============================================================================
-   SPECTRUM — neo-Tokyo design system, in the MEDUSA palette (2026-10-03)
+   SIGNAL — the hood palette (2026-11-14)
    ----------------------------------------------------------------------------
-   The palette is lifted from a render Amara chose: a chrome head under a VR
-   visor, petrol-teal shadows, a coral-red key light from one side and an
-   ice-white rim from the other. It is also the ground's own story — the blue
-   moon over the sakura cliff, then the red tunnel — so the chrome and the
-   footage behind it are one picture rather than two.
+   Lifted from the reference Amara chose: a masked face under a pale hood, lit
+   crimson from one side, magenta smoke rolling up, indigo-blue webbing in the
+   shadows. It is also the ground's own story: a violet city under a moon, a
+   dive into a black hole's lavender ring, then a purple galaxy.
 
-   One theme, three depths of it. The site is dark end to end; there is no light
-   act and no second palette. What changes as you scroll is *depth*, not mode.
+   One theme, three depths of it. The discipline that holds it together:
 
-   The vibrancy rule, which is the whole discipline here:
-
-       chrome is achromatic — colour only ever appears as gradient, bloom or
+       chrome is achromatic. Colour only ever appears as gradient, bloom or
        rim light, never as a flat field.
 
-   Hairlines, mono labels, type and borders stay bone-on-ink. The spectrum ramp
-   does all the chromatic work. That separation is what lets the palette read as
-   vivid without reading as busy — the failure mode the previous four-accent HUD
-   scale hit, and the one a flat neon fill would hit again.
+   The ramp is crimson → magenta → violet → web-blue, the hood's light falling
+   from key to shadow.
    ========================================================================== */
 
 @theme {
   /* --- Ground. Petrol-teal black, never neutral #000: the teal is what the
          coral rim light reads against (and the moonlit footage sinks into). */
-  --color-void: #061317;   /* deepest ground */
-  --color-deck: #0a1d22;   /* raised surface */
-  --color-bloom: #0f2f37;  /* the chromatic beat — one section, once */
-  --color-deck-2: #0e252b; /* card fill on deck */
+  --color-void: #05040c;   /* deepest ground */
+  --color-deck: #0b0a1f;   /* raised surface */
+  --color-bloom: #15124a;  /* the chromatic beat — one section, once */
+  --color-deck-2: #110f2b; /* card fill on deck */
 
   /* --- Foreground: ice bone, not white — a hair of the teal in it. */
-  --color-bone: #e4f1f3;
-  --color-bone-soft: #8ea9b0;
+  --color-bone: #f3f1ff;
+  --color-bone-soft: #bcb7e6;
   /* The step below --color-muted, held at ≥ 4.5:1 on the ground (6.2) and on
      the lighter card surface (5.2). Same rule in both [data-act] blocks. */
-  --color-bone-faint: #7d989f;
+  --color-bone-faint: #a7a2d6;
 
   /* --- The spectrum ramp. THE accent — a ramp, not a colour: the key light
          falling off into the rim, coral red → salmon → ice. Applied as
          --gradient-spectrum wherever a gradient can go. The three stops exist
          individually only for rim lights and single-pixel details. */
-  --spectrum-1: #ff3b30;  /* coral red */
-  --spectrum-2: #ff8a6b;  /* salmon    */
-  --spectrum-3: #9fe3ec;  /* ice teal  */
-  --gradient-spectrum: linear-gradient(100deg, #ff3b30, #ff8a6b, #9fe3ec);
+  --spectrum-1: #ff1f3d;  /* crimson   */
+  --spectrum-2: #e81cc8;  /* magenta   */
+  --spectrum-3: #8a3dff;  /* violet    */
+  --spectrum-4: #5664ff;  /* web blue  */
+  --gradient-spectrum: linear-gradient(100deg, #ff1f3d, #e81cc8 38%, #8a3dff 70%, #5664ff);
+  /* The hood's pale rim: lavender light on the cloth. Rim lights only. */
+  --color-rim: #d9d6ff;
 
   /* Flat fallback for the handful of places a gradient genuinely cannot go:
      1px dots, focus rings, caret. The red end, lifted a touch so a 2px ring
      still clears 3:1 on every surface. */
-  --color-signal: #ff4b3a;
+  --color-signal: #ff2a4a;
 
   /* --- Sodium. Still the name, now a hot coral-orange: the one solid warm
          *lamp* on the site, where the ramp is warm only as a falloff. It is
@@ -65,7 +62,7 @@
          bracket and index, and the UB clock's lamp. Forbidden: type at
          any size above a micro-label, flat fills, and --gradient-spectrum. The
          moment it appears in a third place it stops meaning anything. */
-  --color-hazard: #ff6a3d;
+  --color-hazard: #ff3d71;
 
   /* --- Holo: the cold half of the warm/cool rule.
 
@@ -79,7 +76,7 @@
          light rather than as type; mono micro-type holds 4.5:1 and more on
          every ground and over the veiled footage. Same ration as sodium:
          small type, hairlines and lamps, never a fill, never display type. */
-  --color-holo: #8fe9f0;
+  --color-holo: #c7c2ff;
 
   /* --- The calligraphy. Sumi ink, the paper it is written on, and the
          vermilion of the seal. Only the intro scroll, the ink signs and the
@@ -89,8 +86,8 @@
   --color-seal: #d23a2a;
 
   /* --- Hairlines. Resolved per depth by the [data-act] blocks below. */
-  --color-line: rgba(228, 241, 243, 0.12);
-  --color-line-strong: rgba(228, 241, 243, 0.3);
+  --color-line: rgba(243, 241, 255, 0.12);
+  --color-line-strong: rgba(243, 241, 255, 0.3);
 
   /* --- Semantic aliases. Components style against these and never against a
          literal depth colour, which is what lets the act system shift them. */
@@ -116,7 +113,7 @@
          sans    — Archivo. Body copy, where neither of the above is readable.
          mono    — JetBrains Mono. Micro-labels and numbering.
          nav     — Rajdhani. Navbar links only: narrow sci-fi caps. */
-  --font-display: var(--font-michroma), "Arial Black", sans-serif;
+  --font-display: var(--font-shoulders), "Arial Narrow", "Arial Black", sans-serif;
   --font-tech: var(--font-chakra), ui-sans-serif, system-ui, sans-serif;
   --font-sans: var(--font-archivo), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-mono-hud), ui-monospace, "Courier New", monospace;
@@ -191,8 +188,8 @@
   --color-fg: var(--color-bone);
   --color-muted: var(--color-bone-soft);
   --color-faint: var(--color-bone-faint);
-  --color-line: rgba(228, 241, 243, 0.12);
-  --color-line-strong: rgba(228, 241, 243, 0.3);
+  --color-line: rgba(243, 241, 255, 0.12);
+  --color-line-strong: rgba(243, 241, 255, 0.3);
   color-scheme: dark;
 }
 
@@ -200,10 +197,10 @@
   --color-bg: var(--color-deck);
   --color-surface: var(--color-deck-2);
   --color-fg: var(--color-bone);
-  --color-muted: #93adb4;
-  --color-faint: #80a0a7; /* was #565b74 — 2.89:1 */
-  --color-line: rgba(228, 241, 243, 0.14);
-  --color-line-strong: rgba(228, 241, 243, 0.32);
+  --color-muted: #c0bbe8;
+  --color-faint: #aba6da; /* was #565b74 — 2.89:1 */
+  --color-line: rgba(243, 241, 255, 0.14);
+  --color-line-strong: rgba(243, 241, 255, 0.32);
   color-scheme: dark;
 }
 
@@ -211,12 +208,12 @@
    the ground — the backdrop is one field for the whole document. */
 [data-act="bloom"] {
   --color-bg: var(--color-bloom);
-  --color-surface: #143a44;
-  --color-fg: #eef8f9;
-  --color-muted: #a3bcc2;
-  --color-faint: #8fadb4; /* was #6b5fa8 — 3.32:1 */
-  --color-line: rgba(238, 248, 249, 0.16);
-  --color-line-strong: rgba(238, 248, 249, 0.36);
+  --color-surface: #1d1a5c;
+  --color-fg: #f6f4ff;
+  --color-muted: #c8c3ee;
+  --color-faint: #b2ade0; /* was #6b5fa8 — 3.32:1 */
+  --color-line: rgba(246, 244, 255, 0.16);
+  --color-line-strong: rgba(246, 244, 255, 0.36);
   color-scheme: dark;
 }
 
@@ -241,7 +238,7 @@
    the same presence in Mongolian. */
 :root:lang(mn) .display-caps,
 :root:lang(mn) .font-display {
-  font-weight: 600;
+  font-weight: 800;
   letter-spacing: 0.03em;
 }
 
@@ -329,7 +326,7 @@ body {
 
 ::selection {
   background: var(--color-signal);
-  color: #061317;
+  color: #05040c;
 }
 
 /* Inner scrollers (the case file, the palette) keep a thin bar; the page's
@@ -473,10 +470,10 @@ html::-webkit-scrollbar {
    wider than the grotesk it replaced at the same pixel size. */
 @utility display-caps {
   font-family: var(--font-display);
-  font-weight: 400;
+  font-weight: 800;
   text-transform: uppercase;
-  letter-spacing: 0.005em;
-  line-height: 0.95;
+  letter-spacing: 0.01em;
+  line-height: 0.9;
 }
 
 /* Micro-label: the surviving HUD vocabulary, straight off ref3's tiny
@@ -609,13 +606,13 @@ html::-webkit-scrollbar {
       135deg,
       rgba(255, 255, 255, 0.09) 0%,
       rgba(255, 255, 255, 0.025) 42%,
-      rgba(255, 138, 107, 0.07) 100%
+      rgba(232, 28, 200, 0.07) 100%
     ),
     color-mix(in srgb, var(--color-surface) 58%, transparent);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.2),
-    inset 0 0 0 1px rgba(228, 241, 243, 0.09),
-    inset 0 -1px 0 rgba(159, 227, 236, 0.14),
+    inset 0 0 0 1px rgba(243, 241, 255, 0.09),
+    inset 0 -1px 0 rgba(138, 61, 255, 0.14),
     0 18px 40px -22px rgba(0, 0, 0, 0.7);
 }
 
@@ -649,11 +646,11 @@ html::-webkit-scrollbar {
   backdrop-filter: blur(22px) saturate(1.9) brightness(1.08);
   background-image:
     linear-gradient(180deg, rgba(255, 255, 255, 0.13) 0%, rgba(255, 255, 255, 0.035) 18%, rgba(255, 255, 255, 0) 42%),
-    radial-gradient(120% 60% at 50% 0%, rgba(159, 227, 236, 0.08), transparent 70%);
+    radial-gradient(120% 60% at 50% 0%, rgba(138, 61, 255, 0.08), transparent 70%);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.28),
-    inset 0 0 0 1px rgba(228, 241, 243, 0.1),
-    inset 0 -1px 0 rgba(159, 227, 236, 0.16),
+    inset 0 0 0 1px rgba(243, 241, 255, 0.1),
+    inset 0 -1px 0 rgba(138, 61, 255, 0.16),
     0 24px 60px -24px rgba(0, 0, 0, 0.75);
 }
 /* Low Power Mode (lib/groundBus) or the palette's low-power switch: a live
@@ -662,7 +659,7 @@ html::-webkit-scrollbar {
 :root[data-power="low"] .glass-ios {
   -webkit-backdrop-filter: none;
   backdrop-filter: none;
-  background-color: #041013;
+  background-color: #06051a;
 }
 /* Reduce Transparency (iOS Settings > Accessibility) means a solid pane. */
 @media (prefers-reduced-transparency: reduce) {
@@ -670,7 +667,7 @@ html::-webkit-scrollbar {
   .liquid-glass-live {
     -webkit-backdrop-filter: none;
     backdrop-filter: none;
-    background-color: #041013;
+    background-color: #06051a;
   }
 }
 
@@ -680,7 +677,7 @@ html::-webkit-scrollbar {
 @utility tech-chip {
   position: relative;
   background: rgba(255, 255, 255, 0.05);
-  box-shadow: inset 0 0 0 1px rgba(228, 241, 243, 0.12);
+  box-shadow: inset 0 0 0 1px rgba(243, 241, 255, 0.12);
   &::before {
     content: "";
     position: absolute;
@@ -738,8 +735,8 @@ html::-webkit-scrollbar {
   color: color-mix(in srgb, var(--color-fg) 45%, transparent);
 }
 .neon-tube[data-tone="sodium"] {
-  --neon-core: #ffd8a0;
-  --neon-out: #ff6a1a;
+  --neon-core: #efe4ff;
+  --neon-out: #ff1f3d;
 }
 .neon-tube::before {
   content: attr(data-text);
@@ -1077,7 +1074,7 @@ html[data-vt] [data-vt="hud"] { view-transition-name: hud; }
 .kicker-plate {
   display: inline-block;
   padding: 0.2em 0.55em 0.2em 0.65em;
-  background: rgba(6, 19, 23, 0.72);
+  background: rgba(5, 4, 12, 0.72);
   /* Its left edge is a sodium tube: the bar, and the light it throws. */
   box-shadow: inset 2px 0 0 var(--color-hazard), -6px 0 14px -6px var(--color-hazard);
 }
@@ -1125,10 +1122,10 @@ html[data-vt] [data-vt="hud"] { view-transition-name: hud; }
   transform: translateY(-110%);
   background: linear-gradient(
     180deg,
-    rgba(159, 227, 236, 0) 0%,
-    rgba(159, 227, 236, 0.1) 45%,
-    rgba(255, 106, 61, 0.26) 54%,
-    rgba(255, 106, 61, 0) 62%
+    rgba(138, 61, 255, 0) 0%,
+    rgba(138, 61, 255, 0.1) 45%,
+    rgba(255, 61, 113, 0.26) 54%,
+    rgba(255, 61, 113, 0) 62%
   );
 }
 .monitor-lean {
@@ -1209,7 +1206,7 @@ html[data-vt] [data-vt="hud"] { view-transition-name: hud; }
   border-radius: inherit;
   padding: 1.5px;
   pointer-events: none;
-  background: conic-gradient(from var(--cart-a) at 50% 50%, transparent 0 78%, #ff3b30 86%, #ff8a6b 92%, #9fe3ec 99%, transparent 100%);
+  background: conic-gradient(from var(--cart-a) at 50% 50%, transparent 0 78%, #ff1f3d 86%, #e81cc8 92%, #8a3dff 99%, transparent 100%);
   opacity: 0;
   transition: opacity 400ms;
   -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
@@ -1233,7 +1230,7 @@ html[data-vt] [data-vt="hud"] { view-transition-name: hud; }
    brackets, the tube glowing inside it. */
 .script-sign {
   border: 1px solid color-mix(in srgb, var(--color-hazard) 22%, transparent);
-  background: linear-gradient(180deg, rgba(6, 19, 23, 0.55), rgba(6, 19, 23, 0.25));
+  background: linear-gradient(180deg, rgba(5, 4, 12, 0.55), rgba(5, 4, 12, 0.25));
 }
 .script-sign::before,
 .script-sign::after {
@@ -1252,10 +1249,10 @@ html[data-vt] [data-vt="hud"] { view-transition-name: hud; }
    a shadow on the masked element would be cut off with it. Only opacity is
    ever animated, so the shadow is rasterised once. */
 .ink-sign[data-tone="neon"] .ink-sign-fill {
-  background: linear-gradient(180deg, #fff1dc 0%, #ffd08a 30%, var(--color-hazard) 70%, #ff7a2a 100%);
+  background: linear-gradient(180deg, #f6f0ff 0%, #ffd08a 30%, var(--color-hazard) 70%, #ff7a2a 100%);
 }
 .ink-sign[data-tone="neon"] {
-  filter: drop-shadow(0 0 2px rgba(255, 196, 120, 0.9)) drop-shadow(0 0 10px rgba(255, 140, 40, 0.55))
+  filter: drop-shadow(0 0 2px rgba(232, 28, 200, 0.9)) drop-shadow(0 0 10px rgba(255, 140, 40, 0.55))
     drop-shadow(0 0 28px rgba(255, 106, 26, 0.35));
   opacity: 0.12;
 }
@@ -1501,7 +1498,7 @@ html[data-vt] [data-vt="hud"] { view-transition-name: hud; }
   position: absolute;
   inset: 0;
   overflow: hidden;
-  background: #061317;
+  background: #05040c;
   animation: gate-in 0.18s ease-out both;
 }
 .gate[data-phase="open"] .gate-face { animation: gate-open 0.85s cubic-bezier(0.7, 0, 0.2, 1) forwards; }
@@ -1521,7 +1518,7 @@ html[data-vt] [data-vt="hud"] { view-transition-name: hud; }
   margin: -45vmin 0 0 -45vmin;
   border-radius: 50%;
   pointer-events: none;
-  background: radial-gradient(closest-side, rgba(143, 233, 240, 0.22), rgba(143, 233, 240, 0.05) 45%, transparent);
+  background: radial-gradient(closest-side, rgba(199, 194, 255, 0.22), rgba(199, 194, 255, 0.05) 45%, transparent);
   opacity: 0;
 }
 .gate[data-phase="lock"] .gate-flash { animation: gate-flash 0.9s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
@@ -1589,7 +1586,7 @@ html[data-vt] [data-vt="hud"] { view-transition-name: hud; }
   inset: 0;
   z-index: 110;
   pointer-events: none;
-  background: #061317;
+  background: #05040c;
   animation: gate-shut 0.62s cubic-bezier(0.7, 0, 0.2, 1) forwards;
 }
 .gate-shut[data-done] { animation: gate-lift 0.32s ease forwards; }
@@ -1652,8 +1649,8 @@ html[data-vt] [data-vt="hud"] { view-transition-name: hud; }
 
 .aurora-pulse {
   background-image:
-    radial-gradient(55% 45% at 30% 35%, rgba(255, 138, 107, 0.16), transparent 80%),
-    radial-gradient(50% 40% at 72% 64%, rgba(255, 59, 48, 0.1), transparent 80%);
+    radial-gradient(55% 45% at 30% 35%, rgba(232, 28, 200, 0.16), transparent 80%),
+    radial-gradient(50% 40% at 72% 64%, rgba(255, 31, 61, 0.1), transparent 80%);
   animation: aurora-pulse 10s ease-in-out infinite alternate;
 }
 
@@ -1670,7 +1667,7 @@ html[data-vt] [data-vt="hud"] { view-transition-name: hud; }
   top: -24%;
   width: 70vmax;
   height: 70vmax;
-  background: radial-gradient(closest-side, rgba(255, 59, 48, 0.26), rgba(255, 59, 48, 0.08) 55%, transparent);
+  background: radial-gradient(closest-side, rgba(255, 31, 61, 0.26), rgba(255, 31, 61, 0.08) 55%, transparent);
   animation-name: aurora-drift-a;
   animation-duration: 30s;
 }
@@ -1679,7 +1676,7 @@ html[data-vt] [data-vt="hud"] { view-transition-name: hud; }
   bottom: -28%;
   width: 76vmax;
   height: 76vmax;
-  background: radial-gradient(closest-side, rgba(159, 227, 236, 0.2), rgba(159, 227, 236, 0.06) 55%, transparent);
+  background: radial-gradient(closest-side, rgba(138, 61, 255, 0.2), rgba(138, 61, 255, 0.06) 55%, transparent);
   animation-name: aurora-drift-b;
   animation-duration: 40s;
 }
@@ -1688,7 +1685,7 @@ html[data-vt] [data-vt="hud"] { view-transition-name: hud; }
   top: 22%;
   width: 52vmax;
   height: 40vmax;
-  background: radial-gradient(closest-side, rgba(255, 138, 107, 0.26), rgba(255, 138, 107, 0.07) 60%, transparent);
+  background: radial-gradient(closest-side, rgba(232, 28, 200, 0.26), rgba(232, 28, 200, 0.07) 60%, transparent);
   animation-name: aurora-drift-c;
   animation-duration: 50s;
 }
@@ -1791,7 +1788,7 @@ html[data-vt] [data-vt="hud"] { view-transition-name: hud; }
   pointer-events: none;
   mix-blend-mode: screen;
   background:
-    linear-gradient(90deg, transparent, rgba(255, 236, 206, 0.95) 50%, transparent) center / 100% 1px no-repeat,
+    linear-gradient(90deg, transparent, rgba(241, 232, 255, 0.95) 50%, transparent) center / 100% 1px no-repeat,
     radial-gradient(50% 50% at 50% 50%, color-mix(in srgb, var(--color-hazard) 35%, transparent), transparent 70%);
 }
 @media (prefers-reduced-motion: reduce) {
@@ -1878,7 +1875,7 @@ html[data-vt] [data-vt="hud"] { view-transition-name: hud; }
   z-index: -1;
   pointer-events: none;
   transform: translateX(-102%);
-  background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.08) 55%, rgba(255, 246, 230, 0.55) 96%, #fff 100%);
+  background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.08) 55%, rgba(246, 240, 255, 0.55) 96%, #fff 100%);
 }
 .cta-secondary .cta-curtain,
 .cta-icon .cta-curtain {
@@ -1964,7 +1961,7 @@ html[data-vt] [data-vt="hud"] { view-transition-name: hud; }
   pointer-events: none;
   mix-blend-mode: screen;
   background:
-    linear-gradient(90deg, transparent 0%, rgba(255, 244, 228, 0.95) 50%, transparent 100%) center / 100% 2px no-repeat,
+    linear-gradient(90deg, transparent 0%, rgba(244, 238, 255, 0.95) 50%, transparent 100%) center / 100% 2px no-repeat,
     linear-gradient(90deg, transparent 10%, color-mix(in srgb, var(--color-hazard) 55%, transparent) 50%, transparent 90%) center / 100% 10px no-repeat,
     radial-gradient(45% 50% at 50% 50%, color-mix(in srgb, var(--color-hazard) 30%, transparent), transparent 70%);
 }

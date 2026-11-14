@@ -5,133 +5,93 @@ import { useBootReady } from "@/hooks/useBootReady";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
 import { usePointerDrift } from "@/hooks/usePointerDrift";
 import { groundCovered, isLowPower, markLowPower, onCover, onStrike, setDive } from "@/lib/groundBus";
-import { NeonGround } from "./NeonGround";
 
 /**
- * The site's ground: two loops of footage, and one dive between them.
+ * The site's ground: three loops of footage, a dive and a drift.
  *
- *   sakura   a blossoming tree on a cliff against a blue full moon. Behind the
- *            hero, About, Links and Projects: who he is, where to find
- *            him, what he built.
- *   tunnel   a red hexagonal corridor flying forward. Behind Skills,
- *            Capstone, Journey and Contact: the machine room.
+ *   city     a violet megastructure under a vast moon, the camera pushing
+ *            down the avenue. Behind the title screen, the profile and Links.
+ *   hole     a black hole's lavender accretion ring. Behind the work: the
+ *            camera has gone *into* the moon.
+ *   galaxy   a slow purple nebula. Behind Journey and Contact, where the page
+ *            gets calm again.
  *
- * **The dive.** As Skills' top edge rises from the bottom of the screen to 20%
- * up, the camera pushes into the moon and the corridor opens out of it: the
- * sakura plate scales about a point on the moon's clear face, and the tunnel
- * shows through a circle at that same point that grows with it. A circle in a
- * circle becomes a hexagon in a hexagon. The circle starts as the moon's
- * own disc, so the eye reads the moon *turning into* the tunnel, not a wipe.
+ * **The dive.** As Work's top edge rises from the bottom of the screen to 20%
+ * up, the city plate scales about the moon, and the black hole opens through
+ * a circle at that same point, its dark core sliding into place on the moon's.
+ * The moon turns into the hole, not a wipe.
  *
- * Progress is a pure function of `scrollY` (the film's rule): a deep link, a
- * nav jump or a climb back up shows exactly the frame that belongs there, and
- * there is no state to get out of step. Nothing here listens to time except
- * the videos themselves, which simply loop.
+ * **The drift.** As Journey's top climbs from 100% to 35% of the screen, the
+ * galaxy fades in over the hole.
  *
- * **Cost.** One clip plays at a time: the tunnel is paused (and not even
- * fetched until Work is near) while the cliff is the ground, the cliff is
- * paused once the dive is through. Both stop for a hidden tab, the intro
- * curtain, and anything opaque over the screen (lib/groundBus `cover`). The
- * transforms are written per scroll frame only inside the dive range.
+ * Both are pure functions of `scrollY`: a deep link, a nav jump or a climb
+ * back up shows exactly the frame that belongs there.
  *
- * **The arrival.** The cliff is not simply there when the curtain lifts: it
- * starts pushed in and out of focus and settles over ~3.2s, a camera pulling
- * back to find the frame as the name rises into it. Blur is costly on a
- * fullscreen video, so it runs once and the filter is then removed outright.
+ * **Cost.** One clip plays at a time (two only inside a transition). Later
+ * clips aren't fetched until their chapter is within three screens. All stop
+ * for a hidden tab, the curtain, and anything opaque over the screen
+ * (lib/groundBus `cover`). Transforms are written only inside the dive range.
  *
- * **The sign's light.** When the hero name strikes (groundBus `strike`), its
- * sodium light spills onto the cliff and the moon: a warm cast centred on the
- * name, stuttering in step with the tube (the same keyframes as
- * `neon-strike`), then holding low. It fades with the hero, like the scrim,
- * and sits under the scrim, so it never lifts the floor the copy stands on.
+ * **Grade.** All three clips are already violet. A fixed wash pulls them into
+ * the hood palette: crimson pooled low on the left, web-blue on the right, the
+ * way the reference is lit. It's one static layer, composited, never animated.
  *
- * **Depth.** The cliff drifts a little against the cursor, at under half the
- * name's travel, so the frame has two planes before anyone scrolls. The plate
- * rests at 1.03× so the drift never shows an edge.
+ * Reduced motion: posters only, and the dive is a plain dissolve.
  *
- * The rain (NeonGround) is the tunnel's weather: it fades in with the dive and
- * draws nothing before it. Reduced motion: posters only, and the dive is a
- * plain dissolve.
- *
- * Footage: "Sakura On The Cliff In Blue Moon Night" and "Red Future Tunnel",
- * Infinite Visual (youtube.com/@infinite.visual) — credited in the footer.
+ * Footage (credited in the footer): "Futuristic City Background Video 4K VJ
+ * Loop", Infinite Visual; "Black Hole Live Wallpaper", 3rdeyeview; "Purple
+ * Classic Galaxy", AA-VFX.
  */
 
-const SET = {
-  desktop: { sakura: "/ground/sakura-1080.mp4", tunnel: "/ground/tunnel-1080.mp4" },
-  phone: { sakura: "/ground/sakura-720.mp4", tunnel: "/ground/tunnel-720.mp4" },
-  poster: { sakura: "/ground/sakura-poster.jpg", tunnel: "/ground/tunnel-poster.jpg" },
-} as const;
+type Plate = "city" | "hole" | "galaxy";
+const PLATES: Plate[] = ["city", "hole", "galaxy"];
+const src = (p: Plate, phone: boolean) => `/ground/${p}-${phone ? 720 : 1080}.mp4`;
+const poster = (p: Plate) => `/ground/${p}-poster.jpg`;
 
-/** Source aspect of both clips. */
 const ASPECT = 16 / 9;
-/** Where the camera dives, in source fractions: the moon's clear right half,
- *  clear of the tree. The moon itself is centred ≈ (0.52, 0.49), r ≈ 0.205w. */
-const DIVE_AT = { x: 0.57, y: 0.47 };
-/** The tunnel's first circle, as a fraction of the plate's width: inside the
- *  moon from the dive point. */
-const DISC = 0.15;
-/** Horizontal crop anchor. On a portrait phone `cover` shows ~a quarter of the
- *  frame; 46% keeps the tree's crown and the moon both in it. */
-const POS_X = 0.46;
-/** How deep the sakura plate scales by the end of the dive. */
-const DEPTH = 5;
-/** The section the camera dives at. Projects stays on the cliff: the sakura
- *  plate is the site's face, and the tunnel had most of the page. */
-const DIVE_INTO = "#capabilities";
+/** The moon on the city plate, in source fractions. */
+const MOON = { x: 0.5, y: 0.36 };
+/** The black hole's dark core on its plate, in source fractions. */
+const CORE = { x: 0.74, y: 0.47 };
+/** The hole's first circle as a fraction of the plate's width: the moon's disc. */
+const DISC = 0.12;
+const DEPTH = 4.2;
+const DIVE_INTO = "#work";
+const DRIFT_INTO = "#timeline";
 
 /**
  * The dim over the footage, keyed through the page. `at` is a section, `edge`
- * how far through it (0 top, 1 bottom); a key lands when that point crosses
- * mid-screen and the veil runs linearly between keys. Light where the footage
- * is the point (the hero, the dive), heavy under copy — measured against the
- * brightest pixels behind the text, not chosen.
+ * how far through it; a key lands when that point crosses mid-screen. Light
+ * where the footage is the point (the title screen, the dive, the opening of
+ * Journey), heavier under copy.
  */
 const VEIL: { at: string; edge: number; veil: number }[] = [
-  { at: "#hero", edge: 0, veil: 0.3 },
-  { at: "#hero", edge: 0.7, veil: 0.36 },
-  { at: "#about", edge: 0.1, veil: 0.76 },
-  { at: "#connect", edge: 0.8, veil: 0.78 },
-  { at: "#work", edge: 0.05, veil: 0.76 },
-  { at: "#work", edge: 0.94, veil: 0.76 },
-  { at: "#capabilities", edge: 0, veil: 0.4 },
-  { at: "#capabilities", edge: 0.08, veil: 0.6 },
-  { at: "#timeline", edge: 0.5, veil: 0.62 },
-  { at: "#contact", edge: 0.3, veil: 0.7 },
-  { at: "end", edge: 1, veil: 0.74 },
+  { at: "#hero", edge: 0, veil: 0.34 },
+  { at: "#hero", edge: 0.7, veil: 0.4 },
+  { at: "#about", edge: 0.15, veil: 0.6 },
+  { at: "#connect", edge: 0.8, veil: 0.62 },
+  { at: "#work", edge: 0.02, veil: 0.32 },
+  { at: "#work", edge: 0.2, veil: 0.48 },
+  { at: "#capabilities", edge: 0.1, veil: 0.66 },
+  { at: "#anatomy", edge: 0.5, veil: 0.72 },
+  { at: "#timeline", edge: 0.05, veil: 0.38 },
+  { at: "#timeline", edge: 0.6, veil: 0.52 },
+  { at: "#contact", edge: 0.3, veil: 0.48 },
+  { at: "end", edge: 1, veil: 0.58 },
 ];
 
-/** The plate's resting scale: margin for the drift to travel into. */
-const REST = 1.03;
-/** Where the arrival starts: pushed in and soft. */
-const ARRIVE_FROM = { transform: "scale(1.16)", filter: "blur(9px)" };
-/** The cliff's drift at full deflection, px. The name's is 30. */
-const DRIFT = 13;
-/** The sign's light once it holds, as a fraction of its peak. */
-const CAST = 0.5;
-/** `neon-strike` (globals.css) as WAAPI keyframes over the same 0.9s. */
-const STRIKE: Keyframe[] = [
-  { opacity: 0.05, offset: 0 },
-  { opacity: 1, offset: 0.06 },
-  { opacity: 0.25, offset: 0.1 },
-  { opacity: 1, offset: 0.18 },
-  { opacity: 0.35, offset: 0.22 },
-  { opacity: 1, offset: 0.34 },
-  { opacity: 0.65, offset: 0.4 },
-  { opacity: 1, offset: 0.46 },
-  { opacity: 1, offset: 1 },
-];
+const REST = 1.04;
+const ARRIVE_FROM = { transform: "scale(1.18)", filter: "blur(10px)" };
+const DRIFT = 14;
+const CAST = 0.45;
 
 const clamp = (v: number, lo = 0, hi = 1) => Math.min(hi, Math.max(lo, v));
 const easeInOut = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
 
 export function VideoGround() {
-  const sakuraRef = useRef<HTMLVideoElement>(null);
-  const tunnelRef = useRef<HTMLVideoElement>(null);
-  const sakuraLayer = useRef<HTMLDivElement>(null);
-  const tunnelLayer = useRef<HTMLDivElement>(null);
+  const vids = useRef<Record<Plate, HTMLVideoElement | null>>({ city: null, hole: null, galaxy: null });
+  const layers = useRef<Record<Plate, HTMLDivElement | null>>({ city: null, hole: null, galaxy: null });
   const veilRef = useRef<HTMLDivElement>(null);
-  const scrimRef = useRef<HTMLDivElement>(null);
   const arriveRef = useRef<HTMLDivElement>(null);
   const castRef = useRef<HTMLDivElement>(null);
   const lightRef = useRef<HTMLDivElement>(null);
@@ -139,82 +99,85 @@ export function VideoGround() {
   const booted = useBootReady();
   const reduced = useReducedMotion();
   const [phone, setPhone] = useState(false);
-  const [wantTunnel, setWantTunnel] = useState(false);
-  /* Which plates are showing, written by the dive and read by playback. */
-  const shown = useRef({ sakura: true, tunnel: false });
+  const [want, setWant] = useState<Record<Plate, boolean>>({ city: true, hole: false, galaxy: false });
+  const shown = useRef<Record<Plate, boolean>>({ city: true, hole: false, galaxy: false });
   const syncRef = useRef<() => void>(() => {});
 
   useEffect(() => {
-    // Read once on mount: a desktop resized narrow keeps the set it loaded.
-    // A coarse pointer is a phone or tablet too: the 720 set, whatever the width.
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     setPhone(window.matchMedia("(max-width: 768px), (pointer: coarse)").matches);
   }, []);
 
-  /* --- Scroll → dive and veil. --------------------------------------------- */
+  /* --- Scroll → dive, drift and veil. ------------------------------------ */
   useEffect(() => {
-    const sak = sakuraLayer.current;
-    const tun = tunnelLayer.current;
+    const city = layers.current.city;
+    const hole = layers.current.hole;
+    const galaxy = layers.current.galaxy;
     const veil = veilRef.current;
-    if (!sak || !tun || !veil) return;
+    if (!city || !hole || !galaxy || !veil) return;
 
     let W = 0;
     let H = 0;
-    /* The dive point and the first disc, in viewport px. */
     let ox = 0;
     let oy = 0;
+    let shiftX = 0;
+    let shiftY = 0;
     let disc = 0;
     let reach = 0;
     let diveTop = 0;
+    let driftTop = 0;
     let heroEnd = 0;
     let keys: { y: number; veil: number }[] = [];
     let raf = 0;
-    let lastP = -1;
+    let lastDive = -1;
+    let lastDrift = -1;
     let lastVeil = "";
     let lastUp = "";
 
     const measure = () => {
       W = window.innerWidth;
       H = window.innerHeight;
-      // object-fit: cover, object-position: POS_X 50%
       const s = Math.max(W / (H * ASPECT), 1);
       const dw = H * ASPECT * s;
       const dh = H * s;
-      const left = (W - dw) * POS_X;
+      const left = (W - dw) / 2;
       const top = (H - dh) / 2;
-      ox = left + DIVE_AT.x * dw;
-      oy = top + DIVE_AT.y * dh;
+      ox = left + MOON.x * dw;
+      oy = top + MOON.y * dh;
+      // Where the hole's core sits unshifted, and how far it must slide to the moon.
+      shiftX = ox - (left + CORE.x * dw);
+      shiftY = oy - (top + CORE.y * dh);
       disc = DISC * dw;
       reach = Math.hypot(Math.max(ox, W - ox), Math.max(oy, H - oy));
-      sak.style.transformOrigin = `${ox.toFixed(1)}px ${oy.toFixed(1)}px`;
-      tun.style.transformOrigin = sak.style.transformOrigin;
+      city.style.transformOrigin = `${ox.toFixed(1)}px ${oy.toFixed(1)}px`;
+      hole.style.transformOrigin = city.style.transformOrigin;
 
       const sy = window.scrollY;
-      const dive = document.querySelector<HTMLElement>(DIVE_INTO);
-      diveTop = dive ? dive.getBoundingClientRect().top + sy : 1e9;
-      const hero = document.querySelector<HTMLElement>("#hero");
-      heroEnd = hero ? hero.getBoundingClientRect().bottom + sy : H;
+      const top0 = (sel: string) => {
+        const el = document.querySelector<HTMLElement>(sel);
+        return el ? el.getBoundingClientRect().top + sy : 1e9;
+      };
+      diveTop = top0(DIVE_INTO);
+      driftTop = top0(DRIFT_INTO);
+      const heroEl = document.querySelector<HTMLElement>("#hero");
+      heroEnd = heroEl ? heroEl.getBoundingClientRect().bottom + sy : H;
       const end = document.documentElement.scrollHeight - H;
-      /* A portrait crop is mostly moon: the keys under copy go a step darker
-         on a phone (Connect's lead measured 3.8:1 without it). */
       const boost = W < 768 ? 0.08 : 0;
       keys = VEIL.map((k) => {
-        const veil = k.veil >= 0.5 ? Math.min(0.9, k.veil + boost) : k.veil;
-        if (k.at === "end") return { y: end, veil };
+        const v = k.veil >= 0.45 ? Math.min(0.9, k.veil + boost) : k.veil;
+        if (k.at === "end") return { y: end, veil: v };
         const el = document.querySelector<HTMLElement>(k.at);
         if (!el) return null;
         const r = el.getBoundingClientRect();
-        // the point lands at mid-screen
-        return { y: r.top + sy + r.height * k.edge - H / 2, veil };
+        return { y: r.top + sy + r.height * k.edge - H / 2, veil: v };
       })
         .filter((k): k is { y: number; veil: number } => k !== null)
         .sort((a, b) => a.y - b.y);
-      lastP = -1;
+      lastDive = lastDrift = -1;
       lastVeil = lastUp = "";
     };
 
     const veilAt = (y: number) => {
-      if (!keys.length) return 0.5;
+      if (!keys.length) return 0.4;
       if (y <= keys[0].y) return keys[0].veil;
       for (let i = 1; i < keys.length; i++) {
         const a = keys[i - 1];
@@ -224,46 +187,48 @@ export function VideoGround() {
       return keys[keys.length - 1].veil;
     };
 
+    const show = (next: Record<Plate, boolean>) => {
+      if (PLATES.some((p) => next[p] !== shown.current[p])) {
+        shown.current = next;
+        syncRef.current();
+      }
+    };
+
     const paint = () => {
       raf = 0;
       const y = window.scrollY;
-      // The dive section's top: at the bottom of the screen → 20% up.
       const p = clamp((y + H - diveTop) / (H * 0.8));
-      /* Written only when they change: these are fullscreen layers, and a
-         style write is a style pass even when the value is the same. */
+      const q = clamp((y + H - driftTop) / (H * 0.65));
       const v = veilAt(y).toFixed(3);
       if (v !== lastVeil) veil.style.opacity = lastVeil = v;
-      const heroUp = clamp(1 - y / Math.max(1, heroEnd - H * 0.5)).toFixed(3);
-      if (heroUp !== lastUp) {
-        lastUp = heroUp;
-        if (scrimRef.current) scrimRef.current.style.opacity = heroUp;
-        if (castRef.current) castRef.current.style.opacity = heroUp;
-      }
+      const up = clamp(1 - y / Math.max(1, heroEnd - H * 0.5)).toFixed(3);
+      if (up !== lastUp && castRef.current) castRef.current.style.opacity = lastUp = up;
       setDive(p);
-      if (p === lastP) return;
-      lastP = p;
-      const sakuraOn = p < 1;
-      const tunnelOn = p > 0;
-      if (sakuraOn !== shown.current.sakura || tunnelOn !== shown.current.tunnel) {
-        shown.current = { sakura: sakuraOn, tunnel: tunnelOn };
-        syncRef.current();
+      show({ city: p < 1, hole: p > 0 && q < 1, galaxy: q > 0 });
+
+      if (q !== lastDrift) {
+        lastDrift = q;
+        galaxy.style.visibility = q > 0 ? "visible" : "hidden";
+        galaxy.style.opacity = easeInOut(q).toFixed(3);
       }
+      if (p === lastDive) return;
+      lastDive = p;
       const e = easeInOut(p);
+      city.style.visibility = p < 1 ? "visible" : "hidden";
+      hole.style.visibility = p > 0 ? "visible" : "hidden";
       if (reduced) {
-        tun.style.opacity = e.toFixed(3);
-        tun.style.visibility = tunnelOn ? "visible" : "hidden";
-        sak.style.visibility = sakuraOn ? "visible" : "hidden";
+        hole.style.opacity = e.toFixed(3);
         return;
       }
       const depth = 1 + (DEPTH - 1) * e;
-      sak.style.transform = p > 0 ? `scale(${depth.toFixed(4)})` : "";
-      sak.style.visibility = sakuraOn ? "visible" : "hidden";
-      tun.style.visibility = tunnelOn ? "visible" : "hidden";
-      // The corridor glows up inside the moon first, then the disc opens.
-      tun.style.opacity = clamp(p / 0.22).toFixed(3);
-      tun.style.transform = p < 1 ? `scale(${(1.35 - 0.35 * e).toFixed(4)})` : "";
+      city.style.transform = p > 0 ? `scale(${depth.toFixed(4)})` : "";
+      hole.style.opacity = clamp(p / 0.2).toFixed(3);
+      // The core starts on the moon and slides home as the hole fills the frame.
+      const k = 1 - e;
+      hole.style.transform =
+        p < 1 ? `translate(${(shiftX * k).toFixed(1)}px, ${(shiftY * k).toFixed(1)}px) scale(${(1.5 - 0.5 * e).toFixed(4)})` : "";
       const r = disc * depth;
-      tun.style.clipPath = r >= reach || p >= 1 ? "" : `circle(${r.toFixed(1)}px at ${ox.toFixed(1)}px ${oy.toFixed(1)}px)`;
+      hole.style.clipPath = r >= reach || p >= 1 ? "" : `circle(${r.toFixed(1)}px at ${ox.toFixed(1)}px ${oy.toFixed(1)}px)`;
     };
 
     const onScroll = () => {
@@ -292,17 +257,15 @@ export function VideoGround() {
     };
   }, [reduced]);
 
-  /* --- The arrival: settle from pushed-in and soft to rest. ---------------- */
+  /* --- The arrival: settle from pushed-in and soft to rest, once. --------- */
   useEffect(() => {
     const el = arriveRef.current;
     if (!el || reduced || !booted) return;
     const anim = el.animate([ARRIVE_FROM, { transform: `scale(${REST})`, filter: "blur(0px)" }], {
-      duration: 3200,
+      duration: 2800,
       easing: "cubic-bezier(0.16, 1, 0.3, 1)",
       fill: "forwards",
     });
-    /* Commit the end state with no filter at all: a filter left on a
-       fullscreen video, even blur(0), keeps it on the slow path. */
     anim.onfinish = () => {
       el.style.transform = `scale(${REST})`;
       el.style.filter = "";
@@ -311,7 +274,7 @@ export function VideoGround() {
     return () => anim.cancel();
   }, [booted, reduced]);
 
-  /* --- The sign's light: stutter with the tube, then hold low. ------------ */
+  /* --- The name's light: when the title fills, it throws a cast. ---------- */
   useEffect(() => {
     const el = lightRef.current;
     if (!el) return;
@@ -319,186 +282,176 @@ export function VideoGround() {
       el.style.opacity = String(CAST);
       return;
     }
-    const running: Animation[] = [];
+    let anim: Animation | null = null;
     const off = onStrike(() => {
-      const strike = el.animate(STRIKE, { duration: 900, fill: "forwards" });
-      running.push(strike);
-      strike.onfinish = () => {
-        const settle = el.animate([{ opacity: 1 }, { opacity: CAST }], {
-          duration: 1600,
-          easing: "cubic-bezier(0.33, 0, 0.2, 1)",
-          fill: "forwards",
-        });
-        running.push(settle);
-        settle.onfinish = () => {
-          el.style.opacity = String(CAST);
-          running.forEach((a) => a.cancel());
-        };
+      anim = el.animate([{ opacity: 0 }, { opacity: 1, offset: 0.3 }, { opacity: CAST }], {
+        duration: 2200,
+        easing: "cubic-bezier(0.33, 0, 0.2, 1)",
+        fill: "forwards",
+      });
+      anim.onfinish = () => {
+        el.style.opacity = String(CAST);
+        anim?.cancel();
       };
     });
     return () => {
       off();
-      running.forEach((a) => a.cancel());
+      anim?.cancel();
     };
   }, [reduced]);
 
-  /* --- Fetch the tunnel only once the dive is within three screens. --------- */
+  /* --- Fetch the later plates once their chapter is within three screens. -- */
   useEffect(() => {
     if (reduced) return;
     const near = () => {
-      const dive = document.querySelector<HTMLElement>(DIVE_INTO);
-      const top = dive ? dive.getBoundingClientRect().top : 0;
-      if (top <= window.innerHeight * 3) {
-        window.removeEventListener("scroll", near);
-        setWantTunnel(true);
-      }
+      const within = (sel: string) => {
+        const el = document.querySelector<HTMLElement>(sel);
+        return !!el && el.getBoundingClientRect().top <= window.innerHeight * 3;
+      };
+      setWant((w) => {
+        const hole = w.hole || within(DIVE_INTO);
+        const galaxy = w.galaxy || within(DRIFT_INTO);
+        return hole === w.hole && galaxy === w.galaxy ? w : { city: true, hole, galaxy };
+      });
     };
     window.addEventListener("scroll", near, { passive: true });
     near();
     return () => window.removeEventListener("scroll", near);
   }, [reduced]);
 
-  /* --- Play only what is on screen. ---------------------------------------- */
+  /* --- Play only what is on screen. -------------------------------------- */
   useEffect(() => {
-    const sakura = sakuraRef.current;
-    const tunnel = tunnelRef.current;
-    if (reduced || !sakura || !tunnel) return;
+    if (reduced) return;
     const sync = () => {
       const live = booted && document.visibilityState === "visible" && !groundCovered();
-      const set = (v: HTMLVideoElement, on: boolean) => {
-        if (!v.currentSrc && !v.getAttribute("src")) return;
+      for (const p of PLATES) {
+        const v = vids.current[p];
+        if (!v || (!v.currentSrc && !v.getAttribute("src"))) continue;
+        const on = live && shown.current[p];
         if (on && v.paused)
           v.play().catch((e: unknown) => {
-            /* A muted inline loop refused outright is iOS Low Power Mode
-               (lib/groundBus). An AbortError is just a pause racing the play. */
             if (e instanceof DOMException && e.name === "NotAllowedError") markLowPower();
           });
         else if (!on && !v.paused) v.pause();
+      }
+    };
+    /* Warm a plate while it's still off screen: one play and pause, so its
+       decoder is up before the transition reaches it. */
+    const warmers = PLATES.map((p) => {
+      const v = vids.current[p];
+      if (!v || p === "city") return () => {};
+      let warmed = false;
+      const warm = () => {
+        if (warmed || shown.current[p] || !booted || isLowPower()) return sync();
+        warmed = true;
+        v.play()
+          .then(() => {
+            if (!shown.current[p]) v.pause();
+          })
+          .catch(() => {});
       };
-      set(sakura, live && shown.current.sakura);
-      set(tunnel, live && shown.current.tunnel);
-    };
-    /* Warm the tunnel while it is still off screen: one play and pause, so
-       its decoder is up and its first frame is in hand before the dive.
-       Otherwise the first scroll into Skills paid for both — the hitch that
-       went away once the clip was running. */
-    let warmed = false;
-    const warm = () => {
-      if (warmed || shown.current.tunnel || !booted || isLowPower()) return sync();
-      warmed = true;
-      tunnel
-        .play()
-        .then(() => {
-          if (!shown.current.tunnel) tunnel.pause();
-        })
-        .catch(() => {});
-    };
+      v.addEventListener("loadeddata", warm);
+      if (v.readyState >= 2) warm();
+      return () => v.removeEventListener("loadeddata", warm);
+    });
     syncRef.current = sync;
     sync();
+    const city = vids.current.city;
     document.addEventListener("visibilitychange", sync);
     const unCover = onCover(sync);
-    sakura.addEventListener("loadeddata", sync);
-    tunnel.addEventListener("loadeddata", warm);
-    if (tunnel.readyState >= 2) warm();
+    city?.addEventListener("loadeddata", sync);
     return () => {
       syncRef.current = () => {};
       document.removeEventListener("visibilitychange", sync);
       unCover();
-      sakura.removeEventListener("loadeddata", sync);
-      tunnel.removeEventListener("loadeddata", warm);
+      city?.removeEventListener("loadeddata", sync);
+      warmers.forEach((w) => w());
     };
-  }, [booted, reduced, wantTunnel]);
+  }, [booted, reduced, want]);
 
-  const src = phone ? SET.phone : SET.desktop;
-  const fit = { objectPosition: `${POS_X * 100}% 50%` } as const;
+  const video = (p: Plate) =>
+    reduced ? (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img src={poster(p)} alt="" className="h-full w-full object-cover" />
+    ) : (
+      <video
+        ref={(el) => {
+          vids.current[p] = el;
+        }}
+        className="h-full w-full object-cover"
+        src={want[p] ? src(p, phone) : undefined}
+        poster={poster(p)}
+        muted
+        loop
+        playsInline
+        preload={want[p] ? "auto" : "none"}
+      />
+    );
 
   return (
     <>
-      {/* Three planes, one transform each: the dive (scroll), the arrival
-          (once, on boot) and the drift (pointer). On one element they would
-          overwrite each other. */}
-      <div ref={sakuraLayer} className="absolute inset-0 will-change-transform">
+      <div
+        ref={(el) => {
+          layers.current.city = el;
+        }}
+        className="absolute inset-0 will-change-transform"
+      >
         {reduced ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={SET.poster.sakura} alt="" className="h-full w-full object-cover" style={fit} />
+          video("city")
         ) : (
-          /* Held at the arrival's first frame until boot, so what the lifting
-             curtain uncovers is already the start of the move. */
           <div ref={arriveRef} className="absolute inset-0" style={ARRIVE_FROM}>
             <div ref={drift} className="absolute inset-0">
-              <video
-                ref={sakuraRef}
-                className="h-full w-full object-cover"
-                style={fit}
-                src={src.sakura}
-                poster={SET.poster.sakura}
-                muted
-                loop
-                playsInline
-                preload="auto"
-              />
+              {video("city")}
             </div>
           </div>
         )}
       </div>
       <div
-        ref={tunnelLayer}
+        ref={(el) => {
+          layers.current.hole = el;
+        }}
         className="absolute inset-0 will-change-transform"
         style={{ visibility: "hidden", opacity: 0 }}
       >
-        {reduced ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={SET.poster.tunnel} alt="" className="h-full w-full object-cover" style={fit} />
-        ) : (
-          <video
-            ref={tunnelRef}
-            className="h-full w-full object-cover"
-            style={fit}
-            src={wantTunnel ? src.tunnel : undefined}
-            poster={SET.poster.tunnel}
-            muted
-            loop
-            playsInline
-            preload={wantTunnel ? "auto" : "none"}
-          />
-        )}
+        {video("hole")}
       </div>
-      {/* The veil: the ground's own colour, so the footage sinks into the
-          page rather than going grey. */}
-      {/* The veil, the cast and the scrim each fade with the scroll, so each
-          is its own layer: the fade composites instead of repainting the
-          screen. */}
-      <div ref={veilRef} className="absolute inset-0 bg-void will-change-[opacity]" style={{ opacity: 0.5 }} />
-      {/* The sign's light, centred on the name (≈31% down on a phone, 43%
-          from md) and wide and low like a tube's spill. `screen` adds light
-          rather than tinting: the moon warms, the shadows stay dark. The
-          outer layer fades with the hero; the inner one strikes. The blend
-          is on the outer one: a fading wrapper is a stacking context, which
-          isolated an inner blend from the footage for the whole fade, and
-          the wrapper's every opacity step repainted the blended screen. */}
+      <div
+        ref={(el) => {
+          layers.current.galaxy = el;
+        }}
+        className="absolute inset-0 will-change-[opacity]"
+        style={{ visibility: "hidden", opacity: 0 }}
+      >
+        {video("galaxy")}
+      </div>
+      {/* The grade: the hood's light. Static, so it costs one composite. */}
+      <div
+        className="absolute inset-0 mix-blend-soft-light"
+        style={{
+          background:
+            "radial-gradient(ellipse 60% 70% at 0% 100%, rgb(255 31 61 / 0.55), transparent 70%), radial-gradient(ellipse 55% 65% at 100% 20%, rgb(86 100 255 / 0.45), transparent 70%)",
+        }}
+      />
+      <div ref={veilRef} className="absolute inset-0 bg-void will-change-[opacity]" style={{ opacity: 0.3 }} />
+      {/* The title's light, centred on the name, fading with the hero. */}
       <div ref={castRef} className="pointer-events-none absolute inset-0 mix-blend-screen will-change-[opacity]">
         <div
           ref={lightRef}
-          className="absolute inset-0 [--cast-y:31%] md:[--cast-y:43%]"
+          className="absolute inset-0"
           style={{
             opacity: 0,
             background:
-              "radial-gradient(ellipse 62% 30% at 50% var(--cast-y), rgb(255 106 61 / 0.78), rgb(255 106 61 / 0.3) 46%, transparent 80%)",
+              "radial-gradient(ellipse 58% 26% at 38% 46%, rgb(232 28 200 / 0.42), rgb(255 31 61 / 0.16) 50%, transparent 80%)",
           }}
         />
       </div>
-      {/* The hero's copy sits over the lit moon (3.2:1 on desktop once the
-          lead rises to mid-screen, 3.5:1 on a portrait phone), so the floor
-          of the frame darkens under it — and only while the hero is up. */}
+      {/* The floor of the frame darkens, so the menu always stands on ground. */}
       <div
-        ref={scrimRef}
-        className="absolute inset-0 will-change-[opacity]"
+        className="absolute inset-x-0 bottom-0 h-[45vh]"
         style={{
-          background:
-            "linear-gradient(180deg, transparent 38%, color-mix(in srgb, var(--color-void) 72%, transparent) 62%, color-mix(in srgb, var(--color-void) 88%, transparent) 100%)",
+          background: "linear-gradient(180deg, transparent, color-mix(in srgb, var(--color-void) 70%, transparent))",
         }}
       />
-      <NeonGround />
     </>
   );
 }

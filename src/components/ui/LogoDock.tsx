@@ -197,7 +197,7 @@ export function ToolChips({
         return (
           <li
             key={k}
-            className="flex items-center gap-2 rounded-full border border-line bg-[rgba(6,19,23,0.55)] py-1 pl-1 pr-3"
+            className="flex items-center gap-2 rounded-full border border-line bg-[rgba(5,4,12,0.55)] py-1 pl-1 pr-3"
           >
             <span
               aria-hidden

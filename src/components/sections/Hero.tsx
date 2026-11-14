@@ -1,406 +1,223 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { motion, useScroll, useTransform } from "framer-motion";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useI18n } from "@/lib/i18n";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
-import { useMediaQuery } from "@/hooks/useMediaQuery";
-import { usePointerDrift } from "@/hooks/usePointerDrift";
 import { useBootReady } from "@/hooks/useBootReady";
-import { useScrollTimelines } from "@/hooks/useScrollTimelines";
-import { NeonSign } from "@/components/ui/NeonSign";
-import { ScrambleText } from "@/components/motion/ScrambleText";
-import { WordRevealLines } from "@/components/motion/WordReveal";
-import { Focus } from "@/components/hero/Entrance";
-import { InkSign } from "@/components/ui/InkSign";
-import { Signature } from "@/components/hero/Signature";
-import { FlyThrough } from "@/components/hero/FlyThrough";
-import { DecodeText } from "@/components/motion/DecodeText";
+import { useSmoothScroll } from "@/components/chrome/SmoothScroll";
+import { MARK_D, MARK_T } from "@/components/chrome/NavGlyphs";
+import { GlassIconReveal } from "@/components/ui/GlassLogoReveal";
 import { groundStrike } from "@/lib/groundBus";
-import { sectionIndex } from "@/lib/content";
 import { cn } from "@/lib/utils";
-import { useLocalDraft } from "@/hooks/useLocalDraft";
-import { CinematicHero } from "@/components/cinematic/CinematicHero";
 
 /**
- * The opening frame: the name at a scale that has to break to fit, over the
- * same aurora as every other section.
+ * The title screen.
  *
- * There used to be a horizon of light rising through the letterforms here, and
- * it was the only section with its own backdrop. Scrolling out of the hero
- * therefore always looked like leaving one site for another. The arc is gone,
- * and the hero now sits on the one shared ground like everything else. What
- * gives the frame its depth is the name's own travel: it drifts against the
- * cursor, and on scroll it rises and scales past the copy.
+ * The page opens the way a game does: the name enormous over the city, a
+ * glass seal of ᠠ settling beside it, and a menu down the diagonal that
+ * actually works. Each stage is a chapter jump.
  *
- * The arrival, from the moment the preloader curtain starts to lift:
+ * The arrival, from the moment the curtain starts to tear (useBootReady):
  *
- *   0.20s  the name rises out of its own clip, resolving from 26px of blur
- *   1.25s  the name strikes like a neon tube: a stutter, then it holds
- *   1.15s  the lead arrives one word at a time, line two lagging line one
- *   1.60s  his name in Mongol bichig is brushed in light across the Latin
- *          one, like a signature across a printed name (hero/Signature)
- *   1.70s  the panel, the sub and the footer row settle; the panel's rows
- *          decode once
- *   ~6s    the signature flies into the sign at the frame's edge, which
- *          lights already written
+ *   0.10s  the name rises; its hairline outline fills with the ramp from the
+ *          floor up, the same fill the loader ended on, so the two read as one
+ *          continuous shot. As it lands the city takes its light (groundStrike).
+ *   0.45s  the glass seal plays once: ᠠ magnified in a droplet that spreads
+ *          into a tile and lets go (ui/GlassLogoReveal)
+ *   0.70s  the menu's stages slide in down the diagonal, one after another
+ *   1.20s  the player card and the hint settle
  *
- * The exit, on the pinned runway (hero/FlyThrough): the copy clears, the name
- * becomes a window onto the moon, and the camera flies through its last
- * letter into About.
+ * The menu is a real menu: ↑/↓ (or ←/→) move the lit stage, Enter or a click
+ * jumps, Home/End go to the ends. Hover lights a stage the way a cursor does
+ * in a game. It is a set of links, not scroll-driven UI, so the pointer rule
+ * doesn't apply. The lit stage pulses on a beat (transform only), and the
+ * beat stops whenever the hero is off screen.
  *
- * Nothing in the hero follows the pointer except the name's existing drift.
+ * Reduced motion: everything is at rest, the outline already filled, no beat.
  */
 
-/** Scroll runway. The frame is pinned for all but one viewport of it, and the
- *  fly-through needs that pinned stretch: at the old 130/180vh the frame was
- *  pinned for only 30/80vh and the window would have opened as it slid away.
- *  A phone has no fly-through (its SVG mask re-rasterises every frame and
- *  dropped phones well under 60fps), so it keeps the old short runway: the
- *  copy clears and the lit name scrolls away with the frame. */
-const RUN = "h-[130vh] md:h-[260vh]";
-
-/** When the name's tube strikes, ms after the curtain starts to lift — just
- *  after it has finished rising out of its clip. */
-const STRIKE_AT = 1250;
+const LOGO = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><path fill="white" d="${MARK_D}" transform="${MARK_T}"/></svg>`;
+/** When the fill lands, ms after boot: when the city takes the name's light. */
+const STRIKE_AT = 1300;
 
 export function Hero() {
-  const cinematic = useLocalDraft() === "cinematic";
-  const { t } = useI18n();
-  return <section id="hero" data-act="void" data-chapter="INDEX" aria-label={t.hero.aria}>
-    {cinematic ? <CinematicHero /> : <OriginalHero />}
-  </section>;
-}
-
-function OriginalHero() {
   const { c, t } = useI18n();
   const { profile } = c;
-  const ref = useRef<HTMLElement>(null);
-  const reduced = useReducedMotion();
-  /* The fly-through is md and up only. Matches RUN's breakpoint. */
-  const fly = useMediaQuery("(min-width: 768px)") && !reduced;
-  const [active, setActive] = useState(false);
-  const [struck, setStruck] = useState(false);
-  /* The signature has landed in the edge sign (or there was none to land). */
-  const [landed, setLanded] = useState(false);
-  const nameRef = useRef<HTMLHeadingElement>(null);
-  const tubeRef = useRef<HTMLSpanElement>(null);
-  const signRef = useRef<HTMLDivElement>(null);
-
-  /* Everything below hangs off this. The arrival is 2.9s long and the curtain
-     is up for the first 1.7 of them — on mount the whole sequence played behind
-     an opaque wall and the visitor met the resting frame. `ready` flips as the
-     curtain begins to lift. */
   const ready = useBootReady();
+  const reduced = useReducedMotion();
   const play = ready && !reduced;
+  const { goTo } = useSmoothScroll();
+  const ref = useRef<HTMLElement>(null);
+  const itemsRef = useRef<(HTMLAnchorElement | null)[]>([]);
+  const [lit, setLit] = useState(0);
+  const [live, setLive] = useState(true);
+  const [glassDone, setGlassDone] = useState(false);
+  const onGlassDone = useCallback(() => setGlassDone(true), []);
+  const menu = t.hero.menu;
 
-  /* The name drifts against the cursor, so the frame has depth before you have
-     scrolled at all. The hook no-ops on coarse pointers and under reduced
-     motion, so there is nothing to branch on here. */
-  const drift = usePointerDrift(30);
+  useEffect(() => {
+    if (!play) return;
+    const id = window.setTimeout(groundStrike, STRIKE_AT);
+    return () => window.clearTimeout(id);
+  }, [play]);
 
-  /* 0 at the top, 1 as the pinned frame is about to scroll away. Everything
-     on the way out is keyed to the pin, not to the section leaving, so it
-     all happens while the frame holds still. */
-  const { scrollYProgress: pin } = useScroll({
-    target: ref,
-    offset: ["start start", "end end"],
-  });
-
-  /* Promote the moving plane only while the hero is on screen. */
+  /* The beat and the blink only run while the title screen is on screen. */
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
-    const io = new IntersectionObserver(([entry]) => setActive(entry.isIntersecting));
+    const io = new IntersectionObserver(([e]) => setLive(e.isIntersecting));
     io.observe(el);
     return () => io.disconnect();
   }, []);
 
-  /* The strike. A one-shot arrival beat on a timer rather than an animation
-     callback: the alternative is threading `onAnimationComplete` through three
-     components to reconstruct a schedule written down above. It replaced a
-     glitch burst: a sign flickering on is the same jolt, but it is something
-     the city does, not something the screen does wrong. */
-  useEffect(() => {
-    if (!play) return;
-    const on = setTimeout(() => {
-      setStruck(true);
-      /* The ground lights with it: the sign's glow spills over the footage. */
-      groundStrike();
-    }, STRIKE_AT);
-    return () => clearTimeout(on);
-  }, [play]);
-  const lit = reduced || struck;
+  const move = (to: number) => {
+    const n = (to + menu.length) % menu.length;
+    setLit(n);
+    itemsRef.current[n]?.focus();
+  };
 
-  /* Travel. The name lifts a little as the copy clears; after that the
-     camera's move is the fly-through, not the name's. */
-  const markY = useTransform(pin, [0, 0.45], ["0vh", "-8vh"]);
-  const markScale = useTransform(pin, [0, 0.45], [1, 1.04]);
+  const onKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "ArrowDown" || e.key === "ArrowRight") {
+      e.preventDefault();
+      move(lit + 1);
+    } else if (e.key === "ArrowUp" || e.key === "ArrowLeft") {
+      e.preventDefault();
+      move(lit - 1);
+    } else if (e.key === "Home") {
+      e.preventDefault();
+      move(0);
+    } else if (e.key === "End") {
+      e.preventDefault();
+      move(menu.length - 1);
+    }
+  };
 
-  /* Copy clears out before the window opens. The opacities are functions,
-     not ranges, on purpose: framer hands a ranged scroll opacity to a native
-     ViewTimeline, and with keyframes that do not start at 0 that path held
-     every one of them at 0 from the first frame. */
-  const copyOpacity = useTransform(pin, (v) => fade(v, 0.05, 0.3));
-  const copyY = useTransform(pin, [0, 0.45], ["0vh", "-14vh"]);
-
-  /* The tube becomes the hole it was lit on, and the edge sign goes with it,
-     as the void plate comes up (FlyThrough, 0.25 -> 0.45). */
-  const tubeOpacity = useTransform(pin, (v) => fade(v, 0.3, 0.45));
-
-  const promote = active && !reduced ? "transform" : "auto";
-
-  /* Where the browser has scroll timelines, the way out (copy, name, edge
-     sign) is CSS on the compositor (.hero-*-out in globals.css), and framer
-     only drives what has no CSS form: the fly-through and the tube's fade on
-     wide screens. On a phone this was the stutter: three layers moved by JS
-     a frame behind iOS's own scroll, on a busy main thread. */
-  const css = useScrollTimelines() && !reduced;
+  const state = reduced ? "rest" : ready ? "in" : "wait";
 
   return (
     <section
+      id="hero"
       ref={ref}
-      className={reduced ? "relative" : `hero-timeline relative ${RUN}`}
+      data-act="void"
+      data-chapter="INDEX"
+      aria-label={t.hero.aria}
+      data-state={state}
+      data-live={live && !reduced ? "true" : "false"}
+      className="ts relative z-10 flex min-h-[100svh] flex-col"
     >
-      <div
-        className={
-          reduced
-            ? "relative flex min-h-svh w-full flex-col justify-end overflow-hidden"
-            : "sticky top-0 flex h-svh w-full flex-col justify-end overflow-hidden"
-        }
-      >
-        {/* ---- THE NAME ---------------------------------------------- */}
-        <motion.div
-          className={cn(
-            "pointer-events-none absolute inset-x-0 top-[27vh] z-10 flex justify-center md:top-[36vh]",
-            css && "hero-mark-out"
-          )}
-          style={
-            reduced
-              ? undefined
-              : css
-                ? { willChange: promote }
-                : { y: markY, scale: markScale, willChange: promote }
-          }
-        >
-          {/* Two wrappers, and they are not interchangeable. The outer one is
-              framer's (scroll transform); the inner one is written to directly
-              every frame by usePointerDrift. Put both on one element and the
-              drift's raw `transform` and framer's composed one overwrite each
-              other at 60Hz. */}
-          <div ref={drift} className="relative">
-            {/* Without the fly-through there is no window for the tube to
-                become, so on a phone it stays lit and leaves with the frame. */}
-            <motion.div style={fly ? { opacity: tubeOpacity } : undefined}>
-            <Focus delay={0.45} amount={26} duration={0.95} play={play}>
-              {/* 8vw at every width. Michroma sets AMARTUVSHIN at ~11.07× its
-                  font size, so 8vw fills ~89% of the frame — one line from a
-                  390px phone up, with a gutter either side. The old 13–16vw
-                  was sized for a five-letter wordmark and ran 1.8 viewports
-                  wide with this one. АМАРТҮВШИН in Montserrat 600 is ten
-                  glyphs at ~8.4× its size, so Mongolian takes 10.6vw for the
-                  same fill. Both are also capped by height: on a wide, short
-                  screen (1280×800) a width-only size ran the name down into
-                  the lead. */}
-              {/* The clip is only needed while the name rises; lit, it would
-                  cut the glow off in a hard box. */}
-              <h1 ref={nameRef} className={`display-caps flex ${lit ? "overflow-visible" : "overflow-hidden"} text-[min(8vw,15vh)] leading-[0.95] text-fg [:root:lang(mn)_&]:text-[min(10.6vw,16vh)]`}>
-                <motion.span
-                  initial={reduced ? false : { y: "110%" }}
-                  animate={{ y: play || reduced ? "0%" : "110%" }}
-                  /* Weight: a heavy spring that overshoots a hair and settles,
-                     so the name lands rather than slides. */
-                  transition={{ type: "spring", stiffness: 62, damping: 13, mass: 1.5, delay: 0.2 }}
-                  className="pointer-events-auto block"
-                  style={{ paddingBottom: "0.08em" }}
-                >
-                  <span ref={tubeRef}>
-                    <NeonSign text={profile.wordmark} lit={lit} />
-                  </span>
-                </motion.span>
-              </h1>
-            </Focus>
-            {/* Inside the tube's fade: a signature still writing as the
-                visitor scrolls goes with the name it was written on. */}
-            {!reduced && (
-              <Signature play={play} nameRef={nameRef} targetRef={signRef} onLanded={() => setLanded(true)} />
-            )}
-            </motion.div>
-            {/* The strike's flare: one anamorphic streak across the name as
-                the tube catches, the way a lens smears a light that comes on
-                in frame. Once; transform and opacity only. */}
-            {play && (
-              <motion.span
-                aria-hidden
-                className="hero-streak"
-                initial={{ x: "-55%", opacity: 0, scaleY: 0.6 }}
-                animate={struck ? { x: "55%", opacity: [0, 1, 0.9, 0], scaleY: [0.6, 1, 1, 0.8] } : { x: "-55%", opacity: 0 }}
-                transition={{ duration: 1.1, ease: [0.3, 0, 0.2, 1], times: [0, 0.18, 0.6, 1] }}
-              />
-            )}
-            {fly && <FlyThrough progress={pin} text={profile.wordmark} textRef={tubeRef} active={active} />}
+      <div className="ts-frame">
+        <div className="ts-slate ts-reveal" style={{ "--d": "0.3s" } as React.CSSProperties}>
+          <span className="micro text-fg/85">{profile.kicker}</span>
+          <span className="micro text-fg/85">{profile.location}</span>
+        </div>
+
+        <div className="ts-main">
+          <div className="ts-title">
+            <h1 className="ts-name display-caps">
+              <span className="sr-only">{profile.fullName}</span>
+              <span aria-hidden className="ts-name-outline">
+                {profile.wordmark}
+              </span>
+              {/* The ramp fill, revealed from the floor by two counter-moving
+                  transforms (a clip that rises, a fill that holds still). */}
+              <span aria-hidden className="ts-name-fill">
+                <span>{profile.wordmark}</span>
+              </span>
+            </h1>
+            <p className="ts-role ts-reveal" style={{ "--d": "0.9s" } as React.CSSProperties}>
+              <span className="ts-role-main">{profile.role}</span>
+              <span className="ts-role-sub">{profile.discipline}</span>
+            </p>
           </div>
-        </motion.div>
 
-        {/* ---- THE SIGN ---------------------------------------------- */}
-        {/* His name in Mongol bichig, hung vertically at the frame's edge
-            like the signage of every rain-soaked street in the genre, except
-            this script was vertical first. Lit with the name, in sodium, with
-            the odd flicker a real tube has. Decorative. */}
-        <motion.div
-          aria-hidden
-          initial={reduced ? false : { opacity: 0 }}
-          animate={{ opacity: lit ? 1 : 0 }}
-          transition={{ duration: 0.3 }}
-          className={cn("pointer-events-none absolute right-[5.5%] top-[13vh] z-10 hidden md:block", css && "hero-lift-out")}
-          style={reduced || css ? undefined : { y: copyY }}
-        >
-          <motion.div
-            className="script-sign relative px-3 py-5"
-            style={reduced ? undefined : { opacity: tubeOpacity }}
-          >
-            {/* The dark tube waits; the signature written across the name
-                flies in and lands on it, and it lights already written.
-                Click it to write it again. Remounted on landing, because
-                `written` is read once. */}
-            <div ref={signRef}>
-              <InkSign
-                key={landed ? "lit" : "dark"}
-                tone="neon"
-                lit={reduced ? true : landed ? "write" : false}
-                written={landed}
-                idle
-                rewritable
-                className="h-[min(21vh,13rem)]"
-              />
-            </div>
-          </motion.div>
-        </motion.div>
-
-        {/* ---- COPY, in front of everything --------------------------- */}
-        <motion.div
-          /* The bottom padding takes the larger of the design value and the
-             home-indicator inset, so the footer row is never under a gesture
-             bar on a phone and is unchanged everywhere else. */
-          className={cn(
-            "relative z-[90] mx-auto flex w-full max-w-[112.5rem] flex-col gap-10 px-5 pb-[max(2rem,env(safe-area-inset-bottom))] pt-28 md:px-8 md:pb-[max(2.5rem,env(safe-area-inset-bottom))] lg:px-16",
-            css && "hero-copy-out"
-          )}
-          /* Its own layer while the hero is on screen: the fade and lift then
-             composite instead of repainting the frame under the copy. */
-          style={reduced ? undefined : css ? { willChange: active ? "transform, opacity" : "auto" } : { opacity: copyOpacity, y: copyY }}
-        >
-          <div className="flex flex-col gap-8 md:flex-row md:items-end md:justify-between">
-            <HeroPanel play={play} reduced={reduced} />
-
-            {/* Wider in Mongolian: the same two lines run ~20% longer in Exo 2,
-                and at `max-w-2xl` each wrapped, so four lines climbed up
-                into the name. */}
-            <div className="max-w-xl md:text-right lg:max-w-2xl [:root:lang(mn)_&]:lg:max-w-3xl">
-              {/* The lead, arriving a word at a time. Chakra Petch rather than
-                  the display face: Michroma is unreadable at this size. */}
-              <WordRevealLines
-                lines={profile.heroLeadLines}
-                delay={1.15}
+          <div className="ts-seal ts-reveal" aria-hidden style={{ "--d": "0.45s" } as React.CSSProperties}>
+            {play && !glassDone ? (
+              <GlassIconReveal
+                logo={LOGO}
+                label=""
+                look="dark"
+                background="#05040c"
+                logoColor="#f3f1ff"
+                tileSize={150}
+                logoScale={0.85}
+                iconPlate={false}
+                loop={false}
                 play={play}
-                className="font-tech text-3xl font-medium leading-[1.1] text-fg max-md:[:root:lang(mn)_&]:text-2xl md:text-4xl lg:text-5xl xl:[:root:lang(mn)_&]:text-[2.75rem] 2xl:[:root:lang(mn)_&]:text-5xl"
+                onComplete={onGlassDone}
+                speed={2}
+                className="h-full w-full"
+                tuning={{ dispersion: 1.6, present: 1.3, glide: 1.1 }}
               />
-              <motion.p
-                initial={reduced ? false : { opacity: 0, y: 12 }}
-                animate={play || reduced ? { opacity: 1, y: 0 } : { opacity: 0, y: 12 }}
-                transition={{ delay: 1.7, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-                className="mt-5 text-base leading-relaxed text-fg/75 md:text-lg"
-              >
-                {profile.heroSub}
-              </motion.p>
-            </div>
+            ) : (
+              <svg viewBox="0 0 32 32" className="ts-seal-mark">
+                <defs>
+                  <linearGradient id="ts-seal-ramp" x1="0" y1="1" x2="1" y2="0">
+                    <stop offset="0" stopColor="#ff1f3d" />
+                    <stop offset="0.4" stopColor="#e81cc8" />
+                    <stop offset="0.72" stopColor="#8a3dff" />
+                    <stop offset="1" stopColor="#5664ff" />
+                  </linearGradient>
+                </defs>
+                <path d={MARK_D} transform={MARK_T} fill="url(#ts-seal-ramp)" />
+              </svg>
+            )}
           </div>
 
-          <motion.div
-            initial={reduced ? false : { opacity: 0 }}
-            animate={{ opacity: play || reduced ? 1 : 0 }}
-            transition={{ delay: 1.9, duration: 0.6 }}
-            className="flex items-center justify-between border-t border-line pt-4"
-          >
-            <ScrambleText text={profile.kicker} immediate className="micro" />
-            <span className="micro hidden md:block">{profile.location}</span>
-            <span className="micro flex items-center gap-2">
-              <span
-                className="h-1.5 w-1.5 animate-blink rounded-full"
-                style={{ background: "var(--color-hazard)" }}
-              />
-              {t.hero.scroll}
+          <nav className="ts-menu" aria-label={t.hero.menuAria} onKeyDown={onKeyDown}>
+            <div className="ts-burst" aria-hidden />
+            <ol>
+              {menu.map((item, i) => {
+                const chapter = c.navLinks.find((l) => l.href === item.href);
+                return (
+                  <li
+                    key={item.href}
+                    className="ts-stage ts-reveal"
+                    style={{ "--i": i, "--d": `${0.7 + i * 0.1}s` } as React.CSSProperties}
+                  >
+                    <a
+                      ref={(el) => {
+                        itemsRef.current[i] = el;
+                      }}
+                      href={item.href}
+                      tabIndex={i === lit ? 0 : -1}
+                      data-lit={i === lit ? "true" : "false"}
+                      data-text={item.label}
+                      className="ts-item"
+                      onMouseEnter={() => setLit(i)}
+                      onFocus={() => setLit(i)}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        goTo(item.href);
+                      }}
+                    >
+                      <span className="ts-item-code tag" aria-hidden>
+                        {chapter?.code ?? `0${i + 1}`}
+                      </span>
+                      <span className="ts-item-label">{item.label}</span>
+                      <span className="ts-item-sub">{chapter?.label ?? item.sub}</span>
+                    </a>
+                  </li>
+                );
+              })}
+            </ol>
+          </nav>
+        </div>
+
+        <div className="ts-foot">
+          <div className="ts-card ts-reveal" style={{ "--d": "1.2s" } as React.CSSProperties}>
+            <span className="ts-card-tag tag">{t.hero.player}</span>
+            <span className="flex items-center gap-2 text-sm text-fg">
+              <span className={cn("ts-lamp")} aria-hidden />
+              {profile.status}
             </span>
-          </motion.div>
-        </motion.div>
+            <span className="text-sm text-fg/80">{profile.degree}</span>
+          </div>
+          <span className="ts-hint micro ts-reveal" style={{ "--d": "1.3s" } as React.CSSProperties}>
+            <span className="hidden md:inline">{t.hero.selectKey}</span>
+            <span className="md:hidden">{t.hero.selectTap}</span>
+          </span>
+        </div>
       </div>
     </section>
-  );
-}
-
-/** 1 before `from`, 0 after `to`, linear between. */
-function fade(v: number, from: number, to: number) {
-  return Math.min(1, Math.max(0, (to - v) / (to - from)));
-}
-
-/* -------------------------------------------------------------------------- */
-/* The panel                                                                  */
-/* -------------------------------------------------------------------------- */
-
-/** The hero's readout, as a KPR instrument panel: cut corners, a ramp edge
- *  with a ruler under it, and three readouts that decode once as it arrives.
- *
- *  Wide screens only (xl). On a phone the copy stacks and the panel climbed
- *  over the name; at 1024 it was crushed beside the lead into a column
- *  taller than the frame. Availability and the address are both in Contact
- *  and the menu sheet. */
-function HeroPanel({ play, reduced }: { play: boolean; reduced: boolean }) {
-  const { c, t } = useI18n();
-  const { profile, contact } = c;
-
-  const decode = play && !reduced;
-  const rows: { k: string; v: string; lamp?: boolean; href?: string }[] = [
-    { k: t.hero.statusLabel, v: profile.status, lamp: true },
-    { k: t.hero.emailLabel, v: contact.email, href: `mailto:${contact.email}` },
-    { k: t.hero.degreeLabel, v: profile.degree },
-  ];
-
-  return (
-    <motion.div
-      initial={reduced ? false : { opacity: 0, y: 20 }}
-      animate={play || reduced ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
-      transition={{ delay: 1.7, duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-      className="notch-card relative hidden w-[25rem] shrink-0 bg-[#061317]/80 ring-1 ring-inset ring-line xl:block"
-    >
-      <span aria-hidden className="spectrum-rule absolute inset-x-0 top-0 h-px" />
-      <div aria-hidden className="hud-ruler mt-px" />
-      {/* Labels beside their values, not above them: stacked, the panel
-          stood tall enough to climb into the name on a 1280×800 screen. */}
-      <dl className="grid grid-cols-[auto_1fr] gap-x-5 px-5 pb-8 pt-1">
-        {rows.map((r, i) => (
-          <div key={r.k} className={cn("col-span-2 grid grid-cols-subgrid py-2.5", i > 0 && "border-t border-line")}>
-            {/* Brighter than a stock micro-label: the rain runs behind the
-                panel (measured 3.3:1 at muted; 4.5 needed). */}
-            <dt className="micro flex items-center gap-2 text-fg/80">
-              {r.lamp && <span aria-hidden className="hud-lamp" />}
-              {r.k}
-            </dt>
-            <dd className="min-w-0 break-words pt-px font-tech text-sm font-semibold uppercase leading-tight text-fg">
-              {r.href ? (
-                <a href={r.href} className="spectrum-underline font-mono lowercase tracking-wider">
-                  <DecodeText text={r.v} play={decode} delay={1.9 + i * 0.12} />
-                </a>
-              ) : (
-                <DecodeText text={r.v} play={decode} delay={1.9 + i * 0.12} />
-              )}
-            </dd>
-          </div>
-        ))}
-      </dl>
-      {/* The panel's ID, KPR's convention: the section's own index. */}
-      <span aria-hidden className="micro absolute bottom-2 right-4 text-[var(--color-holo)]">
-        [ {sectionIndex("#hero")} ]
-      </span>
-    </motion.div>
   );
 }

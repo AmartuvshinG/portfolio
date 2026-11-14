@@ -97,7 +97,7 @@ export function Letterbox() {
     };
   }, []);
 
-  const bar = "pointer-events-none fixed inset-x-0 z-[55] bg-[#020a0c] will-change-transform";
+  const bar = "pointer-events-none fixed inset-x-0 z-[55] bg-[#030208] will-change-transform";
   return (
     <div aria-hidden>
       <div

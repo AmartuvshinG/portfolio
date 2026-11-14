@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import {
-  Michroma,
+  Big_Shoulders,
   Chakra_Petch,
   Archivo,
   JetBrains_Mono,
@@ -10,6 +10,9 @@ import {
   Rajdhani,
 } from "next/font/google";
 import "./globals.css";
+import "./signal.css";
+import "./title-screen.css";
+import "./chapters.css";
 import { navLinks, profile, site } from "@/lib/content";
 
 /** Every Mongol-script glyph the page sets: the name and the chapter labels. */
@@ -29,18 +32,16 @@ import { CommandPalette } from "@/components/chrome/CommandPalette";
 import { ChapterKeys } from "@/components/chrome/ChapterKeys";
 import { Footer } from "@/components/chrome/Footer";
 import { LiquidGlassFilter } from "@/components/ui/LiquidGlassFilter";
-import { INK_NAME } from "@/lib/inkName";
 
 /**
- * The display face: wide, square, one weight. Wordmark and section titles only.
- * Michroma has no lowercase worth using and no second weight, which is exactly
- * why it works at 13vw and fails at 1rem — see `.display-caps` in globals.css
- * for the three values it needs to not break.
+ * The display face: Big Shoulders, condensed and heavy. Title-screen type: the
+ * name, the hero menu, chapter titles and big numbers. Latin only; Mongolian
+ * swaps to Montserrat through `:root:lang(mn)` in globals.css.
  */
-const michroma = Michroma({
+const shoulders = Big_Shoulders({
   subsets: ["latin"],
-  weight: "400",
-  variable: "--font-michroma",
+  weight: ["600", "800", "900"],
+  variable: "--font-shoulders",
   display: "swap",
 });
 
@@ -171,7 +172,7 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   /* Matches the opening act. The browser chrome should agree with the ground,
      not with a dark theme the site no longer has. */
-  themeColor: "#061317",
+  themeColor: "#05040c",
   width: "device-width",
   initialScale: 1,
   /* Edge to edge. Without it every `env(safe-area-inset-*)` on the page is 0
@@ -190,7 +191,7 @@ export default function RootLayout({
       /* Seeded to the opening act so first paint is already the base void — waiting for
          ActTheme to mount would flash the wrong surface. */
       data-act="void"
-      className={`${michroma.variable} ${chakra.variable} ${archivo.variable} ${monoHud.variable} ${montserrat.variable} ${exo.variable} ${onest.variable} ${rajdhani.variable} h-full`}
+      className={`${shoulders.variable} ${chakra.variable} ${archivo.variable} ${monoHud.variable} ${montserrat.variable} ${exo.variable} ${onest.variable} ${rajdhani.variable} h-full`}
     >
       <head>
         {/* Mongol script: the name, and the chapters' names hung beside
@@ -202,13 +203,10 @@ export default function RootLayout({
           rel="stylesheet"
           href={`https://fonts.googleapis.com/css2?family=Noto+Sans+Mongolian&display=swap&text=${encodeURIComponent(SCRIPT_GLYPHS)}`}
         />
-        {/* The intro's brush: the first thing it needs, before any script
-            asks for it. */}
-        <link rel="preload" as="image" href={INK_NAME.src} fetchPriority="high" />
-        {/* The ink intro is in the server HTML (first paint is its dark
-            room); without script it could never lift, so hide it. */}
+        {/* The intro is in the server HTML (first paint is the curtain);
+            without script it could never lift, so hide it. */}
         <noscript>
-          <style>{`.preloader{display:none}.cin-name>span:not(.sr-only),.cin-intro,.cin-title-menu a{transform:none!important;opacity:1!important}`}</style>
+          <style>{`.preloader{display:none}.ts-reveal{transform:none!important;opacity:1!important}`}</style>
         </noscript>
       </head>
       <body className="min-h-full antialiased">

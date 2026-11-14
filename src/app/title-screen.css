@@ -1,0 +1,395 @@
+/* ============================================================================
+   The title screen (sections/Hero): the name, the glass seal, the menu.
+   ========================================================================== */
+
+#hero.ts {
+  overflow-x: clip;
+}
+.ts-frame {
+  position: relative;
+  flex: 1;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  gap: clamp(16px, 3vh, 32px);
+  padding: calc(88px + env(safe-area-inset-top)) clamp(16px, 4vw, 64px) clamp(20px, 4vh, 40px);
+}
+.ts-slate,
+.ts-foot {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 16px;
+}
+.ts-main {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-content: center;
+  gap: clamp(20px, 4vh, 40px);
+}
+@media (min-width: 1024px) {
+  .ts-main {
+    grid-template-columns: minmax(0, 1fr) auto minmax(300px, auto);
+    grid-template-rows: auto auto;
+    align-items: end;
+    column-gap: clamp(24px, 3vw, 48px);
+  }
+  .ts-title {
+    display: contents;
+  }
+  .ts-name {
+    grid-column: 1 / -1;
+    grid-row: 1;
+  }
+  .ts-role {
+    grid-column: 1;
+    grid-row: 2;
+    align-self: start;
+  }
+  .ts-seal {
+    grid-column: 2;
+    grid-row: 2;
+    align-self: start;
+    margin-top: clamp(12px, 2vh, 24px);
+  }
+  .ts-menu {
+    grid-column: 3;
+    grid-row: 2;
+  }
+}
+
+/* The name: outline, then the ramp fills it from the floor. */
+.ts-name {
+  position: relative;
+  width: max-content;
+  max-width: 100%;
+  margin: 0;
+  font-size: clamp(3.2rem, 15.2vw, 15.5rem);
+  line-height: 0.8;
+  letter-spacing: 0.005em;
+  white-space: nowrap;
+}
+@media (min-width: 1024px) {
+  .ts-name {
+    font-size: clamp(5rem, 15vw, 17rem);
+  }
+}
+.ts-name-outline {
+  display: block;
+  color: transparent;
+  -webkit-text-stroke: 1px rgb(243 241 255 / 0.6);
+  /* A dark halo under the glyphs: the moon passes right behind the name. */
+  text-shadow:
+    0 0 26px rgb(5 4 12 / 0.95),
+    0 0 60px rgb(5 4 12 / 0.8);
+}
+.ts-name-fill {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+.ts-name-fill > span {
+  display: block;
+  color: transparent;
+  background-image: linear-gradient(to top, #ff6b8a, #ff5cc0 38%, #b07dff 70%, #9aa3ff);
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+.ts[data-state="wait"] .ts-name-fill {
+  transform: translateY(100%);
+}
+.ts[data-state="wait"] .ts-name-fill > span {
+  transform: translateY(-100%);
+}
+.ts[data-state="in"] .ts-name-fill {
+  animation: ts-clip 1.3s cubic-bezier(0.65, 0, 0.25, 1) 0.1s both;
+}
+.ts[data-state="in"] .ts-name-fill > span {
+  animation: ts-hold 1.3s cubic-bezier(0.65, 0, 0.25, 1) 0.1s both;
+}
+@keyframes ts-clip {
+  from { transform: translateY(100%); }
+  to { transform: none; }
+}
+@keyframes ts-hold {
+  from { transform: translateY(-100%); }
+  to { transform: none; }
+}
+/* A soft dark pool behind the title block, over the brightest footage. */
+.ts-main::before {
+  content: "";
+  position: absolute;
+  inset: -12% -8% -6% -12%;
+  z-index: -1;
+  pointer-events: none;
+  background: radial-gradient(ellipse 60% 55% at 32% 42%, rgb(5 4 12 / 0.72), rgb(5 4 12 / 0.35) 55%, transparent 80%);
+}
+@media (max-width: 1023px) {
+  .ts-main::before {
+    inset: -18% -16% 30% -16%;
+    background: radial-gradient(ellipse 85% 60% at 50% 38%, rgb(5 4 12 / 0.9), rgb(5 4 12 / 0.6) 55%, transparent 85%);
+  }
+}
+
+.ts[data-state="in"] .ts-name-outline {
+  animation: ts-rise 1.1s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes ts-rise {
+  from {
+    opacity: 0;
+    transform: translateY(18%);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.ts-role {
+  margin-top: clamp(12px, 2vh, 24px);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px 18px;
+}
+.ts-role {
+  text-shadow: 0 1px 2px rgb(5 4 12 / 0.9), 0 0 18px rgb(5 4 12 / 0.95);
+}
+.ts-role-main {
+  font-family: var(--font-tech);
+  font-weight: 600;
+  font-size: clamp(1.25rem, 2.2vw, 2rem);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.ts-role-sub {
+  font-family: var(--font-mono);
+  font-size: 0.95rem;
+  color: #fff;
+  padding: 2px 8px;
+  background: rgb(5 4 12 / 0.72);
+}
+
+/* Staggered settle for everything that isn't the name. */
+.ts-reveal {
+  opacity: 0;
+  transform: translateY(14px);
+}
+.ts[data-state="rest"] .ts-reveal {
+  opacity: 1;
+  transform: none;
+}
+.ts[data-state="in"] .ts-reveal {
+  animation: ts-settle 0.9s cubic-bezier(0.16, 1, 0.3, 1) var(--d, 0s) both;
+}
+@keyframes ts-settle {
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* The glass seal. */
+.ts-seal {
+  position: relative;
+  width: clamp(96px, 11vw, 150px);
+  aspect-ratio: 1;
+  border: 1px solid rgb(243 241 255 / 0.18);
+  background: rgb(5 4 12 / 0.7);
+  overflow: hidden;
+  display: none;
+}
+@media (min-width: 1024px) {
+  .ts-seal {
+    display: block;
+  }
+}
+.ts-seal-mark {
+  position: absolute;
+  inset: 16%;
+  width: 68%;
+  height: 68%;
+  filter: drop-shadow(0 0 12px rgb(232 28 200 / 0.5));
+}
+
+/* The menu: the Vinyl reference's stages, down the diagonal. */
+.ts-menu {
+  position: relative;
+}
+.ts-menu ol {
+  position: relative;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: clamp(2px, 0.6vh, 8px);
+}
+.ts-stage {
+  padding-left: calc(var(--i) * clamp(10px, 1.6vw, 26px));
+}
+.ts-item {
+  position: relative;
+  display: inline-grid;
+  grid-template-columns: auto auto;
+  grid-template-rows: auto auto;
+  column-gap: 12px;
+  align-items: baseline;
+  padding: 2px 12px 4px 4px;
+  font-family: var(--font-display);
+  font-weight: 900;
+  text-transform: uppercase;
+  line-height: 0.92;
+  color: rgb(243 241 255 / 0.7);
+  transform: skewX(-8deg) rotate(-2deg);
+  transform-origin: 0 50%;
+  transition: transform 0.32s cubic-bezier(0.2, 0.9, 0.2, 1);
+}
+.ts-item-code {
+  grid-row: 1 / 3;
+  align-self: center;
+  color: rgb(243 241 255 / 0.85);
+  padding: 2px 6px;
+}
+.ts-item-label {
+  display: inline-block;
+  font-size: clamp(1.9rem, 3.3vw, 3.1rem);
+  letter-spacing: 0.01em;
+}
+.ts-item-sub {
+  grid-column: 2;
+  font-family: var(--font-mono);
+  font-weight: 400;
+  font-size: 0.875rem;
+  letter-spacing: 0.1em;
+  color: rgb(243 241 255 / 0.85);
+  opacity: 0;
+  transform: translateY(-4px);
+  transition:
+    opacity 0.25s ease,
+    transform 0.25s ease;
+}
+.ts-item[data-lit="true"] {
+  color: #fff;
+  transform: skewX(-8deg) rotate(-2deg) translateX(14px) scale(1.04);
+  text-shadow:
+    0.02em 0.02em 0 #e81cc8,
+    0.04em 0.04em 0 #ff1f3d,
+    0.06em 0.06em 0 #8a3dff,
+    0 0 0.4em rgb(232 28 200 / 0.55);
+}
+.ts-item[data-lit="true"] .ts-item-sub {
+  opacity: 1;
+  transform: none;
+  text-shadow: none;
+}
+.ts-item[data-lit="true"] .ts-item-code {
+  background-image: var(--gradient-spectrum);
+  color: var(--color-void);
+  text-shadow: none;
+}
+.ts-item:focus-visible {
+  outline-offset: 6px;
+}
+.ts[data-live="true"] .ts-item[data-lit="true"] .ts-item-label {
+  animation: ts-beat 0.75s cubic-bezier(0.2, 0.8, 0.2, 1) infinite;
+}
+@keyframes ts-beat {
+  0% {
+    transform: scale(1.035);
+  }
+  45%,
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* A halftone starburst behind the menu. */
+.ts-burst {
+  position: absolute;
+  inset: -30% -20% -30% -10%;
+  pointer-events: none;
+  background-image: radial-gradient(circle, rgb(232 28 200 / 0.55) 0 30%, transparent 34%);
+  background-size: 9px 9px;
+  -webkit-mask-image:
+    repeating-conic-gradient(from 0deg at 55% 50%, #000 0deg 7deg, transparent 7deg 18deg),
+    radial-gradient(circle at 55% 50%, #000 0 18%, transparent 62%);
+  -webkit-mask-composite: source-in;
+  mask-image:
+    repeating-conic-gradient(from 0deg at 55% 50%, #000 0deg 7deg, transparent 7deg 18deg),
+    radial-gradient(circle at 55% 50%, #000 0 18%, transparent 62%);
+  mask-composite: intersect;
+  opacity: 0.3;
+}
+.ts[data-live="true"] .ts-burst {
+  animation: ts-burst 0.75s cubic-bezier(0.2, 0.8, 0.2, 1) infinite;
+}
+@keyframes ts-burst {
+  0% {
+    transform: scale(1.06);
+    opacity: 0.42;
+  }
+  50%,
+  100% {
+    transform: scale(1);
+    opacity: 0.3;
+  }
+}
+
+/* Player card and hint. */
+.ts-card {
+  display: grid;
+  gap: 4px;
+  padding: 12px 16px 12px 14px;
+  position: relative;
+  background: linear-gradient(90deg, rgb(5 4 12 / 0.75), transparent);
+  max-width: 34rem;
+}
+.ts-card::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 2px;
+  background-image: linear-gradient(to bottom, #ff1f3d, #e81cc8 40%, #8a3dff 75%, #5664ff);
+}
+.ts-card-tag {
+  color: var(--color-rim);
+}
+.ts-lamp {
+  width: 7px;
+  height: 7px;
+  flex: none;
+  border-radius: 50%;
+  background: var(--color-signal);
+  box-shadow: 0 0 10px var(--color-signal);
+}
+.ts-hint {
+  color: rgb(243 241 255 / 0.85);
+  text-align: right;
+}
+@media (max-width: 1023px) {
+  .ts-foot {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .ts-hint {
+    text-align: left;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ts-burst,
+  .ts-item-label {
+    animation: none !important;
+  }
+}
+
+/* Mongolian: Montserrat sets roughly 1.6x wider than Big Shoulders. */
+:root:lang(mn) .ts-name {
+  font-size: clamp(2rem, 9.2vw, 9.5rem);
+  letter-spacing: 0;
+}
+:root:lang(mn) .ts-item-label {
+  font-size: clamp(1.5rem, 2.4vw, 2.3rem);
+}
+:root:lang(mn) .signal-word {
+  font-size: clamp(2rem, 9vw, 8rem);
+}

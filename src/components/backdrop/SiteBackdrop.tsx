@@ -2,8 +2,6 @@
 
 import { VideoGround } from "./VideoGround";
 import { Grain } from "./Grain";
-import { useLocalDraft } from "@/hooks/useLocalDraft";
-import { World } from "@/components/cinematic/World";
 
 /**
  * One background for the entire document.
@@ -18,22 +16,18 @@ import { World } from "@/components/cinematic/World";
  * Layer order, back to front:
  *
  *   1  base          — the void colour, for the frame before the footage paints.
- *   2  video ground  — the sakura cliff under a blue moon, a dive into the
- *                      moon at Work, then the red tunnel; the neon rain
- *                      (NeonGround) is the tunnel's weather (VideoGround).
- *                      Before it: the neon room, the film (city → station),
- *                      the aurora — Aurora.tsx is kept, unmounted. Reduced
- *                      motion gets the two posters and a dissolve.
+ *   2  video ground  — a violet city under a moon, a dive into a black hole
+ *                      at Work, then a purple galaxy from Journey on
+ *                      (VideoGround). Reduced motion gets the posters.
  *   3  grain + vignette
  *
  * Everything here is `pointer-events-none` and sits at z-0; content is z-10.
  */
 export function SiteBackdrop() {
-  const cinematic = useLocalDraft() === "cinematic";
   return (
     <div aria-hidden className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
       <div className="absolute inset-0" style={{ background: "var(--color-void)" }} />
-      {cinematic ? <World /> : <VideoGround />}
+      <VideoGround />
       <Grain />
     </div>
   );

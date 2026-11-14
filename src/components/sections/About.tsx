@@ -2,7 +2,7 @@
 
 import { education, sectionIndex } from "@/lib/content";
 import { useI18n } from "@/lib/i18n";
-import { Reveal, RevealStagger } from "@/components/motion/Reveal";
+import { Reveal } from "@/components/motion/Reveal";
 import { ChapterSeam } from "@/components/chrome/ChapterSeam";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
 import { cn } from "@/lib/utils";
@@ -87,44 +87,45 @@ export function About() {
         <FlowStatement lead={about.lead} heading={about.heading} stats={stats} reduced={reduced} />
       )}
 
-      {/* ---- 3. THE STORY ------------------------------------------------- */}
+      {/* ---- 3. THE ID, and the story on demand ----------------------- */}
       <div className="relative mx-auto max-w-[112.5rem] px-5 pb-20 pt-6 md:px-8 md:pb-28 lg:px-16">
-        <div className="grid items-start gap-12 lg:grid-cols-12 lg:gap-16">
-          <Reveal className="lg:col-span-5 lg:pt-10">
-            <RevealStagger className="space-y-6">
-              {about.paragraphs.map((p, i) => (
-                <Reveal key={i} asChild>
-                  <p className="text-base leading-relaxed text-fg/85 md:text-lg">{p}</p>
-                </Reveal>
-              ))}
-            </RevealStagger>
-          </Reveal>
-
-          <Reveal className="lg:col-span-7" delay={0.1}>
+        <div className="grid items-start gap-10 lg:grid-cols-12 lg:gap-16">
+          <Reveal className="lg:col-span-7">
             <IdCard />
           </Reveal>
+          <Reveal className="lg:col-span-5" delay={0.1}>
+            {/* The long copy lives in a drawer: the chapter leads with the
+                line, the figures and the card. */}
+            <details className="dossier group">
+              <summary className="dossier-summary">
+                <span className="tag text-[var(--color-rim)]">{t.about.file}</span>
+                <span className="dossier-summary-label">{t.about.dossier}</span>
+                <span aria-hidden className="dossier-plus" />
+              </summary>
+              <div className="dossier-body">
+                {about.paragraphs.map((para, i) => (
+                  <p key={i} className="text-base leading-relaxed text-fg/85 md:text-lg">
+                    {para}
+                  </p>
+                ))}
+                <div className="flex flex-col gap-3">
+                  <span className="micro text-[var(--color-holo)]">{about.offHours.label}</span>
+                  <span className="text-sm text-fg/80">{about.offHours.note}</span>
+                  <ul className="flex flex-wrap gap-2" aria-label={about.offHours.label}>
+                    {about.offHours.games.map((g) => (
+                      <li
+                        key={g}
+                        className="border border-line bg-[#05040c]/60 px-3 py-2 font-tech text-sm font-semibold uppercase tracking-wide text-fg"
+                      >
+                        {g}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            </details>
+          </Reveal>
         </div>
-
-        {/* Off hours: one row under the card, not a chapter of its own. Plain
-            text titles: no game logos, and nothing here is clickable. */}
-        <Reveal className="mt-12 md:mt-14">
-          <div className="flex flex-col gap-4 md:flex-row md:items-center md:gap-8">
-            <div className="flex shrink-0 flex-col gap-1">
-              <span className="micro text-[var(--color-holo)]">{about.offHours.label}</span>
-              <span className="text-sm text-muted">{about.offHours.note}</span>
-            </div>
-            <ul className="flex flex-wrap gap-2" aria-label={about.offHours.label}>
-              {about.offHours.games.map((g) => (
-                <li
-                  key={g}
-                  className="border border-line bg-[#061317]/60 px-3 py-2 font-tech text-sm font-semibold uppercase tracking-wide text-fg"
-                >
-                  {g}
-                </li>
-              ))}
-            </ul>
-          </div>
-        </Reveal>
       </div>
     </section>
   );
@@ -270,7 +271,7 @@ function IdCard() {
 
   return (
     <div ref={plateRef}>
-      <GlareCard tilt={6} className="id-card bg-[#061317]/85">
+      <GlareCard tilt={6} className="id-card bg-[#05040c]/85">
         {/* Own layer: .hud-brackets sets the `background` shorthand, and
             unlayered CSS would wipe the card's fill if they shared a node. */}
         <span

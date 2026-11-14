@@ -19,21 +19,6 @@ export type BeatShow = "input" | "access" | "forest" | "override" | "neighbours"
 type AnatomyBeat = { station: string; title: string; body: string; plain?: string; show: BeatShow[] };
 
 const en = {
-  draft: {
-    previousStop: "Previous journey entry",
-    nextStop: "Next journey entry",
-    select: (title: string) => `Select ${title}`,
-    cinematic: "Cinematic",
-    label: "Local draft",
-    vinyl: "Vinyl",
-    masters: "Signature",
-    ink: "Ink",
-    off: "Original",
-    play: "Play photo filmstrip",
-    pause: "Pause photo filmstrip",
-    enter: "Enter portfolio",
-    intro: "Intro sequence",
-  },
   lang: {
     /** The toggle's own labels, always in their own script. */
     en: "EN",
@@ -43,7 +28,7 @@ const en = {
   },
   preloader: {
     loading: "LOADING",
-    writing: "WRITING",
+    writing: "LINKING",
     ready: "READY",
     /** The slate in the intro's top bar. */
     reel: "ULAANBAATAR, MONGOLIA",
@@ -66,6 +51,18 @@ const en = {
     statusLabel: "Status",
     emailLabel: "Email",
     degreeLabel: "Degree",
+    /** The title screen's chapter menu. `sub` is the chapter's plain name. */
+    menuAria: "Chapter menu",
+    menu: [
+      { label: "Start", sub: "About", href: "#about" },
+      { label: "Missions", sub: "Projects", href: "#work" },
+      { label: "Skill tree", sub: "Skills", href: "#capabilities" },
+      { label: "Map", sub: "Journey", href: "#timeline" },
+      { label: "Comms", sub: "Contact", href: "#contact" },
+    ],
+    selectKey: "↑ ↓ to choose · Enter to select",
+    selectTap: "Tap to select",
+    player: "Player 1",
   },
   about: {
     aria: "Profile",
@@ -75,6 +72,7 @@ const en = {
     languagesValue: "Mongolian · English",
     status: "Status",
     file: "About me",
+    dossier: "Open the dossier",
     /** The four figures under the statement. Values come from
      *  content.ts (`education`, the heroSub's 222,000+ Firefox bugs). */
     statGpa: "GPA · final 4 terms",
@@ -257,6 +255,10 @@ const en = {
     transit: "Flying",
     distance: (km: number) => `≈ ${km.toLocaleString("en-US")} km`,
     board: "Journey log",
+    pause: "Pause the reel",
+    play: "Play the reel",
+    choose: "Open this stop",
+    caseLink: "Open the project",
     hint: "Scroll or use ← → keys",
     gpaRecent: "GPA · final 4 terms",
     gpaOverall: "GPA · overall",
@@ -354,7 +356,7 @@ const en = {
       type: "Type",
       built: "Built with",
       footage: "Footage",
-      ground: "Rain",
+      ground: "Components",
       map: "Map data",
       base: "Made in",
       via: "via",
@@ -420,21 +422,6 @@ export type UiStrings = typeof en;
  */
 const mn: UiStrings = {
   // Local draft interface; awaiting the owner's Mongolian proofread.
-  draft: {
-    previousStop: "Замналын өмнөх үйл явдал",
-    nextStop: "Замналын дараах үйл явдал",
-    select: (title: string) => `${title} сонгох`,
-    cinematic: "Кино хэв маяг",
-    label: "Ноорог",
-    vinyl: "Пянз",
-    masters: "Гарын үсэг",
-    ink: "Бэх",
-    off: "Эх хувилбар",
-    play: "Зургийн цувааг тоглуулах",
-    pause: "Зургийн цувааг зогсоох",
-    enter: "Портфолио руу орох",
-    intro: "Эхлэл",
-  },
   lang: {
     en: "EN",
     mn: "МН",
@@ -443,7 +430,7 @@ const mn: UiStrings = {
   },
   preloader: {
     loading: "АЧААЛЖ БАЙНА",
-    writing: "БИЧИЖ БАЙНА",
+    writing: "ХОЛБОЖ БАЙНА",
     ready: "БЭЛЭН",
     reel: "УЛААНБААТАР, МОНГОЛ",
     skipKey: "Алгасах бол дурын товч дарна уу",
@@ -463,6 +450,18 @@ const mn: UiStrings = {
     statusLabel: "Төлөв",
     emailLabel: "Имэйл",
     degreeLabel: "Зэрэг",
+    /* Drafts: awaiting Amartuvshin's proofread. */
+    menuAria: "Бүлгийн цэс",
+    menu: [
+      { label: "Эхлэх", sub: "Танилцуулга", href: "#about" },
+      { label: "Даалгавар", sub: "Төслүүд", href: "#work" },
+      { label: "Ур чадвар", sub: "Чадварууд", href: "#capabilities" },
+      { label: "Газрын зураг", sub: "Аялал", href: "#timeline" },
+      { label: "Холбоо", sub: "Холбогдох", href: "#contact" },
+    ],
+    selectKey: "↑ ↓ сонгох · Enter дарж орох",
+    selectTap: "Товшиж сонгоно уу",
+    player: "Тоглогч 1",
   },
   about: {
     aria: "Танилцуулга",
@@ -470,6 +469,7 @@ const mn: UiStrings = {
     languagesValue: "Монгол · Англи",
     status: "Төлөв",
     file: "Миний тухай",
+    dossier: "Дэлгэрэнгүйг нээх",
     /* Drafts: awaiting Amartuvshin's proofread. */
     statGpa: "Голч · сүүлийн 4 улирал",
     statBugs: "Төгсөлтийн төслийн суралцсан Firefox-ийн алдааны тайлан",
@@ -647,6 +647,11 @@ const mn: UiStrings = {
     transit: "Нислэгт",
     distance: (km: number) => `≈ ${km.toLocaleString("mn-MN")} км`,
     board: "Замналын бүртгэл",
+    /* Drafts: awaiting Amartuvshin's proofread. */
+    pause: "Түр зогсоох",
+    play: "Үргэлжлүүлэх",
+    choose: "Энэ үеийг нээх",
+    caseLink: "Төслийг нээх",
     hint: "Гүйлгэх эсвэл ← → товч",
     gpaRecent: "Голч · сүүлийн 4 улирал",
     gpaOverall: "Голч · нийт",
@@ -739,7 +744,7 @@ const mn: UiStrings = {
       type: "Үсгийн хэв",
       built: "Ашигласан технологи",
       footage: "Видео бичлэг",
-      ground: "Бороо",
+      ground: "Бүрэлдэхүүн",
       map: "Газрын зургийн өгөгдөл",
       base: "Бүтээсэн газар",
       via: "эх сурвалж",

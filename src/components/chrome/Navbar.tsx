@@ -304,7 +304,7 @@ export function Navbar() {
                   iOS 26's own floating controls do. Its own element, because
                   `hud-brackets` owns the button's background. 44px of
                   backdrop is nothing to blur. */}
-              <span aria-hidden className="glass-ios pointer-events-none absolute inset-0 -z-10 hidden rounded-[3px] bg-[#020a0c]/35 pointer-coarse:block" />
+              <span aria-hidden className="glass-ios pointer-events-none absolute inset-0 -z-10 hidden rounded-[3px] bg-[#030208]/35 pointer-coarse:block" />
               <span aria-hidden className="hidden min-[420px]:inline [:root:lang(mn)_&]:normal-case [:root:lang(mn)_&]:tracking-[0.08em]">
                 {/* Below 420px the wordmark needs the room; the button keeps
                     its accessible name either way. */}
@@ -350,7 +350,7 @@ export function Navbar() {
             animate={{ opacity: 1, transition: { duration: 0.3, ease: "easeOut" } }}
             exit={{ opacity: 0, transition: { duration: 0.22, ease: "easeIn" } }}
             className={cn(
-              "fixed inset-0 z-[79] bg-[#020a0c]/60",
+              "fixed inset-0 z-[79] bg-[#030208]/60",
               mn ? "min-[1280px]:hidden" : "min-[1080px]:hidden"
             )}
           />
@@ -378,7 +378,7 @@ export function Navbar() {
               if (info.offset.y > 110 || info.velocity.y > 600) closeSheet();
             }}
             className={cn(
-              "glass-ios fixed inset-x-0 bottom-0 z-[80] flex max-h-[calc(100svh-env(safe-area-inset-top)-0.75rem)] flex-col overflow-hidden rounded-t-[28px] bg-[#020a0c]/72 px-6 pb-[max(1.25rem,env(safe-area-inset-bottom))] pl-[max(1.5rem,env(safe-area-inset-left))] pr-[max(1.5rem,env(safe-area-inset-right))]",
+              "glass-ios fixed inset-x-0 bottom-0 z-[80] flex max-h-[calc(100svh-env(safe-area-inset-top)-0.75rem)] flex-col overflow-hidden rounded-t-[28px] bg-[#030208]/72 px-6 pb-[max(1.25rem,env(safe-area-inset-bottom))] pl-[max(1.5rem,env(safe-area-inset-left))] pr-[max(1.5rem,env(safe-area-inset-right))]",
               mn ? "min-[1280px]:hidden" : "min-[1080px]:hidden"
             )}
           >

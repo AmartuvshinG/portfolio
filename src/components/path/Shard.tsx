@@ -97,7 +97,7 @@ export function Shard({
           background:
             `linear-gradient(180deg, color-mix(in srgb, ${cls.ink} 16%, transparent), transparent 40%),` +
             `repeating-linear-gradient(135deg, rgba(255,255,255,0.025) 0 1px, transparent 1px 5px),` +
-            `color-mix(in srgb, ${cls.ink} 7%, #071316)`,
+            `color-mix(in srgb, ${cls.ink} 7%, #07061a)`,
           boxShadow: `inset 0 0 0 1px color-mix(in srgb, ${cls.ink} 42%, transparent), inset 0 1px 0 color-mix(in srgb, ${cls.ink} 75%, transparent)`,
         }}
       >
@@ -106,11 +106,11 @@ export function Shard({
           {Array.from({ length: 6 }, (_, i) => (
             <motion.span
               key={i}
-              className="h-[3px] w-[5px] bg-[#ffc56b]"
+              className="h-[3px] w-[5px] bg-[#e6d6ff]"
               initial={false}
               animate={{ opacity: still && !instant ? 0.18 : 1 }}
               transition={t(SEAT_AT + 0.05 + i * 0.04, 0.12)}
-              style={{ boxShadow: still && !instant ? undefined : "0 0 4px rgba(255,170,60,0.7)" }}
+              style={{ boxShadow: still && !instant ? undefined : "0 0 4px rgba(232,28,200,0.7)" }}
             />
           ))}
         </span>

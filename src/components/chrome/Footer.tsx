@@ -12,16 +12,16 @@ import { IconArrowUp, IconReplay } from "@/components/ui/HudIcons";
 import { replayIntro } from "@/lib/intro";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
 
-/** The two loops behind the page (backdrop/VideoGround): the sakura cliff and
-    the red tunnel. */
-const FOOTAGE = {
-  names: "Sakura On The Cliff · Red Future Tunnel",
-  by: "Infinite Visual",
-  href: "https://www.youtube.com/@infinite.visual",
-};
-/** The tunnel's rain — and the red haze — is ported from this component
-    (docs/reference: `cyberpunk neon preloaer.txt`). */
-const GROUND = { name: "Neon Katakana Preloader", via: "21st.dev" };
+/** The three loops behind the page (backdrop/VideoGround). */
+const FOOTAGE = [
+  { name: "Futuristic City", by: "Infinite Visual", href: "https://www.youtube.com/@infinite.visual" },
+  { name: "Black Hole", by: "3rdeyeview", href: "https://www.youtube.com/watch?v=mNcM7Sl0_CY" },
+  { name: "Purple Classic Galaxy", by: "AA-VFX", href: "https://www.youtube.com/watch?v=eTD0WWFIDAg" },
+];
+/** The preloader's halftone and the hero menu's stages follow the Vinyl
+    Halftone Preloader; the arc of work cards follows Cue's Chained Spring Arc
+    Carousel; the glass mark reveal is ported from zanwei/glass-icon-reveal. */
+const GROUND = { name: "Vinyl Halftone Preloader · Chained Spring Arc Carousel · glass-icon-reveal", via: "21st.dev · Cue · GitHub" };
 /** The Path's globe is Natural Earth's land, lakes and borders, baked (scripts/bake-globe-mask). */
 const MAP = { name: "Natural Earth", href: "https://www.naturalearthdata.com" };
 
@@ -48,20 +48,24 @@ export function Footer() {
 
   const credits: { role: string; value: React.ReactNode }[] = [
     { role: cr.design, value: profile.fullName },
-    { role: cr.type, value: "Michroma · Chakra Petch · Archivo · Rajdhani · JetBrains Mono · Noto Sans Mongolian" },
+    { role: cr.type, value: "Big Shoulders · Chakra Petch · Archivo · Rajdhani · JetBrains Mono · Noto Sans Mongolian" },
     { role: cr.built, value: "Next.js · React · Tailwind CSS · Framer Motion · GSAP · Lenis · WebGL" },
     {
       role: cr.footage,
       value: (
         <>
-          {FOOTAGE.names}
-          <span className="text-muted">
-            {" — "}
-            <a href={FOOTAGE.href} target="_blank" rel="noopener noreferrer" className="spectrum-underline">
-              {FOOTAGE.by}
-              <span className="sr-only">{t.common.newTab}</span>
-            </a>
-          </span>
+          {FOOTAGE.map((f) => (
+            <span key={f.name} className="block">
+              {f.name}
+              <span className="text-muted">
+                {" — "}
+                <a href={f.href} target="_blank" rel="noopener noreferrer" className="spectrum-underline">
+                  {f.by}
+                  <span className="sr-only">{t.common.newTab}</span>
+                </a>
+              </span>
+                          </span>
+          ))}
         </>
       ),
     },

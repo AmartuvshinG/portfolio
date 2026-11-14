@@ -29,14 +29,14 @@ export function stampLabel(s: Stamp, words: PathWords): string | null {
  * this site must not resemble.
  */
 const YEAR_NEON: Record<number, string> = {
-  2026: "#9fe3ec",
-  2025: "#ff3b30",
-  2024: "#ff6a3d",
-  2023: "#ff8a6b",
+  2026: "#8a3dff",
+  2025: "#ff1f3d",
+  2024: "#ff3d71",
+  2023: "#e81cc8",
   2022: "#ff6a5c",
-  2020: "#ff6a3d",
+  2020: "#ff3d71",
 };
-const FALLBACK_NEON = ["#9fe3ec", "#ff3b30", "#ff6a3d", "#ff8a6b", "#ff6a5c"];
+const FALLBACK_NEON = ["#8a3dff", "#ff1f3d", "#ff3d71", "#e81cc8", "#ff6a5c"];
 export function yearNeon(year: number): string {
   return YEAR_NEON[year] ?? FALLBACK_NEON[year % FALLBACK_NEON.length];
 }

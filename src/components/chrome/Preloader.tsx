@@ -1,50 +1,48 @@
 "use client";
 
-import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
-import { AnimatePresence, animate, motion, useMotionValue } from "framer-motion";
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import { useLockScroll } from "@/hooks/useLockScroll";
 import { markBooted } from "@/hooks/useBootReady";
 import { useI18n } from "@/lib/i18n";
-import { InkScroll } from "@/components/chrome/InkScroll";
 import { useIntroReplays } from "@/lib/intro";
-import { requestRewrite } from "@/lib/inkWriteQueue";
-import { useLocalDraft } from "@/hooks/useLocalDraft";
-import { DraftPreloader } from "@/components/chrome/DraftPreloader";
+import { MARK_D, MARK_T } from "@/components/chrome/NavGlyphs";
+import { meanderRing } from "@/lib/meander";
+import { createHalftone } from "@/lib/halftone";
 
 /**
- * First-load curtain: his name in Mongol bichig, written by brush on a
- * hanging scroll in a dark room, framed like the first shot of a film.
+ * SIGNAL: the first-load curtain.
  *
- * It replaced the dot-matrix LED sign. A sign is something the city switches
- * on; this is something a hand makes — and the hero then shows the same
- * name as the city's neon, which is the whole story of the site in two shots.
+ * Built from scratch on 2026-11-14, replacing the brushed ink scroll. Three
+ * beats, all of them the load itself rather than a film played over it:
  *
- * The room and its beats are InkScroll's (the lamp, the unrolling, the brush,
- * the seal). This component owns the frame around it and the exit:
+ *   1. **The mark.** ᠠ (the first letter of his name in the vertical script)
+ *      is traced by a line of light on the ramp. Round it a hairline ring
+ *      turns, and on the ring a meander key (the *alkhan khee* border every
+ *      Mongolian ger door and deel hem carries) draws itself on.
+ *   2. **The name.** The wordmark stands in hairline outline and fills from
+ *      the bottom with the ramp as the load climbs (crimson at the floor,
+ *      web-blue at the top), with a mono counter and ratio at the foot.
+ *   3. **The tear.** At 100 a halftone front opens from the mark (lib/halftone):
+ *      the ground's dots shrink away with ramp-lit rims, uncovering the city.
+ *      `markBooted` fires as it starts, so the hero's entrance plays through
+ *      the opening rather than behind a wall.
  *
- *   - 2.39:1 letterbox bars with a slate: reel and status up top, the
- *     wordmark, a skip hint and the ink's progress rule below;
- *   - when the scroll is done, a rack focus past it (the scroll goes soft)
- *     while the curtain dissolves onto the hero's city and the bars slide
- *     off. `markBooted` fires as the dissolve starts, so the hero's own
- *     focus-pull plays under it and lands as the curtain clears.
+ * The progress is honest at the end: it is simulated up to 92%, then waits
+ * for the fonts and the city's first frame before it can reach 100. Any key,
+ * click, wheel or touch rushes it. A repeat view in the tab, or Save-Data,
+ * runs about three times faster. A ceiling timer lifts it regardless.
  *
- * Any key, click, wheel or touch skips: the brush finishes in a quarter of a
- * second, the seal stamps, and it lifts. A second view in the same tab, or
- * Save-Data, runs at 0.55×; a replay (lib/intro — the footer, the palette)
- * runs at full length again. A ceiling timer lifts it regardless, so a stalled
- * frame loop (a background tab) can never strand the page behind it.
- *
- * **First paint is the dark room.** Reduced motion is read with
- * useSyncExternalStore and a server snapshot of "motion allowed", so the
- * curtain is in the server HTML. Visitors who do prefer reduced motion, or
- * have no JavaScript, never see it: CSS hides `.preloader` for them before
- * any script runs (globals.css, and a <noscript> style in the layout).
+ * **First paint is the curtain.** Reduced motion is read with
+ * useSyncExternalStore and a server snapshot of "motion allowed", so it is in
+ * the server HTML. Visitors who prefer reduced motion, or have no JavaScript,
+ * never see it: CSS hides `.preloader` for them (globals.css, and a
+ * <noscript> style in the layout).
  */
 
-const SEEN_KEY = "ink-intro-seen";
-/** Lift no matter what after this long (× timeScale). */
-const CEILING_MS = 10000;
+const SEEN_KEY = "signal-intro-seen";
+const CEILING_MS = 9000;
+const OPEN_MS = 1150;
 
 const QUERY = "(prefers-reduced-motion: reduce)";
 function subscribeReduced(onChange: () => void) {
@@ -52,13 +50,11 @@ function subscribeReduced(onChange: () => void) {
   mq.addEventListener("change", onChange);
   return () => mq.removeEventListener("change", onChange);
 }
-
 const noSubscribe = () => () => {};
 
-/** 0.55 on a repeat view or Save-Data, else 1. Client-only; nothing in the
- *  markup depends on it, so the server's 1 cannot mismatch. */
-function initialTimeScale(): number {
-  if (typeof window === "undefined") return 1;
+/** Load length in ms: 2400 on a first view, 800 on a repeat or Save-Data. */
+function loadLength(replay: boolean): number {
+  if (replay || typeof window === "undefined") return 2400;
   let seen = false;
   try {
     seen = sessionStorage.getItem(SEEN_KEY) === "1";
@@ -66,95 +62,162 @@ function initialTimeScale(): number {
   } catch {
     /* Storage blocked: every view is a first view. */
   }
-  const saveData = (navigator as Navigator & { connection?: { saveData?: boolean } }).connection
-    ?.saveData;
-  return seen || saveData ? 0.55 : 1;
+  const saveData = (navigator as Navigator & { connection?: { saveData?: boolean } }).connection?.saveData;
+  return seen || saveData ? 800 : 2400;
 }
 
-/** The bars' height: the same rule as `letterboxBar` in lib/inkShader. */
-const BAR =
-  "h-[clamp(6dvh,calc((100dvh-41.841vw)/2),16dvh)] portrait:h-[7dvh]";
+/** A load that surges and stalls, never backwards: 0–1 in, 0–1 out. */
+const CURVE = [
+  [0, 0], [0.12, 0.16], [0.28, 0.22], [0.42, 0.55], [0.52, 0.6], [0.74, 0.86], [0.84, 0.9], [1, 1],
+];
+function simulated(t: number) {
+  if (t <= 0) return 0;
+  if (t >= 1) return 1;
+  for (let i = 1; i < CURVE.length; i++) {
+    const [t0, p0] = CURVE[i - 1];
+    const [t1, p1] = CURVE[i];
+    if (t <= t1) {
+      const u = (t - t0) / (t1 - t0);
+      return p0 + (p1 - p0) * u * u * (3 - 2 * u);
+    }
+  }
+  return 1;
+}
+
+const easeOut = (t: number) => 1 - Math.pow(1 - t, 3);
 
 export function Preloader() {
-  const draft = useLocalDraft();
-  return draft === "vinyl" || draft === "masters" ? <DraftPreloader mode={draft} /> : <InkPreloader />;
-}
-
-function InkPreloader() {
   /* Keyed by the replay count: a replay is a fresh curtain with fresh state. */
   const replays = useIntroReplays();
   return <Curtain key={replays} replay={replays > 0} />;
 }
 
+const RING = meanderRing(200, 200, 176, 20, 36);
+
 function Curtain({ replay }: { replay: boolean }) {
   const { c, t } = useI18n();
-  const reduced = useSyncExternalStore(
-    subscribeReduced,
-    () => window.matchMedia(QUERY).matches,
-    () => false
-  );
-  const [timeScale] = useState(() => (replay ? 1 : initialTimeScale()));
+  const reduced = useSyncExternalStore(subscribeReduced, () => window.matchMedia(QUERY).matches, () => false);
+  const touch = useSyncExternalStore(noSubscribe, () => window.matchMedia("(pointer: coarse)").matches, () => false);
+  const [length] = useState(() => loadLength(replay));
+  const [opening, setOpening] = useState(false);
   const [done, setDone] = useState(false);
-  const [ready, setReady] = useState(false);
-  const [writing, setWriting] = useState(false);
-  const [skip, setSkip] = useState(false);
-  const touch = useSyncExternalStore(
-    noSubscribe,
-    () => window.matchMedia("(pointer: coarse)").matches,
-    () => false
-  );
 
-  const focus = useMotionValue(0);
-  const progress = useMotionValue(0);
+  const rootRef = useRef<HTMLDivElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const markRef = useRef<HTMLDivElement>(null);
+  const countRef = useRef<HTMLSpanElement>(null);
+  const fillRef = useRef<HTMLSpanElement>(null);
+  const ratioRef = useRef<HTMLSpanElement>(null);
+  const rushRef = useRef(false);
+  const liftedRef = useRef(false);
 
   const finished = reduced || done;
-  /* After a replay the signs on screen write themselves again. */
-  useEffect(() => {
-    if (!replay || !done) return;
-    const id = window.setTimeout(requestRewrite, 900);
-    return () => window.clearTimeout(id);
-  }, [replay, done]);
   useLockScroll(!finished);
 
-  /* Release the hero as the dissolve starts (see useBootReady). Also covers
-     reduced motion, where `finished` resolves true straight after hydration
-     and there is no curtain. Never from the server snapshot. */
+  /* Reduced motion: no curtain at all, so the hero is released at once. */
   useEffect(() => {
-    if (finished) markBooted();
-  }, [finished]);
+    if (reduced) markBooted();
+  }, [reduced]);
 
+  /* The tear: halftone open from the mark, then the curtain is gone. */
+  const open = useCallback(() => {
+    if (liftedRef.current) return;
+    liftedRef.current = true;
+    setOpening(true);
+    markBooted();
+    const canvas = canvasRef.current;
+    const root = rootRef.current;
+    const ht = canvas ? createHalftone(canvas) : null;
+    if (!ht || !root) {
+      // No WebGL: the curtain simply dissolves (AnimatePresence exit).
+      setDone(true);
+      return;
+    }
+    const mark = markRef.current?.getBoundingClientRect();
+    const cx = mark ? mark.left + mark.width / 2 : window.innerWidth / 2;
+    const cy = mark ? mark.top + mark.height / 2 : window.innerHeight / 2;
+    const reach = ht.reach(cx, cy) + Math.min(window.innerWidth, window.innerHeight) * 0.36;
+    ht.draw(cx, cy, 0);
+    // The canvas now holds the ground; the curtain itself can let go of it.
+    root.style.background = "transparent";
+    const t0 = performance.now();
+    const step = (now: number) => {
+      const k = Math.min(1, (now - t0) / OPEN_MS);
+      ht.draw(cx, cy, easeOut(k) * reach);
+      if (k < 1) requestAnimationFrame(step);
+      else {
+        ht.dispose();
+        setDone(true);
+      }
+    };
+    requestAnimationFrame(step);
+  }, []);
+
+  /* The load: one frame loop writing straight to the DOM, no re-renders. */
   useEffect(() => {
-    return progress.on("change", (v) => {
-      if (v > 0) setWriting(true);
-    });
-  }, [progress]);
-
-  /* READY first, then the exit: AnimatePresence freezes the tree it is
-     removing, so a label changed in the same render never shows. */
-  const lift = useCallback(() => {
-    setReady(true);
-    animate(focus, 1, { duration: 1.0, ease: [0.45, 0, 0.2, 1] });
-    setTimeout(() => setDone(true), 240);
-  }, [focus]);
-
-  useEffect(() => {
-    /* `done` too: this component outlives its curtain (AnimatePresence
-       inside it), so the listeners must come off when the curtain does —
-       or every key on the page would be swallowed for the whole visit. */
     if (reduced || done) return;
-    const ceiling = setTimeout(lift, CEILING_MS * timeScale);
-    let skipped = false;
+    let ready = false;
+    const poster = new Image();
+    const posterReady = new Promise<void>((res) => {
+      poster.onload = poster.onerror = () => res();
+      poster.src = "/ground/city-poster.jpg";
+    });
+    Promise.all([document.fonts?.ready ?? Promise.resolve(), posterReady]).then(() => {
+      ready = true;
+    });
+    const root = rootRef.current;
+    const start = performance.now();
+    let shown = 0;
+    let last = start;
+    let raf = 0;
+    let lastInt = -1;
+    const tick = (now: number) => {
+      const dt = Math.min(64, now - last);
+      last = now;
+      const elapsed = now - start;
+      let target = simulated(elapsed / length);
+      if (!ready) target = Math.min(target, 0.92);
+      if (rushRef.current) target = ready ? 1 : Math.max(target, 0.92);
+      const k = 1 - Math.exp(-dt / (rushRef.current ? 70 : 150));
+      shown = Math.max(shown, shown + (target - shown) * k);
+      if (target >= 1 && shown > 0.995) shown = 1;
+      root?.style.setProperty("--load", shown.toFixed(4));
+      /* The fill rises by transforms only: the clip moves up, its contents
+         move down by the same amount, so the letters hold still. */
+      const fill = fillRef.current;
+      if (fill) {
+        const off = ((1 - shown) * 100).toFixed(2);
+        fill.style.transform = `translateY(${off}%)`;
+        (fill.firstElementChild as HTMLElement | null)?.style.setProperty("transform", `translateY(-${off}%)`);
+      }
+      const n = Math.round(shown * 100);
+      if (n !== lastInt) {
+        lastInt = n;
+        if (countRef.current) countRef.current.textContent = String(n).padStart(3, "0");
+        if (ratioRef.current) ratioRef.current.textContent = shown.toFixed(4);
+      }
+      if (shown >= 1) {
+        // A beat on the full mark before it tears.
+        window.setTimeout(open, rushRef.current ? 120 : 320);
+        return;
+      }
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [reduced, done, length, open]);
+
+  /* Skips and the ceiling. */
+  useEffect(() => {
+    if (reduced || done) return;
+    const ceiling = setTimeout(open, CEILING_MS);
     const onSkip = () => {
-      if (skipped) return;
-      skipped = true;
-      setSkip(true);
+      rushRef.current = true;
     };
     const SKIP_EVENTS = ["pointerdown", "wheel", "touchstart"] as const;
     for (const ev of SKIP_EVENTS) window.addEventListener(ev, onSkip, { passive: true });
-    /* A key behind the curtain is only ever a skip. A deep link to a case
-       file opens it under the curtain with focus on its Close button, so a
-       Space pressed to skip would also have closed the file (and Esc fired
-       the dialog's own Esc). Taken in the capture phase and stopped here. */
+    /* A key behind the curtain is only ever a skip: a deep-linked case file
+       opens under it with focus on Close, and Space/Esc must not reach it. */
     const onKey = (e: KeyboardEvent) => {
       e.preventDefault();
       e.stopImmediatePropagation();
@@ -170,86 +233,78 @@ function Curtain({ replay }: { replay: boolean }) {
       clearTimeout(ceiling);
       for (const ev of SKIP_EVENTS) window.removeEventListener(ev, onSkip);
       window.removeEventListener("keydown", onKey, true);
-      // The keyup of the skipping key lands after the curtain: let it go.
       window.setTimeout(() => window.removeEventListener("keyup", swallow, true), 400);
     };
-  }, [reduced, done, timeScale, lift]);
-
-  const status = ready ? t.preloader.ready : writing ? t.preloader.writing : t.preloader.loading;
+  }, [reduced, done, open]);
 
   return (
     <AnimatePresence>
       {!finished && (
         <motion.div
           key="preloader"
+          ref={rootRef}
           aria-hidden
-          className="preloader fixed inset-0 z-[120] overflow-hidden bg-void text-fg"
-          /* First load: the server's dark room is already there. A replay
-             fades the room in over the page. */
+          className="preloader signal fixed inset-0 z-[120] overflow-hidden text-fg"
+          style={{ background: "var(--color-void)" }}
           initial={replay ? { opacity: 0 } : false}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          /* A visitor who skipped has said they are in a hurry. */
-          transition={skip ? { duration: 0.6, delay: 0.1 } : { duration: 1.1, delay: 0.3, ease: [0.4, 0, 0.2, 1] }}
+          transition={{ duration: opening ? 0.2 : 0.5 }}
         >
-          <InkScroll
-            timeScale={timeScale}
-            skip={skip}
-            focus={focus}
-            progress={progress}
-            onDone={lift}
-          />
+          <canvas ref={canvasRef} className="pointer-events-none absolute inset-0 h-full w-full" />
 
-          {/* ---- the letterbox, and the slate in it ---------------------- */}
-          <motion.div
-            className={`absolute inset-x-0 top-0 flex items-end justify-between bg-[#020a0c] px-5 pb-3 md:px-10 md:pb-4 ${BAR}`}
-            exit={{ y: "-100%" }}
-            transition={{ duration: 1.0, delay: 0.25, ease: [0.7, 0, 0.3, 1] }}
-          >
-            <span className="micro text-fg/70">{t.preloader.reel}</span>
-            <span className="micro flex items-center gap-4 text-fg/70">
-              <span className="flex items-center gap-2 text-[var(--color-hazard)]">
-                <span
-                  className={`h-1.5 w-1.5 rounded-full bg-[var(--color-hazard)] ${ready ? "" : "animate-blink"}`}
-                />
-                {status}
-              </span>
-            </span>
-          </motion.div>
-
-          <motion.div
-            className={`absolute inset-x-0 bottom-0 flex items-start justify-between gap-6 bg-[#020a0c] px-5 pt-3 md:px-10 md:pt-4 ${BAR}`}
-            exit={{ y: "100%" }}
-            transition={{ duration: 1.0, delay: 0.25, ease: [0.7, 0, 0.3, 1] }}
-          >
-            <motion.span
-              className="micro pl-[0.1em] tracking-[0.5em] text-[#ffd8a0]"
-              initial={{ opacity: 0, y: 4 }}
-              animate={ready || skip ? { opacity: 0.9, y: 0 } : { opacity: 0, y: 4 }}
-              transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-            >
-              {c.profile.wordmark}
-            </motion.span>
-
-            <motion.span
-              className="micro hidden text-fg/45 md:block"
-              animate={{ opacity: skip || ready ? 0 : 1 }}
-              transition={{ duration: 0.3 }}
-            >
-              {touch ? t.preloader.skipTap : t.preloader.skipKey}
-            </motion.span>
-
-            {/* The rule fills as the name is written. */}
-            <div className="relative mt-[0.45em] h-px w-24 shrink-0 bg-line md:w-40">
-              <motion.span
-                className="absolute inset-0 origin-left"
-                style={{
-                  scaleX: progress,
-                  backgroundImage: "linear-gradient(90deg, #ff6a1a, var(--color-hazard) 55%, #fff1dc)",
-                }}
-              />
+          <div className={`signal-scene ${opening ? "signal-scene--out" : ""}`}>
+            <div className="signal-top">
+              <span className="micro text-fg/80">{t.preloader.reel}</span>
+              <span className="micro text-fg/80">{c.profile.kicker}</span>
             </div>
-          </motion.div>
+
+            <div ref={markRef} className="signal-mark">
+              <svg className="signal-ring" viewBox="0 0 400 400">
+                <circle cx="200" cy="200" r="198" />
+                <circle cx="200" cy="200" r="150" />
+                <path className="signal-key" d={RING} pathLength={1} />
+              </svg>
+              <svg className="signal-glyph" viewBox="0 0 32 32">
+                <defs>
+                  <linearGradient id="signal-ramp" x1="0" y1="1" x2="0" y2="0">
+                    <stop offset="0" stopColor="#ff1f3d" />
+                    <stop offset="0.38" stopColor="#e81cc8" />
+                    <stop offset="0.7" stopColor="#8a3dff" />
+                    <stop offset="1" stopColor="#5664ff" />
+                  </linearGradient>
+                </defs>
+                <path className="signal-glyph-fill" d={MARK_D} transform={MARK_T} fill="url(#signal-ramp)" />
+                <path
+                  className="signal-glyph-line"
+                  d={MARK_D}
+                  transform={MARK_T}
+                  pathLength={1}
+                  stroke="url(#signal-ramp)"
+                  vectorEffect="non-scaling-stroke"
+                />
+              </svg>
+            </div>
+
+            <div className="signal-word display-caps">
+              <span className="signal-word-outline">{c.profile.wordmark}</span>
+              <span ref={fillRef} className="signal-word-fill">
+                <span>{c.profile.wordmark}</span>
+              </span>
+            </div>
+
+            <div className="signal-foot">
+              <span className="micro flex items-center gap-2 text-fg/80">
+                <span className={`signal-lamp ${opening ? "" : "animate-blink"}`} />
+                {opening ? t.preloader.ready : t.preloader.loading}
+              </span>
+              <span className="micro hidden text-fg/80 md:block">{touch ? t.preloader.skipTap : t.preloader.skipKey}</span>
+              <span className="flex items-baseline gap-3">
+                <span className="micro tabular text-fg/80" ref={ratioRef}>0.0000</span>
+                <span className="signal-count display-caps tabular" ref={countRef}>000</span>
+              </span>
+            </div>
+          </div>
         </motion.div>
       )}
     </AnimatePresence>
