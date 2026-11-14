@@ -26,6 +26,9 @@ import { cn } from "@/lib/utils";
 import { IconArrowLeft, IconArrowRight } from "@/components/ui/HudIcons";
 import { Cta } from "@/components/ui/Cta";
 import { ScriptLabel } from "@/components/ui/ScriptLabel";
+import { useLocalDraft } from "@/hooks/useLocalDraft";
+import { ArcWork } from "@/components/ui/CarouselDraft";
+import { CinematicWork } from "@/components/cinematic/CinematicWork";
 
 /* ---------------------------------------------------------------------------
    The work theatre.
@@ -70,6 +73,8 @@ function projectCount() {
 }
 
 export function SelectedWork() {
+  const mode = useLocalDraft();
+  const draft = mode !== "off";
   const reduced = useReducedMotion();
   /* Stacked layout until we know there is room to pin; SSR and first paint
      agree on it. */
@@ -85,7 +90,7 @@ export function SelectedWork() {
 
   const { t } = useI18n();
   const ref = useRef<HTMLElement>(null);
-  const pinned = wide && !reduced;
+  const pinned = wide && !reduced && !draft;
 
   /* One <section> for both layouts, never swapped. The navbar's section
      observer, ChapterFrame's triggers and ChapterKeys all grab `#work` once at
@@ -100,10 +105,10 @@ export function SelectedWork() {
       data-act="void"
       data-chapter="WORK"
       aria-label={t.work.aria}
-      className={pinned ? "relative" : "relative py-24 md:py-32"}
+      className={pinned || draft ? "relative" : "relative py-24 md:py-32"}
       style={pinned ? { height: `${SPAN * STEP_VH + 100}vh` } : undefined}
     >
-      {pinned ? <Theatre sectionRef={ref} /> : <Stack reduced={reduced} />}
+      {mode === "cinematic" ? <CinematicWork /> : draft ? <ArcWork /> : pinned ? <Theatre sectionRef={ref} /> : <Stack reduced={reduced} />}
     </section>
   );
 }

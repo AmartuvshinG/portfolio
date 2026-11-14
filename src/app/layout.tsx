@@ -208,7 +208,7 @@ export default function RootLayout({
         {/* The ink intro is in the server HTML (first paint is its dark
             room); without script it could never lift, so hide it. */}
         <noscript>
-          <style>{`.preloader{display:none}`}</style>
+          <style>{`.preloader{display:none}.cin-name>span:not(.sr-only),.cin-intro,.cin-title-menu a{transform:none!important;opacity:1!important}`}</style>
         </noscript>
       </head>
       <body className="min-h-full antialiased">

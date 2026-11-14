@@ -8,6 +8,8 @@ import { useI18n } from "@/lib/i18n";
 import { InkScroll } from "@/components/chrome/InkScroll";
 import { useIntroReplays } from "@/lib/intro";
 import { requestRewrite } from "@/lib/inkWriteQueue";
+import { useLocalDraft } from "@/hooks/useLocalDraft";
+import { DraftPreloader } from "@/components/chrome/DraftPreloader";
 
 /**
  * First-load curtain: his name in Mongol bichig, written by brush on a
@@ -74,6 +76,11 @@ const BAR =
   "h-[clamp(6dvh,calc((100dvh-41.841vw)/2),16dvh)] portrait:h-[7dvh]";
 
 export function Preloader() {
+  const draft = useLocalDraft();
+  return draft === "vinyl" || draft === "masters" ? <DraftPreloader mode={draft} /> : <InkPreloader />;
+}
+
+function InkPreloader() {
   /* Keyed by the replay count: a replay is a fresh curtain with fresh state. */
   const replays = useIntroReplays();
   return <Curtain key={replays} replay={replays > 0} />;

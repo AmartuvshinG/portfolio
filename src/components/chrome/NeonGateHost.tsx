@@ -7,6 +7,8 @@ import { registerNeonGate, type GateRequest } from "@/lib/neonGate";
 import { simulated } from "@/lib/neonField";
 import { useLockScroll } from "@/hooks/useLockScroll";
 import { NeonWord, useDisplayFont } from "@/components/ui/NeonWord";
+import { useLocalDraft } from "@/hooks/useLocalDraft";
+import { CaseShutter } from "@/components/cinematic/CaseShutter";
 
 /**
  * The gate a case file opens through (lib/neonGate).
@@ -41,10 +43,11 @@ const HERO_SIZES = "(max-width: 1280px) 100vw, 1280px";
 const GALLERY_SIZES = "(max-width: 768px) 100vw, 620px";
 
 export function NeonGateHost() {
+  const cinematic = useLocalDraft() === "cinematic";
   const [req, setReq] = useState<GateRequest | null>(null);
   useEffect(() => registerNeonGate(setReq), []);
   if (!req) return null;
-  return <Gate key={req.id} req={req} onDone={() => setReq(null)} />;
+  return cinematic ? <CaseShutter key={req.id} req={req} onDone={() => setReq(null)} /> : <Gate key={req.id} req={req} onDone={() => setReq(null)} />;
 }
 
 type Phase = "boot" | "lock" | "open";

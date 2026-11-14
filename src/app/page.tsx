@@ -8,6 +8,8 @@ import { Timeline } from "@/components/sections/Timeline";
 import { Contact } from "@/components/sections/Contact";
 import { CaseFileHost } from "@/components/work/CaseFile";
 import { getGitHubSummary } from "@/lib/github";
+import { DraftControls } from "@/components/ui/CarouselDraft";
+import { CinematicDesign } from "@/components/cinematic/CinematicDesign";
 
 /**
  * The descent.
@@ -29,6 +31,8 @@ export default async function Home() {
   const github = await getGitHubSummary();
   return (
     <>
+      <CinematicDesign />
+      <DraftControls />
       <Hero />
       <About />
       <Connect github={github} />

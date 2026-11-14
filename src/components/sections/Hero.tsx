@@ -19,6 +19,8 @@ import { DecodeText } from "@/components/motion/DecodeText";
 import { groundStrike } from "@/lib/groundBus";
 import { sectionIndex } from "@/lib/content";
 import { cn } from "@/lib/utils";
+import { useLocalDraft } from "@/hooks/useLocalDraft";
+import { CinematicHero } from "@/components/cinematic/CinematicHero";
 
 /**
  * The opening frame: the name at a scale that has to break to fit, over the
@@ -63,6 +65,14 @@ const RUN = "h-[130vh] md:h-[260vh]";
 const STRIKE_AT = 1250;
 
 export function Hero() {
+  const cinematic = useLocalDraft() === "cinematic";
+  const { t } = useI18n();
+  return <section id="hero" data-act="void" data-chapter="INDEX" aria-label={t.hero.aria}>
+    {cinematic ? <CinematicHero /> : <OriginalHero />}
+  </section>;
+}
+
+function OriginalHero() {
   const { c, t } = useI18n();
   const { profile } = c;
   const ref = useRef<HTMLElement>(null);
@@ -150,11 +160,7 @@ export function Hero() {
   return (
     <section
       ref={ref}
-      id="hero"
-      data-act="void"
-      data-chapter="INDEX"
       className={reduced ? "relative" : `hero-timeline relative ${RUN}`}
-      aria-label={t.hero.aria}
     >
       <div
         className={

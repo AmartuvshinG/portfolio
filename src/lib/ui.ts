@@ -19,6 +19,21 @@ export type BeatShow = "input" | "access" | "forest" | "override" | "neighbours"
 type AnatomyBeat = { station: string; title: string; body: string; plain?: string; show: BeatShow[] };
 
 const en = {
+  draft: {
+    previousStop: "Previous journey entry",
+    nextStop: "Next journey entry",
+    select: (title: string) => `Select ${title}`,
+    cinematic: "Cinematic",
+    label: "Local draft",
+    vinyl: "Vinyl",
+    masters: "Signature",
+    ink: "Ink",
+    off: "Original",
+    play: "Play photo filmstrip",
+    pause: "Pause photo filmstrip",
+    enter: "Enter portfolio",
+    intro: "Intro sequence",
+  },
   lang: {
     /** The toggle's own labels, always in their own script. */
     en: "EN",
@@ -404,6 +419,22 @@ export type UiStrings = typeof en;
  * English, and the navbar and the rail have fixed room.
  */
 const mn: UiStrings = {
+  // Local draft interface; awaiting the owner's Mongolian proofread.
+  draft: {
+    previousStop: "Замналын өмнөх үйл явдал",
+    nextStop: "Замналын дараах үйл явдал",
+    select: (title: string) => `${title} сонгох`,
+    cinematic: "Кино хэв маяг",
+    label: "Ноорог",
+    vinyl: "Пянз",
+    masters: "Гарын үсэг",
+    ink: "Бэх",
+    off: "Эх хувилбар",
+    play: "Зургийн цувааг тоглуулах",
+    pause: "Зургийн цувааг зогсоох",
+    enter: "Портфолио руу орох",
+    intro: "Эхлэл",
+  },
   lang: {
     en: "EN",
     mn: "МН",

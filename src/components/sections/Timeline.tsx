@@ -39,6 +39,9 @@ import { DecodeText, ReadLine, Shard, shardLamp } from "@/components/path/Shard"
 import { LandingPhotos } from "@/components/path/LandingPhotos";
 import { PhotoFigure } from "@/components/path/PhotoPlate";
 import { cn } from "@/lib/utils";
+import { useLocalDraft } from "@/hooks/useLocalDraft";
+import { MoodJourney } from "@/components/ui/CarouselDraft";
+import { CinematicJourney } from "@/components/cinematic/CinematicJourney";
 
 /* ---------------------------------------------------------------------------
    Path: the route.
@@ -177,6 +180,8 @@ const clamp01 = (x: number) => (x < 0 ? 0 : x > 1 ? 1 : x);
 const span = (pos: number, a: number, b: number) => clamp01((pos - a) / (b - a));
 
 export function Timeline() {
+  const mode = useLocalDraft();
+  const draft = mode !== "off";
   const { t } = useI18n();
   const reduced = useReducedMotion();
   const ref = useRef<HTMLElement>(null);
@@ -189,7 +194,7 @@ export function Timeline() {
     mq.addEventListener("change", update);
     return () => mq.removeEventListener("change", update);
   }, []);
-  const pinned = roomy && !reduced;
+  const pinned = roomy && !reduced && !draft;
 
   /* One <section> for both layouts, never swapped (see SelectedWork): the
      navbar, ChapterFrame and ChapterKeys hold on to it from mount. */
@@ -206,7 +211,7 @@ export function Timeline() {
       style={pinned ? { height: `${(BEATS.span + EDGE) * STEP_VH + 100}vh` } : undefined}
     >
       <ChapterSeam />
-      {pinned ? <Stage sectionRef={ref} /> : <Record reduced={reduced} />}
+      {mode === "cinematic" ? <CinematicJourney /> : <>{draft && <MoodJourney />}{pinned ? <Stage sectionRef={ref} /> : <Record reduced={reduced} />}</>}
     </section>
   );
 }

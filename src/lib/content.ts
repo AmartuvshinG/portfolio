@@ -764,9 +764,9 @@ export const en: SiteContent = {
  * Keep these in sync with --spectrum-1/2/3 in globals.css.
  */
 export const accentColor: Record<AccentKey, string> = {
-  accent: "#ff3b30", // coral red
-  "accent-2": "#ff8a6b", // salmon
-  alert: "#9fe3ec", // ice teal
+  accent: "var(--project-accent-1, #ff3b30)",
+  "accent-2": "var(--project-accent-2, #ff8a6b)",
+  alert: "var(--project-accent-3, #9fe3ec)",
 };
 
 /**

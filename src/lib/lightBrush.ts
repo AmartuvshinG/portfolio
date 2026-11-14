@@ -178,9 +178,10 @@ export function createLightBrush(
 
   const U = (n: string) => gl.getUniformLocation(prog, n);
   const css = getComputedStyle(document.documentElement);
-  gl.uniform3fv(U("uHot"), [1, 0.945, 0.863]); // #fff1dc, the CSS sign's top stop
+  const cinematic = document.documentElement.dataset.design === "cinematic";
+  gl.uniform3fv(U("uHot"), cinematic ? [0.94, 0.95, 1] : [1, 0.945, 0.863]);
   gl.uniform3fv(U("uWarm"), hexToRgb(css.getPropertyValue("--color-hazard"), [1, 0.627, 0.169]));
-  gl.uniform3fv(U("uDeep"), [1, 0.478, 0.165]); // #ff7a2a, its foot
+  gl.uniform3fv(U("uDeep"), cinematic ? [.44, .25, 1] : [1, 0.478, 0.165]);
   gl.uniform2f(U("uTexSize"), tex.width, tex.height);
   gl.uniform1f(U("uSpread"), tex.spread);
   gl.uniform1i(U("uInk"), 0);

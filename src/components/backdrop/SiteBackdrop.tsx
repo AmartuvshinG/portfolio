@@ -2,6 +2,8 @@
 
 import { VideoGround } from "./VideoGround";
 import { Grain } from "./Grain";
+import { useLocalDraft } from "@/hooks/useLocalDraft";
+import { World } from "@/components/cinematic/World";
 
 /**
  * One background for the entire document.
@@ -27,10 +29,11 @@ import { Grain } from "./Grain";
  * Everything here is `pointer-events-none` and sits at z-0; content is z-10.
  */
 export function SiteBackdrop() {
+  const cinematic = useLocalDraft() === "cinematic";
   return (
     <div aria-hidden className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
       <div className="absolute inset-0" style={{ background: "var(--color-void)" }} />
-      <VideoGround />
+      {cinematic ? <World /> : <VideoGround />}
       <Grain />
     </div>
   );

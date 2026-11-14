@@ -14,6 +14,17 @@ import { useI18n } from "@/lib/i18n";
 import { cn, srand } from "@/lib/utils";
 import { GlowHorizon } from "@/components/ui/GlowHorizon";
 import { groundFocus, groundSurge } from "@/lib/groundBus";
+import { useLocalDraft } from "@/hooks/useLocalDraft";
+
+interface ChapterSeamProps { wipe?: boolean; className?: string }
+
+/** Architecture supplies the depth; its chapter joins need only a fine rule. */
+export function ChapterSeam(props: ChapterSeamProps) {
+  const cinematic = useLocalDraft() === "cinematic";
+  return cinematic
+    ? <div aria-hidden className={cn("cin-chapter-seam", props.className)} />
+    : <OriginalChapterSeam {...props} />;
+}
 
 /**
  * The join between two sections.
@@ -51,7 +62,7 @@ import { groundFocus, groundSurge } from "@/lib/groundBus";
  *    actually in play.
  * ---------------------------------------------------------------------------
  */
-export function ChapterSeam({
+function OriginalChapterSeam({
   wipe = false,
   className,
 }: {

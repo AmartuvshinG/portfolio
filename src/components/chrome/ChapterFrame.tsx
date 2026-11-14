@@ -80,7 +80,7 @@ export function ChapterFrame() {
           it shows at every width; the rest of the frame is desktop chrome. */}
       {/* Named for chapter jumps (SmoothScroll's view transition): fixed
           chrome stays put while the page travels under it. */}
-      <div aria-hidden className="pointer-events-none fixed inset-0 z-[70] text-fg" data-vt="spine">
+      <div className="pointer-events-none fixed inset-0 z-[70] text-fg" data-vt="spine">
         <ChapterSpine chapters={chapters} active={active} />
       </div>
     <div
@@ -133,17 +133,15 @@ export function ChapterFrame() {
  * resize and when the page height changes; the fill and the handle ride one
  * transform together (the reel), run by a scroll timeline where there is one.
  *
- * Pointer only: the frame is aria-hidden and the ticks are out of the tab
- * order. Keyboard, wheel and touch scrolling are untouched — hiding the native
- * bar took nothing from them (keyboard users also have the navbar, j/k and
- * the palette).
+ * Desktop chapter ticks are also named keyboard buttons. Touch keeps the
+ * noninteractive indicator so an edge swipe never becomes an accidental scrub.
  */
 function ChapterSpine({ chapters, active }: { chapters: string[]; active: number }) {
   const { c } = useI18n();
   const { scrollTo, goTo } = useSmoothScroll();
   const trackRef = useRef<HTMLDivElement>(null);
   const reelRef = useRef<HTMLSpanElement>(null);
-  const [marks, setMarks] = useState<number[]>([]);
+  const [marks, setMarks] = useState<{ position: number; lane: number }[]>([]);
   const [dragging, setDragging] = useState(false);
   /* The timeline rules only exist without a reduced-motion preference
      (globals.css); under one, the JS has to paint or the spine sits at 0. */
@@ -171,13 +169,19 @@ function ChapterSpine({ chapters, active }: { chapters: string[]; active: number
       trackH.current = trackRef.current?.clientHeight ?? 0;
       const max = document.documentElement.scrollHeight - window.innerHeight;
       if (max <= 0) return;
-      setMarks(
-        chapters.map((id) => {
+      const positions = chapters.map((id) => {
           const el = document.getElementById(id);
           if (!el) return 0;
           return Math.min(1, Math.max(0, (el.getBoundingClientRect().top + window.scrollY) / max));
-        })
-      );
+        });
+      // Closely spaced stops keep their true y position, with separate hit areas.
+      const placed: { position: number; lane: number }[] = [];
+      for (const position of positions) {
+        let lane = 0;
+        while (placed.some((other) => other.lane === lane && Math.abs(position - other.position) * trackH.current < 30)) lane++;
+        placed.push({ position, lane });
+      }
+      setMarks(placed);
     };
     const paint = () => {
       raf = 0;
@@ -280,7 +284,7 @@ function ChapterSpine({ chapters, active }: { chapters: string[]; active: number
   return (
     <div
       ref={trackRef}
-      className="group/spine absolute bottom-[18svh] right-[max(0.375rem,env(safe-area-inset-right))] top-[18svh] w-px translate-x-1/2 transition-opacity duration-500 pointer-coarse:opacity-0 pointer-coarse:data-scrolling:opacity-100 pointer-coarse:data-scrolling:duration-150 lg:right-5"
+      className="chapter-spine group/spine absolute bottom-[18svh] right-[max(0.375rem,env(safe-area-inset-right))] top-[18svh] w-px translate-x-1/2 transition-opacity duration-500 pointer-coarse:opacity-0 pointer-coarse:data-scrolling:opacity-100 pointer-coarse:data-scrolling:duration-150 lg:right-5"
       /* On the track, not the strip, so a press that lands on a chapter tick
          can still become a drag; a tick that is only clicked goes to its
          chapter. */
@@ -319,7 +323,7 @@ function ChapterSpine({ chapters, active }: { chapters: string[]; active: number
           style={{ transform: "translateY(-100%)", transition: "none" }}
         >
           <span
-            className="absolute inset-0"
+            className="spine-light absolute inset-0"
             style={{
               background: "linear-gradient(180deg, color-mix(in srgb, var(--color-hazard) 30%, transparent), var(--color-hazard))",
               boxShadow: "0 0 8px color-mix(in srgb, var(--color-hazard) 60%, transparent)",
@@ -327,13 +331,13 @@ function ChapterSpine({ chapters, active }: { chapters: string[]; active: number
           />
           <span
             className={
-              "absolute bottom-0 left-1/2 h-7 -translate-x-1/2 translate-y-1/2 rounded-full bg-[var(--color-hazard)] shadow-[0_0_12px_var(--color-hazard)] transition-[width] duration-200 lg:h-9 " +
+              "spine-handle absolute bottom-0 left-1/2 h-7 -translate-x-1/2 translate-y-1/2 rounded-full bg-[var(--color-hazard)] shadow-[0_0_12px_var(--color-hazard)] transition-[width] duration-200 lg:h-9 " +
               (dragging ? "w-[5px]" : "w-[3px] group-hover/spine:w-[5px]")
             }
           />
         </span>
       </span>
-      {marks.map((m, i) => {
+      {marks.map(({ position: m, lane }, i) => {
         const id = chapters[i];
         const link = c.navLinks.find((l) => l.href === `#${id}`);
         const on = i === active;
@@ -341,10 +345,12 @@ function ChapterSpine({ chapters, active }: { chapters: string[]; active: number
           <button
             key={id}
             type="button"
-            tabIndex={-1}
+            aria-label={link?.label ?? id}
+            aria-current={on ? "location" : undefined}
+            tabIndex={0}
             onClick={() => goTo(`#${id}`)}
-            className="group pointer-events-auto absolute left-1/2 hidden h-5 w-5 -translate-x-1/2 -translate-y-1/2 items-center justify-center lg:flex"
-            style={{ top: `${m * 100}%` }}
+            className="group pointer-events-auto absolute left-1/2 hidden h-7 w-7 -translate-x-1/2 -translate-y-1/2 items-center justify-center lg:flex pointer-coarse:hidden"
+            style={{ top: `${m * 100}%`, marginLeft: -lane * 30 }}
           >
             <span
               className={
@@ -353,6 +359,7 @@ function ChapterSpine({ chapters, active }: { chapters: string[]; active: number
                   : "h-1.5 w-1.5 rotate-45 border border-current opacity-50 transition-all duration-300 group-hover:opacity-100"
               }
             />
+            {lane > 0 && <i aria-hidden className="pointer-events-none absolute left-1/2 h-px bg-current opacity-25" style={{ width: lane * 30 }} />}
             <span
               className={
                 "tag pointer-events-none absolute right-6 whitespace-nowrap transition-[opacity,transform] duration-300 " +

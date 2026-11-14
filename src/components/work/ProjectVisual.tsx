@@ -55,7 +55,7 @@ export function ProjectVisual({
       <div
         className="absolute -right-1/4 top-1/2 h-[130%] w-2/3 -translate-y-1/2"
         style={{
-          background: `radial-gradient(closest-side, ${color} 0%, ${color}00 78%)`,
+          background: `radial-gradient(closest-side, ${color} 0%, transparent 78%)`,
           opacity: 0.34,
         }}
       />
