@@ -1,203 +1,71 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import Image from "next/image";
-import { ArrowLeft, ArrowRight, ArrowUpRight } from "lucide-react";
+import { ArrowUpRight } from "lucide-react";
+import { motion, useMotionValueEvent, useScroll, useTransform } from "framer-motion";
 import { useI18n } from "@/lib/i18n";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
+import { useScrollTimelines } from "@/hooks/useScrollTimelines";
 import { useSmoothScroll } from "@/components/chrome/SmoothScroll";
 import { ChapterSeam } from "@/components/chrome/ChapterSeam";
+import { ScriptLabel } from "@/components/ui/ScriptLabel";
 import { openCase } from "@/lib/caseFile";
-import type { Project } from "@/lib/content";
+import { sectionIndex, type Project } from "@/lib/content";
+import { cn } from "@/lib/utils";
+import { PIN_QUERY } from "@/lib/viewport";
 
 /**
- * Missions: every screenshot of every project, fanned on an arch.
+ * Projects: the reel.
  *
- * After the Chained Spring Arc Carousel reference (docs/reference): cards sit
- * on a wheel whose pivot is far below the frame, so their tops trace a shallow
- * arc. When the lead card moves, the rest follow it like a plucked string
- * (each card springs toward its neighbour's angle less one gap), so a jump
- * ripples down the wheel instead of rotating as one plate.
+ * Every project is one full frame, the whole screenshot uncropped, with its
+ * other shots in a strip beneath it. On a wide screen the chapter pins and
+ * the vertical scroll runs the reel sideways: the frame in the gate is lit
+ * and full size, the ones either side recede into the dark, and its title
+ * card comes in as a stage of the hero's menu.
  *
- * **Scroll drives it, never the pointer.** On a wide screen the chapter pins
- * and its scroll progress picks the card in front: no wheel hijack, no hover
- * steering (AGENTS.md). Clicking a side card scrolls to its position; clicking
- * the front card, or the title, opens the project's case file. On a phone or
- * under reduced motion the chapter doesn't pin: ← / → buttons and a swipe move
- * the wheel instead.
+ * **Scroll drives it, never the pointer** (AGENTS.md). With scroll timelines
+ * the reel's travel is CSS on the compositor (`.reel-track`, ride.css); framer
+ * is the fallback. React only re-renders when the frame in the gate changes.
+ * Clicking a frame in the gate opens its case file; clicking one beside it
+ * scrolls the reel there.
  *
- * The physics live in a ref-backed frame loop that writes transforms directly
- * and goes to sleep as soon as the wheel settles. React only re-renders when
- * the front card changes, which is when the label above it changes.
+ * Phones and reduced motion: a native swipe row with snap, no pin.
  */
 
-interface Card {
-  project: Project;
-  src: string;
-  alt: string;
-}
-
-/** Degrees between neighbouring cards. */
-const GAP = 13;
-const STIFF = 0.16;
-const DAMP = 0.62;
-/** Scroll per card while pinned, in viewport heights. */
-const STEP_VH = 34;
+/** Scroll per project while pinned, in viewport heights. */
+const STEP_VH = 90;
 
 export function SelectedWork() {
   const { c, t } = useI18n();
   const reduced = useReducedMotion();
-  const wide = useMediaQuery("(min-width: 768px) and (min-height: 600px)");
+  const wide = useMediaQuery(PIN_QUERY);
   const pinned = wide && !reduced;
+  const css = useScrollTimelines();
+  const projects = c.projects;
+  const n = projects.length;
   const { scrollTo } = useSmoothScroll();
 
-  const cards = useMemo<Card[]>(
-    () =>
-      c.projects.flatMap((p) => [
-        ...(p.shot ? [{ project: p, src: p.shot, alt: p.title }] : []),
-        ...(p.gallery ?? []).map((g) => ({ project: p, src: g.src, alt: g.alt })),
-      ]),
-    [c.projects]
-  );
-  const n = cards.length;
-
   const sectionRef = useRef<HTMLElement>(null);
-  const cardEls = useRef<(HTMLButtonElement | null)[]>([]);
-  const target = useRef(0);
-  const angles = useRef<{ a: number; v: number }[]>([]);
-  const wake = useRef<() => void>(() => {});
+  const { scrollYProgress } = useScroll({ target: sectionRef, offset: ["start start", "end end"] });
   const [front, setFront] = useState(0);
-
-  /* The wheel: a chained spring, asleep whenever it is still. */
-  useEffect(() => {
-    if (angles.current.length !== n) angles.current = Array.from({ length: n }, (_, i) => ({ a: i * GAP, v: 0 }));
-    let raf = 0;
-    const write = () => {
-      const st = angles.current;
-      let best = 0;
-      let bestAbs = Infinity;
-      for (let i = 0; i < st.length; i++) {
-        const el = cardEls.current[i];
-        const a = st[i].a;
-        if (el) {
-          el.style.transform = `rotate(${a.toFixed(3)}deg) translateY(calc(var(--arc-r) * -1))`;
-          el.style.zIndex = String(1000 - Math.round(Math.abs(a) * 10));
-          el.style.opacity = Math.abs(a) > 75 ? "0" : "1";
-        }
-        if (Math.abs(a) < bestAbs) {
-          bestAbs = Math.abs(a);
-          best = i;
-        }
-      }
-      setFront((f) => (f === best ? f : best));
-    };
-    const step = () => {
-      raf = 0;
-      const st = angles.current;
-      if (reduced) {
-        st.forEach((c, i) => {
-          c.a = (i - target.current) * GAP;
-          c.v = 0;
-        });
-        write();
-        return;
-      }
-      // The lead is the front target card; neighbours chase it outward.
-      const lead = Math.round(target.current);
-      const L = st[lead];
-      L.v = (L.v + ((lead - target.current) * GAP - L.a) * STIFF) * DAMP;
-      L.a += L.v;
-      for (let i = lead + 1; i < st.length; i++) {
-        const cur = st[i];
-        cur.v = (cur.v + (st[i - 1].a + GAP - cur.a) * STIFF) * DAMP;
-        cur.a += cur.v;
-      }
-      for (let i = lead - 1; i >= 0; i--) {
-        const cur = st[i];
-        cur.v = (cur.v + (st[i + 1].a - GAP - cur.a) * STIFF) * DAMP;
-        cur.a += cur.v;
-      }
-      write();
-      const moving = st.some((c, i) => Math.abs(c.v) > 0.01 || Math.abs((i - target.current) * GAP - c.a) > 0.05);
-      if (moving) raf = requestAnimationFrame(step);
-    };
-    wake.current = () => {
-      if (!raf) raf = requestAnimationFrame(step);
-    };
-    write();
-    return () => cancelAnimationFrame(raf);
-  }, [reduced, n]);
-
-  /* Pinned: the chapter's scroll progress is the target card. */
-  useEffect(() => {
+  useMotionValueEvent(scrollYProgress, "change", (p) => {
     if (!pinned) return;
+    const k = Math.round(Math.min(1, Math.max(0, p)) * (n - 1));
+    setFront((f) => (f === k ? f : k));
+  });
+  /* Fallback travel: the same maths as the CSS keyframes. */
+  const x = useTransform(scrollYProgress, (p) => `calc(${-Math.min(1, Math.max(0, p)) * (n - 1)} * (var(--fw) + var(--fg)))`);
+  const bar = useTransform(scrollYProgress, (p) => Math.min(1, Math.max(0, p)));
+
+  const goFrame = (i: number) => {
     const el = sectionRef.current;
     if (!el) return;
-    let raf = 0;
-    const read = () => {
-      raf = 0;
-      const r = el.getBoundingClientRect();
-      const travel = Math.max(1, r.height - window.innerHeight);
-      const p = Math.min(1, Math.max(0, -r.top / travel));
-      const next = p * (n - 1);
-      if (Math.abs(next - target.current) > 0.001) {
-        target.current = next;
-        wake.current();
-      }
-    };
-    const onScroll = () => {
-      if (!raf) raf = requestAnimationFrame(read);
-    };
-    read();
-    window.addEventListener("scroll", onScroll, { passive: true });
-    window.addEventListener("resize", onScroll);
-    return () => {
-      cancelAnimationFrame(raf);
-      window.removeEventListener("scroll", onScroll);
-      window.removeEventListener("resize", onScroll);
-    };
-  }, [pinned, n]);
-
-  /* Keyboard focus follows the front card, without letting the browser
-     scroll the clipped stage to reach it. */
-  useEffect(() => {
-    const el = document.activeElement;
-    if (el instanceof HTMLElement && el.classList.contains("arc-card")) cardEls.current[front]?.focus({ preventScroll: true });
-  }, [front]);
-
-  const goCard = (i: number) => {
-    const k = Math.max(0, Math.min(n - 1, i));
-    if (pinned) {
-      const el = sectionRef.current;
-      if (!el) return;
-      const top = el.getBoundingClientRect().top + window.scrollY;
-      const travel = el.offsetHeight - window.innerHeight;
-      scrollTo(top + (k / Math.max(1, n - 1)) * travel);
-    } else {
-      target.current = k;
-      wake.current();
-    }
+    const top = el.getBoundingClientRect().top + window.scrollY;
+    const travel = el.offsetHeight - window.innerHeight;
+    scrollTo(top + (i / Math.max(1, n - 1)) * travel);
   };
-
-  /* Swipe, unpinned only. */
-  const swipe = useRef<{ x: number; y: number } | null>(null);
-  const onPointerDown = (e: React.PointerEvent) => {
-    if (pinned) return;
-    swipe.current = { x: e.clientX, y: e.clientY };
-  };
-  const onPointerUp = (e: React.PointerEvent) => {
-    const s = swipe.current;
-    swipe.current = null;
-    if (!s || pinned) return;
-    const dx = e.clientX - s.x;
-    if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(e.clientY - s.y)) goCard(front + (dx < 0 ? 1 : -1));
-  };
-
-  const card = cards[front];
-  const project = card?.project;
-  const projectCards = cards.filter((x) => x.project.slug === project?.slug);
-  const shotIndex = projectCards.indexOf(card) + 1;
 
   return (
     <section
@@ -206,76 +74,118 @@ export function SelectedWork() {
       data-act="void"
       data-chapter="WORK"
       aria-label={t.work.aria}
-      className="relative z-10"
+      className={cn("relative z-10", pinned && "reel-timeline")}
       style={pinned ? { height: `${(n - 1) * STEP_VH + 100}svh` } : undefined}
     >
       <ChapterSeam />
       <div
-        className={pinned ? "sticky top-0 h-[100svh] overflow-clip" : "relative h-[min(100svh,860px)] min-h-[620px] overflow-clip"}
+        className={cn("reel", pinned ? "reel--pinned sticky top-0 h-[100svh] overflow-clip" : "reel--flow py-24")}
+        style={{ "--n": n } as React.CSSProperties}
         onKeyDown={(e) => {
-          if (e.key === "ArrowRight") {
+          if (!pinned) return;
+          if (e.key === "ArrowRight" && front < n - 1) {
             e.preventDefault();
-            goCard(front + 1);
-          } else if (e.key === "ArrowLeft") {
+            goFrame(front + 1);
+          } else if (e.key === "ArrowLeft" && front > 0) {
             e.preventDefault();
-            goCard(front - 1);
+            goFrame(front - 1);
           }
         }}
       >
-        {/* The label: index, title, the shot's place in the set. */}
-        {project && (
-          <div className="arc-label">
-            <span className="micro text-fg/85">{t.work.title} · {t.work.count(front + 1, n)}</span>
-            <span className="arc-index display-caps tabular" key={`i-${project.slug}`}>
-              {project.index}
+        <header className="reel-head">
+          <div className="relative">
+            <ScriptLabel href="#work" />
+            <span className="micro kicker-plate">
+              {sectionIndex("#work")} — {t.work.eyebrow}
             </span>
-            <button type="button" className="arc-title display-caps" onClick={() => openCase(project.slug)}>
-              <span className="arc-title-label spectrum-text" key={`t-${project.slug}`}>
-                {project.title}
+          </div>
+          {pinned && (
+            <div className="reel-meter" aria-hidden>
+              <span className="tag tabular text-fg">{t.work.count(front + 1, n)}</span>
+              <span className="reel-meter-track">
+                {css ? <span className="reel-meter-fill reel-meter-fill--css" /> : <motion.span className="reel-meter-fill" style={{ scaleX: bar }} />}
               </span>
-              <ArrowUpRight aria-hidden className="arc-title-arrow" />
-            </button>
-            <span className="micro text-fg/85">
-              {project.category} · {project.year} · {shotIndex}/{projectCards.length}
-            </span>
-          </div>
-        )}
+              <span className="micro hidden text-fg/85 lg:inline">{t.work.hint}</span>
+            </div>
+          )}
+        </header>
 
-        <div className="arc-stage" onPointerDown={onPointerDown} onPointerUp={onPointerUp}>
-          <div className="arc-arch" aria-hidden />
-          <div className="arc-pivot">
-            {cards.map((cd, i) => (
-              <button
-                key={`${cd.project.slug}-${i}`}
-                ref={(el) => {
-                  cardEls.current[i] = el;
-                }}
-                type="button"
-                tabIndex={i === front ? 0 : -1}
-                className="arc-card"
-                data-front={i === front ? "true" : "false"}
-                aria-label={i === front ? t.work.preview(cd.project.title) : `${cd.project.title} · ${i + 1}/${n}`}
-                aria-current={i === front ? "true" : undefined}
-                onClick={() => (i === front ? openCase(cd.project.slug) : goCard(i))}
-              >
-                <span className="arc-card-inner">
-                  <Image src={cd.src} alt="" fill sizes="(max-width: 768px) 180px, 300px" className="object-cover" />
-                </span>
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div className="arc-controls">
-          <button type="button" className="arc-btn" onClick={() => goCard(front - 1)} disabled={front === 0} aria-label={t.work.prev}>
-            <ArrowLeft aria-hidden />
-          </button>
-          <span className="micro hidden text-fg/85 md:inline">{pinned ? t.work.hint : null}</span>
-          <button type="button" className="arc-btn" onClick={() => goCard(front + 1)} disabled={front === n - 1} aria-label={t.work.next}>
-            <ArrowRight aria-hidden />
-          </button>
+        <div className={cn("reel-gate", !pinned && "reel-gate--swipe")}>
+          {pinned && !css ? (
+            <motion.ol className="reel-track" style={{ x }}>
+              <Frames projects={projects} front={front} pinned={pinned} onPick={goFrame} />
+            </motion.ol>
+          ) : (
+            <ol className={cn("reel-track", pinned && "reel-track--css")}>
+              <Frames projects={projects} front={front} pinned={pinned} onPick={goFrame} />
+            </ol>
+          )}
         </div>
       </div>
     </section>
+  );
+}
+
+function Frames({
+  projects,
+  front,
+  pinned,
+  onPick,
+}: {
+  projects: Project[];
+  front: number;
+  pinned: boolean;
+  onPick: (i: number) => void;
+}) {
+  const { t } = useI18n();
+  return (
+    <>
+      {projects.map((p, i) => {
+        const on = !pinned || i === front;
+        const shots = (p.gallery ?? []).slice(0, 3);
+        return (
+          <li key={p.slug} className="reel-frame" data-on={on ? "true" : "false"} data-side={i < front ? "l" : i > front ? "r" : "c"}>
+            <button
+              type="button"
+              className="reel-shot"
+              tabIndex={on ? 0 : -1}
+              aria-label={on ? t.work.preview(p.title) : `${p.title} · ${t.work.count(i + 1, projects.length)}`}
+              onClick={() => (on ? openCase(p.slug) : onPick(i))}
+            >
+              {p.shot ? (
+                <Image src={p.shot} alt="" fill sizes="(max-width: 768px) 88vw, 70vw" className="object-cover object-top" />
+              ) : null}
+              <span aria-hidden className="reel-shot-glow" />
+              <span aria-hidden className="reel-corners" />
+            </button>
+
+            {/* The title card: one lit stage of the hero's menu. */}
+            <div className="reel-card">
+              <span className="ms-item reel-stage" data-lit={on ? "true" : "false"}>
+                <span className="ms-code tag">{p.index}</span>
+                <span className="ms-label">{p.title}</span>
+              </span>
+              <span className="micro mt-3 block text-fg/85">
+                {p.category} · {p.year}
+              </span>
+              <p className="reel-summary text-sm leading-relaxed text-fg/85 md:text-base">{p.summary}</p>
+              <button type="button" className="reel-open tag" tabIndex={on ? 0 : -1} onClick={() => openCase(p.slug)}>
+                {t.work.open} <ArrowUpRight aria-hidden size={16} />
+              </button>
+            </div>
+
+            {shots.length > 0 && (
+              <ul className="reel-strip" aria-hidden>
+                {shots.map((g, k) => (
+                  <li key={g.src} style={{ "--k": k } as React.CSSProperties}>
+                    <Image src={g.src} alt="" fill sizes="220px" className="object-cover object-top" />
+                  </li>
+                ))}
+              </ul>
+            )}
+          </li>
+        );
+      })}
+    </>
   );
 }

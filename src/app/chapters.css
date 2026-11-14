@@ -3,162 +3,11 @@
    dossier drawer.
    ========================================================================== */
 
-/* --- Missions: the arc carousel ---------------------------------------- */
-.arc-label {
-  position: absolute;
-  z-index: 20;
-  top: calc(84px + env(safe-area-inset-top));
-  left: 50%;
-  transform: translateX(-50%);
-  width: min(92vw, 900px);
-  display: grid;
-  justify-items: center;
-  gap: 6px;
-  text-align: center;
-}
-.arc-index {
-  font-size: clamp(3.5rem, 9vw, 7rem);
-  line-height: 0.82;
-  color: transparent;
-  -webkit-text-stroke: 1px rgb(243 241 255 / 0.7);
-  animation: arc-in 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
-}
-.arc-title {
-  display: inline-flex;
-  align-items: flex-start;
-  gap: 8px;
-  font-size: clamp(2.2rem, 6vw, 4.6rem);
-  line-height: 0.9;
-}
-.arc-title-label {
-  display: inline-block;
-  animation: arc-in 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.05s both;
-}
-.arc-title-arrow {
-  width: 0.5em;
-  height: 0.5em;
-  margin-top: 0.08em;
-  color: var(--color-rim);
-  transition: transform 0.25s ease;
-}
-.arc-title:hover .arc-title-arrow,
-.arc-title:focus-visible .arc-title-arrow {
-  transform: translate(3px, -3px);
-}
+/* Shared settle-in for swapped content. */
 @keyframes arc-in {
   from {
     opacity: 0;
     transform: translateY(16px);
-  }
-}
-.arc-stage {
-  --arc-r: max(880px, 118svh);
-  --card-w: clamp(150px, 17vw, 250px);
-  position: absolute;
-  inset: 0;
-  touch-action: pan-y;
-}
-@media (max-width: 767px) {
-  .arc-stage {
-    --arc-r: 760px;
-    --card-w: 168px;
-  }
-}
-.arc-arch {
-  position: absolute;
-  left: 50%;
-  bottom: calc(var(--arc-r) * -1.9 + 34svh);
-  width: calc(var(--arc-r) * 1.8);
-  aspect-ratio: 1;
-  transform: translateX(-50%);
-  border-radius: 50%;
-  border: 1px solid rgb(217 214 255 / 0.22);
-  background: linear-gradient(to bottom, rgb(21 18 74 / 0.6), rgb(5 4 12 / 0.92) 22%);
-  box-shadow: 0 -2px 40px rgb(138 61 255 / 0.35), inset 0 1px 0 rgb(217 214 255 / 0.4);
-  pointer-events: none;
-}
-.arc-pivot {
-  position: absolute;
-  left: 50%;
-  bottom: calc(var(--arc-r) * -1 + 34svh);
-  width: 0;
-  height: 0;
-}
-.arc-card {
-  position: absolute;
-  left: calc(var(--card-w) / -2);
-  bottom: calc(var(--card-w) * -0.7);
-  width: var(--card-w);
-  aspect-ratio: 10 / 14;
-  will-change: transform;
-}
-.arc-card-inner {
-  position: absolute;
-  inset: 0;
-  overflow: hidden;
-  border: 1px solid rgb(243 241 255 / 0.18);
-  background: var(--color-deck);
-  box-shadow: 0 20px 50px rgb(0 0 0 / 0.45);
-  transition: transform 0.4s cubic-bezier(0.2, 0.9, 0.2, 1);
-}
-/* Side cards sit under a dim; the front card's lifts away (opacity only). */
-.arc-card-inner::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: 1;
-  background: rgb(5 4 12 / 0.38);
-  transition: opacity 0.4s ease;
-}
-.arc-card[data-front="true"] .arc-card-inner::before {
-  opacity: 0;
-}
-.arc-card[data-front="true"] .arc-card-inner {
-  transform: translateY(-28px) scale(1.08);
-  border-color: transparent;
-  box-shadow:
-    0 0 0 1px rgb(217 214 255 / 0.6),
-    0 0 40px rgb(232 28 200 / 0.4),
-    0 30px 60px rgb(0 0 0 / 0.55);
-}
-/* The front card's ramp underline. */
-.arc-card[data-front="true"] .arc-card-inner::after {
-  content: "";
-  position: absolute;
-  inset: auto 0 0 0;
-  height: 3px;
-  background-image: var(--gradient-spectrum);
-}
-.arc-controls {
-  position: absolute;
-  z-index: 20;
-  left: 50%;
-  bottom: clamp(20px, 5vh, 48px);
-  transform: translateX(-50%);
-  display: flex;
-  align-items: center;
-  gap: 20px;
-}
-.arc-btn {
-  display: grid;
-  place-items: center;
-  width: 48px;
-  height: 48px;
-  border: 1px solid rgb(243 241 255 / 0.3);
-  background: rgb(5 4 12 / 0.6);
-  color: var(--color-fg);
-  transition: opacity 0.2s ease;
-}
-.arc-btn:hover:not(:disabled) {
-  border-color: var(--color-rim);
-}
-.arc-btn:disabled {
-  opacity: 0.35;
-}
-@media (prefers-reduced-motion: reduce) {
-  .arc-index,
-  .arc-title-label {
-    animation: none;
   }
 }
 
@@ -188,8 +37,10 @@
 .mood-title-fill {
   position: absolute;
   inset: 0;
-  -webkit-mask-image: linear-gradient(to top, #000 30%, transparent 75%);
-  mask-image: linear-gradient(to top, #000 30%, transparent 75%);
+  overflow: hidden;
+}
+.mood-title-fill > span {
+  display: block;
 }
 .mood-span {
   order: 3;
@@ -211,24 +62,6 @@
   padding-right: clamp(14px, 2vw, 28px);
   margin: 0;
   list-style: none;
-  animation: mood-glide 48s linear infinite;
-  animation-play-state: paused;
-}
-.mood-row--rev .mood-track {
-  animation-direction: reverse;
-  animation-duration: 56s;
-}
-.mood[data-run="true"] .mood-track {
-  animation-play-state: running;
-}
-.mood-row:hover .mood-track,
-.mood-row:focus-within .mood-track {
-  animation-play-state: paused;
-}
-@keyframes mood-glide {
-  to {
-    transform: translateX(-100%);
-  }
 }
 .mood-frame {
   flex: none;
@@ -304,15 +137,6 @@
   justify-content: center;
   padding-inline: 16px;
 }
-.mood-pause {
-  display: grid;
-  place-items: center;
-  width: 44px;
-  height: 44px;
-  border: 1px solid rgb(243 241 255 / 0.3);
-  color: var(--color-fg);
-  background: rgb(5 4 12 / 0.6);
-}
 .mood-rail {
   display: flex;
   gap: 4px;
@@ -342,7 +166,6 @@
   padding: clamp(18px, 3vw, 28px);
   border: 1px solid rgb(243 241 255 / 0.16);
   background: linear-gradient(160deg, rgb(21 18 74 / 0.55), rgb(5 4 12 / 0.85));
-  animation: arc-in 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 .mood-card-title {
   margin-top: 6px;
@@ -374,65 +197,9 @@
   color: var(--color-rim);
 }
 @media (prefers-reduced-motion: reduce) {
-  .mood-card {
+  .mood-card-body {
     animation: none;
   }
-}
-
-/* --- About: the dossier drawer ----------------------------------------- */
-.dossier {
-  border: 1px solid rgb(243 241 255 / 0.16);
-  background: linear-gradient(160deg, rgb(21 18 74 / 0.5), rgb(5 4 12 / 0.85));
-}
-.dossier-summary {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  gap: 6px 16px;
-  padding: 22px 24px;
-  list-style: none;
-  cursor: pointer;
-}
-.dossier-summary::-webkit-details-marker {
-  display: none;
-}
-.dossier-summary-label {
-  grid-column: 1;
-  font-family: var(--font-display);
-  font-weight: 800;
-  text-transform: uppercase;
-  font-size: clamp(1.8rem, 3vw, 2.6rem);
-  line-height: 0.95;
-}
-.dossier-plus {
-  grid-column: 2;
-  grid-row: 1 / 3;
-  align-self: center;
-  position: relative;
-  width: 28px;
-  height: 28px;
-}
-.dossier-plus::before,
-.dossier-plus::after {
-  content: "";
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: 50%;
-  height: 2px;
-  background-image: var(--gradient-spectrum);
-  transition: transform 0.3s ease;
-}
-.dossier-plus::after {
-  transform: rotate(90deg);
-}
-.dossier[open] .dossier-plus::after {
-  transform: rotate(0deg);
-}
-.dossier-body {
-  display: grid;
-  gap: 18px;
-  padding: 0 24px 24px;
-  animation: arc-in 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 /* --- Skills: the skill tree -------------------------------------------- */

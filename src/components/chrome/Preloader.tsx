@@ -9,6 +9,7 @@ import { useIntroReplays } from "@/lib/intro";
 import { MARK_D, MARK_T } from "@/components/chrome/NavGlyphs";
 import { meanderRing } from "@/lib/meander";
 import { createHalftone } from "@/lib/halftone";
+import { InkSign } from "@/components/ui/InkSign";
 
 /**
  * SIGNAL: the first-load curtain.
@@ -109,6 +110,11 @@ function Curtain({ replay }: { replay: boolean }) {
   const fillRef = useRef<HTMLSpanElement>(null);
   const ratioRef = useRef<HTMLSpanElement>(null);
   const rushRef = useRef(false);
+  /* The name has to finish writing before the load can reach 100. */
+  const writtenRef = useRef(false);
+  const onWritten = useCallback(() => {
+    writtenRef.current = true;
+  }, []);
   const liftedRef = useRef(false);
 
   const finished = reduced || done;
@@ -177,6 +183,7 @@ function Curtain({ replay }: { replay: boolean }) {
       const elapsed = now - start;
       let target = simulated(elapsed / length);
       if (!ready) target = Math.min(target, 0.92);
+      if (!writtenRef.current && !rushRef.current) target = Math.min(target, 0.97);
       if (rushRef.current) target = ready ? 1 : Math.max(target, 0.92);
       const k = 1 - Math.exp(-dt / (rushRef.current ? 70 : 150));
       shown = Math.max(shown, shown + (target - shown) * k);
@@ -284,6 +291,12 @@ function Curtain({ replay }: { replay: boolean }) {
                   vectorEffect="non-scaling-stroke"
                 />
               </svg>
+              {/* His whole name in the vertical script, written beside the
+                  mark by the old intro's brush route, now as a tube of light
+                  in the ramp (InkSign "write"). The load waits for it. */}
+              <div className="signal-script" aria-hidden>
+                <InkSign tone="neon" lit="write" secs={length > 1000 ? 2.1 : 0.8} onWritten={onWritten} className="h-full" />
+              </div>
             </div>
 
             <div className="signal-word display-caps">

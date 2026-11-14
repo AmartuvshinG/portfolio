@@ -83,7 +83,10 @@ export function Connect({ github }: { github: GitHubSummary | null }) {
           <p className="max-w-md text-base leading-relaxed text-fg/80 md:pb-3 md:text-right">{t.connect.lead}</p>
         </div>
 
-        <ul className="mt-12 grid gap-4 md:mt-14 md:grid-cols-3 lg:gap-5">
+        {/* The uplink: one ramp line runs out under the title, and drops into
+            each monolith just before it powers on. */}
+        <div aria-hidden className={cn("uplink-rail mt-12 hidden md:block", css && "uplink-on")} />
+        <ul className="mt-12 grid gap-4 md:mt-0 md:grid-cols-3 md:pt-12 lg:gap-5">
           {socials.map((social, i) => (
             <Cartridge
               key={social.label}
@@ -161,6 +164,11 @@ function Cartridge({
 
   return (
     <li className="relative min-w-0">
+      <span
+        aria-hidden
+        className={cn("uplink-drop hidden md:block", css && "uplink-on")}
+        style={{ "--ca": a.toFixed(4) } as React.CSSProperties}
+      />
       <motion.div
         className={cn("relative h-full", css && "cart-on will-change-transform")}
         style={
@@ -182,17 +190,28 @@ function Cartridge({
             ax.set(0);
             ay.set(0);
           }}
-          className="cart group/cart relative flex h-full min-h-[9.5rem] flex-col justify-between gap-6 overflow-hidden rounded-2xl border border-line bg-[color-mix(in_srgb,var(--color-bg)_82%,transparent)] p-5 md:min-h-[14rem] md:p-6"
+          className="cart monolith group/cart relative flex h-full min-h-[9.5rem] flex-col justify-between gap-6 overflow-hidden rounded-2xl border border-line bg-[color-mix(in_srgb,var(--color-bg)_82%,transparent)] p-5 md:min-h-[26rem] md:p-7"
         >
           <span aria-hidden className="cart-bloom" />
           <span aria-hidden className="cart-edge" />
 
           <div className="relative flex items-start justify-between gap-4">
-            <span className="cart-mark flex h-11 items-center md:h-14">
+            <span className="cart-mark relative flex h-11 items-center md:h-16">
+              {!reduced && (
+                <span
+                  aria-hidden
+                  className={cn("cart-ring", css && "uplink-on")}
+                  style={{ "--ca": a.toFixed(4) } as React.CSSProperties}
+                />
+              )}
               {Mark ? (
                 <Mark className="h-full w-auto" />
               ) : (
-                social.shot && <LiveThumb src={social.shot} />
+                social.shot && (
+                  <span className="h-full md:hidden">
+                    <LiveThumb src={social.shot} />
+                  </span>
+                )
               )}
             </span>
             <motion.span style={{ x: ax, y: ay }} className="mt-1 shrink-0">
@@ -205,8 +224,10 @@ function Cartridge({
             </motion.span>
           </div>
 
+          <Readout kind={kind} github={github} shot={social.shot} />
+
           <div className="relative">
-            <span className="block font-tech text-2xl font-bold uppercase leading-tight text-fg md:text-3xl">
+            <span className="block font-tech text-2xl font-bold uppercase leading-tight text-fg md:text-4xl">
               {social.label}
             </span>
             <span className="mt-1 block font-mono text-sm lowercase tracking-wider text-fg/90">{social.handle}</span>
@@ -252,6 +273,70 @@ function Fact({ kind, github }: { kind: Kind; github: GitHubSummary | null }) {
   }
   if (!text) return null;
   return <span className="tag mt-4 block text-[var(--color-holo)]">{text}</span>;
+}
+
+/** The monolith's middle: what each place actually holds. The repos and
+ *  languages are the daily GitHub fetch; the live product shows its own
+ *  screen. Nothing here is invented, and with no data it is empty. */
+function Readout({ kind, github, shot }: { kind: Kind; github: GitHubSummary | null; shot?: string }) {
+  const { c, t } = useI18n();
+  if (kind === "github") {
+    if (!github) return <span className="hidden md:block md:flex-1" />;
+    const langs = github.languages.slice(0, 4);
+    const total = langs.reduce((n, l) => n + l.count, 0) || 1;
+    return (
+      <div className="readout relative hidden flex-1 flex-col justify-center gap-5 md:flex">
+        {langs.length > 0 && (
+          <div>
+            <span className="tag text-fg/85">{t.connect.langs}</span>
+            <div className="readout-bar mt-2" aria-hidden>
+              {langs.map((l) => (
+                <span key={l.name} style={{ flexGrow: l.count }} />
+              ))}
+            </div>
+            <ul className="mt-2 flex flex-wrap gap-x-4 gap-y-1 font-mono text-sm text-fg/85">
+              {langs.map((l) => (
+                <li key={l.name}>
+                  {l.name} <span className="text-fg/80">{Math.round((l.count / total) * 100)}%</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+        {github.recent.length > 0 && (
+          <div>
+            <span className="tag text-fg/85">{t.connect.recent}</span>
+            <ul className="mt-2 grid gap-1 font-mono text-sm text-fg">
+              {github.recent.map((r, i) => (
+                <li key={r.name} className="readout-line truncate" style={{ "--i": i } as React.CSSProperties}>
+                  <span className="spectrum-text">&gt;</span> {r.name}
+                  {r.language ? <span className="text-fg/80"> · {r.language}</span> : null}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </div>
+    );
+  }
+  if (kind === "linkedin") {
+    return (
+      <div className="readout relative hidden flex-1 flex-col justify-center gap-2 font-mono text-sm text-fg md:flex">
+        {[c.profile.role, c.profile.discipline, c.profile.location].map((line, i) => (
+          <span key={line} className="readout-line" style={{ "--i": i } as React.CSSProperties}>
+            <span className="spectrum-text">&gt;</span> {line}
+          </span>
+        ))}
+      </div>
+    );
+  }
+  if (!shot) return null;
+  return (
+    <div className="readout readout-screen relative hidden flex-1 md:block" aria-hidden>
+      {/* eslint-disable-next-line @next/next/no-img-element -- decorative, fixed asset */}
+      <img src={imageLoader({ src: shot, width: 1280 })} alt="" loading="lazy" className="absolute inset-0 h-full w-full object-cover object-top" />
+    </div>
+  );
 }
 
 /** The live product, as a small framed screen in place of a mark. */

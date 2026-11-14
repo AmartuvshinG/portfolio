@@ -59,6 +59,7 @@ export function InkSign({
   rewritable = false,
   written = false,
   onWritten,
+  secs = WRITE_SECS,
   className,
   style,
 }: {
@@ -71,6 +72,8 @@ export function InkSign({
   written?: boolean;
   /** Called once a write has run to its end and the light has settled. */
   onWritten?: () => void;
+  /** How long the write takes, s (the loader writes faster). */
+  secs?: number;
   className?: string;
   style?: React.CSSProperties;
 }) {
@@ -163,17 +166,17 @@ export function InkSign({
       };
       const frame = (now: number) => {
         const s = (now - t0) / 1000 - LEAD_SECS;
-        const wt = s / WRITE_SECS;
+        const wt = s / secs;
         const b = brushAt(wt);
         renderer.draw({
           t: wt,
-          secs: WRITE_SECS,
+          secs,
           tipX: b.x,
           tipY: b.y,
           tipLift: b.lift,
           tipVis: Math.min(1, Math.max(0, (wt + 0.04) / 0.04)) * Math.max(0, 1 - Math.max(0, wt - 1) / 0.05),
         });
-        if (s > WRITE_SECS + SETTLE_SECS) return finish(true);
+        if (s > secs + SETTLE_SECS) return finish(true);
         raf = requestAnimationFrame(frame);
       };
       raf = requestAnimationFrame(frame);
@@ -184,7 +187,7 @@ export function InkSign({
       finish();
     };
     // `run` restarts it after a rewrite has set the phase back to dark.
-  }, [write, inView, run, setPhase]);
+  }, [write, inView, run, setPhase, secs]);
 
   const rewrite = useCallback(() => {
     if (!write) return;

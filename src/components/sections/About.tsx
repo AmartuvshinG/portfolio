@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils";
 import {
   motion,
   useInView,
+  useMotionValue,
   useMotionValueEvent,
   useScroll,
   useTransform,
@@ -21,6 +22,7 @@ import { NeonSign } from "@/components/ui/NeonSign";
 import { ScrubWords } from "@/components/motion/ScrubWords";
 import { GlareCard } from "@/components/motion/GlareCard";
 import { ScriptLabel } from "@/components/ui/ScriptLabel";
+import { PIN_QUERY } from "@/lib/viewport";
 
 /**
  * About: a statement, four numbers, then the story — Lando Norris's order
@@ -41,7 +43,7 @@ import { ScriptLabel } from "@/components/ui/ScriptLabel";
  */
 
 /** Room for the pinned frame: the statement and the numbers at full size. */
-const STAGE_QUERY = "(min-width: 1200px) and (min-height: 860px)";
+const STAGE_QUERY = PIN_QUERY;
 /** The pinned runway: one screen to light the line, a little to hold. */
 const STAGE_VH = 210;
 /** Where the line has finished lighting, in stage progress. */
@@ -87,46 +89,8 @@ export function About() {
         <FlowStatement lead={about.lead} heading={about.heading} stats={stats} reduced={reduced} />
       )}
 
-      {/* ---- 3. THE ID, and the story on demand ----------------------- */}
-      <div className="relative mx-auto max-w-[112.5rem] px-5 pb-20 pt-6 md:px-8 md:pb-28 lg:px-16">
-        <div className="grid items-start gap-10 lg:grid-cols-12 lg:gap-16">
-          <Reveal className="lg:col-span-7">
-            <IdCard />
-          </Reveal>
-          <Reveal className="lg:col-span-5" delay={0.1}>
-            {/* The long copy lives in a drawer: the chapter leads with the
-                line, the figures and the card. */}
-            <details className="dossier group">
-              <summary className="dossier-summary">
-                <span className="tag text-[var(--color-rim)]">{t.about.file}</span>
-                <span className="dossier-summary-label">{t.about.dossier}</span>
-                <span aria-hidden className="dossier-plus" />
-              </summary>
-              <div className="dossier-body">
-                {about.paragraphs.map((para, i) => (
-                  <p key={i} className="text-base leading-relaxed text-fg/85 md:text-lg">
-                    {para}
-                  </p>
-                ))}
-                <div className="flex flex-col gap-3">
-                  <span className="micro text-[var(--color-holo)]">{about.offHours.label}</span>
-                  <span className="text-sm text-fg/80">{about.offHours.note}</span>
-                  <ul className="flex flex-wrap gap-2" aria-label={about.offHours.label}>
-                    {about.offHours.games.map((g) => (
-                      <li
-                        key={g}
-                        className="border border-line bg-[#05040c]/60 px-3 py-2 font-tech text-sm font-semibold uppercase tracking-wide text-fg"
-                      >
-                        {g}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              </div>
-            </details>
-          </Reveal>
-        </div>
-      </div>
+      {/* ---- 3. THE ID, then the story, page by page ------------------- */}
+      {pinned ? <ProfileBoot /> : <ProfileFlow reduced={reduced} />}
     </section>
   );
 }
@@ -217,7 +181,7 @@ function StatementBody({
         </span>
         {/* The statement, at the size of the screen. Michroma sets wide, so
             this is ~5vw rather than a grotesk's 8. */}
-        <h2 className="display-caps mt-8 max-w-[22ch] text-[clamp(1.75rem,5.1vw,5.75rem)] leading-[1.04] md:mt-10 md:pr-24">
+        <h2 className="display-caps mt-8 max-w-[22ch] text-[clamp(1.75rem,min(5.1vw,7.2vh),5.75rem)] leading-[1.04] md:mt-10 md:pr-24">
           <ScrubWords text={lead} progress={progress} ramp />
         </h2>
       </div>
@@ -255,14 +219,17 @@ function StatementBody({
 
 /** The dossier as an ID card: the same fields, the same scan and decode, on
  *  a card that tilts toward the pointer and carries the ramp on its rim. */
-function IdCard() {
+function IdCard({ boot }: { boot?: boolean }) {
   const { c, t } = useI18n();
   const { about, profile } = c;
   const reduced = useReducedMotion();
   const plateRef = useRef<HTMLDivElement>(null);
   /* Same threshold as the scan below, so each value decodes as the line
      passes it. */
-  const scanned = useInView(plateRef, { once: true, amount: 0.6 });
+  const seen = useInView(plateRef, { once: true, amount: 0.6 });
+  /* A pinned stage hands in its own clock; in flow, the card boots when most
+     of it is on screen. */
+  const scanned = boot ?? seen;
 
   const fields = [
     ...about.signature.map((s) => ({ k: s.k, v: s.v, wide: false })),
@@ -271,7 +238,7 @@ function IdCard() {
 
   return (
     <div ref={plateRef}>
-      <GlareCard tilt={6} className="id-card bg-[#05040c]/85">
+      <GlareCard tilt={6} className={cn("id-card bg-[#05040c]/85", scanned && "id-card--on")}>
         {/* Own layer: .hud-brackets sets the `background` shorthand, and
             unlayered CSS would wipe the card's fill if they shared a node. */}
         <span
@@ -288,8 +255,7 @@ function IdCard() {
                 "linear-gradient(180deg, transparent calc(100% - 28px), color-mix(in srgb, var(--color-hazard) 18%, transparent) calc(100% - 2px), var(--color-hazard))",
             }}
             initial={{ y: "-100%", opacity: 1 }}
-            whileInView={{ y: "0%", opacity: [1, 1, 0] }}
-            viewport={{ once: true, amount: 0.6 }}
+            animate={scanned ? { y: "0%", opacity: [1, 1, 0] } : undefined}
             transition={{ duration: 1.1, ease: [0.45, 0, 0.2, 1], opacity: { times: [0, 0.85, 1], duration: 1.1 } }}
           />
         )}
@@ -331,6 +297,167 @@ function IdCard() {
           <InkSign tone="neon" lit="write" idle rewritable className="h-[min(78%,20rem)]" />
         </div>
       </GlareCard>
+    </div>
+  );
+}
+
+/* -------------------------------------------------------------------------- */
+/* 4. The story                                                               */
+/* -------------------------------------------------------------------------- */
+
+type Page = { key: string; text: string; games: string[] | null };
+
+/** The pages of the dossier: the two paragraphs, then the off-hours list. */
+function usePages(): Page[] {
+  const { c } = useI18n();
+  const { about } = c;
+  return [
+    ...about.paragraphs.map((text, i) => ({ key: `p${i}`, text, games: null })),
+    { key: "off", text: about.offHours.note, games: about.offHours.games },
+  ];
+}
+
+/** Profile boot, pinned: the card prints (scan, decode, brackets lock), then
+ *  the dossier deals its pages in beside it, one per stretch of scroll. Each
+ *  page lights its words as it lands; the one before steps back into the
+ *  stack. Once printed, the card stays printed. */
+const BOOT_VH = 320;
+const BOOT_AT = 0.03;
+const PAGES_FROM = 0.14;
+
+function ProfileBoot() {
+  const ref = useRef<HTMLDivElement>(null);
+  const pages = usePages();
+  const n = pages.length;
+  const { scrollYProgress } = useScroll({ target: ref, offset: ["start start", "end end"] });
+  const [booted, setBooted] = useState(false);
+  useMotionValueEvent(scrollYProgress, "change", (p) => {
+    if (p > BOOT_AT) setBooted(true);
+  });
+
+  return (
+    <div ref={ref} className="relative" style={{ height: `${BOOT_VH}vh` }}>
+      <div className="sticky top-0 flex h-svh items-center">
+        <div className="mx-auto grid w-full max-w-[112.5rem] items-center gap-10 px-8 lg:grid-cols-12 lg:gap-14 lg:px-16">
+          <div className="lg:col-span-7">
+            <IdCard boot={booted} />
+          </div>
+          <div className="dossier-stack lg:col-span-5">
+            {pages.map((pg, i) => (
+              <DossierPage key={pg.key} index={i} count={n} page={pg} progress={scrollYProgress} />
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function DossierPage({
+  index,
+  count,
+  page,
+  progress,
+}: {
+  index: number;
+  count: number;
+  page: Page;
+  progress: MotionValue<number>;
+}) {
+  const span = (1 - PAGES_FROM) / count;
+  const a = PAGES_FROM + index * span;
+  const b = a + span;
+  /* In over the first fifth of its stretch, lit across the next half, then
+     it holds; the next page's arrival pushes it back into the stack. */
+  const x = useTransform(progress, [a - span * 0.05, a + span * 0.2], ["70%", "0%"]);
+  const opacity = useTransform(progress, [a - span * 0.05, a + span * 0.15], [0, 1]);
+  const back = useTransform(progress, [b - span * 0.05, b + span * 0.2], [0, 1]);
+  const scale = useTransform(back, [0, 1], [1, 0.92]);
+  const y = useTransform(back, [0, 1], ["0%", "-8%"]);
+  const dim = useTransform(back, [0, 1], [1, 0.08]);
+  const words = useTransform(progress, [a + span * 0.1, a + span * 0.7], [0, 1]);
+  const last = index === count - 1;
+
+  return (
+    <motion.article className="dossier-page" style={{ x, y, scale, opacity, zIndex: index + 1 }}>
+      <motion.div style={{ opacity: last ? 1 : dim }}>
+        <PageBody page={page} index={index} count={count}>
+          <ScrubWords text={page.text} progress={words} />
+        </PageBody>
+        {page.games ? <GameChips games={page.games} progress={progress} at={a + span * 0.5} /> : null}
+      </motion.div>
+    </motion.article>
+  );
+}
+
+function PageBody({
+  page,
+  index,
+  count,
+  children,
+}: {
+  page: Page;
+  index: number;
+  count: number;
+  children: React.ReactNode;
+}) {
+  const { c, t } = useI18n();
+  return (
+    <>
+      <header className="dossier-page-head">
+        <span className="tag text-[var(--color-rim)]">{page.games ? c.about.offHours.label : t.about.file}</span>
+        <span className="tag text-fg/85">
+          {String(index + 1).padStart(2, "0")} / {String(count).padStart(2, "0")}
+        </span>
+      </header>
+      <p className="text-base leading-relaxed text-fg md:text-lg">{children}</p>
+    </>
+  );
+}
+
+/** The off-hours titles, popping in one after another once their page has
+ *  landed (or as soon as they render, in flow). */
+function GameChips({ games, progress, at = 0 }: { games: string[]; progress?: MotionValue<number>; at?: number }) {
+  const { c } = useI18n();
+  const [hit, setHit] = useState(false);
+  const fallback = useMotionValue(1);
+  useMotionValueEvent(progress ?? fallback, "change", (p) => {
+    if (p >= at) setHit(true);
+  });
+  const on = !progress || hit;
+  return (
+    <ul className="game-chips" aria-label={c.about.offHours.label} data-on={on ? "true" : "false"}>
+      {games.map((g, i) => (
+        <li key={g} className="game-chip" style={{ "--i": i } as React.CSSProperties}>
+          {g}
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+/** The same story in flow: the card, then each page lights as it scrolls by. */
+function ProfileFlow({ reduced }: { reduced: boolean }) {
+  const pages = usePages();
+  return (
+    <div className="relative mx-auto max-w-[112.5rem] px-5 pb-20 pt-6 md:px-8 md:pb-28 lg:px-16">
+      <div className="grid items-start gap-10 lg:grid-cols-12 lg:gap-16">
+        <Reveal className="lg:col-span-7">
+          <IdCard />
+        </Reveal>
+        <div className="flex flex-col gap-6 lg:col-span-5">
+          {pages.map((pg, i) => (
+            <Reveal key={pg.key} delay={i * 0.06}>
+              <article className="dossier-page dossier-page--flow">
+                <PageBody page={pg} index={i} count={pages.length}>
+                  {reduced ? pg.text : <ScrubWords text={pg.text} />}
+                </PageBody>
+                {pg.games ? <GameChips games={pg.games} /> : null}
+              </article>
+            </Reveal>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }

@@ -69,12 +69,23 @@ export function SkillTree({ items }: { items: Capability[] }) {
   };
 
   const cur = items[active];
+  const pos = (i: number) => {
+    const a = ((ANGLES[i] ?? 0) * Math.PI) / 180;
+    return { x: Math.sin(a) * RING, y: -Math.cos(a) * RING };
+  };
+  /* The ring arc from node i to the next, clockwise (the last closes it). */
+  const arc = (i: number) => {
+    const p0 = pos(i);
+    const p1 = pos((i + 1) % n);
+    return `M ${p0.x.toFixed(2)} ${p0.y.toFixed(2)} A ${RING} ${RING} 0 0 1 ${p1.x.toFixed(2)} ${p1.y.toFixed(2)}`;
+  };
+  const tip = pos(active);
 
   return (
     <div ref={ref} className="relative" style={{ height: `${n * STEP_VH + 100}svh` }}>
       <div className="sticky top-0 flex h-[100svh] items-center">
         <div className="tree mx-auto w-full max-w-[112.5rem] px-8 lg:px-16">
-          <div className="tree-graph" aria-hidden={false}>
+          <div className="tree-graph">
             <svg className="tree-wires" viewBox="-50 -50 100 100" aria-hidden>
               <defs>
                 <linearGradient id="tree-ramp" x1="-40" y1="40" x2="40" y2="-40" gradientUnits="userSpaceOnUse">
@@ -85,23 +96,31 @@ export function SkillTree({ items }: { items: Capability[] }) {
                 </linearGradient>
               </defs>
               <circle r={RING} className="tree-orbit" />
-              {ANGLES.slice(0, n).map((a, i) => {
-                const x = Math.sin((a * Math.PI) / 180) * RING;
-                const y = -Math.cos((a * Math.PI) / 180) * RING;
+              {items.map((it, i) => {
+                const { x, y } = pos(i);
                 return (
-                  <g key={a}>
+                  <g key={it.code}>
                     <line x1={0} y1={0} x2={x} y2={y} className="tree-wire" />
-                    <line
-                      x1={0}
-                      y1={0}
-                      x2={x}
-                      y2={y}
-                      className="tree-wire--lit"
-                      data-on={i < unlocked ? "true" : "false"}
+                    <line x1={0} y1={0} x2={x} y2={y} pathLength={1} className="tree-wire--lit" data-on={i < unlocked ? "true" : "false"} />
+                    {/* The link to the next node: drawn once both ends are
+                        unlocked, so by the last node the ring is closed. */}
+                    <path
+                      d={arc(i)}
+                      pathLength={1}
+                      className="tree-link"
+                      data-on={(i + 1 < unlocked || (i === n - 1 && unlocked === n)) ? "true" : "false"}
                     />
                   </g>
                 );
               })}
+              {/* A packet of light runs out along the wire to the node that
+                  just lit. Remounted per node, so it plays once each time. */}
+              {unlocked > 0 && (
+                <g key={`pk-${active}`} className="tree-packet" style={{ "--tx": `${tip.x}px`, "--ty": `${tip.y}px` } as React.CSSProperties}>
+                  <circle r={1.6} className="tree-packet-core" />
+                  <circle r={3.6} className="tree-packet-halo" />
+                </g>
+              )}
             </svg>
             <div className="tree-hub">
               <svg viewBox="0 0 32 32" aria-hidden>
@@ -110,11 +129,9 @@ export function SkillTree({ items }: { items: Capability[] }) {
             </div>
             <ol className="tree-nodes">
               {items.map((it, i) => {
-                const a = ANGLES[i] ?? 0;
-                const x = 50 + Math.sin((a * Math.PI) / 180) * RING;
-                const y = 50 - Math.cos((a * Math.PI) / 180) * RING;
+                const { x, y } = pos(i);
                 return (
-                  <li key={it.code} style={{ left: `${x}%`, top: `${y}%` }}>
+                  <li key={it.code} style={{ left: `${50 + x}%`, top: `${50 + y}%` }}>
                     <button
                       type="button"
                       className="tree-node"
@@ -125,7 +142,9 @@ export function SkillTree({ items }: { items: Capability[] }) {
                     >
                       <span className="tree-hex" aria-hidden>
                         <TechMark name={it.stack[0]} size={26} />
+                        <span className="tree-num tabular">{String(i + 1).padStart(2, "0")}</span>
                       </span>
+                      {i === active && unlocked > 0 && <span key={`sh-${active}`} aria-hidden className="tree-shock" />}
                       <span className="tree-node-label">{it.title}</span>
                     </button>
                   </li>
@@ -134,42 +153,60 @@ export function SkillTree({ items }: { items: Capability[] }) {
             </ol>
           </div>
 
-          <div className="tree-panel" aria-live="polite" key={active}>
-            <span className="micro text-fg/85">
-              {cur.code} · {String(active + 1).padStart(2, "0")} / {String(n).padStart(2, "0")}
+          <article className="tree-panel" aria-live="polite">
+            {/* A shutter of ramp bars closes and opens over each new item. */}
+            <span key={`w-${active}`} aria-hidden className="tree-shutter">
+              {[0, 1, 2, 3, 4].map((b) => (
+                <span key={b} style={{ "--b": b } as React.CSSProperties} />
+              ))}
             </span>
-            <h3 className="tree-title display-caps">{cur.title}</h3>
-            <p className="text-base leading-relaxed text-fg/85">{cur.description}</p>
-            <div>
-              <span className="tag text-[var(--color-rim)]">{t.craft.stack}</span>
-              <ul className="mt-2 flex flex-wrap gap-2">
-                {cur.stack.map((k) => (
-                  <li key={k} className="tree-chip">
-                    <TechMark name={k} size={18} />
-                    {techLabel(k, t.craft.tools)}
-                  </li>
-                ))}
-              </ul>
-            </div>
-            {(cur.courses?.length ?? 0) > 0 && (
+            <span aria-hidden className="tree-ghost display-caps tabular">
+              <span key={`g-${active}`}>{String(active + 1).padStart(2, "0")}</span>
+            </span>
+            <div key={`c-${active}`} className="tree-panel-body">
+              <span className="micro flex items-center gap-3 text-fg/85">
+                <span className="tree-code">{cur.code}</span>
+                <span className="tree-roll tabular">
+                  <span>{String(active + 1).padStart(2, "0")}</span>
+                </span>
+                / {String(n).padStart(2, "0")}
+              </span>
+              <h3 className="tree-title display-caps">{cur.title}</h3>
+              <p className="text-base leading-relaxed text-fg/85">{cur.description}</p>
               <div>
-                <span className="tag text-[var(--color-rim)]">{t.craft.studied}</span>
-                <ul className="mt-2 flex flex-wrap gap-2">
-                  {cur.courses?.map((code) => (
-                    <li key={code} className="tree-chip">
-                      <span className="font-mono text-fg/85">{code}</span>
-                      {getCourse(code)?.title}
+                <span className="tag text-[var(--color-rim)]">{t.craft.stack}</span>
+                <ul className="mt-3 flex flex-wrap gap-2">
+                  {cur.stack.map((k, i) => (
+                    <li key={k} className="tree-tool" style={{ "--i": i } as React.CSSProperties}>
+                      <span className="tree-tool-mark">
+                        <TechMark name={k} size={22} />
+                      </span>
+                      {techLabel(k, t.craft.tools)}
                     </li>
                   ))}
                 </ul>
               </div>
-            )}
-            {cur.proof && (
-              <button type="button" className="mood-link" onClick={() => openCase(cur.proof!)}>
-                {t.craft.proven} {c.projects.find((p) => p.slug === cur.proof)?.title ?? cur.proof} <ArrowUpRight aria-hidden size={18} />
-              </button>
-            )}
-          </div>
+              {(cur.courses?.length ?? 0) > 0 && (
+                <div>
+                  <span className="tag text-[var(--color-rim)]">{t.craft.studied}</span>
+                  <ul className="mt-3 grid gap-1.5">
+                    {cur.courses?.map((code, i) => (
+                      <li key={code} className="tree-course" style={{ "--i": i } as React.CSSProperties}>
+                        <span aria-hidden className="tree-tick" />
+                        <span className="font-mono text-fg/85">{code}</span>
+                        <span className="text-fg">{getCourse(code)?.title}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              {cur.proof && (
+                <button type="button" className="tree-proof tag" onClick={() => openCase(cur.proof!)}>
+                  {t.craft.proven} {c.projects.find((p) => p.slug === cur.proof)?.title ?? cur.proof} <ArrowUpRight aria-hidden size={18} />
+                </button>
+              )}
+            </div>
+          </article>
         </div>
       </div>
     </div>

@@ -1,7 +1,7 @@
 "use client";
 
-import { education, sectionIndex, techStack } from "@/lib/content";
-import { LogoDock } from "@/components/ui/LogoDock";
+import { education, sectionIndex } from "@/lib/content";
+import { Loadout } from "@/components/craft/Loadout";
 import { useI18n } from "@/lib/i18n";
 import { SectionHeader } from "@/components/ui/SectionHeader";
 import { CapabilityCard } from "@/components/ui/CapabilityCard";
@@ -56,8 +56,8 @@ export function Capabilities() {
           </Reveal>
         </div>
 
-        <LogoDock keys={techStack} labels={t.craft.tools} title={t.craft.dock} className="mt-12 md:mt-16" />
-        <p className="tag mt-6 text-center text-muted">
+        <Loadout className="mt-14 md:mt-20" />
+        <p className="tag mt-10 text-center text-fg/85">
           {t.craft.degree(education.credits, education.deansList)}
         </p>
 
@@ -66,7 +66,7 @@ export function Capabilities() {
         <div className="pb-24 md:hidden">
           <CraftList items={c.capabilities} />
         </div>
-        {(wide === null || (wide && reduced)) && (
+        {(wide === null || !wide || reduced) && (
           <RevealStagger className="mt-14 hidden gap-4 pb-36 md:grid md:grid-cols-2 lg:grid-cols-12">
             {c.capabilities.map((item) => (
               <CapabilityCard key={item.code} item={item} />

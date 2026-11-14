@@ -191,3 +191,27 @@
   from { opacity: 0; transform: scaleX(0); }
   to { opacity: 0.8; transform: scaleX(1); }
 }
+
+/* The name in the vertical script, written in light beside the mark. */
+.signal-script {
+  position: absolute;
+  top: 6%;
+  bottom: 6%;
+  left: calc(100% + clamp(12px, 3vw, 48px));
+  display: flex;
+  justify-content: center;
+}
+.signal-script::before {
+  content: "";
+  position: absolute;
+  inset: -8% -14px;
+  border-left: 1px solid rgb(243 241 255 / 0.18);
+  border-right: 1px solid rgb(243 241 255 / 0.18);
+}
+@media (max-width: 640px) {
+  .signal-script {
+    left: calc(100% + 8px);
+    top: 14%;
+    bottom: 14%;
+  }
+}

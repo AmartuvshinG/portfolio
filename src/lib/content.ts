@@ -344,6 +344,14 @@ export const techStack: TechKey[] = [
   "scikitlearn", "docker", "github",
 ];
 
+/** The tech stack in the loadout's four groups (labels: ui.ts craft.groups). */
+export const techGroups: TechKey[][] = [
+  ["typescript", "javascript", "python", "java"],
+  ["react", "nextjs", "tailwind"],
+  ["fastapi", "postgresql", "supabase"],
+  ["scikitlearn", "docker", "github"],
+];
+
 export const projects: Project[] = [
   {
     slug: "spotfixes",

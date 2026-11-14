@@ -393,3 +393,81 @@
 :root:lang(mn) .signal-word {
   font-size: clamp(2rem, 9vw, 8rem);
 }
+
+/* ---- The name, alive: a passing light and keys that lift ------------------
+   Every layer shares one flow (no kerning, same tracking) so the copies sit
+   exactly on the outline. */
+.ts-name {
+  font-kerning: none;
+}
+.ts-name-sweep {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 20%;
+  overflow: hidden;
+  pointer-events: none;
+  transform: translateX(-100%);
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 42%, #000 58%, transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 42%, #000 58%, transparent);
+}
+.ts-name-sweep > span {
+  display: block;
+  width: 500%;
+  color: #fff;
+  text-shadow: 0 0 0.18em rgb(232 28 200 / 0.9);
+  transform: translateX(20%);
+}
+.ts[data-state="in"][data-live="true"] .ts-name-sweep {
+  animation: ts-sweep-win 7s cubic-bezier(0.45, 0, 0.2, 1) 2.6s infinite;
+}
+.ts[data-state="in"][data-live="true"] .ts-name-sweep > span {
+  animation: ts-sweep-txt 7s cubic-bezier(0.45, 0, 0.2, 1) 2.6s infinite;
+}
+@keyframes ts-sweep-win {
+  0% { transform: translateX(-100%); }
+  20%, 100% { transform: translateX(500%); }
+}
+@keyframes ts-sweep-txt {
+  0% { transform: translateX(20%); }
+  20%, 100% { transform: translateX(-100%); }
+}
+.ts-name-keys {
+  position: absolute;
+  inset: 0;
+  display: block;
+}
+.ts-name-keys > span {
+  display: inline-block;
+  color: transparent;
+  transition:
+    transform 0.7s cubic-bezier(0.16, 1, 0.3, 1),
+    color 0.7s ease,
+    text-shadow 0.7s ease;
+}
+@media (hover: hover) {
+  .ts[data-state="in"] .ts-name-keys > span:hover,
+  .ts[data-state="rest"] .ts-name-keys > span:hover {
+    color: #fff;
+    transform: translateY(-0.06em) skewX(-6deg);
+    text-shadow:
+      0.02em 0.02em 0 #e81cc8,
+      0.04em 0.04em 0 #ff1f3d,
+      0.06em 0.06em 0 #8a3dff,
+      0 0 0.3em rgb(232 28 200 / 0.6);
+    transition-duration: 0.14s;
+    animation: ts-key-on 0.32s steps(1, end) both;
+  }
+}
+/* A tube striking: two quick dips, then it holds. Plays once per hover. */
+@keyframes ts-key-on {
+  0% { opacity: 0.35; }
+  25% { opacity: 1; }
+  45% { opacity: 0.55; }
+  60%, 100% { opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ts-name-sweep { display: none; }
+  .ts-name-keys > span:hover { animation: none !important; }
+}

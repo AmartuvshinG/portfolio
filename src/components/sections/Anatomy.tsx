@@ -1,7 +1,7 @@
 "use client";
 
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from "react";
-import { frameHeight } from "@/lib/viewport";
+import { frameHeight, PIN_QUERY } from "@/lib/viewport";
 import {
   AnimatePresence,
   motion,
@@ -25,6 +25,8 @@ import { SectionHeader } from "@/components/ui/SectionHeader";
 import { ScriptLabel } from "@/components/ui/ScriptLabel";
 import { IconArrowRight } from "@/components/ui/HudIcons";
 import { ScrambleText } from "@/components/motion/ScrambleText";
+import { ScrubWords } from "@/components/motion/ScrubWords";
+import { MenuStage } from "@/components/ui/MenuStage";
 import { BeatDetail, BeatNotes, DUPLICATE, MatrixTable } from "@/components/anatomy/BeatDetail";
 import type { UiStrings } from "@/lib/ui";
 import { cn } from "@/lib/utils";
@@ -66,7 +68,7 @@ export function Anatomy() {
      shrinking. */
   const [stageRoom, setStageRoom] = useState(false);
   useEffect(() => {
-    const big = window.matchMedia("(min-width: 1024px) and (min-height: 700px)");
+    const big = window.matchMedia(PIN_QUERY);
     const update = () => setStageRoom(big.matches);
     update();
     big.addEventListener("change", update);
@@ -148,6 +150,8 @@ function Stage({ sectionRef: ref }: { sectionRef: React.RefObject<HTMLElement | 
   });
   const b = A.beats[beat];
   const boxRef = useRef<HTMLDivElement>(null);
+  /* The body lights across the first part of the step's plateau. */
+  const read = useTransform(pos, (v) => Math.min(1, Math.max(0, (v - beat + 0.45) / 0.5)));
 
   return (
     <div className="sticky top-0 h-svh w-full overflow-hidden">
@@ -168,32 +172,51 @@ function Stage({ sectionRef: ref }: { sectionRef: React.RefObject<HTMLElement | 
           </p>
         </header>
 
-        <Rail words={A} along={along} beat={beat} goTo={goTo} />
-
-        {/* The step on screen. Decoration for assistive tech, which reads the
-            full sequence below instead. Never a scroll box of its own: the
-            wheel over it must move the page, or the stage stalls under the
-            pointer. A step taller than the box is carried up through it by
-            the page scroll instead (StepCard). */}
-        <div ref={boxRef} aria-hidden className="relative mt-6 min-h-0 flex-1 overflow-hidden">
-          <AnimatePresence mode="popLayout" initial={false}>
-            <StepCard key={beat} i={beat} n={n} pos={pos} boxRef={boxRef}>
-              <div className="min-w-0">
-                <span className="display-caps tabular text-[clamp(3rem,5vw,5.5rem)] leading-none text-[var(--color-holo)] [text-shadow:0_0_28px_color-mix(in_srgb,var(--color-holo)_45%,transparent)]">
-                  {String(beat + 1).padStart(2, "0")}
-                </span>
-                <h3 className="mt-4 font-tech text-3xl font-bold uppercase leading-[1.05] text-fg lg:text-4xl">
-                  <ScrambleText key={`t${beat}-${b.title}`} text={b.title} immediate speed={26} />
-                </h3>
-                <p className="mt-4 text-lg leading-relaxed text-fg/85">{b.body}</p>
-                <BeatNotes i={beat} words={A} className="mt-5" />
-                {beat === n - 1 && <CaseLink words={A} className="mt-5" />}
-              </div>
-              <div className="min-w-0 self-center">
-                <BeatDetail i={beat} words={A} animate />
-              </div>
-            </StepCard>
-          </AnimatePresence>
+        {/* The mission run: the six steps as the title screen's menu down
+            the left, lit by the scroll, with a packet of light running down
+            beside them; the step itself plays as a cutscene on the right. */}
+        <div className="mission mt-6 min-h-0 flex-1">
+          <div className="mission-index">
+            <VRail along={along} />
+            <MenuStage
+              items={A.beats.map((s, i) => ({
+                key: s.station,
+                code: String(i + 1).padStart(2, "0"),
+                label: s.station,
+              }))}
+              active={beat}
+              onSelect={goTo}
+              label={A.eyebrow}
+              size="sm"
+            />
+          </div>
+          <div ref={boxRef} aria-hidden className="mission-scene relative min-h-0 overflow-hidden">
+            <span className="mission-bar mission-bar--top" key={`bt-${beat}`} />
+            <span className="mission-bar mission-bar--bottom" key={`bb-${beat}`} />
+            <AnimatePresence mode="popLayout" initial={false}>
+              <StepCard key={beat} i={beat} n={n} pos={pos} boxRef={boxRef}>
+                <div className="min-w-0">
+                  <span className="mission-step tag">
+                    <span className="mission-rec" />
+                    {A.eyebrow} · {String(beat + 1).padStart(2, "0")} / {String(n).padStart(2, "0")}
+                  </span>
+                  <span className="mission-num display-caps tabular">{String(beat + 1).padStart(2, "0")}</span>
+                  <h3 className="mt-2 font-tech text-3xl font-bold uppercase leading-[1.05] text-fg lg:text-4xl">
+                    <ScrambleText key={`t${beat}-${b.title}`} text={b.title} immediate speed={26} />
+                  </h3>
+                  <p className="mt-4 text-lg leading-relaxed text-fg">
+                    <ScrubWords text={b.body} progress={read} />
+                  </p>
+                  <BeatNotes i={beat} words={A} className="mt-5" />
+                  {beat === n - 1 && <CaseLink words={A} className="mt-5" />}
+                </div>
+                <div className="mission-visual min-w-0 self-center">
+                  <span aria-hidden className="reel-corners mission-corners" />
+                  <BeatDetail i={beat} words={A} animate />
+                </div>
+              </StepCard>
+            </AnimatePresence>
+          </div>
         </div>
 
         <p className="micro mt-3 !text-fg/85">{A.hint}</p>
@@ -244,11 +267,11 @@ const StepCard = forwardRef<
   return (
     <motion.article
       ref={ref}
-      className="liquid-glass absolute inset-x-0 top-0 grid grid-cols-[minmax(0,5fr)_minmax(0,6fr)] gap-10 rounded-[20px] p-7 lg:gap-14 lg:p-9"
+      className="mission-card absolute inset-x-0 top-0 grid grid-cols-[minmax(0,5fr)_minmax(0,6fr)] gap-10 p-7 lg:gap-12 lg:p-9"
       style={{ y }}
-      initial={{ clipPath: "inset(0 100% 0 0 round 20px)", x: 24 }}
-      animate={{ clipPath: "inset(0 0% 0 0 round 20px)", x: 0 }}
-      exit={{ clipPath: "inset(0 0 0 100% round 20px)", x: -24, transition: { duration: 0.35, ease: EASE_EXPO } }}
+      initial={{ clipPath: "inset(0 100% 0 0)", x: 24 }}
+      animate={{ clipPath: "inset(0 0% 0 0)", x: 0 }}
+      exit={{ clipPath: "inset(0 0 0 100%)", x: -24, transition: { duration: 0.35, ease: EASE_EXPO } }}
       transition={{ duration: 0.7, ease: EASE_EXPO }}
     >
       {children}
@@ -256,72 +279,16 @@ const StepCard = forwardRef<
   );
 });
 
-/**
- * The pipeline: six stations on one line, a lit track that fills behind the
- * packet, and the packet itself. Every station is a button to its step.
- */
-function Rail({
-  words,
-  along,
-  beat,
-  goTo,
-}: {
-  words: UiStrings["anatomy"];
-  along: MotionValue<number>;
-  beat: number;
-  goTo: (i: number) => void;
-}) {
-  const n = words.beats.length;
-  const fill = along;
-  const packet = useTransform(along, (v) => `${v * 100}%`);
+/** The packet's run down the index: a lit track fills behind it, and it
+ *  rests beside each step while you read. */
+function VRail({ along }: { along: MotionValue<number> }) {
+  const y = useTransform(along, (v) => `${v * 100}%`);
   return (
-    <div className="relative mt-7">
-      {/* The track runs station centre to station centre. */}
-      <div aria-hidden className="absolute top-[11px] h-[2px] bg-[var(--color-line-strong)]" style={{ left: `${50 / n}%`, right: `${50 / n}%` }}>
-        <motion.span className="spectrum-rule absolute inset-0 origin-left" style={{ scaleX: fill }} />
-        <motion.span className="absolute inset-0" style={{ x: packet }}>
-          <span className="absolute -left-[7px] -top-[6px] block h-[14px] w-[14px] rounded-full bg-[var(--color-holo)] shadow-[0_0_0_4px_color-mix(in_srgb,var(--color-holo)_25%,transparent),0_0_24px_4px_color-mix(in_srgb,var(--color-holo)_70%,transparent)]" />
-        </motion.span>
-      </div>
-      <ol className="relative grid" style={{ gridTemplateColumns: `repeat(${n}, minmax(0, 1fr))` }}>
-        {words.beats.map((s, i) => {
-          const done = i < beat;
-          const on = i === beat;
-          return (
-            <li key={i} className="flex justify-center">
-              <button
-                type="button"
-                onClick={() => goTo(i)}
-                aria-current={on ? "step" : undefined}
-                className="group flex min-h-11 flex-col items-center gap-2"
-              >
-                <span
-                  className={cn(
-                    "grid h-6 w-6 place-items-center rounded-full border-2 transition-[border-color,background-color,transform] duration-300",
-                    on
-                      ? "scale-110 border-[var(--color-holo)] bg-[var(--color-bg)]"
-                      : done
-                        ? "border-[var(--color-holo)] bg-[color-mix(in_srgb,var(--color-holo)_35%,var(--color-bg))]"
-                        : "border-[var(--color-line-strong)] bg-[var(--color-bg)] group-hover:border-[var(--color-fg)]"
-                  )}
-                />
-                <span
-                  className={cn(
-                    "tag whitespace-nowrap transition-colors duration-300",
-                    on ? "text-fg" : done ? "text-fg/80" : "text-muted group-hover:text-fg"
-                  )}
-                >
-                  <span className="tabular mr-1.5 text-[var(--color-holo)]">{String(i + 1).padStart(2, "0")}</span>
-                  {s.station}
-                  {/* The name starts with what is on screen (WCAG 2.5.3), then
-                      says where it goes. */}
-                  <span className="sr-only">: {s.title}</span>
-                </span>
-              </button>
-            </li>
-          );
-        })}
-      </ol>
+    <div aria-hidden className="mission-rail">
+      <motion.span className="mission-rail-fill" style={{ scaleY: along }} />
+      <motion.span className="mission-rail-run" style={{ y }}>
+        <span className="mission-packet" />
+      </motion.span>
     </div>
   );
 }

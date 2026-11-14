@@ -13,11 +13,13 @@ import "./globals.css";
 import "./signal.css";
 import "./title-screen.css";
 import "./chapters.css";
+import "./ride.css";
 import { navLinks, profile, site } from "@/lib/content";
 
 /** Every Mongol-script glyph the page sets: the name and the chapter labels. */
 const SCRIPT_GLYPHS = [profile.nameScript, ...navLinks.map((l) => l.script ?? "")].join("");
 import { SmoothScroll } from "@/components/chrome/SmoothScroll";
+import { WarpCard } from "@/components/chrome/WarpCard";
 import { LocaleProvider } from "@/lib/i18n";
 import { ActTheme } from "@/components/chrome/ActTheme";
 import { SiteBackdrop } from "@/components/backdrop/SiteBackdrop";
@@ -245,6 +247,7 @@ export default function RootLayout({
               <Diagnostics />
 
               <Navbar />
+              <WarpCard />
               <ChapterFrame />
 
               {/* Keyboard surfaces. Both headless, both stand down while a field

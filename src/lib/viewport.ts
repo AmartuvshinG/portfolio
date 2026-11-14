@@ -12,3 +12,10 @@
 export function frameHeight(): number {
   return document.documentElement.clientHeight;
 }
+
+/**
+ * Room for a pinned, scroll-driven chapter at full reading size. A 1366×768
+ * or 1440×900 laptop qualifies; phones, tablets in portrait and short
+ * windows get each chapter's flowing version instead.
+ */
+export const PIN_QUERY = "(min-width: 1024px) and (min-height: 680px)";

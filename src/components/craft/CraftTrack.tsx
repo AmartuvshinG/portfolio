@@ -1,5 +1,7 @@
 "use client";
 
+import { PIN_QUERY } from "@/lib/viewport";
+
 import { useEffect, useState } from "react";
 import { iconStroke } from "@/lib/icon";
 import { ArrowRight, ChevronDown } from "lucide-react";
@@ -109,7 +111,7 @@ export function CraftList({ items }: { items: Capability[] }) {
 export function useWideCraft() {
   const [wide, setWide] = useState<boolean | null>(null);
   useEffect(() => {
-    const mq = window.matchMedia("(min-width: 768px)");
+    const mq = window.matchMedia(PIN_QUERY);
     const update = () => setWide(mq.matches);
     update();
     mq.addEventListener("change", update);

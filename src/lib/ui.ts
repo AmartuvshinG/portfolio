@@ -43,6 +43,8 @@ const en = {
     home: "home",
     /** The phone's menu button, visible text. */
     index: "Index",
+    /** The phone menu's heading: the game is paused while it is open. */
+    paused: "Paused",
   },
   hero: {
     aria: "Introduction",
@@ -93,6 +95,9 @@ const en = {
     copy: (label: string) => `Copy ${label} link`,
     copied: "Copied",
     copyShort: "Copy link",
+    /** The GitHub monolith's readout, from the daily fetch. */
+    langs: "Languages across my repos",
+    recent: "Recently pushed",
   },
   work: {
     aria: "Selected work",
@@ -119,6 +124,8 @@ const en = {
     stack: "Tools",
     /** The master logo dock under the header. */
     dock: "Tech stack",
+    /** The loadout's groups, in techStack order (content.ts `techGroups`). */
+    groups: ["Languages", "Frontend", "Backend & data", "ML & DevOps"],
     studied: "Studied at Gannon",
     degree: (credits: number, deans: number) =>
       `B.S. Software Engineering · ${credits} credits · Dean's List ×${deans}`,
@@ -443,6 +450,8 @@ const mn: UiStrings = {
     backToTop: "дээш буцах",
     home: "нүүр",
     index: "Гарчиг",
+    /* Draft: awaiting Amartuvshin's proofread. */
+    paused: "Түр зогссон",
   },
   hero: {
     aria: "Танилцуулга",
@@ -487,6 +496,9 @@ const mn: UiStrings = {
     copy: (label: string) => `${label} холбоосыг хуулах`,
     copied: "Хуулсан",
     copyShort: "Холбоос хуулах",
+    /* Drafts: awaiting Amartuvshin's proofread. */
+    langs: "Репонуудын хэлүүд",
+    recent: "Сүүлд шинэчилсэн",
   },
   work: {
     aria: "Сонгосон төслүүд",
@@ -511,6 +523,8 @@ const mn: UiStrings = {
     proven: "Ашигласан",
     stack: "Хэрэгсэл",
     dock: "Технологийн стек",
+    /* Draft: awaiting Amartuvshin's proofread. */
+    groups: ["Програмчлалын хэл", "Фронтэнд", "Бэкэнд ба өгөгдөл", "ML ба DevOps"],
     studied: "Ганнонд судалсан",
     degree: (credits: number, deans: number) =>
       `Програм хангамжийн инженерчлэлийн бакалавр · ${credits} кредит · Деканы жагсаалт ×${deans}`,

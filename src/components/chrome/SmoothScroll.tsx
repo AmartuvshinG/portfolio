@@ -15,6 +15,7 @@ import { gsap, ScrollTrigger } from "@/lib/gsap";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
 import { noteScroll } from "@/lib/scrollPause";
 import { noteVelocity } from "@/lib/groundBus";
+import { announceWarp } from "@/lib/warp";
 
 interface LenisContextValue {
   /** `immediate` jumps without the 1.2s glide — for restoring a position, not
@@ -203,6 +204,10 @@ export function SmoothScroll({ children }: { children: ReactNode }) {
       const vh = window.innerHeight;
       const d = y - window.scrollY;
       const far = Math.abs(d) > FAR_VH * vh;
+      /* The warp card names the destination (chrome/WarpCard). */
+      if (typeof target === "string" && Math.abs(d) > vh * 0.5) {
+        announceWarp({ href: target, dir: d > 0 ? "down" : "up", far });
+      }
       const glide = (to: number, duration: number) =>
         lenis.scrollTo(to, { duration, easing: easeInOutCubic, force: true });
 

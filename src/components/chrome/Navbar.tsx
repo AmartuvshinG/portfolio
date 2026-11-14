@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { iconStroke } from "@/lib/icon";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { AnimatePresence, motion, useDragControls } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import { X } from "lucide-react";
 import { navLinks as sectionLinks, type NavLink } from "@/lib/content";
 import { useI18n } from "@/lib/i18n";
@@ -15,6 +15,7 @@ import { useOverlay } from "@/hooks/useOverlay";
 import { cn } from "@/lib/utils";
 import { Monogram } from "@/components/chrome/NavGlyphs";
 import { InkSign } from "@/components/ui/InkSign";
+import { MenuStage } from "@/components/ui/MenuStage";
 import { useScramble } from "@/hooks/useScramble";
 
 /**
@@ -42,6 +43,13 @@ import { useScramble } from "@/hooks/useScramble";
  *    home route; everywhere else the active item comes from the pathname.
  * 3. **Deep links re-land** while the page is still growing (see below).
  */
+/** How far down the page the reader is, 0–1 (read when the menu opens). */
+function readProgress(): number {
+  if (typeof window === "undefined") return 0;
+  const max = document.documentElement.scrollHeight - window.innerHeight;
+  return max > 0 ? Math.min(1, Math.max(0, window.scrollY / max)) : 0;
+}
+
 export function Navbar() {
   const { c, t, locale } = useI18n();
   const { navLinks, profile, contact } = c;
@@ -59,10 +67,6 @@ export function Navbar() {
   const [open, setOpen] = useState(false);
   const toggleRef = useRef<HTMLButtonElement>(null);
   const sheetRef = useRef<HTMLDivElement>(null);
-  /* The sheet drags from its grabber and header only. Dragging from
-     anywhere claimed every vertical touch, so the link list could never
-     scroll when it did not fit. */
-  const sheetDrag = useDragControls();
 
   const closeSheet = useCallback(() => setOpen(false), []);
 
@@ -330,153 +334,85 @@ export function Navbar() {
         </nav>
       </header>
 
-      {/* The phone index: an iOS sheet of big, developing links.
-          It rises from the bottom edge on a spring, sits on a dimmed page,
-          and goes away the way a native sheet does: tap the dim, tap close,
-          or throw it down. A real modal: `z-80` so it is over the header
-          rather than under it, and `aria-modal` so the page behind is gone
-          from the a11y tree. That is why it carries its own wordmark and
-          close button; the header's copies are outside the dialog and
-          unreachable to a screen reader. The page behind does not scale back
-          the way Apple's card stack does: a transform on <main> would break
-          every sticky pin and fixed layer inside it. */}
+      {/* The phone index: the game's pause menu.
+          The page stops behind an opaque screen (the city's poster under the
+          void, no backdrop blur), a shutter of ramp bars sweeps across, and
+          the chapters stand down the diagonal like the title screen's menu,
+          the one you are in lit. A real modal: `z-80` over the header,
+          `aria-modal`, its own wordmark and close button (the header's
+          copies are outside the dialog). Close, Escape, or a chapter tap
+          resumes. */}
       <AnimatePresence>
         {open && (
           <motion.div
-            key="nav-dim"
-            aria-hidden
-            onClick={closeSheet}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1, transition: { duration: 0.3, ease: "easeOut" } }}
-            exit={{ opacity: 0, transition: { duration: 0.22, ease: "easeIn" } }}
-            className={cn(
-              "fixed inset-0 z-[79] bg-[#030208]/60",
-              mn ? "min-[1280px]:hidden" : "min-[1080px]:hidden"
-            )}
-          />
-        )}
-        {open && (
-          <motion.div
-            key="nav-sheet"
+            key="nav-pause"
             ref={sheetRef}
             id="mobile-nav"
             role="dialog"
             aria-modal="true"
             aria-label={t.nav.siteMenu}
-            /* UIKit's sheet: a critically damped spring up, its own curve
-               down. A downward throw dismisses on distance or speed; upward
-               it barely gives, as a sheet at full height does. */
-            initial={{ y: "100%" }}
-            animate={{ y: 0, transition: { type: "spring", stiffness: 420, damping: 42, mass: 0.9 } }}
-            exit={{ y: "100%", transition: { duration: 0.28, ease: [0.32, 0.72, 0, 1] } }}
-            drag="y"
-            dragControls={sheetDrag}
-            dragListener={false}
-            dragConstraints={{ top: 0, bottom: 0 }}
-            dragElastic={{ top: 0.04, bottom: 0.85 }}
-            onDragEnd={(_, info) => {
-              if (info.offset.y > 110 || info.velocity.y > 600) closeSheet();
-            }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1, transition: { duration: 0.18 } }}
+            exit={{ opacity: 0, transition: { duration: 0.24, delay: 0.1 } }}
             className={cn(
-              "glass-ios fixed inset-x-0 bottom-0 z-[80] flex max-h-[calc(100svh-env(safe-area-inset-top)-0.75rem)] flex-col overflow-hidden rounded-t-[28px] bg-[#030208]/72 px-6 pb-[max(1.25rem,env(safe-area-inset-bottom))] pl-[max(1.5rem,env(safe-area-inset-left))] pr-[max(1.5rem,env(safe-area-inset-right))]",
+              "pause fixed inset-0 z-[80] flex flex-col overflow-hidden px-5 pb-[max(1rem,env(safe-area-inset-bottom))] pl-[max(1.25rem,env(safe-area-inset-left))] pr-[max(1.25rem,env(safe-area-inset-right))] pt-[env(safe-area-inset-top)]",
               mn ? "min-[1280px]:hidden" : "min-[1080px]:hidden"
             )}
           >
-            {/* The name, brushed, as a ghost down the sheet's right edge. */}
-            <InkSign tone="ghost" className="pointer-events-none absolute -right-2 top-[10%] h-[80%]" />
+            <span aria-hidden className="pause-shutter">
+              {[0, 1, 2, 3, 4, 5].map((i) => (
+                <span key={i} style={{ "--b": i } as React.CSSProperties} />
+              ))}
+            </span>
+            {/* The name in light down the right edge. */}
+            <InkSign tone="neon" className="pause-script pointer-events-none absolute right-3 top-[16%] h-[62%]" />
 
-            {/* The handle: the grabber and the header row under it. The
-                grabber says "this pulls down" before anyone tries. */}
-            <div
-              onPointerDown={(e) => sheetDrag.start(e)}
-              className="relative -mx-6 shrink-0 touch-none px-6"
-            >
-              <span aria-hidden className="relative mx-auto mt-2 block h-[5px] w-9 shrink-0 rounded-full bg-white/30" />
-              <div className="relative flex h-14 shrink-0 items-center justify-between">
-                <span className="flex items-center gap-3">
-                  <Monogram className="shrink-0" />
-                  <span className="font-display text-lg text-fg">{profile.wordmark}</span>
-                </span>
-                <button
-                  type="button"
-                  data-autofocus
-                  onClick={closeSheet}
-                  aria-label={t.nav.closeMenu}
-                  className="hud-brackets -mr-1 flex h-11 w-11 items-center justify-center text-fg"
-                >
-                  <X size={18} strokeWidth={iconStroke(18, "medium")} />
-                </button>
-              </div>
+            <div className="relative flex h-16 shrink-0 items-center justify-between">
+              <span className="flex items-center gap-3">
+                <Monogram className="shrink-0" />
+                <span className="font-display text-lg text-fg">{profile.wordmark}</span>
+              </span>
+              <button
+                type="button"
+                data-autofocus
+                onClick={closeSheet}
+                aria-label={t.nav.closeMenu}
+                className="hud-brackets -mr-1 flex h-11 w-11 items-center justify-center text-fg"
+              >
+                <X size={18} strokeWidth={iconStroke(18, "medium")} />
+              </button>
             </div>
 
-            {/* The links take what is left and scroll if it is not enough, so
-                the language row below can never be pushed off the sheet.
-                Mongolian labels run longer and wrap; on a short phone with
-                Safari's bars showing, the toggle used to land below the
-                screen, and once switched there was no way back. */}
-            <ul
-              data-lenis-prevent
-              className="relative mt-1 min-h-0 flex-1 overflow-y-auto overscroll-contain"
-            >
-              {navLinks.map((link, i) => {
-                const isActive = active === link.href;
-                const inner = (
-                  <>
-                    <span
-                      className={cn(
-                        "w-8 shrink-0 font-mono text-xs tabular",
-                        isActive ? "text-[var(--color-hazard)]" : "text-faint"
-                      )}
-                    >
-                      {link.code}
-                    </span>
-                    <span className="font-tech text-[clamp(1.375rem,min(9vw,5.2svh),3.25rem)] font-semibold uppercase leading-none tracking-[0.04em] text-fg [:root:lang(mn)_&]:normal-case [:root:lang(mn)_&]:tracking-normal">
-                      {link.label}
-                    </span>
-                    {isActive && (
-                      <span
-                        aria-hidden
-                        className="ml-auto h-1.5 w-1.5 self-center rounded-full bg-[var(--color-hazard)] shadow-[0_0_12px_var(--color-hazard)]"
-                      />
-                    )}
-                  </>
-                );
-                return (
-                  <motion.li
-                    key={link.href}
-                    /* The lines settle in a short cascade: a few pixels and a
-                       fade each, all landed within ~0.6s of the tap. */
-                    initial={{ opacity: 0, y: 6 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.08 + 0.03 * i, duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
-                    className="border-b border-line"
-                  >
-                    {isHome ? (
-                      <a
-                        href={link.href}
-                        onClick={(e) => {
-                          e.preventDefault();
-                          go(link.href);
-                        }}
-                        aria-current={isActive ? "location" : undefined}
-                        className="flex items-baseline gap-4 py-[clamp(0.5rem,1.5svh,0.875rem)]"
-                      >
-                        {inner}
-                      </a>
-                    ) : (
-                      <Link
-                        href={`/${link.href}`}
-                        onClick={() => setOpen(false)}
-                        className="flex items-baseline gap-4 py-[clamp(0.5rem,1.5svh,0.875rem)]"
-                      >
-                        {inner}
-                      </Link>
-                    )}
-                  </motion.li>
-                );
-              })}
-            </ul>
-            <div className="relative mt-3 flex shrink-0 flex-wrap items-center justify-between gap-x-4">
+            <div className="pause-head relative mt-2 shrink-0">
+              <span className="pause-title display-caps">{t.nav.paused}</span>
+              <span aria-hidden className="pause-progress">
+                <span
+                  ref={(el) => {
+                    if (el) el.style.transform = `scaleX(${readProgress()})`;
+                  }}
+                />
+              </span>
+            </div>
+
+            {/* The chapters scroll inside if a short phone cannot fit them,
+                so the language row below is never pushed off screen. */}
+            <div data-lenis-prevent className="pause-menu relative mt-4 min-h-0 flex-1 overflow-y-auto overscroll-contain pr-12">
+              <MenuStage
+                items={navLinks.map((link) => ({ key: link.href, code: link.code, label: link.label }))}
+                active={Math.max(0, navLinks.findIndex((l) => l.href === active))}
+                onSelect={(i) => {
+                  const link = navLinks[i];
+                  if (isHome) go(link.href);
+                  else window.location.assign(`/${link.href}`);
+                }}
+                selectOnMove={false}
+                linkProps={(i) => ({ href: isHome ? navLinks[i].href : `/${navLinks[i].href}` })}
+                label={t.nav.siteMenu}
+                size="lg"
+              />
+            </div>
+
+            <div className="pause-hud relative mt-3 flex shrink-0 flex-wrap items-center justify-between gap-x-4">
               <a href={`mailto:${contact.email}`} className="hud-label flex h-11 items-center">
                 {contact.email}
               </a>

@@ -123,6 +123,19 @@ export function Hero() {
               <span aria-hidden className="ts-name-fill">
                 <span>{profile.wordmark}</span>
               </span>
+              {/* A light that crosses the name now and then: a narrow window
+                  travelling right while the text inside it counter-travels,
+                  so only transforms move. */}
+              <span aria-hidden className="ts-name-sweep">
+                <span>{profile.wordmark}</span>
+              </span>
+              {/* Each letter as its own key: hovering one lifts it out of the
+                  name in the menu's stacked ramp, then lets it settle back. */}
+              <span aria-hidden className="ts-name-keys">
+                {Array.from(profile.wordmark).map((ch, i) => (
+                  <span key={i}>{ch}</span>
+                ))}
+              </span>
             </h1>
             <p className="ts-role ts-reveal" style={{ "--d": "0.9s" } as React.CSSProperties}>
               <span className="ts-role-main">{profile.role}</span>
