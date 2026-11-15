@@ -1996,22 +1996,6 @@ html[data-vt] [data-vt="hud"] { view-transition-name: hud; }
 .group:focus-visible .monitor-reticle { opacity: 1; transform: scale(0.985); }
 
 
-/* About's ID card (sections/About): a 1px rim in the ramp, drawn on the card
-   itself so it tilts with it. The mask cuts the content box out of a padded
-   gradient, leaving only the padding — the rim. */
-.id-card::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: 30;
-  padding: 1px;
-  pointer-events: none;
-  background: var(--gradient-spectrum);
-  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-  -webkit-mask-composite: xor;
-  mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
-}
-
 /* The hero's signature (hero/Signature): while it writes, only the light
    shows. The unlit tube at its usual 0.12 would preview the whole stroke
    over the name before the brush has drawn it. */

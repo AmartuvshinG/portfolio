@@ -3,82 +3,129 @@
 import { useRef, useState } from "react";
 import Image from "next/image";
 import { ArrowUpRight } from "lucide-react";
-import { motion, useMotionValueEvent, useScroll, useTransform } from "framer-motion";
+import { useMotionValueEvent, useScroll } from "framer-motion";
 import { useI18n } from "@/lib/i18n";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { useScrollTimelines } from "@/hooks/useScrollTimelines";
 import { useSmoothScroll } from "@/components/chrome/SmoothScroll";
 import { ChapterSeam } from "@/components/chrome/ChapterSeam";
-import { photoSrc, PHOTOS } from "@/lib/pathPhotos";
+import { FrameLock } from "@/components/motion/FrameLock";
+import { photoSrc, PHOTOS, type PhotoKey } from "@/lib/pathPhotos";
 import { openCase } from "@/lib/caseFile";
 import { PIN_QUERY } from "@/lib/viewport";
 import { cn } from "@/lib/utils";
 import { education, type TimelineEntry } from "@/lib/content";
 
 /**
- * Journey: the mood board, driven by the scroll.
+ * Journey: a vertical flight log, built to be read while it moves.
  *
- * Two filmstrips of the real photos run in opposite directions around the
- * chapter's name. On a wide screen the chapter pins and the scroll is the
- * whole control: it runs the strips, fills JOURNEY with the ramp from left to
- * right, slides the marker along the years and deals each stop into the card
- * below (period, place, what happened), oldest first. Nothing needs a click;
- * a year or a photo can still be clicked, and that scrolls there.
+ * On a wide screen the chapter pins and the scroll travels forward in time,
+ * oldest first, one stop per stretch of scroll. Everything is arranged around
+ * one eye line, a little above the middle of the frame:
  *
- * With scroll timelines the strips and the fill run on the compositor
- * (ride.css); framer is the fallback. React re-renders only when the stop in
- * the card changes. Phones and short windows: the strips still follow the
- * scroll as the chapter passes, and a tap picks the stop. Reduced motion: the
- * photos sit in a wrapped grid.
+ *   - left, the years slide up a column so the current one always sits on
+ *     the eye line, large and in the ramp;
+ *   - centre, the spine fills with the ramp as the scroll runs (scrubbed),
+ *     with a playhead fixed on the eye line;
+ *   - right, the stop itself: its photo and what happened, always at the
+ *     same place, so the eye never has to hunt. The stop before shows dimmed
+ *     above it and the next one below, like a teleprompter.
+ *
+ * Readability is the rule. A stop changes only at the boundary of its stretch,
+ * and the change is a short vertical move in the direction of the scroll (the
+ * old stop rises out, the new one rises in); for the rest of the stretch the
+ * text holds perfectly still. Only the photo drifts, slowly, with the scroll.
+ *
+ * Phones and short windows: the same stops as a vertical list on a spine, each
+ * locking in as it scrolls by. Reduced motion: the list at rest.
  */
 
 const yearOf = (e: TimelineEntry) => e.start.year;
-/** Scroll per stop while pinned, in viewport heights. */
-const STEP_VH = 55;
+/** Scroll per stop while pinned, in small-viewport heights. */
+const STEP_VH = 62;
+/** An ongoing role: no end date and not a single moment like a graduation. */
+const ongoing = (e: TimelineEntry) => !e.end && !e.note && e.kind === "work";
+
+type PhotoText = { caption: string; alt: string };
 
 export function Timeline() {
-  const { c, t } = useI18n();
+  const { t } = useI18n();
   const reduced = useReducedMotion();
   const room = useMediaQuery(PIN_QUERY);
   const css = useScrollTimelines();
   const pinned = room && !reduced;
+
+  return (
+    <section
+      id="timeline"
+      data-act="void"
+      data-chapter="JOURNEY"
+      aria-label={t.path.aria}
+      className={cn("relative z-10 overflow-x-clip", !pinned && "pb-24 md:pb-32")}
+    >
+      <ChapterSeam wipe />
+      <JourneyHead scrub={css && !reduced} />
+      {pinned ? <FlightLog /> : <FlightList />}
+    </section>
+  );
+}
+
+/* -------------------------------------------------------------------------- */
+
+/** The chapter's name, filled with the ramp left to right as it scrolls up. */
+function JourneyHead({ scrub }: { scrub: boolean }) {
+  const { c, t } = useI18n();
+  const years = c.timeline.map(yearOf);
+  return (
+    <header className={cn("jr-head", scrub && "jr-head--scrub")}>
+      <h2 className="jr-title display-caps" aria-label={t.path.title}>
+        <span aria-hidden className="jr-title-outline">
+          {t.path.title}
+        </span>
+        <span aria-hidden className="jr-title-fill">
+          <span className="spectrum-text">{t.path.title}</span>
+        </span>
+      </h2>
+      <p className="micro text-fg/85">
+        {Math.min(...years)} — {Math.max(...years)} · {t.path.places.ub} → {t.path.places.erie} → {t.path.places.ub}
+      </p>
+    </header>
+  );
+}
+
+/** Oldest first, so the scroll travels forward in time. */
+function useEntries() {
+  const { c } = useI18n();
+  return [...c.timeline].sort((a, b) => yearOf(a) - yearOf(b) || (a.start.month ?? 6) - (b.start.month ?? 6));
+}
+
+function usePhotoText() {
+  const { t } = useI18n();
+  return t.path.photos as unknown as Record<PhotoKey, PhotoText>;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Pinned: the flight log                                                     */
+/* -------------------------------------------------------------------------- */
+
+function FlightLog() {
+  const { t } = useI18n();
   const { scrollTo } = useSmoothScroll();
-  /* Oldest first, so the scroll travels forward in time. */
-  const entries = [...c.timeline].sort((a, b) => yearOf(a) - yearOf(b));
+  const entries = useEntries();
   const n = entries.length;
-  const [picked, setPicked] = useState(n - 1);
-  const [scrolled, setScrolled] = useState(0);
-  const sel = pinned ? scrolled : picked;
-  const ref = useRef<HTMLElement>(null);
-
-  const { scrollYProgress } = useScroll({
-    target: ref,
-    offset: pinned ? ["start start", "end end"] : ["start end", "end start"],
-  });
+  const ref = useRef<HTMLDivElement>(null);
+  const [sel, setSel] = useState(0);
+  const { scrollYProgress } = useScroll({ target: ref, offset: ["start start", "end end"] });
   useMotionValueEvent(scrollYProgress, "change", (p) => {
-    if (!pinned) return;
     const k = Math.min(n - 1, Math.max(0, Math.floor(p * n * 0.9999)));
-    setScrolled((s) => (s === k ? s : k));
+    setSel((s) => (s === k ? s : k));
   });
-  /* Fallback motion (no scroll timelines). */
-  const rowA = useTransform(scrollYProgress, [0, 1], ["0%", "-45%"]);
-  const rowB = useTransform(scrollYProgress, [0, 1], ["-45%", "0%"]);
-  const fillOut = useTransform(scrollYProgress, [0, 1], ["-100%", "0%"]);
-  const fillIn = useTransform(scrollYProgress, [0, 1], ["100%", "0%"]);
-  const fallback = !css && !reduced;
 
-  const half = Math.ceil(n / 2);
-  const rows = [entries.slice(0, half).map((e, i) => ({ e, i })), entries.slice(half).map((e, i) => ({ e, i: i + half }))];
   const years = Array.from(new Set(entries.map(yearOf))).sort();
-  const cur = entries[sel];
-  const yearAt = years.indexOf(yearOf(cur));
+  const yearAt = years.indexOf(yearOf(entries[sel]));
 
   const pick = (i: number) => {
-    if (!pinned) {
-      setPicked(i);
-      return;
-    }
     const el = ref.current;
     if (!el) return;
     const top = el.getBoundingClientRect().top + window.scrollY;
@@ -86,121 +133,188 @@ export function Timeline() {
     scrollTo(top + ((i + 0.5) / n) * travel);
   };
 
-  const strip = (row: { e: TimelineEntry; i: number }[], copy: number) => (
-    <ul key={copy} className="mood-track" aria-hidden={copy === 1 ? true : undefined}>
-      {row.map(({ e, i }) => (
-        <li key={`${copy}-${i}`} className="mood-frame" style={{ "--tilt": `${((i * 37) % 9) - 4}deg` } as React.CSSProperties}>
-          <button
-            type="button"
-            tabIndex={copy === 1 ? -1 : 0}
-            aria-pressed={copy === 0 ? sel === i : undefined}
-            aria-label={copy === 0 ? `${t.path.choose}: ${e.period} · ${e.title}` : undefined}
-            data-sel={sel === i ? "true" : "false"}
-            onClick={() => pick(i)}
-          >
-            {e.photo ? (
-              <Image src={photoSrc(e.photo, PHOTOS[e.photo].widths[0])} alt="" fill sizes="300px" className="object-cover" unoptimized />
-            ) : null}
-            <span className="mood-year tag">{yearOf(e)}</span>
-          </button>
-        </li>
-      ))}
-    </ul>
-  );
+  return (
+    <div ref={ref} className="jr-runway relative" style={{ height: `${n * STEP_VH + 100}svh`, "--n": n } as React.CSSProperties}>
+      <div className="jr-stage sticky top-0 h-svh overflow-hidden">
+        <div className="jr-grid">
+          {/* The years: the column slides so the current one sits on the
+              eye line. Each year jumps to its first stop. */}
+          <nav className="jr-years" aria-label={t.path.years}>
+            <ol style={{ "--y": yearAt } as React.CSSProperties}>
+              {years.map((y, yi) => {
+                const first = entries.findIndex((e) => yearOf(e) === y);
+                const d = yi - yearAt;
+                return (
+                  <li key={y} data-d={Math.max(-2, Math.min(2, d))}>
+                    <button type="button" aria-current={d === 0 ? "true" : undefined} onClick={() => pick(first)}>
+                      {y}
+                    </button>
+                  </li>
+                );
+              })}
+            </ol>
+          </nav>
 
-  const board = (
-    <div className={cn("mood", pinned && "mood--pinned", css && !reduced && "mood--scroll")} data-still={reduced ? "true" : "false"}>
-      <h2 className="mood-title display-caps" aria-label={t.path.title}>
-        <span aria-hidden className="mood-title-outline">
-          {t.path.title}
-        </span>
-        {/* The ramp fill, revealed left to right by the scroll: a window that
-            opens rightward while the text inside it holds still. */}
-        <motion.span aria-hidden className="mood-title-fill" style={fallback ? { x: fillOut } : undefined}>
-          <motion.span className="spectrum-text" style={fallback ? { x: fillIn } : undefined}>
-            {t.path.title}
-          </motion.span>
-        </motion.span>
-      </h2>
-      <p className="mood-span micro">
-        {years[0]} — {years[years.length - 1]} · {t.path.places.ub} → {t.path.places.erie}
-      </p>
-
-      {rows.map((row, r) => (
-        <div key={r} className={cn("mood-row", r === 1 && "mood-row--rev")}>
-          <motion.div className="mood-run" style={fallback ? { x: r === 0 ? rowA : rowB } : undefined}>
-            {strip(row, 0)}
-            {strip(row, 1)}
-          </motion.div>
-        </div>
-      ))}
-
-      <div className="mood-dock">
-        <div className="mood-controls">
-          <ol className="mood-rail" aria-label={t.path.board} style={{ "--y": yearAt } as React.CSSProperties}>
-            {years.map((y) => {
-              const first = entries.findIndex((e) => yearOf(e) === y);
-              const on = yearOf(cur) === y;
-              return (
-                <li key={y}>
-                  <button type="button" data-on={on ? "true" : "false"} onClick={() => pick(first)}>
-                    {y}
-                  </button>
-                </li>
-              );
-            })}
-            <li aria-hidden className="mood-marker" />
-          </ol>
-          {pinned && (
-            <span className="tag tabular text-fg/85">
-              {String(sel + 1).padStart(2, "0")} / {String(n).padStart(2, "0")}
+          {/* The spine: filled by the scroll, a playhead on the eye line. */}
+          <div className="jr-spine" aria-hidden style={{ "--sel": sel } as React.CSSProperties}>
+            <span className="jr-spine-fill" />
+            <span className="jr-playhead" />
+            <span className="jr-count tag tabular">
+              {String(sel + 1).padStart(2, "0")}
+              <span className="text-fg/60">/{String(n).padStart(2, "0")}</span>
             </span>
-          )}
-        </div>
-
-        <article className="mood-card" aria-live="polite">
-          <span key={`w-${sel}`} aria-hidden className="mood-wipe">
-            <span />
-            <span />
-          </span>
-          <div key={sel} className="mood-card-body">
-            <span className="micro text-fg/85">
-              {cur.period} · {t.path[cur.kind]}
-            </span>
-            <h3 className="mood-card-title">{cur.title}</h3>
-            <p className="micro text-fg/85">{cur.org}</p>
-            <p className="mt-3 text-sm text-fg/85">{cur.description}</p>
-            {cur.extra === "gpa" && (
-              <p className="mood-stat">
-                <span className="display-caps spectrum-text">{education.gpaRecent.toFixed(2)}</span>
-                <span className="micro text-fg/85">{t.path.gpaRecent}</span>
-                <span className="display-caps">{education.gpaOverall.toFixed(2)}</span>
-                <span className="micro text-fg/85">{t.path.gpaOverall}</span>
-              </p>
-            )}
-            {cur.extra === "spotfixes" && (
-              <button type="button" className="mood-link" onClick={() => openCase("spotfixes")}>
-                {t.path.caseLink} <ArrowUpRight aria-hidden size={18} />
-              </button>
-            )}
           </div>
-        </article>
+
+          <div className="jr-reader">
+            {/* The stop before, dimmed above. */}
+            <div className="jr-ghosts jr-ghosts--prev" aria-hidden>
+              {entries.map((e, i) => (
+                <p key={i} className="jr-ghost" data-on={i === sel - 1 ? "true" : "false"} data-dir={i < sel - 1 ? "up" : "down"}>
+                  <span className="tag tabular">{yearOf(e)}</span> {e.title}
+                </p>
+              ))}
+            </div>
+
+            {/* The stop: every one rendered on the same spot, only the
+                current one showing. Live region, so a screen reader hears
+                each new stop once. */}
+            <div className="jr-cards" aria-live="polite">
+              {entries.map((e, i) => (
+                <StopCard key={i} entry={e} index={i} count={n} state={i < sel ? "past" : i > sel ? "next" : "cur"} near={Math.abs(i - sel) <= 1} />
+              ))}
+            </div>
+
+            {/* The stop after, dimmed below. */}
+            <div className="jr-ghosts jr-ghosts--next" aria-hidden>
+              {entries.map((e, i) => (
+                <p key={i} className="jr-ghost" data-on={i === sel + 1 ? "true" : "false"} data-dir={i > sel + 1 ? "down" : "up"}>
+                  <span className="tag tabular">{yearOf(e)}</span> {e.title}
+                </p>
+              ))}
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
+}
 
+/** One stop on the eye line. `state` places it: risen out above (past),
+ *  waiting below (next), or showing (cur). Only near stops load their photo. */
+function StopCard({
+  entry: e,
+  index,
+  count,
+  state,
+  near,
+}: {
+  entry: TimelineEntry;
+  index: number;
+  count: number;
+  state: "past" | "cur" | "next";
+  near: boolean;
+}) {
+  const on = state === "cur";
   return (
-    <section
-      id="timeline"
-      ref={ref}
-      data-act="void"
-      data-chapter="JOURNEY"
-      aria-label={t.path.aria}
-      className={cn("relative z-10", pinned ? "journey-timeline" : "overflow-hidden py-24 md:py-32", !pinned && !reduced && "journey-view")}
-      style={pinned ? { height: `${n * STEP_VH + 100}svh` } : undefined}
-    >
-      <ChapterSeam wipe />
-      {pinned ? <div className="sticky top-0 flex h-[100svh] flex-col justify-center overflow-hidden">{board}</div> : board}
-    </section>
+    <article className="jr-card" data-state={state} aria-hidden={on ? undefined : true} style={{ "--i": index } as React.CSSProperties}>
+      <StopPhoto entry={e} play={on} load={near} />
+      <StopText entry={e} index={index} count={count} interactive={on} />
+    </article>
+  );
+}
+
+function StopPhoto({ entry: e, play, load }: { entry: TimelineEntry; play: boolean; load: boolean }) {
+  const text = usePhotoText();
+  if (!e.photo) return <div className="jr-photo jr-photo--empty" />;
+  const meta = PHOTOS[e.photo];
+  const w = meta.widths[meta.widths.length - 1];
+  return (
+    <figure className="jr-photo" data-reveal={meta.reveal} data-play={play ? "true" : "false"}>
+      <div
+        className="jr-photo-frame"
+        style={{ aspectRatio: String(meta.aspect), "--fx": `${meta.focus.x * 100}%`, "--fy": `${meta.focus.y * 100}%` } as React.CSSProperties}
+      >
+        {load ? (
+          <span className="jr-photo-drift">
+            <Image src={photoSrc(e.photo, w)} alt={text[e.photo]?.alt ?? ""} fill sizes="(min-width: 1024px) 28rem, 90vw" className="object-cover" unoptimized />
+          </span>
+        ) : null}
+      </div>
+      <figcaption className="micro mt-2 text-fg/85">{text[e.photo]?.caption}</figcaption>
+    </figure>
+  );
+}
+
+function StopText({
+  entry: e,
+  index,
+  count,
+  interactive,
+}: {
+  entry: TimelineEntry;
+  index: number;
+  count: number;
+  interactive: boolean;
+}) {
+  const { t } = useI18n();
+  const live = ongoing(e);
+  return (
+    <div className="jr-text">
+      <p className="micro flex flex-wrap items-center gap-x-3 gap-y-1 text-fg/85">
+        {live ? <span className="jr-now">{t.path.now}</span> : null}
+        <span>{e.period}</span>
+        <span aria-hidden>·</span>
+        <span>{t.path[e.kind]}</span>
+        <span aria-hidden className="ml-auto tabular text-fg/60">
+          {String(index + 1).padStart(2, "0")}/{String(count).padStart(2, "0")}
+        </span>
+      </p>
+      <h3 className="jr-card-title">{e.title}</h3>
+      <p className="micro text-fg/85">{e.org}</p>
+      <p className="jr-desc">{e.description}</p>
+      {e.extra === "gpa" && (
+        <p className="mood-stat">
+          <span className="display-caps spectrum-text">{education.gpaRecent.toFixed(2)}</span>
+          <span className="micro text-fg/85">{t.path.gpaRecent}</span>
+          <span className="display-caps">{education.gpaOverall.toFixed(2)}</span>
+          <span className="micro text-fg/85">{t.path.gpaOverall}</span>
+        </p>
+      )}
+      {e.extra === "spotfixes" && (
+        <button type="button" className="mood-link" tabIndex={interactive ? 0 : -1} onClick={() => openCase("spotfixes")}>
+          {t.path.caseLink} <ArrowUpRight aria-hidden size={18} />
+        </button>
+      )}
+    </div>
+  );
+}
+
+/* -------------------------------------------------------------------------- */
+/* Flow: the list on a spine                                                  */
+/* -------------------------------------------------------------------------- */
+
+function FlightList() {
+  const entries = useEntries();
+  const n = entries.length;
+  return (
+    <ol className="jr-list">
+      {entries.map((e, i) => {
+        const newYear = i === 0 || yearOf(entries[i - 1]) !== yearOf(e);
+        return (
+          <li key={i} className="jr-item">
+            {newYear && <span className="jr-year-chip display-caps">{yearOf(e)}</span>}
+            <span aria-hidden className="jr-node" />
+            <FrameLock as="article" className="jr-card jr-card--flow">
+              <div className="fl-in" style={{ "--i": 0 } as React.CSSProperties}>
+                <StopPhoto entry={e} play load />
+              </div>
+              <div className="fl-in" style={{ "--i": 1 } as React.CSSProperties}>
+                <StopText entry={e} index={i} count={n} interactive />
+              </div>
+            </FrameLock>
+          </li>
+        );
+      })}
+    </ol>
   );
 }

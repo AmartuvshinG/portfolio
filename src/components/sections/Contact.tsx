@@ -33,8 +33,8 @@ import { EASE_EXPO } from "@/lib/motion";
  * The address arrives letter by letter, each rising out of its own slot,
  * and its underline draws in from whichever side the pointer came from.
  * Copying it is answered the way the intro ends: his seal stamps beside it,
- * with the same thud. Under it, three plain facts in one line: open to
- * work, when to expect a reply, and where he is.
+ * with the same thud. Under it, three plain facts in one line: where he
+ * works now, when to expect a reply, and where he is.
  */
 export function Contact() {
   const { c, t } = useI18n();

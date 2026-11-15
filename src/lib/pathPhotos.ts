@@ -20,7 +20,8 @@ export type PhotoKey =
   | "gannon-arc"
   | "erie-aerial"
   | "gannon-autumn"
-  | "ihack-tower";
+  | "ihack-tower"
+  | "techpack";
 export type RevealKind = "diode" | "iris" | "doors" | "scan" | "slash" | "tilt";
 
 export interface PathPhoto {
@@ -53,6 +54,8 @@ export const PHOTOS: Record<PhotoKey, PathPhoto> = {
   "gannon-autumn": { widths: [640, 1280], aspect: 2048 / 1365, maxCss: 640, reveal: "doors", focus: { x: 0.49, y: 0.5 } },
   /* Cropped off its pillarbox bars at the bake; the camera tilts up the tower. */
   "ihack-tower": { widths: [596], aspect: 596 / 800, maxCss: 298, reveal: "tilt", focus: { x: 0.5, y: 1 } },
+  /* The Central Park office building, shot looking up: the camera tilts up it. */
+  techpack: { widths: [640, 960], aspect: 960 / 720, maxCss: 480, reveal: "tilt", focus: { x: 0.5, y: 1 } },
 };
 
 export const photoSrc = (key: PhotoKey, w: number) => `/path/photos/${key}-${w}.webp`;

@@ -56,10 +56,10 @@ export function Capabilities() {
           </Reveal>
         </div>
 
-        <Loadout className="mt-14 md:mt-20" />
-        <p className="tag mt-10 text-center text-fg/85">
-          {t.craft.degree(education.credits, education.deansList)}
-        </p>
+        <Loadout
+          className="mt-14 md:mt-20"
+          footer={<p className="tag text-center text-fg/85">{t.craft.degree(education.credits, education.deansList)}</p>}
+        />
 
         {/* Phones get the list from the first paint: the layout is CSS's call,
             so there is no grid rendered and then swapped out after hydration. */}

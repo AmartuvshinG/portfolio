@@ -11,170 +11,7 @@
   }
 }
 
-/* --- Map: the mood board ----------------------------------------------- */
-.mood {
-  position: relative;
-  display: grid;
-  justify-items: center;
-  gap: clamp(14px, 2.4vh, 26px);
-}
-.mood-title {
-  position: absolute;
-  z-index: 3;
-  top: clamp(150px, 22vw, 260px);
-  left: 50%;
-  transform: translate(-50%, -50%);
-  margin: 0;
-  font-size: clamp(4.5rem, 19vw, 18rem);
-  line-height: 0.8;
-  pointer-events: none;
-  white-space: nowrap;
-}
-.mood-title-outline {
-  color: transparent;
-  -webkit-text-stroke: 1px rgb(243 241 255 / 0.65);
-}
-.mood-title-fill {
-  position: absolute;
-  inset: 0;
-  overflow: hidden;
-}
-.mood-title-fill > span {
-  display: block;
-}
-.mood-span {
-  order: 3;
-  color: rgb(243 241 255 / 0.85);
-}
-.mood-row {
-  --frame-w: clamp(150px, 18vw, 260px);
-  width: 100%;
-  display: flex;
-  overflow: hidden;
-  padding-block: 18px;
-  -webkit-mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
-  mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
-}
-.mood-track {
-  display: flex;
-  flex: none;
-  gap: clamp(14px, 2vw, 28px);
-  padding-right: clamp(14px, 2vw, 28px);
-  margin: 0;
-  list-style: none;
-}
-.mood-frame {
-  flex: none;
-  width: var(--frame-w);
-  aspect-ratio: 4 / 3;
-  transform: rotate(var(--tilt));
-}
-.mood-frame button {
-  position: relative;
-  display: block;
-  width: 100%;
-  height: 100%;
-  overflow: hidden;
-  border: 1px solid rgb(243 241 255 / 0.2);
-  background: var(--color-deck);
-  box-shadow: 0 18px 40px rgb(0 0 0 / 0.45);
-  transition: transform 0.35s cubic-bezier(0.2, 0.9, 0.2, 1);
-}
-.mood-frame button::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: 1;
-  background: rgb(5 4 12 / 0.3);
-  transition: opacity 0.35s ease;
-  pointer-events: none;
-}
-.mood-frame button:hover,
-.mood-frame button:focus-visible {
-  transform: scale(1.05) rotate(calc(var(--tilt) * -1));
-}
-.mood-frame button:hover::before,
-.mood-frame button:focus-visible::before,
-.mood-frame button[data-sel="true"]::before {
-  opacity: 0;
-}
-.mood-frame button[data-sel="true"] {
-  box-shadow:
-    0 0 0 2px var(--color-rim),
-    0 0 40px rgb(232 28 200 / 0.45);
-}
-.mood-year {
-  position: absolute;
-  left: 8px;
-  bottom: 8px;
-  z-index: 2;
-  padding: 2px 8px;
-  background: rgb(5 4 12 / 0.82);
-  color: var(--color-fg);
-}
-.mood[data-still="true"] .mood-row {
-  -webkit-mask-image: none;
-  mask-image: none;
-  justify-content: center;
-}
-.mood[data-still="true"] .mood-track {
-  flex: 1 1 100%;
-  width: 100%;
-  padding-inline: 16px;
-  flex-wrap: wrap;
-  justify-content: center;
-  animation: none;
-}
-.mood[data-still="true"] .mood-track[aria-hidden] {
-  display: none;
-}
-.mood-controls {
-  order: 4;
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  flex-wrap: wrap;
-  justify-content: center;
-  padding-inline: 16px;
-}
-.mood-rail {
-  display: flex;
-  gap: 4px;
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  flex-wrap: wrap;
-  justify-content: center;
-}
-.mood-rail button {
-  font-family: var(--font-display);
-  font-weight: 800;
-  font-size: 1.35rem;
-  padding: 4px 10px;
-  color: rgb(243 241 255 / 0.8);
-  border-bottom: 2px solid transparent;
-}
-.mood-rail button[data-on="true"] {
-  color: #fff;
-  border-image: var(--gradient-spectrum) 1;
-  border-bottom-width: 2px;
-  border-bottom-style: solid;
-}
-.mood-card {
-  order: 5;
-  width: min(92vw, 720px);
-  padding: clamp(18px, 3vw, 28px);
-  border: 1px solid rgb(243 241 255 / 0.16);
-  background: linear-gradient(160deg, rgb(21 18 74 / 0.55), rgb(5 4 12 / 0.85));
-}
-.mood-card-title {
-  margin-top: 6px;
-  font-family: var(--font-display);
-  font-weight: 800;
-  text-transform: uppercase;
-  font-size: clamp(1.8rem, 3.6vw, 2.8rem);
-  line-height: 0.95;
-}
+/* --- Journey: the stop extras (the flight log itself is in motion.css) -- */
 .mood-stat {
   margin-top: 16px;
   display: grid;
@@ -195,11 +32,6 @@
   font-size: 0.95rem;
   letter-spacing: 0.08em;
   color: var(--color-rim);
-}
-@media (prefers-reduced-motion: reduce) {
-  .mood-card-body {
-    animation: none;
-  }
 }
 
 /* --- Skills: the skill tree -------------------------------------------- */
@@ -227,19 +59,6 @@
   stroke: rgb(217 214 255 / 0.18);
   stroke-width: 0.25;
   stroke-dasharray: 0.8 1.2;
-}
-.tree-wire {
-  stroke: rgb(217 214 255 / 0.22);
-  stroke-width: 0.35;
-}
-.tree-wire--lit {
-  stroke: url(#tree-ramp);
-  stroke-width: 0.5;
-  opacity: 0;
-  transition: opacity 0.6s ease;
-}
-.tree-wire--lit[data-on="true"] {
-  opacity: 1;
 }
 .tree-hub {
   position: absolute;
@@ -343,14 +162,10 @@
   font-size: 0.9rem;
 }
 
-:root:lang(mn) .mood-title {
-  font-size: clamp(3rem, 12vw, 11rem);
-}
 :root:lang(mn) .arc-title,
 :root:lang(mn) .tree-title {
   font-size: clamp(1.6rem, 3.6vw, 3rem);
 }
-:root:lang(mn) .mood-card-title,
 :root:lang(mn) .dossier-summary-label {
   font-size: clamp(1.3rem, 2.4vw, 2rem);
 }

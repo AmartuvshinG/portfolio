@@ -29,6 +29,7 @@ const SOURCES = {
   "erie-aerial": "erie-aerial.webp",
   "gannon-autumn": "gannon-autumn.jpg",
   "ihack-tower": "ihack-tower.jpg",
+  techpack: "techpack.jpg",
 };
 /* Sources that arrive letterboxed: the photo's own box, in source px. */
 const EXTRACT = {

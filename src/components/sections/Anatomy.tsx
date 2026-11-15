@@ -30,6 +30,7 @@ import { MenuStage } from "@/components/ui/MenuStage";
 import { BeatDetail, BeatNotes, DUPLICATE, MatrixTable } from "@/components/anatomy/BeatDetail";
 import type { UiStrings } from "@/lib/ui";
 import { cn } from "@/lib/utils";
+import { FrameLock } from "@/components/motion/FrameLock";
 
 /* ---------------------------------------------------------------------------
    Capstone: how Spotfixes works, in six plain steps.
@@ -274,6 +275,10 @@ const StepCard = forwardRef<
       exit={{ clipPath: "inset(0 0 0 100%)", x: -24, transition: { duration: 0.35, ease: EASE_EXPO } }}
       transition={{ duration: 0.7, ease: EASE_EXPO }}
     >
+      {/* The frame locks onto each step as it is swapped in. */}
+      <FrameLock on corners={false} className="pointer-events-none absolute inset-0">
+        {null}
+      </FrameLock>
       {children}
     </motion.article>
   );

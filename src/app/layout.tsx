@@ -14,6 +14,7 @@ import "./signal.css";
 import "./title-screen.css";
 import "./chapters.css";
 import "./ride.css";
+import "./motion.css";
 import { navLinks, profile, site } from "@/lib/content";
 
 /** Every Mongol-script glyph the page sets: the name and the chapter labels. */

@@ -45,6 +45,9 @@ const en = {
     index: "Index",
     /** The phone menu's heading: the game is paused while it is open. */
     paused: "Paused",
+    /** The HUD's chapter-select button and the progress it shows. */
+    chapters: "Chapters",
+    progress: "Read progress",
   },
   hero: {
     aria: "Introduction",
@@ -73,6 +76,9 @@ const en = {
     languages: "Languages",
     languagesValue: "Mongolian · English",
     status: "Status",
+    /** The ID card: the current-role row and the live strip. */
+    now: "Now",
+    localTime: "Local time",
     file: "About me",
     dossier: "Open the dossier",
     /** The four figures under the statement. Values come from
@@ -262,6 +268,9 @@ const en = {
     transit: "Flying",
     distance: (km: number) => `≈ ${km.toLocaleString("en-US")} km`,
     board: "Journey log",
+    /** The Journey's ongoing role, and the year column's name. */
+    now: "Now",
+    years: "Years",
     pause: "Pause the reel",
     play: "Play the reel",
     choose: "Open this stop",
@@ -316,6 +325,10 @@ const en = {
       "ihack-tower": {
         caption: "I-HACK · Gannon",
         alt: "Gannon's I-HACK building, the Institute for Health and Cyber Knowledge, seen from below against a blue sky.",
+      },
+      techpack: {
+        caption: "Central Park office building · Ulaanbaatar",
+        alt: "A tall white office tower seen from its base on a street in Ulaanbaatar, a café entrance under it and trees along the pavement.",
       },
     },
   },
@@ -452,6 +465,9 @@ const mn: UiStrings = {
     index: "Гарчиг",
     /* Draft: awaiting Amartuvshin's proofread. */
     paused: "Түр зогссон",
+    /* MN draft (2026-11-15), awaiting proofread. */
+    chapters: "Бүлгүүд",
+    progress: "Уншсан хэсэг",
   },
   hero: {
     aria: "Танилцуулга",
@@ -477,6 +493,9 @@ const mn: UiStrings = {
     languages: "Хэл",
     languagesValue: "Монгол · Англи",
     status: "Төлөв",
+    /* MN draft (2026-11-15), awaiting proofread. */
+    now: "Одоо",
+    localTime: "Орон нутгийн цаг",
     file: "Миний тухай",
     dossier: "Дэлгэрэнгүйг нээх",
     /* Drafts: awaiting Amartuvshin's proofread. */
@@ -661,6 +680,9 @@ const mn: UiStrings = {
     transit: "Нислэгт",
     distance: (km: number) => `≈ ${km.toLocaleString("mn-MN")} км`,
     board: "Замналын бүртгэл",
+    /* MN draft (2026-11-15), awaiting proofread. */
+    now: "Одоо",
+    years: "Он",
     /* Drafts: awaiting Amartuvshin's proofread. */
     pause: "Түр зогсоох",
     play: "Үргэлжлүүлэх",
@@ -714,6 +736,11 @@ const mn: UiStrings = {
       "ihack-tower": {
         caption: "I-HACK · Gannon",
         alt: "Gannon-ий I-HACK барилга (Institute for Health and Cyber Knowledge) доороос, цэнхэр тэнгэрийн дор.",
+      },
+      /* MN draft (2026-11-15), awaiting proofread. */
+      techpack: {
+        caption: "Central Park оффисын барилга · Улаанбаатар",
+        alt: "Улаанбаатарын гудамжинд, доороос нь харсан өндөр цагаан оффисын барилга; доор нь кафены хаалга, явган замын дагуу моднууд.",
       },
     },
   },

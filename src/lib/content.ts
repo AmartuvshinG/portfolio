@@ -148,7 +148,7 @@ export const site = {
   name: "AMARTUVSHIN",
   title: "Amartuvshin Ganzorig · Software Engineer",
   description:
-    "Portfolio of Amartuvshin Ganzorig, a software engineering graduate (B.S., Gannon University, 2026) building full-stack and machine learning applications. Based in Ulaanbaatar, Mongolia.",
+    "Portfolio of Amartuvshin Ganzorig, a software engineering graduate (B.S., Gannon University, 2026) building full-stack and machine learning applications, now a System Developer at Techpack Power Intel LLC in Ulaanbaatar, Mongolia.",
   url: siteUrl,
 };
 
@@ -158,7 +158,7 @@ export const profile = {
   role: "Software Engineer",
   discipline: "Full-stack · Machine Learning · UI/UX",
   location: "Ulaanbaatar, Mongolia · GMT+8",
-  status: "OPEN TO ENTRY-LEVEL SOFTWARE ENGINEERING JOBS",
+  status: "SYSTEM DEVELOPER AT TECHPACK POWER INTEL LLC",
   /** The hero panel's degree row. Same facts as the page description. */
   degree: "B.S. Software Engineering · Gannon University, 2026",
   /** Set in the editorial serif under the name. */
@@ -242,7 +242,7 @@ export const about = {
   lead: "Gannon University graduate, now back home in Ulaanbaatar.",
   paragraphs: [
     "I graduated from Gannon University (Erie, Pennsylvania) in May 2026 with a B.S. in Software Engineering. My capstone, Spotfixes, is a live web platform that predicts how serious a software bug is and finds duplicate reports, built on real Mozilla Firefox data with feedback from Firefox developers. I built much of its backend, tenant system and deployment, and led its UI/UX and testing.",
-    "I work mostly in Java, Python and React. I like making software that is easy to use, works every time, and gets tested before anyone else finds the bugs. I'm back in Ulaanbaatar, I speak Mongolian and English, and I'm looking for my first full-time job as a software engineer.",
+    "I work mostly in Java, Python and React. I like making software that is easy to use, works every time, and gets tested before anyone else finds the bugs. I'm back in Ulaanbaatar, I speak Mongolian and English, and since November 2026 I work as a System Developer at Techpack Power Intel LLC.",
   ],
   signature: [
     { k: "FOCUS", v: "Full-stack · ML" },
@@ -631,6 +631,18 @@ export const timeline: TimelineEntry[] = [
     description:
       "The main contact for shipping and transport between the Ulaanbaatar head office and the mine site, working with many teams and contractors. I tracked logistics data to find slow or wasteful routes, under strict safety rules.",
   },
+  {
+    /* From Amartuvshin (2026-11-15): started as System Developer in Nov 2026.
+       The photo is the Central Park office building. No logo mark. */
+    start: { year: 2026, month: 11 },
+    period: "Nov 2026 – now",
+    kind: "work",
+    stop: "ub",
+    photo: "techpack",
+    title: "System Developer",
+    org: "Techpack Power Intel LLC · Ulaanbaatar",
+    description: "Started work as a System Developer in November 2026.",
+  },
 ];
 
 /**
@@ -689,9 +701,9 @@ export function getCourse(code: string): Course | undefined {
 
 export const contact = {
   heading: "CONTACT",
-  lead: "Hiring for an entry-level software role, or want to talk about a project? Email me.",
+  lead: "Want to talk about a project or work together? Email me.",
   email: "amaraajunior@gmail.com",
-  availability: "Open to work",
+  availability: "System Developer · Techpack Power Intel",
 };
 
 export const socials: SocialLink[] = [

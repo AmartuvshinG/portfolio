@@ -5,8 +5,8 @@ import { iconStroke } from "@/lib/icon";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
-import { X } from "lucide-react";
-import { navLinks as sectionLinks, type NavLink } from "@/lib/content";
+import { ChevronDown, X } from "lucide-react";
+import { navLinks as sectionLinks } from "@/lib/content";
 import { useI18n } from "@/lib/i18n";
 import { LangToggle } from "@/components/chrome/LangToggle";
 import { isCaseHash } from "@/lib/caseFile";
@@ -16,32 +16,30 @@ import { cn } from "@/lib/utils";
 import { Monogram } from "@/components/chrome/NavGlyphs";
 import { InkSign } from "@/components/ui/InkSign";
 import { MenuStage } from "@/components/ui/MenuStage";
-import { useScramble } from "@/hooks/useScramble";
 
 /**
- * The HUD.
+ * The Chapter HUD.
  *
- * No bar and no capsule: the chrome sits *in the frame*, the way a camera's
- * readout does. The wordmark holds the top-left corner; the chapter index
- * holds the top-right. Past the fold a dark scrim
- * fades in behind them (no backdrop-filter — a blur on fixed chrome is a tax on
- * every scroll frame), and at a chapter cut the letterbox's top bar closes in
- * behind the row, so the HUD ends up printed on the matte.
+ * One slim instrument floating at the top centre of the frame, the way a
+ * game's HUD carries the objective: the ᠠ (back to the top), a split-flap
+ * readout of the chapter you are in, and the language switch. A ramp
+ * hairline along its bottom edge is how far down the page you are; it runs
+ * on the root scroll timeline, so no JavaScript touches it per frame. The
+ * fill is opaque, not glass: a blur on fixed chrome is a tax on every scroll
+ * frame.
  *
- * The links: a mono index and a wide-tracked label. Hover draws a hairline out
- * from the left with a little sodium light under it, and the label decodes
- * through its own script (useScramble). The section you are in carries the
- * live hairline, which slides between links on a `layoutId`. Scroll progress
- * lives in the chapter spine at the right edge (ChapterFrame), not here.
+ * Desktop: the readout is a disclosure. Hover, or Enter on it, drops the
+ * chapter select beneath the bar (the title screen's diagonal menu, the
+ * chapter you are in lit); a chapter jumps there. Escape, leaving it or
+ * picking a chapter puts it away. Phones: the readout and the menu button
+ * open the pause menu, as before.
  *
- * Kept from the capsule, each a fix rather than a taste:
- *
- * 1. **The row is a container query context.** Its contents are `nowrap`; the
- *    wordmark gives way as the row narrows, and the breakpoints are measured
- *    against the row, not the viewport.
- * 2. **It knows what page it is on.** The section observer can only work on the
- *    home route; everywhere else the active item comes from the pathname.
- * 3. **Deep links re-land** while the page is still growing (see below).
+ * Kept, each a fix rather than a taste:
+ * 1. **It knows what page it is on.** The section observer can only work on
+ *    the home route; everywhere else nothing is active.
+ * 2. **Deep links re-land** while the page is still growing (see below).
+ * 3. **The pause menu closes at the desktop breakpoint**, so no scroll lock
+ *    outlives the dialog that held it.
  */
 /** How far down the page the reader is, 0–1 (read when the menu opens). */
 function readProgress(): number {
@@ -50,28 +48,31 @@ function readProgress(): number {
   return max > 0 ? Math.min(1, Math.max(0, window.scrollY / max)) : 0;
 }
 
+/** Where the chapter select takes over from the pause menu. */
+const DESK_QUERY = "(min-width: 1024px)";
+
 export function Navbar() {
-  const { c, t, locale } = useI18n();
+  const { c, t } = useI18n();
   const { navLinks, profile, contact } = c;
-  /* Where the full link row takes over from the menu sheet. Mongolian labels
-     run ~40% longer, so Mongolian keeps the sheet until 1280.
-     Written out in full because Tailwind only sees literal class names. */
-  const mn = locale === "mn";
-  const deskQuery = mn ? "(min-width: 1280px)" : "(min-width: 1080px)";
   const { scrollTo, goTo } = useSmoothScroll();
   const pathname = usePathname();
   const isHome = pathname === "/";
 
-  const [scrolled, setScrolled] = useState(false);
   const [observed, setObserved] = useState<string | null>("#hero");
   const [open, setOpen] = useState(false);
+  const [select, setSelect] = useState(false);
   const toggleRef = useRef<HTMLButtonElement>(null);
   const sheetRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const hudRef = useRef<HTMLDivElement>(null);
+  const leaveTimer = useRef<number | undefined>(undefined);
+  /* Opened by hovering, so the click that usually follows keeps it open. */
+  const hoverOpened = useRef(false);
 
   const closeSheet = useCallback(() => setOpen(false), []);
 
-  /* The sheet is a real modal — same trap, restore and lock as the dossier and
-     the palette. See the sheet's own markup for why it has a header of its own. */
+  /* The pause menu is a real modal: same trap, restore and lock as the case
+     file and the palette. */
   useOverlay({
     open,
     onClose: closeSheet,
@@ -80,31 +81,16 @@ export function Navbar() {
   });
 
   /* The site is one route. Off it (a 404) there is nothing to observe, and no
-     active link at all is the correct answer. */
+     active chapter at all is the correct answer. */
   const active = isHome ? observed : null;
-
-  /* The scrim past the fold. One boolean, flipped at most twice a gesture. */
-  useEffect(() => {
-    let ticking = false;
-    const onScroll = () => {
-      if (ticking) return;
-      ticking = true;
-      requestAnimationFrame(() => {
-        setScrolled(window.scrollY > 100);
-        ticking = false;
-      });
-    };
-    onScroll();
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
-  }, []);
+  const activeIndex = Math.max(0, navLinks.findIndex((l) => l.href === active));
+  const cur = navLinks[activeIndex];
 
   /* Active-chapter tracking. Home only, and rebuilt when the route changes. */
   useEffect(() => {
     if (!isHome) return;
     /* The static list, not the translated one: only the hrefs are read, and
-       they are the same in every language — depending on the translated
-       array would tear the observer down on every language switch. */
+       they are the same in every language. */
     const sections = sectionLinks
       .map((l) => document.querySelector<HTMLElement>(l.href))
       .filter((el): el is HTMLElement => Boolean(el));
@@ -126,31 +112,24 @@ export function Navbar() {
 
   /* Arriving from another route with a hash: Lenis owns the scroll position and
      does not act on the browser's own hash jump, so the page lands at the top
-     with the right URL. One frame later, put it where it was asked to go. */
+     with the right URL. One frame later, put it where it was asked to go.
+
+     The page is not its final height yet (pins and runways mount after the
+     first render), so for a moment after arrival every change in the page's
+     height re-lands on the target, until the visitor takes over or it has had
+     time to settle. The position is handed over as a number: given a
+     selector, Lenis adds the element's rect to its own scroll value, which
+     never saw the browser's native anchor jump. */
   useEffect(() => {
     const hash = window.location.hash;
-    /* `#case=…` belongs to the case-file host, and is not a valid selector —
-       `querySelector` would throw on the `=`. Look up plain ids only. */
+    /* `#case=…` belongs to the case-file host, and is not a valid selector. */
     if (!isHome || !hash || isCaseHash(hash)) return;
     const target = document.getElementById(decodeURIComponent(hash.slice(1)));
     if (!target) return;
     const id = requestAnimationFrame(() => scrollTo(window.location.hash));
 
-    /* The page is not its final height yet. `useReducedMotion` reports true
-       for the first render, so the hero starts without its runway and the film
-       interludes start collapsed; ScrollTrigger then inserts pin spacers. Each
-       of those grows the page *above* the target after the jump was aimed, and
-       a deep link to #about landed a screen and a half short. So for a moment
-       after arrival, every change in the page's height re-lands on the target —
-       until the visitor takes over, or it has had time to settle.
-
-       The position is computed here and handed over as a number. Given a
-       selector, Lenis adds the element's rect to its *own* scroll value, which
-       never saw the browser's native anchor jump — and the glide above is
-       ignored anyway while the preloader holds the lock — so a selector
-       re-land aimed from the wrong origin. */
     let done = false;
-    let t = 0;
+    let timer = 0;
     const land = () => {
       if (done) return;
       const y = target.getBoundingClientRect().top + window.scrollY;
@@ -158,18 +137,17 @@ export function Navbar() {
     };
     const settle = () => {
       if (done) return;
-      clearTimeout(t);
-      t = window.setTimeout(land, 120);
+      clearTimeout(timer);
+      timer = window.setTimeout(land, 120);
     };
     const finish = () => {
       done = true;
-      clearTimeout(t);
+      clearTimeout(timer);
       ro.disconnect();
     };
     const ro = new ResizeObserver(settle);
     ro.observe(document.body);
-    /* One last landing after the curtain has lifted, then hands off. The ink
-       intro runs ~9.5s on a first view, so this waits that long and a beat. */
+    /* One last landing after the loader has lifted, then hands off. */
     const giveUp = window.setTimeout(() => {
       land();
       finish();
@@ -188,160 +166,196 @@ export function Navbar() {
     };
   }, [isHome, scrollTo]);
 
-  /* Close the sheet the moment the viewport reaches the desktop breakpoint.
-     The sheet and its toggle are both `min-[1080px]:hidden` (1280 in
-     Mongolian — see `deskQuery`), so widening the window with it open hid the
-     whole thing in CSS while `open` stayed true — leaving a scroll lock held
-     by a dialog that no longer exists on screen and no control left to close
-     it. The query must match the one in the class. */
+  /* Close the pause menu the moment the viewport reaches the desktop
+     breakpoint (its toggle is hidden there), and the chapter select below
+     it (its trigger is a plain readout there). */
   useEffect(() => {
-    if (!open) return;
-    const mq = window.matchMedia(deskQuery);
-    const check = () => mq.matches && setOpen(false);
+    const mq = window.matchMedia(DESK_QUERY);
+    const check = () => (mq.matches ? setOpen(false) : setSelect(false));
     check();
     mq.addEventListener("change", check);
     return () => mq.removeEventListener("change", check);
-  }, [open, deskQuery]);
+  }, []);
+
+  useEffect(() => () => window.clearTimeout(leaveTimer.current), []);
 
   const go = (href: string) => {
     goTo(href);
     setOpen(false);
+    setSelect(false);
+  };
+  const jump = (i: number) => {
+    const link = navLinks[i];
+    if (isHome) go(link.href);
+    else window.location.assign(`/${link.href}`);
   };
 
-  const brand = (
-    <>
+  /* Hovering the readout opens the select on a mouse (not the whole bar: the
+     language switch sits in it too); leaving the HUD puts it away after a
+     beat, so the pointer can cross the gap between the bar and the panel. */
+  const onEnter = (e: React.PointerEvent) => {
+    if (e.pointerType !== "mouse" || !window.matchMedia(DESK_QUERY).matches) return;
+    window.clearTimeout(leaveTimer.current);
+    if (!select) hoverOpened.current = true;
+    setSelect(true);
+  };
+  const onLeave = (e: React.PointerEvent) => {
+    if (e.pointerType !== "mouse") return;
+    window.clearTimeout(leaveTimer.current);
+    leaveTimer.current = window.setTimeout(() => {
+      /* Never pull the menu out from under keyboard focus. */
+      if (document.getElementById("hud-select")?.contains(document.activeElement)) return;
+      hoverOpened.current = false;
+      setSelect(false);
+    }, 220);
+  };
+  const onKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Escape" && select) {
+      e.stopPropagation();
+      setSelect(false);
+      triggerRef.current?.focus();
+    }
+  };
+  /* Focus leaving the HUD puts the select away. */
+  const onBlur = (e: React.FocusEvent) => {
+    if (!hudRef.current?.contains(e.relatedTarget as Node | null)) setSelect(false);
+  };
+
+  const homeLabel = `${profile.wordmark} — ${isHome ? t.nav.backToTop : t.nav.home}`;
+  const monogram = isHome ? (
+    <a
+      href="#hero"
+      onClick={(e) => {
+        e.preventDefault();
+        go("#hero");
+      }}
+      className="hud-home"
+      aria-label={homeLabel}
+    >
       <Monogram className="shrink-0" />
-      <span
-        className={cn(
-          "font-display text-lg text-fg",
-          /* With the full link row showing, a row under 70rem cannot hold the
-             wordmark too; the monogram carries the brand alone there. */
-          mn ? "@max-[70rem]:min-[1280px]:hidden" : "@max-[70rem]:min-[1080px]:hidden"
-        )}
-      >
-        {profile.wordmark}
-      </span>
-    </>
+    </a>
+  ) : (
+    <Link href="/" className="hud-home" aria-label={homeLabel}>
+      <Monogram className="shrink-0" />
+    </Link>
   );
 
   return (
     <>
-      {/* Padded by the safe-area insets: the viewport is `cover`, so on an
-          iPhone the header would otherwise sit under the status bar and, in
-          landscape, under the notch. */}
+      {/* Padded by the safe-area insets: the viewport is `cover`. */}
       <header
-        className="fixed inset-x-0 top-0 z-[60] pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)] pt-[env(safe-area-inset-top)]"
+        className="pointer-events-none fixed inset-x-0 top-0 z-[60] flex justify-center px-3 pl-[max(0.75rem,env(safe-area-inset-left))] pr-[max(0.75rem,env(safe-area-inset-right))] pt-[calc(env(safe-area-inset-top)+10px)]"
         /* Its own layer in a chapter jump (SmoothScroll), so it holds still
-           while the page dissolves under it. Named only during the jump
-           (globals.css): a view-transition-name makes a backdrop root, which
-           would blind the menu button's glass. */
+           while the page dissolves under it. Named only during the jump. */
         data-vt="nav"
       >
-        {/* The scrim: only past the fold, and only a gradient — the frame
-            stays open; the HUD just keeps its legibility over the film. */}
-        <span
-          aria-hidden
-          className="pointer-events-none absolute inset-x-0 top-0 h-[calc(7rem+env(safe-area-inset-top))] transition-opacity duration-500"
-          style={{
-            opacity: scrolled ? 1 : 0,
-            background: "linear-gradient(180deg, rgba(2,3,6,0.88) 0%, rgba(2,3,6,0.55) 45%, rgba(2,3,6,0) 100%)",
-          }}
-        />
-        <nav className="@container relative mx-auto flex h-16 max-w-[112.5rem] flex-nowrap items-center justify-between gap-3 px-5 sm:gap-6 md:px-8 lg:px-10">
-          {/* Top-left: the brand. A real link off-route so it navigates home
-              rather than scrolling a page that has no #hero. */}
-          <div className="flex min-w-0 shrink-0 items-center gap-5">
-            {isHome ? (
-              <a
-                href="#hero"
-                onClick={(e) => {
-                  e.preventDefault();
-                  go("#hero");
-                }}
-                className="flex shrink-0 items-center gap-2.5"
-                aria-label={`${profile.wordmark} — ${t.nav.backToTop}`}
-              >
-                {brand}
-              </a>
-            ) : (
-              <Link
-                href="/"
-                className="flex shrink-0 items-center gap-2.5"
-                aria-label={`${profile.wordmark} — ${t.nav.home}`}
-              >
-                {brand}
-              </Link>
-            )}
-          </div>
+        <div
+          ref={hudRef}
+          className="hud pointer-events-auto relative"
+          data-select={select ? "true" : "false"}
+          onPointerLeave={onLeave}
+          onKeyDown={onKeyDown}
+          onBlur={onBlur}
+        >
+          <nav className="hud-bar" aria-label={t.nav.siteMenu}>
+            <span aria-hidden className="hud-corners" />
+            {monogram}
+            <span aria-hidden className="hud-sep" />
 
-          {/* Top-right: the chapter index. `shrink-0`: a list allowed to
-              shrink is compressed under its neighbours rather than overflowing,
-              which reads as a rendering fault and hides from overflow checks. */}
-          <div className="flex shrink-0 items-center gap-3 sm:gap-6">
-            <ul className={cn("hidden shrink-0 flex-nowrap items-center", mn ? "min-[1280px]:flex" : "min-[1080px]:flex")}>
-              {/* No INDEX: the wordmark already goes to the top. The sheet,
-                  palette and footer keep it. */}
-              {navLinks
-                .filter((l) => l.href !== "#hero")
-                .map((link) => (
-                  <HudLink key={link.href} link={link} isActive={active === link.href} isHome={isHome} go={go} />
-                ))}
-            </ul>
+            {/* The readout. Desktop: the chapter select's trigger. Phones: it
+                opens the pause menu, like the button beside it. */}
+            <button
+              ref={triggerRef}
+              type="button"
+              className="hud-readout hidden lg:inline-flex"
+              aria-expanded={select}
+              aria-controls="hud-select"
+              aria-label={`${t.nav.chapters}: ${cur.code} ${cur.label}`}
+              onClick={(e) => {
+                /* A mouse click right after a hover-open keeps it open. */
+                const next = e.detail > 0 && hoverOpened.current ? true : !select;
+                hoverOpened.current = false;
+                setSelect(next);
+                /* Opened from the keyboard: focus goes to the lit chapter, so
+                   the next arrow or Enter acts in the menu. */
+                if (next && e.detail === 0) {
+                  requestAnimationFrame(() =>
+                    document.querySelector<HTMLElement>("#hud-select .ms-item[tabindex=\"0\"]")?.focus()
+                  );
+                }
+              }}
+              onPointerEnter={onEnter}
+            >
+              <Readout code={cur.code} label={cur.label} />
+              <ChevronDown aria-hidden size={16} strokeWidth={iconStroke(16, "medium")} className="hud-chev" />
+            </button>
+            <button
+              type="button"
+              className="hud-readout lg:hidden"
+              aria-label={`${t.nav.openMenu}: ${cur.code} ${cur.label}`}
+              aria-expanded={open}
+              aria-controls="mobile-nav"
+              onClick={() => setOpen(true)}
+            >
+              <Readout code={cur.code} label={cur.label} />
+            </button>
 
+            <span aria-hidden className="hud-sep hidden sm:block" />
             <LangToggle className="hidden sm:flex" />
 
             <button
               ref={toggleRef}
               type="button"
-              /* The sheet opens on its own short fade. It used to be inked in
-                 by a full-screen flood, which read as heavy-handed for a menu. */
               onClick={() => setOpen((o) => !o)}
               aria-label={open ? t.nav.closeMenu : t.nav.openMenu}
               aria-expanded={open}
               aria-controls="mobile-nav"
-              className={cn(
-                "hud-brackets relative isolate flex h-11 items-center gap-3 px-3 font-mono text-[0.875rem] uppercase tracking-[0.16em] text-fg",
-                mn ? "min-[1280px]:hidden" : "min-[1080px]:hidden"
-              )}
+              className="hud-menu lg:hidden"
             >
-              {/* On touch, the button floats on a small pane of glass, as
-                  iOS 26's own floating controls do. Its own element, because
-                  `hud-brackets` owns the button's background. 44px of
-                  backdrop is nothing to blur. */}
-              <span aria-hidden className="glass-ios pointer-events-none absolute inset-0 -z-10 hidden rounded-[3px] bg-[#030208]/35 pointer-coarse:block" />
-              <span aria-hidden className="hidden min-[420px]:inline [:root:lang(mn)_&]:normal-case [:root:lang(mn)_&]:tracking-[0.08em]">
-                {/* Below 420px the wordmark needs the room; the button keeps
-                    its accessible name either way. */}
-                {t.nav.index}
-              </span>
-              {/* Two hairlines of unequal length that cross into an X. */}
+              {/* Two hairlines of unequal length. */}
               <span aria-hidden className="relative block h-3 w-5">
-                {[-1, 1].map((d) => (
-                  <span
-                    key={d}
-                    className="absolute right-0 top-1/2 h-px bg-current transition-[transform,width] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]"
-                    style={{
-                      width: open || d < 0 ? "100%" : "60%",
-                      transform: open
-                        ? `translateY(-50%) rotate(${d * 45}deg)`
-                        : `translateY(calc(-50% + ${d * 3.5}px))`,
-                    }}
-                  />
-                ))}
+                <span className="absolute right-0 top-[2px] h-px w-full bg-current" />
+                <span className="absolute right-0 bottom-[2px] h-px w-3/5 bg-current" />
               </span>
             </button>
+
+            {/* How far down the page: the root scroll timeline (motion.css). */}
+            <span aria-hidden className="hud-progress">
+              <span />
+            </span>
+          </nav>
+
+          {/* The chapter select (desktop). */}
+          <div id="hud-select" className="hud-select" hidden={!select} onPointerEnter={onEnter}>
+            {select && (
+              <>
+                <span aria-hidden className="hud-select-shutter">
+                  {[0, 1, 2, 3].map((i) => (
+                    <span key={i} style={{ "--b": i } as React.CSSProperties} />
+                  ))}
+                </span>
+                <MenuStage
+                  items={navLinks.map((link) => ({ key: link.href, code: link.code, label: link.label }))}
+                  active={activeIndex}
+                  onSelect={jump}
+                  selectOnMove={false}
+                  linkProps={(i) => ({ href: isHome ? navLinks[i].href : `/${navLinks[i].href}` })}
+                  label={t.nav.chapters}
+                  size="sm"
+                />
+              </>
+            )}
           </div>
-        </nav>
+        </div>
       </header>
 
       {/* The phone index: the game's pause menu.
-          The page stops behind an opaque screen (the city's poster under the
-          void, no backdrop blur), a shutter of ramp bars sweeps across, and
-          the chapters stand down the diagonal like the title screen's menu,
-          the one you are in lit. A real modal: `z-80` over the header,
-          `aria-modal`, its own wordmark and close button (the header's
-          copies are outside the dialog). Close, Escape, or a chapter tap
-          resumes. */}
+          The page stops behind an opaque screen, a shutter of ramp bars
+          sweeps across, and the chapters stand down the diagonal like the
+          title screen's menu, the one you are in lit. A real modal: `z-80`
+          over the header, `aria-modal`, its own mark and close button (the
+          header's copies are outside the dialog). Close, Escape, or a chapter
+          tap resumes. */}
       <AnimatePresence>
         {open && (
           <motion.div
@@ -354,10 +368,7 @@ export function Navbar() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1, transition: { duration: 0.18 } }}
             exit={{ opacity: 0, transition: { duration: 0.24, delay: 0.1 } }}
-            className={cn(
-              "pause fixed inset-0 z-[80] flex flex-col overflow-hidden px-5 pb-[max(1rem,env(safe-area-inset-bottom))] pl-[max(1.25rem,env(safe-area-inset-left))] pr-[max(1.25rem,env(safe-area-inset-right))] pt-[env(safe-area-inset-top)]",
-              mn ? "min-[1280px]:hidden" : "min-[1080px]:hidden"
-            )}
+            className="pause fixed inset-0 z-[80] flex flex-col overflow-hidden px-5 pb-[max(1rem,env(safe-area-inset-bottom))] pl-[max(1.25rem,env(safe-area-inset-left))] pr-[max(1.25rem,env(safe-area-inset-right))] pt-[calc(env(safe-area-inset-top)+10px)] lg:hidden"
           >
             <span aria-hidden className="pause-shutter">
               {[0, 1, 2, 3, 4, 5].map((i) => (
@@ -367,23 +378,30 @@ export function Navbar() {
             {/* The name in light down the right edge. */}
             <InkSign tone="neon" className="pause-script pointer-events-none absolute right-3 top-[16%] h-[62%]" />
 
-            <div className="relative flex h-16 shrink-0 items-center justify-between">
-              <span className="flex items-center gap-3">
+            {/* The same instrument as the HUD, so the menu reads as the bar
+                opened out. */}
+            <div className="hud-bar hud-bar--pause relative shrink-0 self-center">
+              <span aria-hidden className="hud-corners" />
+              <span className="hud-home" aria-hidden>
                 <Monogram className="shrink-0" />
-                <span className="font-display text-lg text-fg">{profile.wordmark}</span>
               </span>
+              <span aria-hidden className="hud-sep" />
+              <span className="hud-readout">
+                <span className="font-display text-lg leading-none text-fg">{profile.wordmark}</span>
+              </span>
+              <span aria-hidden className="hud-sep" />
               <button
                 type="button"
                 data-autofocus
                 onClick={closeSheet}
                 aria-label={t.nav.closeMenu}
-                className="hud-brackets -mr-1 flex h-11 w-11 items-center justify-center text-fg"
+                className="hud-menu"
               >
                 <X size={18} strokeWidth={iconStroke(18, "medium")} />
               </button>
             </div>
 
-            <div className="pause-head relative mt-2 shrink-0">
+            <div className="pause-head relative mt-5 shrink-0">
               <span className="pause-title display-caps">{t.nav.paused}</span>
               <span aria-hidden className="pause-progress">
                 <span
@@ -399,12 +417,8 @@ export function Navbar() {
             <div data-lenis-prevent className="pause-menu relative mt-4 min-h-0 flex-1 overflow-y-auto overscroll-contain pr-12">
               <MenuStage
                 items={navLinks.map((link) => ({ key: link.href, code: link.code, label: link.label }))}
-                active={Math.max(0, navLinks.findIndex((l) => l.href === active))}
-                onSelect={(i) => {
-                  const link = navLinks[i];
-                  if (isHome) go(link.href);
-                  else window.location.assign(`/${link.href}`);
-                }}
+                active={activeIndex}
+                onSelect={jump}
                 selectOnMove={false}
                 linkProps={(i) => ({ href: isHome ? navLinks[i].href : `/${navLinks[i].href}` })}
                 label={t.nav.siteMenu}
@@ -412,7 +426,7 @@ export function Navbar() {
               />
             </div>
 
-            <div className="pause-hud relative mt-3 flex shrink-0 flex-wrap items-center justify-between gap-x-4">
+            <div className="pause-hud relative mt-3 flex shrink-0 flex-wrap items-center justify-between gap-x-4 gap-y-2">
               <a href={`mailto:${contact.email}`} className="hud-label flex h-11 items-center">
                 {contact.email}
               </a>
@@ -425,114 +439,18 @@ export function Navbar() {
   );
 }
 
-/**
- * One link in the HUD: index, label, and the hairlines.
- *
- * The active hairline is one element on a `layoutId`, so it travels between
- * links rather than blinking from one to the next. The hover hairline draws
- * out from the left over 300ms with a little sodium light pooled under the
- * label; both are transform/opacity only. The label decodes on hover and on
- * focus (useScramble); its accessible name is a separate sr-only copy.
- */
-function HudLink({
-  link,
-  isActive,
-  isHome,
-  go,
-}: {
-  link: NavLink;
-  isActive: boolean;
-  isHome: boolean;
-  go: (href: string) => void;
-}) {
-  const { ref: scrambleRef, run: runScramble } = useScramble(link.label);
-  /* A language switch decodes the label into its new script, the way a
-     hover does (see lib/localeDecode for the headings). */
-  const shownLabel = useRef(link.label);
-  useEffect(() => {
-    if (shownLabel.current === link.label) return;
-    shownLabel.current = link.label;
-    runScramble();
-  }, [link.label, runScramble]);
-  const linkClass = cn(
-    "group/hud relative flex items-baseline gap-2 whitespace-nowrap px-2.5 py-3 font-nav text-[1.0625rem] font-semibold uppercase tracking-[0.2em] transition-colors duration-300 @[76rem]:px-3.5",
-    /* Exo 2 caps in Cyrillic run long; mixed case keeps the Mongolian row. */
-    "[:root:lang(mn)_&]:normal-case [:root:lang(mn)_&]:tracking-[0.02em]",
-    isActive ? "text-fg" : "text-muted hover:text-fg"
-  );
-  const parts = (
-    <>
-      {/* Light pooled under the label on hover. */}
-      <span
-        aria-hidden
-        className="pointer-events-none absolute inset-x-1 bottom-0 h-6 opacity-0 transition-opacity duration-300 group-hover/hud:opacity-100 group-focus-visible/hud:opacity-100"
-        style={{
-          background:
-            "radial-gradient(60% 100% at 50% 100%, color-mix(in srgb, var(--color-hazard) 22%, transparent), transparent)",
-        }}
-      />
-      {/* The index: the first thing to go when the row runs short. */}
-      <span
-        aria-hidden
-        className={cn(
-          "hidden font-mono text-[0.6875rem] tabular tracking-normal transition-colors duration-300 @[76rem]:inline",
-          "[:root:lang(mn)_&]:hidden [:root:lang(mn)_&]:@[84rem]:inline",
-          /* Muted, not faint: over the film, faint measured 4.28–4.49:1. */
-          isActive ? "text-[var(--color-hazard)]" : "text-muted group-hover/hud:text-[var(--color-hazard)]"
-        )}
-      >
-        {link.code}
-      </span>
-      <span className="sr-only">{link.label}</span>
-      <span ref={scrambleRef} aria-hidden className="inline-block whitespace-nowrap">
-        {link.label}
-      </span>
-      {/* The hover hairline, drawn from the left. */}
-      {!isActive && (
-        <span
-          aria-hidden
-          className="pointer-events-none absolute inset-x-2.5 bottom-1 h-px origin-left scale-x-0 bg-fg/60 transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover/hud:scale-x-100 group-focus-visible/hud:scale-x-100 @[76rem]:inset-x-3.5"
-        />
-      )}
-      {isActive && (
-        <motion.span
-          layoutId="nav-active"
-          aria-hidden
-          className="pointer-events-none absolute inset-x-2.5 bottom-1 h-px bg-[var(--color-hazard)] shadow-[0_0_8px_var(--color-hazard),0_0_18px_color-mix(in_srgb,var(--color-hazard)_50%,transparent)] @[76rem]:inset-x-3.5"
-          transition={{ layout: { type: "spring", stiffness: 380, damping: 34 } }}
-        />
-      )}
-    </>
-  );
-
+/** The chapter readout: its code and name flap down, split-flap style, each
+ *  time the chapter changes. Keyed by the label, so a language switch flaps
+ *  it into the new script too. */
+function Readout({ code, label }: { code: string; label: string }) {
   return (
-    <li className="relative">
-      {isHome ? (
-        <a
-          href={link.href}
-          onClick={(e) => {
-            e.preventDefault();
-            go(link.href);
-          }}
-          aria-current={isActive ? "location" : undefined}
-          onMouseEnter={runScramble}
-          onFocus={runScramble}
-          className={linkClass}
-        >
-          {parts}
-        </a>
-      ) : (
-        <Link
-          href={`/${link.href}`}
-          aria-current={isActive ? "page" : undefined}
-          onMouseEnter={runScramble}
-          onFocus={runScramble}
-          className={linkClass}
-        >
-          {parts}
-        </Link>
-      )}
-    </li>
+    <span className="hud-flap" aria-hidden>
+      <span key={`${code}-${label}`} className="hud-flap-card">
+        <span className="hud-code tabular">{code}</span>
+        <span className="hud-tri">▸</span>
+        <span className="hud-label-text">{label}</span>
+      </span>
+    </span>
   );
 }
 

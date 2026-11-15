@@ -1,11 +1,10 @@
 "use client";
 
-import { education, sectionIndex } from "@/lib/content";
+import { education, profile as enProfile, sectionIndex } from "@/lib/content";
 import { useI18n } from "@/lib/i18n";
 import { Reveal } from "@/components/motion/Reveal";
 import { ChapterSeam } from "@/components/chrome/ChapterSeam";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
-import { cn } from "@/lib/utils";
 import {
   motion,
   useInView,
@@ -20,9 +19,13 @@ import { DecodeText } from "@/components/motion/DecodeText";
 import { InkSign } from "@/components/ui/InkSign";
 import { NeonSign } from "@/components/ui/NeonSign";
 import { ScrubWords } from "@/components/motion/ScrubWords";
-import { GlareCard } from "@/components/motion/GlareCard";
+import { FrameLock } from "@/components/motion/FrameLock";
+import { MARK_D, MARK_T } from "@/components/chrome/NavGlyphs";
+import { iconStroke } from "@/lib/icon";
+import { Briefcase, Crosshair, GraduationCap, MapPin, Wrench } from "lucide-react";
 import { ScriptLabel } from "@/components/ui/ScriptLabel";
 import { PIN_QUERY } from "@/lib/viewport";
+import { useMediaQuery } from "@/hooks/useMediaQuery";
 
 /**
  * About: a statement, four numbers, then the story — Lando Norris's order
@@ -44,6 +47,9 @@ import { PIN_QUERY } from "@/lib/viewport";
 
 /** Room for the pinned frame: the statement and the numbers at full size. */
 const STAGE_QUERY = PIN_QUERY;
+/** Room for the printed ID to hold whole under the HUD (it runs ~740px tall,
+ *  more in Mongolian); shorter screens get the card in flow. */
+const BOOT_QUERY = "(min-width: 1024px) and (min-height: 820px)";
 /** The pinned runway: one screen to light the line, a little to hold. */
 const STAGE_VH = 210;
 /** Where the line has finished lighting, in stage progress. */
@@ -65,6 +71,7 @@ export function About() {
     return () => mq.removeEventListener("change", update);
   }, []);
   const pinned = room && !reduced;
+  const bootRoom = useMediaQuery(BOOT_QUERY);
 
   const stats = [
     { v: education.gpaRecent.toFixed(2), k: t.about.statGpa },
@@ -90,7 +97,7 @@ export function About() {
       )}
 
       {/* ---- 3. THE ID, then the story, page by page ------------------- */}
-      {pinned ? <ProfileBoot /> : <ProfileFlow reduced={reduced} />}
+      {pinned && bootRoom ? <ProfileBoot /> : <ProfileFlow reduced={reduced} />}
     </section>
   );
 }
@@ -217,86 +224,184 @@ function StatementBody({
 /* 3. The ID                                                                  */
 /* -------------------------------------------------------------------------- */
 
-/** The dossier as an ID card: the same fields, the same scan and decode, on
- *  a card that tilts toward the pointer and carries the ramp on its rim. */
-function IdCard({ boot }: { boot?: boolean }) {
+/** One glyph per signature field, in content order (focus, tools, degree,
+ *  home), and one for the current role. */
+const FIELD_ICONS = [Crosshair, Wrench, GraduationCap, MapPin] as const;
+
+/** A passport's machine-readable line, from the Latin name only. Decoration:
+ *  aria-hidden, and it states nothing the card does not. */
+const MRZ = (() => {
+  const [given = "", ...rest] = enProfile.fullName.toUpperCase().split(" ");
+  const line = `P<MNG${rest.join("<")}<<${given}`;
+  return (line + "<".repeat(44)).slice(0, 44);
+})();
+
+/** Local time in Ulaanbaatar, written into one text node once a second. */
+function LocalClock() {
+  const ref = useRef<HTMLSpanElement>(null);
+  useEffect(() => {
+    const fmt = new Intl.DateTimeFormat("en-GB", {
+      timeZone: "Asia/Ulaanbaatar",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      hour12: false,
+    });
+    const tick = () => {
+      if (ref.current) ref.current.textContent = fmt.format(new Date());
+    };
+    tick();
+    const id = window.setInterval(tick, 1000);
+    return () => window.clearInterval(id);
+  }, []);
+  return (
+    <span ref={ref} className="tabular">
+      --:--:--
+    </span>
+  );
+}
+
+/**
+ * The ID as a printed credential.
+ *
+ * Pinned, the stage hands in two clocks: `lift` (the runway arriving: the card
+ * comes up off the deck, tilted back, and lands flat as the pin takes hold)
+ * and `progress` (the runway itself: the holo foil crosses the card and the
+ * machine-readable line types out). `boot` prints it once: frame lock, the
+ * ᠠ stamped into its emblem slot, each field decoding with its meter filling,
+ * then the NOW row lights. In flow it boots once on view and the foil and
+ * the MRZ play as a short settle instead. Nothing follows the pointer.
+ */
+function IdCard({
+  boot,
+  lift,
+  progress,
+}: {
+  boot?: boolean;
+  lift?: MotionValue<number>;
+  progress?: MotionValue<number>;
+}) {
   const { c, t } = useI18n();
   const { about, profile } = c;
   const reduced = useReducedMotion();
   const plateRef = useRef<HTMLDivElement>(null);
-  /* Same threshold as the scan below, so each value decodes as the line
-     passes it. */
-  const seen = useInView(plateRef, { once: true, amount: 0.6 });
-  /* A pinned stage hands in its own clock; in flow, the card boots when most
-     of it is on screen. */
-  const scanned = boot ?? seen;
+  const seen = useInView(plateRef, { once: true, amount: 0.5 });
+  const scanned = reduced || (boot ?? seen);
 
-  const fields = [
-    ...about.signature.map((s) => ({ k: s.k, v: s.v, wide: false })),
-    { k: t.about.status, v: profile.status, wide: true },
-  ];
+  const zero = useMotionValue(1);
+  const rotateX = useTransform(lift ?? zero, [0, 1], [18, 0]);
+  const scale = useTransform(lift ?? zero, [0, 1], [0.9, 1]);
+  const y = useTransform(lift ?? zero, [0, 1], [60, 0]);
+  const foilX = useTransform(progress ?? zero, [0, 0.4], ["-100%", "330%"]);
+  const scrubbed = Boolean(progress) && !reduced;
+
+  const Glyph = Briefcase;
 
   return (
-    <div ref={plateRef}>
-      <GlareCard tilt={6} className={cn("id-card bg-[#05040c]/85", scanned && "id-card--on")}>
-        {/* Own layer: .hud-brackets sets the `background` shorthand, and
-            unlayered CSS would wipe the card's fill if they shared a node. */}
-        <span
-          aria-hidden
-          className="hud-brackets pointer-events-none absolute inset-0 z-20 [--hud-c:var(--color-hazard)] [--hud-l:14px] [--hud-w:2px]"
-        />
-        {/* One sodium scan down the card as it arrives. */}
-        {!reduced && (
-          <motion.span
-            aria-hidden
-            className="pointer-events-none absolute inset-0 z-10"
-            style={{
-              background:
-                "linear-gradient(180deg, transparent calc(100% - 28px), color-mix(in srgb, var(--color-hazard) 18%, transparent) calc(100% - 2px), var(--color-hazard))",
-            }}
-            initial={{ y: "-100%", opacity: 1 }}
-            animate={scanned ? { y: "0%", opacity: [1, 1, 0] } : undefined}
-            transition={{ duration: 1.1, ease: [0.45, 0, 0.2, 1], opacity: { times: [0, 0.85, 1], duration: 1.1 } }}
-          />
-        )}
+    <div ref={plateRef} className="idc-stage">
+      <motion.div className="idc-tilt" style={lift && !reduced ? { rotateX, scale, y } : undefined}>
+        <FrameLock on={scanned} className="idc" data-print={scanned ? "true" : "false"} data-scrub={scrubbed ? "true" : "false"}>
+          {/* The holo foil: one diagonal band of the ramp, screened over the
+              card. Pinned it crosses with the scroll; in flow it crosses once. */}
+          <span aria-hidden className="idc-foil-clip">
+            <motion.span className="idc-foil" style={scrubbed ? { x: foilX } : undefined} />
+          </span>
+          <span aria-hidden className="idc-grid" />
 
-        <div className="relative p-6 md:p-9 md:pr-28">
-          <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2">
-            <span className="micro text-[var(--color-hazard)]">
-              {t.about.file} · {sectionIndex("#about")}
-            </span>
-            <span className="micro">{profile.role}</span>
-          </div>
-          <p className="mt-5 font-display text-[clamp(1.5rem,2.6vw,2.6rem)] uppercase leading-none text-fg">
-            {profile.fullName}
-          </p>
-          <p className="spectrum-text mt-3 font-tech text-base font-semibold uppercase tracking-wide md:text-lg">
-            {profile.discipline}
-          </p>
+          <div className="relative p-6 md:p-9 md:pr-28">
+            <div className="flex items-start gap-5">
+              {/* The emblem slot: the ᠠ stamps in as the card prints. */}
+              <span aria-hidden className="idc-emblem">
+                <svg viewBox="0 0 32 32">
+                  <defs>
+                    <linearGradient id="idc-ramp" x1="0" y1="32" x2="32" y2="0" gradientUnits="userSpaceOnUse">
+                      <stop offset="0" stopColor="#ff1f3d" />
+                      <stop offset="0.4" stopColor="#e81cc8" />
+                      <stop offset="0.72" stopColor="#8a3dff" />
+                      <stop offset="1" stopColor="#5664ff" />
+                    </linearGradient>
+                  </defs>
+                  <path d={MARK_D} transform={MARK_T} fill="url(#idc-ramp)" />
+                </svg>
+              </span>
+              <div className="min-w-0 flex-1">
+                <div className="fl-in flex flex-wrap items-center justify-between gap-x-6 gap-y-1" style={{ "--i": 0 } as React.CSSProperties}>
+                  <span className="micro text-[var(--color-hazard)]">
+                    {t.about.file} · {sectionIndex("#about")}
+                  </span>
+                  <span className="micro">{profile.role}</span>
+                </div>
+                <p className="fl-in mt-3 font-display text-[clamp(1.5rem,2.6vw,2.6rem)] uppercase leading-none text-fg" style={{ "--i": 1 } as React.CSSProperties}>
+                  {profile.fullName}
+                </p>
+                <p className="fl-in spectrum-text mt-2 font-tech text-base font-semibold uppercase tracking-wide md:text-lg" style={{ "--i": 2 } as React.CSSProperties}>
+                  {profile.discipline}
+                </p>
+              </div>
+            </div>
 
-          <dl className="mt-7 grid grid-cols-1 border-t border-line sm:grid-cols-2">
-            {fields.map((f, i) => (
-              <div
-                key={f.k}
-                className={cn("flex flex-col gap-2 border-b border-line py-4 sm:pr-6", f.wide && "sm:col-span-2")}
-              >
-                <dt className="micro">{f.k}</dt>
+            <dl className="mt-7 grid grid-cols-1 gap-x-6 sm:grid-cols-2">
+              {about.signature.map((f, i) => {
+                const Icon = FIELD_ICONS[i] ?? Crosshair;
+                return (
+                  <div key={f.k} className="idc-field" style={{ "--i": i } as React.CSSProperties}>
+                    <dt className="micro flex items-center gap-2">
+                      <Icon aria-hidden size={16} strokeWidth={iconStroke(16, "medium")} className="text-[var(--color-rim)]" />
+                      {f.k}
+                    </dt>
+                    <dd className="font-tech text-lg font-semibold uppercase leading-tight text-fg">
+                      <DecodeText text={f.v} play={scanned} delay={0.5 + i * 0.14} />
+                    </dd>
+                    <span aria-hidden className="idc-meter">
+                      <span />
+                    </span>
+                  </div>
+                );
+              })}
+              {/* The current role: lit once when the print finishes. */}
+              <div className="idc-field idc-now sm:col-span-2" style={{ "--i": 4 } as React.CSSProperties}>
+                <dt className="micro flex items-center gap-2">
+                  <span aria-hidden className="idc-lamp" />
+                  {t.about.now}
+                </dt>
                 <dd className="font-tech text-lg font-semibold uppercase leading-tight text-fg">
-                  <DecodeText text={f.v} play={scanned} delay={0.3 + i * 0.12} />
+                  <Glyph aria-hidden size={18} strokeWidth={iconStroke(18, "medium")} className="mr-2 inline-block align-[-3px] text-[var(--color-rim)]" />
+                  <DecodeText text={profile.status} play={scanned} delay={1.15} />
                 </dd>
               </div>
-            ))}
-          </dl>
-        </div>
+            </dl>
 
-        {/* The name again, in Mongol bichig, down the card's spine. */}
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-y-0 right-0 hidden w-20 items-center justify-center border-l border-line md:flex"
-        >
-          <InkSign tone="neon" lit="write" idle rewritable className="h-[min(78%,20rem)]" />
-        </div>
-      </GlareCard>
+            {/* The live strip: serial, place, the time there now. */}
+            <div className="idc-strip micro">
+              <span>
+                ID-{sectionIndex("#about")} · {profile.location}
+              </span>
+              <span className="flex items-center gap-2">
+                {t.about.localTime}
+                <span className="text-fg">
+                  <LocalClock />
+                </span>
+              </span>
+            </div>
+            <p aria-hidden className="idc-mrz">
+              {/* One span per character: it types out on opacity alone. */}
+              {MRZ.split("").map((ch, i) => (
+                <span key={i} style={{ "--c": i } as React.CSSProperties}>
+                  {ch}
+                </span>
+              ))}
+            </p>
+          </div>
+
+          {/* The name again, in Mongol bichig, down the card's spine. */}
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-y-0 right-0 hidden w-20 items-center justify-center border-l border-line md:flex"
+          >
+            <InkSign tone="neon" lit="write" idle rewritable className="h-[min(78%,20rem)]" />
+          </div>
+        </FrameLock>
+      </motion.div>
     </div>
   );
 }
@@ -330,17 +435,19 @@ function ProfileBoot() {
   const pages = usePages();
   const n = pages.length;
   const { scrollYProgress } = useScroll({ target: ref, offset: ["start start", "end end"] });
+  /* The runway arriving: the card lands flat as the pin takes hold. */
+  const { scrollYProgress: lift } = useScroll({ target: ref, offset: ["start end", "start start"] });
   const [booted, setBooted] = useState(false);
   useMotionValueEvent(scrollYProgress, "change", (p) => {
     if (p > BOOT_AT) setBooted(true);
   });
 
   return (
-    <div ref={ref} className="relative" style={{ height: `${BOOT_VH}vh` }}>
+    <div ref={ref} className="boot-runway relative" style={{ height: `${BOOT_VH}vh` }}>
       <div className="sticky top-0 flex h-svh items-center">
         <div className="mx-auto grid w-full max-w-[112.5rem] items-center gap-10 px-8 lg:grid-cols-12 lg:gap-14 lg:px-16">
           <div className="lg:col-span-7">
-            <IdCard boot={booted} />
+            <IdCard boot={booted} lift={lift} progress={scrollYProgress} />
           </div>
           <div className="dossier-stack lg:col-span-5">
             {pages.map((pg, i) => (
@@ -377,9 +484,17 @@ function DossierPage({
   const dim = useTransform(back, [0, 1], [1, 0.08]);
   const words = useTransform(progress, [a + span * 0.1, a + span * 0.7], [0, 1]);
   const last = index === count - 1;
+  /* The frame locks onto the page as it lands, and stays locked. */
+  const [landed, setLanded] = useState(false);
+  useMotionValueEvent(progress, "change", (p) => {
+    if (p >= a + span * 0.12) setLanded(true);
+  });
 
   return (
     <motion.article className="dossier-page" style={{ x, y, scale, opacity, zIndex: index + 1 }}>
+      <FrameLock on={landed} className="pointer-events-none absolute inset-0">
+        {null}
+      </FrameLock>
       <motion.div style={{ opacity: last ? 1 : dim }}>
         <PageBody page={page} index={index} count={count}>
           <ScrubWords text={page.text} progress={words} />
@@ -447,14 +562,14 @@ function ProfileFlow({ reduced }: { reduced: boolean }) {
         </Reveal>
         <div className="flex flex-col gap-6 lg:col-span-5">
           {pages.map((pg, i) => (
-            <Reveal key={pg.key} delay={i * 0.06}>
-              <article className="dossier-page dossier-page--flow">
+            <FrameLock key={pg.key} as="article" className="dossier-page dossier-page--flow">
+              <div className="fl-in">
                 <PageBody page={pg} index={i} count={pages.length}>
                   {reduced ? pg.text : <ScrubWords text={pg.text} />}
                 </PageBody>
                 {pg.games ? <GameChips games={pg.games} /> : null}
-              </article>
-            </Reveal>
+              </div>
+            </FrameLock>
           ))}
         </div>
       </div>
