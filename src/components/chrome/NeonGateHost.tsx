@@ -68,6 +68,9 @@ function Gate({ req, onDone }: { req: GateRequest; onDone: () => void }) {
     const canvas = canvasRef.current;
     const ht = !reduced && canvas ? createHalftone(canvas) : null;
     if (!ht) {
+      // A failed/lost WebGL canvas can paint the browser's white broken-canvas
+      // surface. The CSS ground, rather than that canvas, owns the fallback.
+      if (canvas) canvas.style.visibility = "hidden";
       setFade(true);
       ready.then(() => {
         if (!live) return;
@@ -88,6 +91,16 @@ function Gate({ req, onDone }: { req: GateRequest; onDone: () => void }) {
     const cx = window.innerWidth / 2;
     const cy = window.innerHeight / 2;
     const reach = ht.reach(cx, cy) + Math.min(window.innerWidth, window.innerHeight) * 0.36;
+    // Paint before exposing the canvas; React's effect may run after a paint.
+    ht.draw(cx, cy, reach);
+    canvas!.style.visibility = "visible";
+    canvas!.parentElement!.style.backgroundColor = "transparent";
+    const lost = (event: Event) => {
+      event.preventDefault();
+      canvas!.style.visibility = "hidden";
+      canvas!.parentElement!.style.backgroundColor = "#05040c";
+    };
+    canvas!.addEventListener("webglcontextlost", lost);
     let raf = 0;
     const run = (ms: number, from: number, to: number, ease: (t: number) => number, then: () => void) => {
       const t0 = performance.now();
@@ -107,7 +120,7 @@ function Gate({ req, onDone }: { req: GateRequest; onDone: () => void }) {
         request.current.onCovered();
         setTitle(false);
         run(OPEN_MS, 0, reach, easeOut, () => {
-          ht.dispose();
+          canvas!.style.visibility = "hidden";
           request.current.resolve();
           done.current();
         });
@@ -117,6 +130,8 @@ function Gate({ req, onDone }: { req: GateRequest; onDone: () => void }) {
       live = false;
       cancelAnimationFrame(raf);
       timers.forEach(clearTimeout);
+      canvas!.style.visibility = "hidden";
+      canvas!.removeEventListener("webglcontextlost", lost);
       ht.dispose();
     };
     // A request's project is fixed until the gate unmounts.
@@ -124,8 +139,8 @@ function Gate({ req, onDone }: { req: GateRequest; onDone: () => void }) {
   }, []);
 
   return (
-    <div aria-hidden className="pointer-events-auto fixed inset-0 z-[95]">
-      <canvas ref={canvasRef} className={`absolute inset-0 h-full w-full ${fade ? "bg-void transition-opacity" : ""}`} />
+    <div aria-hidden className="pointer-events-auto fixed inset-0 z-[95]" style={{ backgroundColor: "#05040c" }}>
+      <canvas ref={canvasRef} style={{ visibility: "hidden" }} className={`absolute inset-0 h-full w-full ${fade ? "bg-void transition-opacity" : ""}`} />
       {project && (
         <div
           className={`absolute inset-0 grid place-content-center justify-items-center gap-3 text-center transition-opacity duration-300 ${

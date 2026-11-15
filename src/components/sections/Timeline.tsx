@@ -158,7 +158,13 @@ function FlightLog() {
           {/* The spine: filled by the scroll, a playhead on the eye line. */}
           <div className="jr-spine" aria-hidden style={{ "--sel": sel } as React.CSSProperties}>
             <span className="jr-spine-fill" />
-            <span className="jr-playhead" />
+            {/* A node per stop, lit once the playhead has passed it. */}
+            {entries.map((_, i) => (
+              <span key={i} className="jr-spine-node" data-on={i <= sel ? "true" : "false"} style={{ top: `${((i + 0.5) / n) * 100}%` }} />
+            ))}
+            <span className="jr-spine-head" />
+            {/* The playhead turns a quarter at every new stop, then settles. */}
+            <span className="jr-playhead" data-turn={sel % 2} />
             <span className="jr-count tag tabular">
               {String(sel + 1).padStart(2, "0")}
               <span className="text-fg/60">/{String(n).padStart(2, "0")}</span>

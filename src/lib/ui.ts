@@ -43,8 +43,8 @@ const en = {
     home: "home",
     /** The phone's menu button, visible text. */
     index: "Index",
-    /** The phone menu's heading: the game is paused while it is open. */
-    paused: "Paused",
+    /** The phone menu's heading. */
+    paused: "Menu",
     /** The HUD's chapter-select button and the progress it shows. */
     chapters: "Chapters",
     progress: "Read progress",
@@ -59,15 +59,16 @@ const en = {
     /** The title screen's chapter menu. `sub` is the chapter's plain name. */
     menuAria: "Chapter menu",
     menu: [
-      { label: "Start", sub: "About", href: "#about" },
-      { label: "Missions", sub: "Projects", href: "#work" },
-      { label: "Skill tree", sub: "Skills", href: "#capabilities" },
-      { label: "Map", sub: "Journey", href: "#timeline" },
-      { label: "Comms", sub: "Contact", href: "#contact" },
+      { label: "About", sub: "Who I am", href: "#about" },
+      { label: "Projects", sub: "What I've built", href: "#work" },
+      { label: "Skills", sub: "What I work with", href: "#capabilities" },
+      { label: "Journey", sub: "Where I've been", href: "#timeline" },
+      { label: "Contact", sub: "Get in touch", href: "#contact" },
     ],
-    selectKey: "↑ ↓ to choose · Enter to select",
-    selectTap: "Tap to select",
-    player: "Player 1",
+    selectKey: "↑ ↓ and Enter to jump to a section",
+    selectTap: "Tap a section to jump to it",
+    /** The hero card's label over the current role. */
+    player: "Currently",
   },
   about: {
     aria: "Profile",
@@ -357,6 +358,7 @@ const en = {
     title: "Get in touch",
     email: "Email",
     responseTime: "Replies within 48 hours",
+    reply: "Reply time",
     emailMe: "Email me",
     copy: "Copy",
     copied: "Copied",
@@ -464,7 +466,7 @@ const mn: UiStrings = {
     home: "нүүр",
     index: "Гарчиг",
     /* Draft: awaiting Amartuvshin's proofread. */
-    paused: "Түр зогссон",
+    paused: "Цэс",
     /* MN draft (2026-11-15), awaiting proofread. */
     chapters: "Бүлгүүд",
     progress: "Уншсан хэсэг",
@@ -478,15 +480,16 @@ const mn: UiStrings = {
     /* Drafts: awaiting Amartuvshin's proofread. */
     menuAria: "Бүлгийн цэс",
     menu: [
-      { label: "Эхлэх", sub: "Танилцуулга", href: "#about" },
-      { label: "Даалгавар", sub: "Төслүүд", href: "#work" },
-      { label: "Ур чадвар", sub: "Чадварууд", href: "#capabilities" },
-      { label: "Газрын зураг", sub: "Аялал", href: "#timeline" },
-      { label: "Холбоо", sub: "Холбогдох", href: "#contact" },
+      /* MN draft (2026-11-15), awaiting proofread. */
+      { label: "Танилцуулга", sub: "Би хэн бэ", href: "#about" },
+      { label: "Төслүүд", sub: "Бүтээсэн зүйлс", href: "#work" },
+      { label: "Ур чадвар", sub: "Ашигладаг хэрэгслүүд", href: "#capabilities" },
+      { label: "Замнал", sub: "Миний туулсан зам", href: "#timeline" },
+      { label: "Холбогдох", sub: "Надтай холбогдох", href: "#contact" },
     ],
-    selectKey: "↑ ↓ сонгох · Enter дарж орох",
-    selectTap: "Товшиж сонгоно уу",
-    player: "Тоглогч 1",
+    selectKey: "↑ ↓ болон Enter-ээр хэсэг рүү шилжинэ",
+    selectTap: "Хэсэг дээр товшиж шилжинэ",
+    player: "Одоо",
   },
   about: {
     aria: "Танилцуулга",
@@ -768,6 +771,8 @@ const mn: UiStrings = {
     title: "Холбоо барих",
     email: "И-мэйл",
     responseTime: "48 цагийн дотор хариулна",
+    /* MN draft (2026-11-15), awaiting proofread. */
+    reply: "Хариу өгөх хугацаа",
     emailMe: "И-мэйл бичих",
     copy: "Хуулах",
     copied: "Хуулсан",

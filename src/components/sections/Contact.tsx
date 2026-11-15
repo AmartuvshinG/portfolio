@@ -3,19 +3,19 @@
 import { useEffect, useRef, useState } from "react";
 import { iconStroke } from "@/lib/icon";
 import { AnimatePresence, motion, useAnimationControls, useInView } from "framer-motion";
-import { Clock, MapPin } from "lucide-react";
+import { Briefcase, Clock, MapPin } from "lucide-react";
 import { sectionIndex } from "@/lib/content";
 import { useI18n } from "@/lib/i18n";
-import { Reveal } from "@/components/motion/Reveal";
 import { ChapterSeam } from "@/components/chrome/ChapterSeam";
 import { LinkedInMark } from "@/components/ui/BrandMarks";
-import { NeonSign } from "@/components/ui/NeonSign";
 import { InkSign } from "@/components/ui/InkSign";
 import { IconCheck, IconCopy, IconMail } from "@/components/ui/HudIcons";
 import { Cta } from "@/components/ui/Cta";
 import { Seal } from "@/components/ui/Seal";
 import { MagneticButton } from "@/components/motion/MagneticButton";
-import { ScriptLabel } from "@/components/ui/ScriptLabel";
+import { SectionHeader } from "@/components/ui/SectionHeader";
+import { FrameLock } from "@/components/motion/FrameLock";
+import { LocalClock } from "@/components/ui/LocalClock";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
 import { EASE_EXPO } from "@/lib/motion";
 
@@ -68,121 +68,122 @@ export function Contact() {
       id="contact"
       data-act="void"
       data-chapter="CONTACT"
-      className="relative overflow-hidden pb-24 pt-24 md:pb-36 md:pt-36"
+      className="relative overflow-x-clip pb-24 pt-24 md:pb-36 md:pt-36"
       aria-label={t.contact.aria}
     >
       <ChapterSeam wipe />
 
       {/* The bookend: the hero's sign again, down the right margin, written
-          in light once more as you arrive — dimmer, a sign further down the
-          street, so it never competes with the address. */}
+          in light once more as you arrive. Dimmer, so it never competes with
+          the address. */}
       <InkSign
         tone="neon"
         lit="write"
-        className="pointer-events-none absolute right-[1.5%] top-[14%] hidden h-[min(64vh,40rem)] opacity-45 md:block"
+        className="pointer-events-none absolute right-[1.5%] top-[14%] hidden h-[min(64vh,40rem)] opacity-40 xl:block"
       />
 
       <div className="relative mx-auto max-w-[112.5rem] px-5 md:px-8 lg:px-16">
-        <Reveal className="relative flex flex-col gap-4">
-          <ScriptLabel href="#contact" />
-          <span className="micro kicker-plate w-fit">
-            {sectionIndex("#contact")} — {contact.heading}
-          </span>
-          <h2 className="display-caps text-[clamp(1.9rem,6vw,6rem)] text-fg">
-            {/* The bookend to the hero: the last sign on the street lights as
-                you reach it. */}
-            <NeonSign text={t.contact.title} lit="view" />
-          </h2>
-          <p className="max-w-2xl font-tech text-2xl leading-snug text-fg md:text-3xl">
-            {contact.lead}
-          </p>
-        </Reveal>
+        <div className="flex flex-col justify-between gap-6 md:flex-row md:items-end">
+          <SectionHeader index={sectionIndex("#contact")} label={contact.heading} title={t.contact.title} chapter="#contact" />
+          <p className="max-w-md text-lg leading-relaxed text-fg/85 md:text-right">{contact.lead}</p>
+        </div>
 
-        <Reveal className="mt-16 min-w-0 border-t border-line pt-14">
-          <p className="micro">{t.contact.email}</p>
+        {/* The signal card: the address and the two ways in on the left, the
+            live status on the right. Locks in like every card on the page. */}
+        <FrameLock className="ct-card mt-14 md:mt-20">
+          <div className="ct-main fl-in min-w-0" style={{ "--i": 0 } as React.CSSProperties}>
+            <p className="tag text-[var(--color-rim)]">{t.contact.email}</p>
 
-          {/* The address is the headline. It breaks anywhere rather than
-              overflowing a phone, and the copy button sits on its baseline.
-              The thud: the line dips a hair as the seal lands. Driven by
-              controls, never by re-keying — a remount would take the Copy
-              button, and keyboard focus with it. */}
-          <motion.div className="mt-3 flex flex-wrap items-end gap-x-5 gap-y-3" animate={thud}>
-            <Address email={contact.email} reduced={reduced} />
-            <Cta
-              variant="secondary"
-              onClick={copy}
-              className="mb-1 shrink-0"
-              icon={copied ? <IconCheck size={15} /> : <IconCopy size={15} />}
-              label={copied ? t.contact.copied : t.contact.copy}
-            />
-            <span aria-live="polite" className="sr-only">
-              {copied ? t.contact.copiedLive(contact.email) : ""}
-            </span>
-            {/* His seal, pressed beside the address: falls in large, lands
-                with the intro's ease, holds while "Copied" does. */}
-            <AnimatePresence>
-              {copied && (
-                <motion.span
-                  key={stamps}
-                  aria-hidden
-                  className="mb-1 block h-12 w-12 shrink-0 md:h-14 md:w-14"
-                  initial={reduced ? { opacity: 0 } : { opacity: 0, scale: 1.5, rotate: -14 }}
-                  animate={{ opacity: 0.95, scale: 1, rotate: -6 }}
-                  exit={{ opacity: 0, transition: { duration: 0.5 } }}
-                  transition={{ duration: 0.16, ease: [0.55, 0, 0.9, 0.4] }}
-                >
-                  <Seal className="h-full w-full" />
-                </motion.span>
-              )}
-            </AnimatePresence>
-          </motion.div>
-
-          {/* Three facts, one line: what a recruiter checks before writing. */}
-          <ul className="mt-8 flex flex-wrap gap-x-8 gap-y-3 text-base text-fg/90 md:text-lg">
-            <li className="flex items-center gap-2.5">
-              <span
-                aria-hidden
-                /* Steady, not blinking: an infinite animation keeps the page
-                   producing frames even off screen. */
-                className="h-2 w-2 shrink-0 rounded-full bg-[var(--color-hazard)] shadow-[0_0_10px_var(--color-hazard)]"
-              />
-              {contact.availability}
-            </li>
-            <li className="flex items-center gap-2.5">
-              <Clock aria-hidden size={18} strokeWidth={iconStroke(18)} className="shrink-0 text-[var(--color-holo)]" />
-              {t.contact.responseTime}
-            </li>
-            <li className="flex items-center gap-2.5">
-              <MapPin aria-hidden size={18} strokeWidth={iconStroke(18)} className="shrink-0 text-[var(--color-holo)]" />
-              {profile.location}
-            </li>
-          </ul>
-
-          <div className="mt-10 flex flex-wrap gap-3">
-            {/* The ramp carries the colour and the label stays dark on it:
-                bone on magenta is only ~3:1. */}
-            <MagneticButton strength={0.25}>
+            {/* The address is the headline. It breaks anywhere rather than
+                overflowing a phone, and the copy button sits on its baseline.
+                The thud: the line dips a hair as the seal lands. Driven by
+                controls, never by re-keying: a remount would take the Copy
+                button, and keyboard focus with it. */}
+            <motion.div className="mt-3 flex flex-wrap items-end gap-x-5 gap-y-3" animate={thud}>
+              <Address email={contact.email} reduced={reduced} />
               <Cta
-                href={`mailto:${contact.email}`}
-                icon={<IconMail size={15} />}
-                label={t.contact.emailMe}
-                className="h-12 px-7"
+                variant="secondary"
+                onClick={copy}
+                className="mb-1 shrink-0"
+                icon={copied ? <IconCheck size={15} /> : <IconCopy size={15} />}
+                label={copied ? t.contact.copied : t.contact.copy}
               />
-            </MagneticButton>
-            {linkedin && (
+              <span aria-live="polite" className="sr-only">
+                {copied ? t.contact.copiedLive(contact.email) : ""}
+              </span>
+              {/* His seal, pressed beside the address. */}
+              <AnimatePresence>
+                {copied && (
+                  <motion.span
+                    key={stamps}
+                    aria-hidden
+                    className="mb-1 block h-12 w-12 shrink-0 md:h-14 md:w-14"
+                    initial={reduced ? { opacity: 0 } : { opacity: 0, scale: 1.5, rotate: -14 }}
+                    animate={{ opacity: 0.95, scale: 1, rotate: -6 }}
+                    exit={{ opacity: 0, transition: { duration: 0.5 } }}
+                    transition={{ duration: 0.16, ease: [0.55, 0, 0.9, 0.4] }}
+                  >
+                    <Seal className="h-full w-full" />
+                  </motion.span>
+                )}
+              </AnimatePresence>
+            </motion.div>
+
+            <div className="mt-10 flex flex-wrap gap-3">
+              {/* The ramp carries the colour and the label stays dark on it. */}
               <MagneticButton strength={0.25}>
-                <Cta
-                  variant="secondary"
-                  href={linkedin.href}
-                  external
-                  icon={<LinkedInMark className="h-4 w-auto" />}
-                  label={linkedin.label === "LINKEDIN" ? "LinkedIn" : linkedin.label}
-                  className="h-12 px-6"
-                />
+                <Cta href={`mailto:${contact.email}`} icon={<IconMail size={15} />} label={t.contact.emailMe} className="h-12 px-7" />
               </MagneticButton>
-            )}
+              {linkedin && (
+                <MagneticButton strength={0.25}>
+                  <Cta
+                    variant="secondary"
+                    href={linkedin.href}
+                    external
+                    icon={<LinkedInMark className="h-4 w-auto" />}
+                    label={linkedin.label === "LINKEDIN" ? "LinkedIn" : linkedin.label}
+                    className="h-12 px-6"
+                  />
+                </MagneticButton>
+              )}
+            </div>
           </div>
-        </Reveal>
+
+          {/* The status panel: what a recruiter checks before writing, as
+              live readouts in the ID card's module style. */}
+          <dl className="ct-status fl-in" style={{ "--i": 1 } as React.CSSProperties}>
+            <div className="ct-row">
+              <dt className="tag flex items-center gap-2">
+                <span aria-hidden className="idc-lamp ct-lamp" />
+                {t.about.now}
+              </dt>
+              <dd className="flex items-center gap-2.5">
+                <Briefcase aria-hidden size={18} strokeWidth={iconStroke(18)} className="shrink-0 text-[var(--color-rim)]" />
+                {contact.availability}
+              </dd>
+            </div>
+            <div className="ct-row">
+              <dt className="tag">{t.about.localTime}</dt>
+              <dd className="flex items-center gap-2.5">
+                <Clock aria-hidden size={18} strokeWidth={iconStroke(18)} className="shrink-0 text-[var(--color-rim)]" />
+                <span>
+                  <LocalClock className="text-fg" /> <span className="text-fg/80">· GMT+8</span>
+                </span>
+              </dd>
+            </div>
+            <div className="ct-row">
+              <dt className="tag">{t.contact.reply}</dt>
+              <dd>{t.contact.responseTime}</dd>
+            </div>
+            <div className="ct-row">
+              <dt className="tag">{c.about.signature[3]?.k}</dt>
+              <dd className="flex items-center gap-2.5">
+                <MapPin aria-hidden size={18} strokeWidth={iconStroke(18)} className="shrink-0 text-[var(--color-rim)]" />
+                {profile.location}
+              </dd>
+            </div>
+          </dl>
+        </FrameLock>
       </div>
     </section>
   );

@@ -244,7 +244,7 @@ export function SkillTree({ items }: { items: Capability[] }) {
             </span>
             <div key={`c-${active}`} className="tree-panel-body">
               <span className="micro flex items-center gap-3 text-fg/85">
-                <span className="tree-code">{cur.code}</span>
+                <span className="tree-code">{t.craft.title}</span>
                 <span className="tree-roll tabular">
                   <span>{String(active + 1).padStart(2, "0")}</span>
                 </span>

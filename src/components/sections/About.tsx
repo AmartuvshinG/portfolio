@@ -20,6 +20,7 @@ import { InkSign } from "@/components/ui/InkSign";
 import { NeonSign } from "@/components/ui/NeonSign";
 import { ScrubWords } from "@/components/motion/ScrubWords";
 import { FrameLock } from "@/components/motion/FrameLock";
+import { LocalClock } from "@/components/ui/LocalClock";
 import { MARK_D, MARK_T } from "@/components/chrome/NavGlyphs";
 import { iconStroke } from "@/lib/icon";
 import { Briefcase, Crosshair, GraduationCap, MapPin, Wrench } from "lucide-react";
@@ -235,31 +236,6 @@ const MRZ = (() => {
   const line = `P<MNG${rest.join("<")}<<${given}`;
   return (line + "<".repeat(44)).slice(0, 44);
 })();
-
-/** Local time in Ulaanbaatar, written into one text node once a second. */
-function LocalClock() {
-  const ref = useRef<HTMLSpanElement>(null);
-  useEffect(() => {
-    const fmt = new Intl.DateTimeFormat("en-GB", {
-      timeZone: "Asia/Ulaanbaatar",
-      hour: "2-digit",
-      minute: "2-digit",
-      second: "2-digit",
-      hour12: false,
-    });
-    const tick = () => {
-      if (ref.current) ref.current.textContent = fmt.format(new Date());
-    };
-    tick();
-    const id = window.setInterval(tick, 1000);
-    return () => window.clearInterval(id);
-  }, []);
-  return (
-    <span ref={ref} className="tabular">
-      --:--:--
-    </span>
-  );
-}
 
 /**
  * The ID as a printed credential.

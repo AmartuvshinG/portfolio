@@ -2,13 +2,15 @@
 
 import { useI18n } from "@/lib/i18n";
 import { useSmoothScroll } from "@/components/chrome/SmoothScroll";
-import { UbClock } from "@/components/chrome/Navbar";
+import { LocalClock } from "@/components/ui/LocalClock";
+import { FrameLock } from "@/components/motion/FrameLock";
+import { MARK_D, MARK_T } from "@/components/chrome/NavGlyphs";
 import { LedTicker } from "@/components/chrome/LedTicker";
 import { Reveal } from "@/components/motion/Reveal";
 import { Cta } from "@/components/ui/Cta";
 import { InkSign } from "@/components/ui/InkSign";
 import { Seal } from "@/components/ui/Seal";
-import { IconArrowUp, IconReplay } from "@/components/ui/HudIcons";
+import { IconReplay } from "@/components/ui/HudIcons";
 import { replayIntro } from "@/lib/intro";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
 
@@ -28,13 +30,13 @@ const MAP = { name: "Natural Earth", href: "https://www.naturalearthdata.com" };
 /**
  * The end of the reel.
  *
- * The site opened like a film — a slate, a scroll being written — so it ends
- * like one: the LED sign running the name as the house lights come up, then
- * end credits, set the way a film sets them, roles right-aligned against names
- * on a centre line. Every credit is a fact about how the site was made: who
- * designed and built it, the faces, the stack, and where the footage and
- * the rain behind the page and the map on the Path come from. Then the seal, the
- * brushed name, and the house index for anyone who wants to go back in.
+ * The site opened like a film, so it ends like one: the LED sign running the
+ * name, then end credits on one frame-locked card, roles right-aligned against
+ * names on a centre line, each row rising in as the roll scrolls up. Every
+ * credit is a fact about how the site was made: who designed and built it, the
+ * faces, the stack, and where the footage, components and map data come from.
+ * Then the seal and the name, the contents and the links, and the ᠠ to go
+ * back to the top.
  *
  * Carries `data-act="void"` so the chrome above stays inverted to the bottom.
  */
@@ -57,7 +59,7 @@ export function Footer() {
           {FOOTAGE.map((f) => (
             <span key={f.name} className="block">
               {f.name}
-              <span className="text-muted">
+              <span className="cr-by">
                 {" — "}
                 <a href={f.href} target="_blank" rel="noopener noreferrer" className="spectrum-underline">
                   {f.by}
@@ -74,7 +76,7 @@ export function Footer() {
       value: (
         <>
           {GROUND.name}
-          <span className="text-muted"> — {cr.via} {GROUND.via}</span>
+          <span className="cr-by"> — {cr.via} {GROUND.via}</span>
         </>
       ),
     },
@@ -105,19 +107,21 @@ export function Footer() {
           tone="ghost"
           className="pointer-events-none absolute left-[4%] top-16 hidden h-[min(80%,34rem)] lg:block"
         />
-        <Reveal className="flex flex-col items-center">
-          <h2 className="micro tracking-[0.5em] !text-[var(--color-hazard)]">{cr.title}</h2>
-          <span aria-hidden className="mt-4 h-10 w-px bg-gradient-to-b from-[var(--color-hazard)] to-transparent" />
+        <Reveal className="cr-head">
+          <h2 className="cr-title">{cr.title}</h2>
+          <span aria-hidden className="cr-rule" />
         </Reveal>
 
-        <dl className="mx-auto mt-10 grid max-w-4xl gap-y-6">
-          {credits.map((row) => (
-            <Reveal key={row.role} className="grid grid-cols-1 gap-1 text-center md:grid-cols-[1fr_1fr] md:gap-x-10 md:text-left">
-              <dt className="micro md:text-right">{row.role}</dt>
-              <dd className="font-tech text-base text-fg md:text-lg">{row.value}</dd>
-            </Reveal>
-          ))}
-        </dl>
+        <FrameLock as="div" className="cr-roll">
+          <dl className="m-0">
+            {credits.map((row, i) => (
+              <div key={row.role} className="cr-row fl-in" style={{ "--i": Math.min(i, 6) } as React.CSSProperties}>
+                <dt className="tag">{row.role}</dt>
+                <dd>{row.value}</dd>
+              </div>
+            ))}
+          </dl>
+        </FrameLock>
 
         <Reveal className="mt-20 flex flex-col items-center gap-6">
           <Seal className="h-12 w-12 opacity-90" />
@@ -139,9 +143,9 @@ export function Footer() {
                   e.preventDefault();
                   goTo(l.href);
                 }}
-                className="group inline-flex min-h-11 items-center gap-3 font-mono text-xs uppercase tracking-widest text-muted transition-colors hover:text-fg md:min-h-0"
+                className="ft-link"
               >
-                <span className="tabular text-faint transition-colors group-hover:text-[var(--color-hazard)]">{l.code}</span>
+                <span className="ft-code tabular">{l.code}</span>
                 {l.label}
               </a>
             </li>
@@ -155,14 +159,10 @@ export function Footer() {
                 href={s.href}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="group flex min-h-11 items-center justify-between gap-4 font-mono text-xs uppercase tracking-widest text-muted transition-colors hover:text-fg md:min-h-0"
+                className="ft-link w-full justify-between"
               >
                 {s.label}
-                {/* Revealed on hover — so on a touch screen, always shown, and
-                    at full muted strength: at 60% it read 3-point-something:1. */}
-                <span className="opacity-0 transition-opacity group-hover:opacity-60 [@media(hover:none)]:opacity-100">
-                  {s.handle}
-                </span>
+                <span className="normal-case tracking-normal text-fg/80">{s.handle}</span>
               </a>
             </li>
           ))}
@@ -171,35 +171,34 @@ export function Footer() {
 
       {/* The last frame: room at the foot for the letterbox to close over
           without covering anything (lg+, where the matte exists). */}
-      <div className="flex flex-col items-start justify-between gap-3 border-t border-line px-5 py-5 font-mono text-xs uppercase tracking-[0.2em] text-faint md:flex-row md:items-center md:px-8 lg:pb-[calc(1.25rem+5vh)]">
-        <div className="flex flex-col gap-2">
-          <span className="flex flex-wrap items-center gap-x-4 gap-y-2">
+      <div className="flex flex-col items-start justify-between gap-5 border-t border-line px-5 py-6 md:flex-row md:items-center md:px-8 lg:pb-[calc(1.5rem+5vh)]">
+        <div className="flex flex-col gap-3">
+          <span className="ft-base flex flex-wrap items-center gap-x-5 gap-y-2">
             <span>
               © {year} {profile.fullName}
             </span>
-            <UbClock className="flex" />
-            <span
-              aria-hidden
-              lang="mn-Mong"
-              className="font-script text-sm normal-case tracking-normal text-[color-mix(in_srgb,var(--color-hazard)_70%,transparent)]"
-            >
+            <span className="flex items-center gap-2" aria-hidden>
+              UB <LocalClock className="text-fg" />
+            </span>
+            <span aria-hidden lang="mn-Mong" className="font-script text-base normal-case tracking-normal text-[var(--color-rim)]">
               {profile.nameScript}
             </span>
           </span>
-          {/* The trademark credit for the marks on the Signal panels. Sentence
-              case and normal tracking: it is a sentence someone may actually
-              need to read, not a HUD label. */}
-          <span className="max-w-2xl font-sans text-xs normal-case leading-relaxed tracking-normal">
-            {t.footer.credit}
-          </span>
+          {/* The trademark credit: a sentence someone may actually need to
+              read, so sentence case at the 14px floor. */}
+          <span className="max-w-2xl text-sm leading-relaxed text-fg/80">{t.footer.credit}</span>
         </div>
-        <div className="flex flex-wrap items-center gap-3">
+        <div className="flex flex-wrap items-center gap-4">
           {/* The film can be run again. Not under reduced motion, where
               there is no intro to run. */}
           {!reduced && (
             <Cta variant="secondary" onClick={replayIntro} icon={<IconReplay size={14} />} label={t.footer.replay} arrow={null} />
           )}
-          <Cta variant="secondary" onClick={() => goTo(0)} icon={<IconArrowUp size={14} />} label={t.footer.top} arrow={null} />
+          <button type="button" className="ft-top" onClick={() => goTo(0)} aria-label={t.footer.top}>
+            <svg viewBox="0 0 32 32" aria-hidden>
+              <path d={MARK_D} transform={MARK_T} fill="currentColor" />
+            </svg>
+          </button>
         </div>
       </div>
     </footer>
@@ -209,7 +208,7 @@ export function Footer() {
 function FooterCol({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div>
-      <p className="micro mb-4">{title}</p>
+      <p className="tag mb-4 text-[var(--color-rim)]">{title}</p>
       {/* Rows are 44px tap targets on a phone, so they carry their own
           spacing there; on desktop they are type-height again. */}
       <ul className="md:space-y-3">{children}</ul>

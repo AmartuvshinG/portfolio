@@ -173,7 +173,7 @@ function CaseFile({
   return createPortal(
     <AnimatePresence>
       {project && (
-        <div data-act="void" className="fixed inset-0 z-[90]" role="presentation">
+        <div data-act="void" className="fixed inset-0 z-[90]" role="presentation" style={{ backgroundColor: "#05040c" }}>
           <motion.div
             aria-hidden
             className="absolute inset-0 bg-void/90"
@@ -203,6 +203,7 @@ function CaseFile({
             role="dialog"
             aria-modal="true"
             aria-labelledby="case-title"
+            style={{ backgroundColor: "#05040c" }}
             className="absolute inset-0 flex flex-col overflow-hidden bg-bg ring-1 ring-inset ring-line md:inset-4 md:notch-card lg:inset-6"
             initial={reduced ? { opacity: 0 } : { opacity: 0, y: 48 }}
             animate={{ opacity: 1, y: 0 }}

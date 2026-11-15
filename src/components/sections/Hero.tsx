@@ -207,7 +207,7 @@ export function Hero() {
                         {chapter?.code ?? `0${i + 1}`}
                       </span>
                       <span className="ts-item-label">{item.label}</span>
-                      <span className="ts-item-sub">{chapter?.label ?? item.sub}</span>
+                      <span className="ts-item-sub">{item.sub}</span>
                     </a>
                   </li>
                 );
