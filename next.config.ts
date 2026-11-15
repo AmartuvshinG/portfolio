@@ -6,6 +6,10 @@ const nextConfig: NextConfig = {
      fetched at build, and a daily scheduled deploy keeps them fresh. */
   output: "export",
   reactCompiler: true,
+  /* Dev only: lets a phone on the same Wi-Fi load the dev server by the PC's
+     LAN address. Without it Next blocks its dev scripts cross-origin and the
+     page sits on the preloader forever. */
+  allowedDevOrigins: ["192.168.1.36", "192.168.1.*"],
   /* Morphs the work card into the case-file hero instead of cutting to it.
      Paired view-transition-names are set per slug in WorkCardGrid and
      work/[slug]; the animation is disabled under prefers-reduced-motion in
