@@ -61,7 +61,7 @@ export function CourseChips({
             compact ? "py-1 pl-1.5 pr-2.5 text-[0.875rem]" : "py-1.5 pl-2 pr-3 text-[0.9375rem]"
           )}
         >
-          <span className="rounded-[4px] bg-[color-mix(in_srgb,var(--color-holo)_14%,transparent)] px-1.5 py-0.5 font-mono text-[0.8125rem] font-semibold tracking-[0.04em] text-[var(--color-holo)]">
+          <span className="rounded-[4px] bg-[color-mix(in_srgb,var(--color-holo)_14%,transparent)] px-1.5 py-0.5 font-mono text-sm font-semibold tracking-[0.04em] text-[var(--color-holo)]">
             {c.code}
           </span>
           <span className="leading-tight">{c.title}</span>

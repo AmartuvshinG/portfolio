@@ -19,6 +19,9 @@ export const MARK_T = "translate(16 16.4) rotate(90) scale(0.01735 -0.01735) tra
  * on the ramp over a soft glow of itself. Once every eight seconds a spark
  * runs the letter's outline.
  *
+ * Hovering or focusing the link it sits in plays the spark at once (the HUD
+ * styles the lift and halo around it).
+ *
  * The spark is played on demand, not looped in CSS. As an 8s infinite CSS
  * animation it was idle for 77% of every cycle, but `stroke-dashoffset` is
  * not a compositor property, so the browser still recalculated style on every
@@ -34,8 +37,10 @@ export function Monogram({ className }: { className?: string }) {
   useEffect(() => {
     const el = sparkRef.current;
     if (!el || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    const play = () =>
-      el.animate(
+    let run: Animation | null = null;
+    const play = () => {
+      if (run && run.playState === "running") return;
+      run = el.animate(
         [
           { strokeDashoffset: 100, opacity: 0, offset: 0 },
           { opacity: 1, offset: 0.087 },
@@ -44,11 +49,18 @@ export function Monogram({ className }: { className?: string }) {
         ],
         { duration: 1840, easing: "linear" }
       );
+    };
+    /* Hovering or focusing the link it sits in re-traces it at once. */
+    const host = el.ownerSVGElement?.closest("a, button");
+    host?.addEventListener("pointerenter", play);
+    host?.addEventListener("focus", play);
     const first = window.setTimeout(play, 1200);
     const every = window.setInterval(play, 8000);
     return () => {
       window.clearTimeout(first);
       window.clearInterval(every);
+      host?.removeEventListener("pointerenter", play);
+      host?.removeEventListener("focus", play);
     };
   }, []);
   return (

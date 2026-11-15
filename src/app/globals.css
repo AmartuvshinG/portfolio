@@ -521,8 +521,8 @@ html::-webkit-scrollbar {
 @utility hud-label {
   font-family: var(--font-mono);
   text-transform: uppercase;
-  letter-spacing: 0.2em;
-  font-size: 0.75rem;
+  letter-spacing: 0.16em;
+  font-size: 0.875rem;
   line-height: 1;
   color: var(--color-muted);
 }
@@ -1814,9 +1814,10 @@ html[data-vt] [data-vt="hud"] { view-transition-name: hud; }
   height: 2.75rem;
   padding: 0 1.3rem;
   font-family: var(--font-mono);
-  font-size: 0.75rem;
+  /* The 14px floor (mobile audit 2026-11-15: these read at 12px). */
+  font-size: 0.875rem;
   text-transform: uppercase;
-  letter-spacing: 0.18em;
+  letter-spacing: 0.14em;
   white-space: nowrap;
   transition: transform 150ms cubic-bezier(0.2, 0, 0, 1), color 300ms, filter 150ms;
 }
