@@ -308,3 +308,102 @@
   footer a[href^="mailto:"] { display: inline-flex; align-items: center; min-height: 44px; }
   .pause-hud .hud-label { min-height: 44px; }
 }
+
+/* ---- The spine: ramp rail, ᠠ thumb (picked 2026-11-15) ------------------- */
+.spine-light {
+  background: linear-gradient(180deg, rgb(255 31 61 / 0.35), #e81cc8 45%, #8a3dff 80%, #5664ff);
+  box-shadow: 0 0 10px rgb(232 28 200 / 0.55);
+}
+.spine-thumb {
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 20px;
+  margin: 0 0 -10px -11px;
+  color: #f3f1ff;
+  background: #05040c;
+  clip-path: polygon(25% 3%, 75% 3%, 100% 50%, 75% 97%, 25% 97%, 0 50%);
+  transition: transform 0.3s cubic-bezier(0.2, 1.4, 0.3, 1);
+}
+/* Its rim, cut on the same hex: the ramp behind a void inset. */
+.spine-thumb::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background-image: var(--gradient-spectrum);
+}
+.spine-thumb::after {
+  content: "";
+  position: absolute;
+  inset: 1.5px;
+  z-index: -1;
+  background: #05040c;
+  clip-path: inherit;
+}
+.spine-thumb { isolation: isolate; }
+.spine-thumb svg { width: 14px; height: 14px; }
+.chapter-spine:hover .spine-thumb,
+.spine-thumb[data-drag="true"] { transform: scale(1.25); }
+@media (pointer: coarse) {
+  .spine-thumb { width: 16px; height: 15px; margin: 0 0 -7.5px -8px; }
+  .spine-thumb svg { width: 10px; height: 10px; }
+}
+.spine-tick-on {
+  background-image: var(--gradient-spectrum);
+  box-shadow: 0 0 10px rgb(232 28 200 / 0.8);
+}
+@media (prefers-reduced-motion: reduce) { .spine-thumb { transition: none; } }
+
+/* ---- The HUD: edge-lit bar (picked 2026-11-15) -------------------------- */
+@property --hud-a {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 0deg;
+}
+.hud-bar--lit {
+  background:
+    linear-gradient(180deg, rgb(243 241 255 / 0.06), transparent 40%),
+    rgb(5 4 12 / 0.92);
+  box-shadow:
+    0 18px 40px -20px rgb(0 0 0 / 0.9),
+    inset 0 1px 0 rgb(243 241 255 / 0.08);
+}
+/* The rim itself, resting: a faint ramp so the bar reads as lit glass. */
+.hud-bar--lit::before {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  padding: 1px;
+  pointer-events: none;
+  background: linear-gradient(100deg, rgb(255 31 61 / 0.35), rgb(232 28 200 / 0.2) 40%, rgb(138 61 255 / 0.2) 70%, rgb(86 100 255 / 0.35));
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+}
+.hud-edge {
+  position: absolute;
+  inset: -1px;
+  padding: 1.5px;
+  pointer-events: none;
+  background: conic-gradient(from var(--hud-a), transparent 0 68%, #ff1f3d 76%, #e81cc8 82%, #fff 85%, #8a3dff 89%, transparent 97%);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+  opacity: 0;
+  animation: hud-edge 1.2s cubic-bezier(0.45, 0, 0.2, 1) 0.05s both;
+}
+@keyframes hud-edge {
+  0% { opacity: 0; --hud-a: 0deg; }
+  10% { opacity: 1; }
+  82% { opacity: 1; }
+  100% { opacity: 0; --hud-a: 360deg; }
+}
+/* Hovering the bar warms its rim. */
+.hud-bar--lit::before { transition: opacity 0.3s ease; opacity: 0.7; }
+.hud:hover .hud-bar--lit::before,
+.hud:focus-within .hud-bar--lit::before { opacity: 1; }
+@media (prefers-reduced-motion: reduce) { .hud-edge { display: none; } }

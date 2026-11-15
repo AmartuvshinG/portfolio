@@ -1,5 +1,6 @@
 "use client";
 
+import { MARK_D, MARK_T } from "@/components/chrome/NavGlyphs";
 import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
 import { useScrollTimelines } from "@/hooks/useScrollTimelines";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
@@ -123,8 +124,8 @@ export function ChapterFrame() {
  * The page as a reel, down the right gutter — and, since the native scrollbar
  * was hidden, the page's scrollbar.
  *
- * A hairline track, a coral fill for how far you are, a grab handle at the
- * fill's head, and a tick where each chapter begins. Drag anywhere on the
+ * A hairline track, a ramp fill for how far you are, the ᠠ in a hex riding
+ * the fill's head as its thumb, and a tick where each chapter begins. Drag anywhere on the
  * strip to scrub the page (it follows the pointer exactly, no glide); click
  * the track to glide there; hover a tick for its name, click it to go.
  *
@@ -322,19 +323,14 @@ function ChapterSpine({ chapters, active }: { chapters: string[]; active: number
              still lands a frame late in WebKit. */
           style={{ transform: "translateY(-100%)", transition: "none" }}
         >
-          <span
-            className="spine-light absolute inset-0"
-            style={{
-              background: "linear-gradient(180deg, color-mix(in srgb, var(--color-hazard) 30%, transparent), var(--color-hazard))",
-              boxShadow: "0 0 8px color-mix(in srgb, var(--color-hazard) 60%, transparent)",
-            }}
-          />
-          <span
-            className={
-              "spine-handle absolute bottom-0 left-1/2 h-7 -translate-x-1/2 translate-y-1/2 rounded-full bg-[var(--color-hazard)] shadow-[0_0_12px_var(--color-hazard)] transition-[width] duration-200 lg:h-9 " +
-              (dragging ? "w-[5px]" : "w-[3px] group-hover/spine:w-[5px]")
-            }
-          />
+          {/* The rail: the ramp, read top to bottom (picked 2026-11-15). */}
+          <span className="spine-light absolute inset-0" />
+          {/* The thumb: the ᠠ in a hex, riding the head of the fill. */}
+          <span className="spine-thumb" data-drag={dragging ? "true" : "false"}>
+            <svg viewBox="0 0 32 32" aria-hidden>
+              <path d={MARK_D} transform={MARK_T} fill="currentColor" />
+            </svg>
+          </span>
         </span>
       </span>
       {marks.map(({ position: m, lane }, i) => {
@@ -355,7 +351,7 @@ function ChapterSpine({ chapters, active }: { chapters: string[]; active: number
             <span
               className={
                 on
-                  ? "h-2 w-2 rotate-45 bg-[var(--color-hazard)] shadow-[0_0_10px_var(--color-hazard)] transition-all duration-300"
+                  ? "spine-tick-on h-2 w-2 rotate-45 transition-all duration-300"
                   : "h-1.5 w-1.5 rotate-45 border border-current opacity-50 transition-all duration-300 group-hover:opacity-100"
               }
             />
@@ -365,7 +361,7 @@ function ChapterSpine({ chapters, active }: { chapters: string[]; active: number
                 "tag pointer-events-none absolute right-6 whitespace-nowrap transition-[opacity,transform] duration-300 " +
                 /* Labels only on hover: the navbar already says where you
                    are, and an always-on label sat over section content. */
-                (on ? "text-[var(--color-hazard)]" : "text-fg") +
+                (on ? "text-[var(--color-rim)]" : "text-fg") +
                 " translate-x-1 opacity-0 group-hover:translate-x-0 group-hover:opacity-90"
               }
             >

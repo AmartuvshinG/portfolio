@@ -102,12 +102,12 @@ export function Letterbox() {
     <div aria-hidden>
       <div
         ref={topRef}
-        className={`${bar} top-0 origin-top border-b border-[color-mix(in_srgb,var(--color-hazard)_14%,transparent)]`}
+        className={`${bar} top-0 origin-top border-b border-line`}
         style={{ height: `${BAR_VH}vh`, transform: "scaleY(0)" }}
       />
       <div
         ref={botRef}
-        className={`${bar} bottom-0 origin-bottom border-t border-[color-mix(in_srgb,var(--color-hazard)_14%,transparent)]`}
+        className={`${bar} bottom-0 origin-bottom border-t border-line`}
         style={{ height: `${BAR_VH}vh`, transform: "scaleY(0)" }}
       />
     </div>

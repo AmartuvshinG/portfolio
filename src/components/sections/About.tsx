@@ -17,7 +17,6 @@ import {
 import { useEffect, useRef, useState } from "react";
 import { DecodeText } from "@/components/motion/DecodeText";
 import { InkSign } from "@/components/ui/InkSign";
-import { NeonSign } from "@/components/ui/NeonSign";
 import { ScrubWords } from "@/components/motion/ScrubWords";
 import { FrameLock } from "@/components/motion/FrameLock";
 import { LocalClock } from "@/components/ui/LocalClock";
@@ -184,7 +183,7 @@ function StatementBody({
     <div className="relative mx-auto w-full max-w-[112.5rem] px-5 md:px-8 lg:px-16">
       <div className="relative">
         <ScriptLabel href="#about" />
-        <span className="micro kicker-plate">
+        <span className="tag text-[var(--color-rim)]">
           {sectionIndex("#about")} — {heading}
         </span>
         {/* The statement, at the size of the screen. Michroma sets wide, so
@@ -200,11 +199,11 @@ function StatementBody({
           {stats.map((s, i) => (
             <div key={s.k} className="relative flex flex-col pt-5">
               <span aria-hidden className="spectrum-rule absolute inset-x-0 top-0 h-px opacity-80" />
-              <dt className="tag order-2 mt-3 max-w-[18rem] text-[var(--color-holo)]">{s.k}</dt>
+              <dt className="tag order-2 mt-3 max-w-[18rem] text-[var(--color-rim)]">{s.k}</dt>
               {/* Sized so the widest figure (222K+, Michroma) fits a quarter
                   of the frame with the gutter to spare. */}
               <dd className="order-1 font-display text-[clamp(2.25rem,3.6vw,4.25rem)] leading-none">
-                <NeonSign text={s.v} lit={i < litCount} />
+                <span className="lf-stat" data-lit={i < litCount ? "true" : "false"}>{s.v}</span>
               </dd>
             </div>
           ))}

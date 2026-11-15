@@ -16,9 +16,8 @@ import type { PathWords } from "@/components/path/NeonStamp";
    on the Path is one: its type is the shard's class, and opening a row slots
    that shard into the board's reader, which reads it.
 
-     Education  holo     a credential is data
-     Work       sodium   the physical city: shifts, halls, freight
-     Project    spectrum something built
+   Every kind uses a ramp lamp and pearl lettering, like the printed ID.
+   The type word carries the distinction between education, work and projects.
 
    The shard carries only the plain type word, so a recruiter reads
    "Education", "Work" or "Project", and the degree's "Graduated". It used to
@@ -36,12 +35,12 @@ import type { PathWords } from "@/components/path/NeonStamp";
 type Kind = TimelineEntry["kind"];
 
 const CLASS: Record<Kind, { lamp: string; ink: string; code: "education" | "work" | "project" }> = {
-  education: { lamp: "var(--color-holo)", ink: "var(--color-holo)", code: "education" },
-  work: { lamp: "var(--color-hazard)", ink: "var(--color-hazard)", code: "work" },
-  project: { lamp: "var(--gradient-spectrum)", ink: "var(--spectrum-3)", code: "project" },
+  education: { lamp: "var(--gradient-spectrum)", ink: "var(--color-rim)", code: "education" },
+  work: { lamp: "var(--gradient-spectrum)", ink: "var(--color-rim)", code: "work" },
+  project: { lamp: "var(--gradient-spectrum)", ink: "var(--color-rim)", code: "project" },
 };
 
-/** The class colour as a background (the project class is a ramp). */
+/** The shared ramp lamp, retained as a helper for the reader's callers. */
 export function shardLamp(kind: Kind): React.CSSProperties {
   const lamp = CLASS[kind].lamp;
   return lamp.includes("gradient") ? { backgroundImage: lamp } : { background: lamp };
@@ -76,7 +75,7 @@ export function Shard({
       <motion.span
         aria-hidden
         className="absolute -left-[5px] top-1/2 h-4 w-[2px] -translate-y-1/2"
-        style={{ ...shardLamp(entry.kind), boxShadow: `0 0 8px ${cls.ink}` }}
+        style={shardLamp(entry.kind)}
         initial={false}
         {...strike(play, instant, SEAT_AT, 0.5)}
       />
@@ -110,15 +109,15 @@ export function Shard({
               initial={false}
               animate={{ opacity: still && !instant ? 0.18 : 1 }}
               transition={t(SEAT_AT + 0.05 + i * 0.04, 0.12)}
-              style={{ boxShadow: still && !instant ? undefined : "0 0 4px rgba(232,28,200,0.7)" }}
+
             />
           ))}
         </span>
 
         <span className="flex items-center gap-2 whitespace-nowrap pl-3 pr-4">
           <span
-            className={cn("display-caps text-[1rem] leading-none xl:text-[1.1rem]", entry.kind === "project" && "spectrum-text")}
-            style={entry.kind === "project" ? undefined : { color: cls.ink }}
+            className={cn("display-caps text-[1rem] leading-none xl:text-[1.1rem]", "text-[var(--color-rim)]")}
+
           >
             {label}
           </span>
@@ -140,13 +139,9 @@ export function ReadLine({ play, instant }: { play: boolean; instant: boolean })
   return (
     <motion.span
       aria-hidden
-      className="pointer-events-none absolute inset-x-0 top-0 h-px"
-      style={{
-        background: "linear-gradient(90deg, transparent, var(--color-holo) 20%, var(--color-holo) 80%, transparent)",
-        boxShadow: "0 0 12px 1px color-mix(in srgb, var(--color-holo) 55%, transparent)",
-      }}
+      className="lf-read-line pointer-events-none absolute inset-0"
       initial={false}
-      animate={play ? { top: ["0%", "100%"], opacity: [0, 0.9, 0.9, 0] } : { top: "0%", opacity: 0 }}
+      animate={play ? { y: ["-100%", "0%"], opacity: [0, 0.9, 0.9, 0] } : { y: "-100%", opacity: 0 }}
       transition={play ? { duration: 0.55, delay: SEAT_AT + 0.14, ease: [0.45, 0, 0.25, 1], opacity: { duration: 0.55, delay: SEAT_AT + 0.14, times: [0, 0.15, 0.8, 1] } } : { duration: 0 }}
     />
   );

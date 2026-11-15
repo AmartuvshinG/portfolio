@@ -14,7 +14,6 @@ import {
 } from "framer-motion";
 import { sectionIndex } from "@/lib/content";
 import { useI18n } from "@/lib/i18n";
-import { SliceTitle } from "@/components/motion/SliceTitle";
 import { openCase } from "@/lib/caseFile";
 import { isInteractive, modalOpen } from "@/lib/keys";
 import { EASE_EXPO } from "@/lib/motion";
@@ -22,7 +21,6 @@ import { useReducedMotion } from "@/hooks/useReducedMotion";
 import { useSmoothScroll } from "@/components/chrome/SmoothScroll";
 import { ChapterSeam } from "@/components/chrome/ChapterSeam";
 import { SectionHeader } from "@/components/ui/SectionHeader";
-import { ScriptLabel } from "@/components/ui/ScriptLabel";
 import { IconArrowRight } from "@/components/ui/HudIcons";
 import { ScrambleText } from "@/components/motion/ScrambleText";
 import { ScrubWords } from "@/components/motion/ScrubWords";
@@ -158,18 +156,10 @@ function Stage({ sectionRef: ref }: { sectionRef: React.RefObject<HTMLElement | 
     <div className="sticky top-0 h-svh w-full overflow-hidden">
       <div className="relative mx-auto flex h-full max-w-[93.75rem] flex-col px-5 pb-6 pt-20 md:px-8 lg:px-16">
         <header className="relative flex flex-wrap items-end justify-between gap-x-10 gap-y-2 pt-3">
-          <div>
-            <ScriptLabel href="#anatomy" />
-            <span className="eyebrow kicker-plate">
-              {sectionIndex("#anatomy")} — {A.eyebrow}
-            </span>
-            <h2 className="display-caps mt-3 text-[clamp(1.75rem,2.8vw,3rem)] text-fg">
-              <SliceTitle text={A.title} />
-            </h2>
-          </div>
+          <SectionHeader index={sectionIndex("#anatomy")} label={A.eyebrow} title={A.title} chapter="#anatomy" className="lf-masthead" />
           <p className="flex flex-col items-end gap-1 pb-1 text-right">
-            <span className="micro !text-[var(--color-hazard)]">{A.credit}</span>
-            <span className="micro">{A.source}</span>
+            <span className="tag !text-[var(--color-rim)]">{A.credit}</span>
+            <span className="tag">{A.source}</span>
           </p>
         </header>
 
@@ -196,7 +186,7 @@ function Stage({ sectionRef: ref }: { sectionRef: React.RefObject<HTMLElement | 
             <span className="mission-bar mission-bar--bottom" key={`bb-${beat}`} />
             <AnimatePresence mode="popLayout" initial={false}>
               <StepCard key={beat} i={beat} n={n} pos={pos} boxRef={boxRef}>
-                <div className="min-w-0">
+                <div className="fl-in min-w-0" style={{ "--i": 0 } as React.CSSProperties}>
                   <span className="mission-step tag">
                     <span className="mission-rec" />
                     {A.eyebrow} · {String(beat + 1).padStart(2, "0")} / {String(n).padStart(2, "0")}
@@ -211,7 +201,7 @@ function Stage({ sectionRef: ref }: { sectionRef: React.RefObject<HTMLElement | 
                   <BeatNotes i={beat} words={A} className="mt-5" />
                   {beat === n - 1 && <CaseLink words={A} className="mt-5" />}
                 </div>
-                <div className="mission-visual min-w-0 self-center">
+                <div className="fl-in mission-visual min-w-0 self-center" style={{ "--i": 1 } as React.CSSProperties}>
                   <span aria-hidden className="reel-corners mission-corners" />
                   <BeatDetail i={beat} words={A} animate />
                 </div>
@@ -220,7 +210,7 @@ function Stage({ sectionRef: ref }: { sectionRef: React.RefObject<HTMLElement | 
           </div>
         </div>
 
-        <p className="micro mt-3 !text-fg/85">{A.hint}</p>
+        <p className="tag mt-3 !text-fg/85">{A.hint}</p>
         <SrSequence words={A} />
       </div>
     </div>
@@ -268,18 +258,17 @@ const StepCard = forwardRef<
   return (
     <motion.article
       ref={ref}
-      className="mission-card absolute inset-x-0 top-0 grid grid-cols-[minmax(0,5fr)_minmax(0,6fr)] gap-10 p-7 lg:gap-12 lg:p-9"
+      className="mission-card lf-mission-card absolute inset-x-0 top-0"
       style={{ y }}
-      initial={{ clipPath: "inset(0 100% 0 0)", x: 24 }}
-      animate={{ clipPath: "inset(0 0% 0 0)", x: 0 }}
-      exit={{ clipPath: "inset(0 0 0 100%)", x: -24, transition: { duration: 0.35, ease: EASE_EXPO } }}
+      initial={{ opacity: 0, x: 24 }}
+      animate={{ opacity: 1, x: 0 }}
+      exit={{ opacity: 0, x: -24, transition: { duration: 0.35, ease: EASE_EXPO } }}
       transition={{ duration: 0.7, ease: EASE_EXPO }}
     >
       {/* The frame locks onto each step as it is swapped in. */}
-      <FrameLock on corners={false} className="pointer-events-none absolute inset-0">
-        {null}
+      <FrameLock on className="grid grid-cols-[minmax(0,5fr)_minmax(0,6fr)] gap-10 p-7 lg:gap-12 lg:p-9">
+        {children}
       </FrameLock>
-      {children}
     </motion.article>
   );
 });
@@ -304,7 +293,7 @@ function CaseLink({ words, className }: { words: UiStrings["anatomy"]; className
       type="button"
       onClick={() => openCase("spotfixes")}
       className={cn(
-        "micro inline-flex min-h-11 items-center gap-1.5 !text-fg transition-colors hover:!text-[var(--color-hazard)]",
+        "tag inline-flex min-h-11 items-center gap-1.5 !text-fg transition-colors hover:!text-[var(--color-rim)]",
         className
       )}
     >
@@ -415,10 +404,10 @@ function Sequence({ reduced }: { reduced: boolean }) {
   const A = t.anatomy;
   return (
     <div className="mx-auto max-w-[93.75rem] px-5 pb-24 pt-24 md:px-8 md:pb-36 md:pt-36 lg:px-16">
-      <SectionHeader index={sectionIndex("#anatomy")} label={A.eyebrow} title={A.title} chapter="#anatomy" voice="tech" />
+      <SectionHeader index={sectionIndex("#anatomy")} label={A.eyebrow} title={A.title} chapter="#anatomy" />
       <p className="mt-6 flex flex-col gap-1">
-        <span className="micro !text-[var(--color-hazard)]">{A.credit}</span>
-        <span className="micro">{A.source}</span>
+        <span className="tag !text-[var(--color-rim)]">{A.credit}</span>
+        <span className="tag">{A.source}</span>
       </p>
       <ol className="mt-6">
         {A.beats.map((b, i) => (
@@ -435,9 +424,10 @@ function Step({ i, reduced, words }: { i: number; reduced: boolean; words: UiStr
   const seen = useInView(ref, { once: true });
   const b = words.beats[i];
   return (
-    <li className="grid gap-x-14 border-b border-line py-9 md:py-12 lg:grid-cols-[minmax(0,5fr)_minmax(0,6fr)]">
-      <div>
-        <span className="micro tabular !text-[var(--color-holo)]">
+    <li className="py-5">
+      <FrameLock className="lf-step grid gap-x-14 gap-y-6 p-5 md:p-8 lg:grid-cols-[minmax(0,5fr)_minmax(0,6fr)]">
+      <div className="fl-in min-w-0" style={{ "--i": 0 } as React.CSSProperties}>
+        <span className="tag tabular !text-[var(--color-rim)]">
           {words.step(i + 1, words.beats.length)} · {b.station}
         </span>
         <h3 className="mt-3 font-tech text-3xl font-bold uppercase leading-[1.05] text-fg md:text-4xl">{b.title}</h3>
@@ -446,9 +436,10 @@ function Step({ i, reduced, words }: { i: number; reduced: boolean; words: UiStr
       </div>
       {/* Always in the document (its words are content), finished; it is
           drawn on again, once, as it scrolls in. Reduced motion: still. */}
-      <div ref={ref} className="mt-6 max-w-2xl lg:mt-0">
+      <div ref={ref} className="fl-in min-w-0 max-w-2xl" style={{ "--i": 1 } as React.CSSProperties}>
         <BeatDetail key={seen ? "on" : "off"} i={i} words={words} animate={seen && !reduced} />
       </div>
+      </FrameLock>
     </li>
   );
 }

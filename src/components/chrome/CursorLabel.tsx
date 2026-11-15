@@ -74,8 +74,8 @@ export function CursorLabel() {
     <span
       ref={ref}
       aria-hidden
-      className="pointer-events-none fixed left-0 top-0 z-[130] whitespace-nowrap bg-[rgba(5,4,12,0.78)] px-1.5 py-0.5 pl-[calc(0.375rem+0.24em)] font-mono text-[11px] font-semibold uppercase tracking-[0.24em] text-[var(--color-hazard)] transition-opacity duration-150"
-      style={{ opacity: 0, willChange: "transform", textShadow: "0 0 8px rgba(255,61,113,0.55)" }}
+      className="pointer-events-none fixed left-0 top-0 z-[130] whitespace-nowrap bg-[rgba(5,4,12,0.78)] px-1.5 py-0.5 pl-[calc(0.375rem+0.24em)] lf-cursor-label tag text-[var(--color-rim)] transition-opacity duration-150"
+      style={{ opacity: 0, willChange: "transform" }}
     />
   );
 }

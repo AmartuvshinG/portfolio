@@ -257,8 +257,11 @@ export function Navbar() {
           onKeyDown={onKeyDown}
           onBlur={onBlur}
         >
-          <nav className="hud-bar" aria-label={t.nav.siteMenu}>
+          <nav className="hud-bar hud-bar--lit" aria-label={t.nav.siteMenu}>
             <span aria-hidden className="hud-corners" />
+            {/* Edge light: a ramp comet runs once round the rim each time the
+                chapter changes (keyed by it), then the rim rests. */}
+            <span key={`edge-${cur.code}`} aria-hidden className="hud-edge" />
             {monogram}
             <span aria-hidden className="hud-sep" />
 

@@ -10,7 +10,8 @@ import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { useScrollTimelines } from "@/hooks/useScrollTimelines";
 import { useSmoothScroll } from "@/components/chrome/SmoothScroll";
 import { ChapterSeam } from "@/components/chrome/ChapterSeam";
-import { ScriptLabel } from "@/components/ui/ScriptLabel";
+import { SectionHeader } from "@/components/ui/SectionHeader";
+import { FrameLock } from "@/components/motion/FrameLock";
 import { openCase } from "@/lib/caseFile";
 import { sectionIndex, type Project } from "@/lib/content";
 import { cn } from "@/lib/utils";
@@ -93,19 +94,14 @@ export function SelectedWork() {
         }}
       >
         <header className="reel-head">
-          <div className="relative">
-            <ScriptLabel href="#work" />
-            <span className="micro kicker-plate">
-              {sectionIndex("#work")} — {t.work.eyebrow}
-            </span>
-          </div>
+          <SectionHeader index={sectionIndex("#work")} label={t.work.eyebrow} title={t.work.title} chapter="#work" className="lf-masthead" />
           {pinned && (
             <div className="reel-meter" aria-hidden>
               <span className="tag tabular text-fg">{t.work.count(front + 1, n)}</span>
               <span className="reel-meter-track">
                 {css ? <span className="reel-meter-fill reel-meter-fill--css" /> : <motion.span className="reel-meter-fill" style={{ scaleX: bar }} />}
               </span>
-              <span className="micro hidden text-fg/85 lg:inline">{t.work.hint}</span>
+              <span className="tag hidden text-fg/85 lg:inline">{t.work.hint}</span>
             </div>
           )}
         </header>
@@ -159,20 +155,20 @@ function Frames({
               <span aria-hidden className="reel-corners" />
             </button>
 
-            {/* The title card: one lit stage of the hero's menu. */}
-            <div className="reel-card">
-              <span className="ms-item reel-stage" data-lit={on ? "true" : "false"}>
-                <span className="ms-code tag">{p.index}</span>
-                <span className="ms-label">{p.title}</span>
+            {/* The title card uses the same arrival and modules as the ID. */}
+            <FrameLock on={on} className="reel-card lf-project-card">
+              <span className="lf-project-title fl-in" style={{ "--i": 0 } as React.CSSProperties} data-lit={on ? "true" : "false"}>
+                <span className="lf-code tag">{p.index}</span>
+                <span className="lf-project-name">{p.title}</span>
               </span>
-              <span className="micro mt-3 block text-fg/85">
+              <span className="fl-in tag mt-3 block text-fg/85" style={{ "--i": 1 } as React.CSSProperties}>
                 {p.category} · {p.year}
               </span>
-              <p className="reel-summary text-sm leading-relaxed text-fg/85 md:text-base">{p.summary}</p>
-              <button type="button" className="reel-open tag" tabIndex={on ? 0 : -1} onClick={() => openCase(p.slug)}>
+              <p style={{ "--i": 2 } as React.CSSProperties} className="fl-in reel-summary text-sm leading-relaxed text-fg/85 md:text-base">{p.summary}</p>
+              <button type="button" className="reel-open tag fl-in" style={{ "--i": 3 } as React.CSSProperties} tabIndex={on ? 0 : -1} onClick={() => openCase(p.slug)}>
                 {t.work.open} <ArrowUpRight aria-hidden size={16} />
               </button>
-            </div>
+            </FrameLock>
 
             {shots.length > 0 && (
               <ul className="reel-strip" aria-hidden>

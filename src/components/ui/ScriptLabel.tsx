@@ -3,7 +3,6 @@
 import { useRef } from "react";
 import { motion, useInView } from "framer-motion";
 import { navLinks } from "@/lib/content";
-import { strike } from "@/lib/neonStrike";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
 import { cn } from "@/lib/utils";
 
@@ -11,10 +10,8 @@ import { cn } from "@/lib/utils";
  * A chapter's name in Mongol script, hung in the page's left gutter beside its
  * masthead like a banner: read top to bottom, as the script is written.
  *
- * It writes itself once, the first time it is seen — revealed top to bottom
- * the way the intro's brush moves — then strikes on as a sodium neon tube
- * (lib/neonStrike), the street's voice for words. Under reduced motion it is
- * simply lit.
+ * Pearl lettering rises into place once as the masthead arrives. Under
+ * reduced motion it is drawn at rest.
  *
  * It lives in the gutter (absolute, lg+) so it can never push or collide with
  * the masthead's own type; below lg there is no gutter, and it is not shown.
@@ -42,28 +39,10 @@ export function ScriptLabel({ href, className }: { href: string; className?: str
       <motion.span
         className="relative block"
         initial={false}
-        animate={{ clipPath: reduced || seen ? "inset(0% 0% 0% 0%)" : "inset(0% 0% 100% 0%)" }}
-        transition={reduced ? { duration: 0 } : { duration: 1.1, ease: [0.45, 0, 0.25, 1] }}
+        animate={{ opacity: reduced || seen ? 1 : 0, y: reduced || seen ? 0 : 10 }}
+        transition={reduced ? { duration: 0 } : { duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
       >
-        {/* The unlit tube: what the reveal writes. Generated content, not a
-            text node: it is a dim copy for effect, and axe would measure its
-            contrast as if it were the label. */}
-        <span
-          data-text={text}
-          className={cn(GLYPHS, "text-[color-mix(in_srgb,var(--color-hazard)_30%,transparent)] before:content-[attr(data-text)]")}
-        />
-        {/* The lit tube over it, struck once the word is written. */}
-        <motion.span
-          className={cn(GLYPHS, "absolute inset-0 text-[var(--color-hazard)]")}
-          style={{
-            textShadow:
-              "0 0 14px color-mix(in srgb, var(--color-hazard) 55%, transparent), 0 0 2px color-mix(in srgb, var(--color-hazard) 70%, white)",
-          }}
-          initial={false}
-          {...strike(seen, reduced, 1.0, 0.6)}
-        >
-          {text}
-        </motion.span>
+        <span className={cn(GLYPHS, "text-[var(--color-rim)]")}>{text}</span>
       </motion.span>
     </span>
   );

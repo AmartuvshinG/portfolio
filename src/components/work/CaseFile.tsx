@@ -6,7 +6,7 @@ import Image from "next/image";
 import { AnimatePresence, motion } from "framer-motion";
 import { Cta } from "@/components/ui/Cta";
 import { IconArrowLeft, IconArrowRight, IconClose } from "@/components/ui/HudIcons";
-import { accentColor, readable, type Project } from "@/lib/content";
+import { type Project } from "@/lib/content";
 import { useI18n } from "@/lib/i18n";
 import { CASE_EVENT, clearCase, readCase, replaceCase } from "@/lib/caseFile";
 import { playWindowShut } from "@/lib/neonGate";
@@ -15,7 +15,7 @@ import { useReducedMotion } from "@/hooks/useReducedMotion";
 import { useOverlay } from "@/hooks/useOverlay";
 import { EASE_EXPO } from "@/lib/motion";
 import { ShotImage } from "@/components/work/ShotImage";
-import { NeonSign } from "@/components/ui/NeonSign";
+import { FrameLock } from "@/components/motion/FrameLock";
 
 const noopSubscribe = () => () => {};
 function useIsClient() {
@@ -160,7 +160,6 @@ function CaseFile({
   const i = project ? projects.findIndex((p) => p.slug === project.slug) : -1;
   const prev = i >= 0 ? projects[(i - 1 + projects.length) % projects.length] : null;
   const next = i >= 0 ? projects[(i + 1) % projects.length] : null;
-  const color = project ? accentColor[project.accent] : undefined;
   const chapters = project
     ? [
         { id: "cf-overview", label: t.caseFile.overview },
@@ -184,13 +183,13 @@ function CaseFile({
             onClick={onClose}
           />
 
-          {/* Sodium targeting brackets framing the file, 6px outside the
+          {/* Pearl targeting brackets framing the file, 6px outside the
               panel: the panel is a notch clip-path, which would cut them off
               if they lived inside it. Desktop only, where the panel is inset. */}
           {!reduced && (
             <motion.span
               aria-hidden
-              className="hud-brackets pointer-events-none absolute hidden md:inset-2.5 md:block lg:inset-4 [--hud-c:var(--color-hazard)] [--hud-l:22px] [--hud-w:2px]"
+              className="hud-brackets pointer-events-none absolute hidden md:inset-2.5 md:block lg:inset-4 [--hud-c:var(--color-rim)] [--hud-l:22px] [--hud-w:2px]"
               initial={{ opacity: 0, scale: 1.02 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0 }}
@@ -210,37 +209,34 @@ function CaseFile({
             exit={reduced ? { opacity: 0 } : { opacity: 0, y: 32 }}
             transition={{ duration: 0.5, ease: EASE_EXPO }}
           >
-            {/* The scan-in: one sodium line sweeps down the file as it opens
+            {/* The scan-in: one ramp line sweeps down the file as it opens
                 (a full-size layer with the line on its bottom edge, slid from
                 -100% to 0, then gone). Transform and opacity only. */}
             {!reduced && (
               <motion.span
                 key={`scan-${project.slug}`}
                 aria-hidden
-                className="pointer-events-none absolute inset-0 z-20"
-                style={{
-                  background:
-                    "linear-gradient(180deg, transparent calc(100% - 60px), color-mix(in srgb, var(--color-hazard) 14%, transparent) calc(100% - 2px), var(--color-hazard))",
-                }}
+                className="lf-case-scan pointer-events-none absolute inset-0 z-20"
                 initial={{ y: "-100%", opacity: 1 }}
                 animate={{ y: "0%", opacity: [1, 1, 0] }}
                 transition={{ duration: 0.75, ease: [0.45, 0, 0.2, 1], opacity: { times: [0, 0.8, 1], duration: 0.75 } }}
               />
             )}
 
+            <FrameLock on className="lf-case-frame">
             {/* Bar */}
-            <div className="flex h-16 shrink-0 items-center justify-between gap-4 border-b border-line px-5 md:px-8">
+            <div className="lf-case-bar fl-in flex h-16 shrink-0 items-center justify-between gap-4 border-b border-line px-5 md:px-8" style={{ "--i": 0 } as React.CSSProperties}>
               <div className="flex min-w-0 items-center gap-3">
-                <span className="font-mono text-sm tabular" style={{ color: color && readable(color) }}>
+                <span className="lf-code tag tabular">
                   {project.index}
                 </span>
-                <span className="micro truncate">
+                <span className="tag truncate text-[var(--color-rim)]">
                   {t.caseFile.label}
-                  <span className="text-[var(--color-hazard)]"> · {project.title}</span>
+                  <span className="text-[var(--color-rim)]"> · {project.title}</span>
                 </span>
               </div>
               <div className="flex items-center gap-4">
-                <span className="micro hidden sm:inline">{t.caseFile.esc}</span>
+                <span className="tag hidden sm:inline">{t.caseFile.esc}</span>
                 <button
                   type="button"
                   data-autofocus
@@ -254,16 +250,17 @@ function CaseFile({
               </div>
             </div>
 
-            <div ref={scrollRef} data-lenis-prevent className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
+            <div ref={scrollRef} data-lenis-prevent className="lf-scroll min-h-0 flex-1 overflow-y-auto overscroll-contain">
               <motion.article
                 key={project.slug}
                 initial={reduced ? false : { opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.45, ease: EASE_EXPO, delay: reduced ? 0 : 0.08 }}
-                className="mx-auto max-w-[80rem] px-5 pb-16 pt-10 md:px-10 md:pt-14"
+                className="fl-in mx-auto max-w-[80rem] px-5 pb-16 pt-10 md:px-10 md:pt-14"
+                style={{ "--i": 1 } as React.CSSProperties}
               >
                 <header>
-                  <span className="micro">{project.category}</span>
+                  <span className="tag">{project.category}</span>
                   <h2
                     id="case-title"
                     className="display-caps mt-4 text-fg"
@@ -283,7 +280,7 @@ function CaseFile({
                       [t.caseFile.status, project.status],
                     ].map(([k, v]) => (
                       <div key={k}>
-                        <dt className="micro">{k}</dt>
+                        <dt className="tag">{k}</dt>
                         <dd className="mt-2 font-tech text-lg font-semibold uppercase leading-snug text-fg">
                           {v}
                         </dd>
@@ -325,9 +322,9 @@ function CaseFile({
                               type="button"
                               onClick={() => jump(ch.id)}
                               aria-current={on ? "true" : undefined}
-                              className={`relative -ml-px flex min-h-10 w-full items-baseline gap-3 border-l px-4 text-left font-mono text-xs uppercase tracking-[0.18em] transition-colors ${on ? "border-[var(--color-holo)] text-fg" : "border-transparent text-muted hover:text-fg"}`}
+                              className={`relative -ml-px flex min-h-10 w-full items-baseline gap-3 border-l px-4 text-left font-mono text-sm uppercase tracking-[0.18em] transition-colors ${on ? "border-[var(--color-rim)] text-fg" : "border-transparent text-fg/80 hover:text-fg"}`}
                             >
-                              <span className={`tabular ${on ? "text-[var(--color-holo)]" : "text-faint"}`}>0{n + 1}</span>
+                              <span className={`tabular ${on ? "text-[var(--color-rim)]" : "text-fg/80"}`}>0{n + 1}</span>
                               {ch.label}
                             </button>
                           </li>
@@ -349,7 +346,7 @@ function CaseFile({
                             key={s}
                             className="flex items-baseline gap-4 border-b border-line py-3 font-mono text-sm uppercase tracking-[0.12em] text-fg"
                           >
-                            <span aria-hidden className="tabular text-xs text-[var(--color-holo)]">
+                            <span aria-hidden className="tabular text-sm text-[var(--color-rim)]">
                               {String(n + 1).padStart(2, "0")}
                             </span>
                             {s}
@@ -363,11 +360,10 @@ function CaseFile({
                         <dl className="mb-8 grid grid-cols-3 gap-4">
                           {project.metrics.map((m) => (
                             <div key={m.label} className="flex flex-col gap-2 border-l border-line pl-4">
-                              <dt className="micro order-2">{m.label}</dt>
-                              {/* The results as lit numerals: each strikes on
-                                  the first time it scrolls into view. */}
+                              <dt className="tag order-2">{m.label}</dt>
+                              {/* Results use the same pearl display face as the ID. */}
                               <dd className="tabular order-1 font-display text-3xl md:text-5xl">
-                                <NeonSign text={m.value} lit="view" />
+                                {m.value}
                               </dd>
                             </div>
                           ))}
@@ -375,8 +371,8 @@ function CaseFile({
                       )}
                       <ul className="max-w-3xl">
                         {project.highlights.map((h) => (
-                          <li key={h} className="flex items-start gap-4 border-b border-line py-4 text-base text-muted">
-                            <span className="mt-2.5 h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: color }} />
+                          <li key={h} className="flex items-start gap-4 border-b border-line py-4 text-base text-fg/80">
+                            <span className="mt-2.5 h-1.5 w-1.5 shrink-0 rounded-full" style={{ backgroundImage: "var(--gradient-spectrum)" }} />
                             {h}
                           </li>
                         ))}
@@ -407,7 +403,7 @@ function CaseFile({
                                   }}
                                 />
                               </div>
-                              {g.caption && <figcaption className="micro mt-3">{g.caption}</figcaption>}
+                              {g.caption && <figcaption className="tag mt-3">{g.caption}</figcaption>}
                             </figure>
                           ))}
                         </div>
@@ -431,16 +427,16 @@ function CaseFile({
                             {/* `.cta` is one nowrap line: the name has to be let wrap, or a
                                 long one ("WEB DESIGN LAB") runs off the card on a phone. */}
                             <span className="flex min-w-0 flex-col gap-3">
-                              <span className="micro flex items-center gap-2">
+                              <span className="tag flex items-center gap-2">
                                 {t.caseFile.nextFile} <IconArrowRight size={14} />
                               </span>
                               <span className="flex min-w-0 items-baseline gap-4">
-                                <span className="shrink-0 font-mono text-sm tabular text-[var(--color-holo)]">{next.index}</span>
+                                <span className="shrink-0 font-mono text-sm tabular text-[var(--color-rim)]">{next.index}</span>
                                 <span className="display-caps min-w-0 text-[clamp(1.25rem,6vw,1.5rem)] text-balance break-words text-fg md:text-4xl">
                                   {next.title}
                                 </span>
                               </span>
-                              <span className="font-mono text-xs uppercase tracking-[0.16em] text-muted">{next.category}</span>
+                              <span className="font-mono text-sm uppercase tracking-[0.16em] text-fg/80">{next.category}</span>
                             </span>
                             <span aria-hidden className="relative hidden aspect-[16/10] overflow-hidden ring-1 ring-inset ring-line sm:block">
                               <ShotImage
@@ -454,7 +450,7 @@ function CaseFile({
                         <button
                           type="button"
                           onClick={() => onGo(prev)}
-                          className="micro flex min-h-11 items-center gap-2 self-start transition-colors hover:text-fg"
+                          className="tag flex min-h-11 items-center gap-2 self-start transition-colors hover:text-fg"
                         >
                           <IconArrowLeft size={14} />
                           {t.caseFile.prev} · {prev.title}
@@ -465,6 +461,7 @@ function CaseFile({
                 </div>
               </motion.article>
             </div>
+            </FrameLock>
           </motion.div>
         </div>
       )}
@@ -478,8 +475,8 @@ function Chapter({ id, n, title, children }: { id: string; n: number; title: str
   return (
     <section id={id} data-chapter-id="" aria-labelledby={`${id}-h`} className="scroll-mt-6 pb-16">
       <h3 id={`${id}-h`} className="mb-6 flex items-baseline gap-4">
-        <span className="font-mono text-sm tabular text-[var(--color-holo)]">0{n}</span>
-        <span className="micro !text-fg">{title}</span>
+        <span className="font-mono text-sm tabular text-[var(--color-rim)]">0{n}</span>
+        <span className="tag !text-fg">{title}</span>
         <span aria-hidden className="h-px flex-1 -translate-y-[0.25em] bg-line" />
       </h3>
       {children}

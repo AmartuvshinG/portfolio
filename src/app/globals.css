@@ -399,8 +399,8 @@ html::-webkit-scrollbar {
    a fine pointer: a touch screen never shows a cursor. */
 @media (pointer: fine) {
   html {
-    cursor: url("/cursors/arrow-v1.png") 2 2, auto;
-    cursor: image-set(url("/cursors/arrow-v1.png") 1x, url("/cursors/arrow-v1@2x.png") 2x) 2 2, auto;
+    cursor: url("/cursors/arrow-v2.png") 5 3, auto;
+    cursor: image-set(url("/cursors/arrow-v2.png") 1x, url("/cursors/arrow-v2@2x.png") 2x) 5 3, auto;
   }
   a[href],
   button,
@@ -409,28 +409,28 @@ html::-webkit-scrollbar {
   label[for],
   select,
   .cursor-pointer {
-    cursor: url("/cursors/hand-v1.png") 11 2, pointer;
-    cursor: image-set(url("/cursors/hand-v1.png") 1x, url("/cursors/hand-v1@2x.png") 2x) 11 2, pointer;
+    cursor: url("/cursors/hand-v2.png") 5 3, pointer;
+    cursor: image-set(url("/cursors/hand-v2.png") 1x, url("/cursors/hand-v2@2x.png") 2x) 5 3, pointer;
   }
   input:not([type="checkbox"], [type="radio"], [type="range"], [type="submit"], [type="button"]),
   textarea,
   [contenteditable="true"] {
-    cursor: url("/cursors/text-v1.png") 16 16, text;
-    cursor: image-set(url("/cursors/text-v1.png") 1x, url("/cursors/text-v1@2x.png") 2x) 16 16, text;
+    cursor: url("/cursors/text-v2.png") 16 16, text;
+    cursor: image-set(url("/cursors/text-v2.png") 1x, url("/cursors/text-v2@2x.png") 2x) 16 16, text;
   }
   .cursor-grab {
-    cursor: url("/cursors/grab-v1.png") 15 15, grab;
-    cursor: image-set(url("/cursors/grab-v1.png") 1x, url("/cursors/grab-v1@2x.png") 2x) 15 15, grab;
+    cursor: url("/cursors/grab-v2.png") 16 16, grab;
+    cursor: image-set(url("/cursors/grab-v2.png") 1x, url("/cursors/grab-v2@2x.png") 2x) 16 16, grab;
   }
   .active\:cursor-grabbing:active,
   .cursor-grabbing {
-    cursor: url("/cursors/grabbing-v1.png") 15 15, grabbing;
-    cursor: image-set(url("/cursors/grabbing-v1.png") 1x, url("/cursors/grabbing-v1@2x.png") 2x) 15 15, grabbing;
+    cursor: url("/cursors/grabbing-v2.png") 16 16, grabbing;
+    cursor: image-set(url("/cursors/grabbing-v2.png") 1x, url("/cursors/grabbing-v2@2x.png") 2x) 16 16, grabbing;
   }
   :disabled,
   [aria-disabled="true"] {
-    cursor: url("/cursors/arrow-v1.png") 2 2, not-allowed;
-    cursor: image-set(url("/cursors/arrow-v1.png") 1x, url("/cursors/arrow-v1@2x.png") 2x) 2 2, not-allowed;
+    cursor: url("/cursors/arrow-v2.png") 5 3, not-allowed;
+    cursor: image-set(url("/cursors/arrow-v2.png") 1x, url("/cursors/arrow-v2@2x.png") 2x) 5 3, not-allowed;
   }
 }
 

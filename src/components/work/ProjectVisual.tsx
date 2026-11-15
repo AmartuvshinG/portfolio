@@ -1,5 +1,4 @@
 import type { AccentKey } from "@/lib/content";
-import { accentColor } from "@/lib/content";
 import { cn } from "@/lib/utils";
 
 interface ProjectVisualProps {
@@ -23,14 +22,12 @@ export function ProjectVisual({
   index,
   title,
   category,
-  accent,
   className,
 }: ProjectVisualProps) {
-  const color = accentColor[accent];
   return (
     <div
       className={cn(
-        "relative h-full w-full overflow-hidden bg-surface",
+        "lf-project-visual relative h-full w-full overflow-hidden bg-surface",
         className
       )}
     >
@@ -55,7 +52,8 @@ export function ProjectVisual({
       <div
         className="absolute -right-1/4 top-1/2 h-[130%] w-2/3 -translate-y-1/2"
         style={{
-          background: `radial-gradient(closest-side, ${color} 0%, transparent 78%)`,
+          backgroundImage: "var(--gradient-spectrum)",
+          maskImage: "radial-gradient(closest-side, black, transparent)",
           opacity: 0.34,
         }}
       />
@@ -63,15 +61,14 @@ export function ProjectVisual({
       {/* Oversized index watermark */}
       <span
         className="display-caps absolute -bottom-[0.18em] -left-2 select-none opacity-[0.14]"
-        style={{ fontSize: "clamp(5rem, 14vw, 13rem)", color }}
+        style={{ fontSize: "clamp(5rem, 14vw, 13rem)", color: "var(--color-rim)" }}
       >
         {index}
       </span>
 
       <div className="absolute inset-0 flex flex-col justify-between p-6">
         <span
-          className="font-mono text-xs uppercase tracking-[0.22em]"
-          style={{ color }}
+          className="tag text-[var(--color-rim)]"
         >
           {category}
         </span>

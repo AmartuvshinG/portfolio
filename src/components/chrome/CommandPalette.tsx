@@ -1,5 +1,6 @@
 "use client";
 
+import { FrameLock } from "@/components/motion/FrameLock";
 import { toggleDiagnostics } from "@/lib/diagnostics";
 import { iconStroke } from "@/lib/icon";
 import { replayIntro } from "@/lib/intro";
@@ -254,14 +255,15 @@ export function CommandPalette() {
             exit={{ opacity: 0, y: -8, scale: 0.99 }}
             transition={{ duration: 0.28, ease: EASE_EXPO }}
             onClick={(e) => e.stopPropagation()}
-            className="chamfer-lg w-full max-w-2xl overflow-hidden border border-line-strong bg-bg/95 shadow-[0_40px_120px_rgba(0,0,0,0.7)]"
+            className="lf-palette w-full max-w-2xl overflow-hidden border border-line-strong bg-bg/95 shadow-[0_40px_120px_rgba(0,0,0,0.7)]"
             /* A modal is idle by definition — nothing is scrolling behind it —
                so unlike the navbar this one can hold real glass all the time. */
             style={{ backdropFilter: "blur(20px) saturate(1.3)" }}
           >
-            <div className="flex items-center gap-3 border-b border-line px-5">
+            <FrameLock on>
+            <div className="fl-in flex items-center gap-3 border-b border-line px-5" style={{ "--i": 0 } as React.CSSProperties}>
               {/* A terminal's prompt, in holo (it is a readout), where a search glass was. */}
-              <span aria-hidden className="shrink-0 font-mono text-sm text-[var(--color-holo)]">
+              <span aria-hidden className="shrink-0 font-mono text-sm text-[var(--color-rim)]">
                 &gt;_
               </span>
               <input
@@ -299,16 +301,16 @@ export function CommandPalette() {
 
                    16px on touch: iOS zooms the page into any field set
                    smaller than that, and does not zoom back out. */
-                className="w-full bg-transparent py-4 font-mono text-sm text-fg pointer-coarse:text-base caret-[var(--color-holo)] placeholder:text-faint focus-visible:[outline-offset:-4px]!"
+                className="w-full bg-transparent py-4 font-mono text-sm text-fg pointer-coarse:text-base caret-[var(--color-rim)] placeholder:text-fg/80 focus-visible:[outline-offset:-4px]!"
               />
-              <kbd className="hud-label shrink-0 border border-line px-1.5 py-0.5">
+              <kbd className="tag shrink-0 border border-line px-1.5 py-0.5">
                 ESC
               </kbd>
             </div>
 
-            <ul id="palette-results" role="listbox" aria-label={t.palette.results} className="max-h-[46svh] overflow-y-auto overscroll-contain py-2">
+            <ul id="palette-results" role="listbox" aria-label={t.palette.results} className="fl-in lf-scroll max-h-[46svh] overflow-y-auto overscroll-contain py-2" style={{ "--i": 1 } as React.CSSProperties}>
               {results.length === 0 && (
-                <li className="px-5 py-6 text-sm text-muted">
+                <li className="px-5 py-6 text-sm text-fg/80">
                   {t.palette.none(query)}
                 </li>
               )}
@@ -318,7 +320,7 @@ export function CommandPalette() {
                 return (
                   <li key={cmd.id} id={cmd.id} role="option" aria-selected={i === cursor}>
                     {header && (
-                      <p className="micro px-5 pb-1 pt-3">{header}</p>
+                      <p className="tag px-5 pb-1 pt-3">{header}</p>
                     )}
                     <button
                       type="button"
@@ -330,7 +332,7 @@ export function CommandPalette() {
                       tabIndex={-1}
                       className={cn(
                         "relative flex w-full items-center justify-between gap-4 px-5 py-2.5 text-left transition-colors",
-                        i === cursor ? "bg-fg/[0.07] text-fg" : "text-muted"
+                        i === cursor ? "bg-fg/[0.07] text-fg" : "text-fg/80"
                       )}
                     >
                       {/* The selection: a lit bar that slides between rows. */}
@@ -338,11 +340,11 @@ export function CommandPalette() {
                         <motion.span
                           layoutId="palette-cursor"
                           aria-hidden
-                          className="absolute inset-y-1 left-0 w-[2px] bg-[var(--color-hazard)] shadow-[0_0_10px_var(--color-hazard)]"
+                          className="absolute inset-y-1 left-0 w-[2px] spectrum-rule"
                           transition={{ type: "spring", stiffness: 520, damping: 40 }}
                         />
                       )}
-                      <span className="flex items-center gap-3">
+                      <span className="flex min-w-0 items-center gap-3">
                         {cmd.id === "a-power" && <Zap size={14} strokeWidth={iconStroke(14)} />}
                         {cmd.id === "a-lang" && <Languages size={14} strokeWidth={iconStroke(14)} />}
                         {cmd.id === "a-copy" &&
@@ -352,10 +354,10 @@ export function CommandPalette() {
                         </span>
                       </span>
                       <span
-                        className="micro tabular shrink-0"
+                        className="lf-palette-hint tag tabular"
                         style={
                           cmd.state === t.palette.on
-                            ? { color: "var(--color-hazard)" }
+                            ? { color: "var(--color-rim)" }
                             : undefined
                         }
                       >
@@ -367,10 +369,11 @@ export function CommandPalette() {
               })}
             </ul>
 
-            <div className="flex items-center justify-between border-t border-line px-5 py-2.5">
-              <span className="micro">{t.palette.keys}</span>
-              <span className="micro tabular">{t.palette.count(results.length)}</span>
+            <div className="fl-in flex items-start justify-between gap-4 border-t border-line px-5 py-2.5" style={{ "--i": 2 } as React.CSSProperties}>
+              <span className="tag min-w-0">{t.palette.keys}</span>
+              <span className="tag tabular shrink-0 whitespace-nowrap">{t.palette.count(results.length)}</span>
             </div>
+            </FrameLock>
           </motion.div>
         </motion.div>
       )}

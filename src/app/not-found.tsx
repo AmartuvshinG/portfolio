@@ -3,30 +3,24 @@
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { useI18n } from "@/lib/i18n";
-import { NeonWord, useDisplayFont } from "@/components/ui/NeonWord";
+import { FrameLock } from "@/components/motion/FrameLock";
 
 /**
- * The page that isn't there: "404" condensing out of the rain, holding a
- * moment, and falling apart again, forever — a signal that keeps almost
- * arriving. The same engine as the case-file gate (ui/NeonWord), in loop
- * mode. The heading is real text for assistive tech; the word is decoration.
+ * A missing page as one printed panel: the same frame lock and ramp rule as
+ * the chapter cards, with a real heading and the existing route home.
  */
 export default function NotFound() {
   const { t } = useI18n();
-  const font = useDisplayFont();
   return (
     <section
       data-act="deck"
-      className="relative flex min-h-dvh flex-col items-center justify-end overflow-hidden px-6 pb-[14vh] text-center"
+      className="lf-not-found relative flex min-h-dvh items-center justify-center px-6 py-28 text-center"
     >
-      <h1 className="sr-only">404 — {t.notFound.eyebrow}</h1>
-      <div aria-hidden className="absolute inset-x-0 top-0 h-[64vh]">
-        {font && (
-          <NeonWord word="404" label={t.notFound.eyebrow} caption="404" font={font} weight="400" loop durationMs={3200} />
-        )}
-      </div>
-
-      <p className="relative max-w-md font-tech text-2xl leading-snug text-fg">{t.notFound.body}</p>
+      <FrameLock on className="lf-404-card">
+        <p className="fl-in tag text-[var(--color-rim)]" style={{ "--i": 0 } as React.CSSProperties}>{t.notFound.eyebrow}</p>
+        <h1 className="fl-in display-caps text-fg" style={{ "--i": 1, fontSize: "clamp(7rem, 25vw, 18rem)", lineHeight: 0.9 } as React.CSSProperties}>404<span className="sr-only"> — {t.notFound.eyebrow}</span></h1>
+        <span aria-hidden className="spectrum-rule h-0.5 w-full" />
+        <p className="fl-in relative max-w-md font-tech text-2xl leading-snug text-fg" style={{ "--i": 2 } as React.CSSProperties}>{t.notFound.body}</p>
 
       <Link
         href="/"
@@ -35,6 +29,7 @@ export default function NotFound() {
       >
         <ArrowLeft size={14} /> {t.notFound.back}
       </Link>
+      </FrameLock>
     </section>
   );
 }
