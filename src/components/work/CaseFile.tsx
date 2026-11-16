@@ -1,5 +1,7 @@
 "use client";
 
+import { Rich } from "@/components/ui/Rich";
+
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
 import Image from "next/image";
@@ -227,12 +229,9 @@ function CaseFile({
             {/* Bar */}
             <div className="lf-case-bar fl-in flex h-16 shrink-0 items-center justify-between gap-4 border-b border-line px-5 md:px-8" style={{ "--i": 0 } as React.CSSProperties}>
               <div className="flex min-w-0 items-center gap-3">
-                <span className="lf-code tag tabular">
-                  {project.index}
-                </span>
+
                 <span className="tag truncate text-[var(--color-rim)]">
-                  {t.caseFile.label}
-                  <span className="text-[var(--color-rim)]"> · {project.title}</span>
+                  {project.title}
                 </span>
               </div>
               <div className="flex items-center gap-4">
@@ -260,7 +259,6 @@ function CaseFile({
                 style={{ "--i": 1 } as React.CSSProperties}
               >
                 <header>
-                  <span className="tag">{project.category}</span>
                   <h2
                     id="case-title"
                     className="display-caps mt-4 text-fg"
@@ -269,15 +267,13 @@ function CaseFile({
                     {project.title}
                   </h2>
                   <p className="mt-5 max-w-3xl font-tech text-xl leading-snug text-fg md:text-2xl">
-                    {project.summary}
+                    <Rich text={project.summary} />
                   </p>
 
                   <dl className="mt-8 grid grid-cols-2 gap-x-6 gap-y-5 border-t border-line pt-6 md:grid-cols-4">
                     {[
                       [t.caseFile.role, project.role],
-                      [t.caseFile.year, project.year],
                       [t.caseFile.category, project.category],
-                      [t.caseFile.status, project.status],
                     ].map(([k, v]) => (
                       <div key={k}>
                         <dt className="tag">{k}</dt>
@@ -314,7 +310,7 @@ function CaseFile({
                 <div className="mt-14 grid gap-12 lg:grid-cols-[11rem_minmax(0,1fr)] lg:gap-16">
                   <nav aria-label={t.caseFile.contents} className="hidden lg:block">
                     <ol className="sticky top-8 flex flex-col border-l border-line">
-                      {chapters.map((ch, n) => {
+                      {chapters.map((ch) => {
                         const on = active === ch.id;
                         return (
                           <li key={ch.id}>
@@ -324,7 +320,6 @@ function CaseFile({
                               aria-current={on ? "true" : undefined}
                               className={`relative -ml-px flex min-h-10 w-full items-baseline gap-3 border-l px-4 text-left font-mono text-sm uppercase tracking-[0.18em] transition-colors ${on ? "border-[var(--color-rim)] text-fg" : "border-transparent text-fg/80 hover:text-fg"}`}
                             >
-                              <span className={`tabular ${on ? "text-[var(--color-rim)]" : "text-fg/80"}`}>0{n + 1}</span>
                               {ch.label}
                             </button>
                           </li>
@@ -341,14 +336,11 @@ function CaseFile({
                     <Chapter id="cf-stack" n={2} title={t.caseFile.stack}>
                       {/* The stack as a system listing, not a cloud of pills. */}
                       <ol className="grid border-t border-line sm:grid-cols-2 sm:gap-x-10">
-                        {project.stack.map((s, n) => (
+                        {project.stack.map((s) => (
                           <li
                             key={s}
                             className="flex items-baseline gap-4 border-b border-line py-3 font-mono text-sm uppercase tracking-[0.12em] text-fg"
                           >
-                            <span aria-hidden className="tabular text-sm text-[var(--color-rim)]">
-                              {String(n + 1).padStart(2, "0")}
-                            </span>
                             {s}
                           </li>
                         ))}
@@ -471,11 +463,10 @@ function CaseFile({
 }
 
 /** One numbered chapter of a case file. */
-function Chapter({ id, n, title, children }: { id: string; n: number; title: string; children: React.ReactNode }) {
+function Chapter({ id, title, children }: { id: string; n: number; title: string; children: React.ReactNode }) {
   return (
     <section id={id} data-chapter-id="" aria-labelledby={`${id}-h`} className="scroll-mt-6 pb-16">
       <h3 id={`${id}-h`} className="mb-6 flex items-baseline gap-4">
-        <span className="font-mono text-sm tabular text-[var(--color-rim)]">0{n}</span>
         <span className="tag !text-fg">{title}</span>
         <span aria-hidden className="h-px flex-1 -translate-y-[0.25em] bg-line" />
       </h3>

@@ -1,5 +1,7 @@
 "use client";
 
+import { Rich } from "@/components/ui/Rich";
+
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { ArrowUpRight } from "lucide-react";
 import { useI18n } from "@/lib/i18n";
@@ -218,7 +220,6 @@ export function SkillTree({ items }: { items: Capability[] }) {
                         }}
                       >
                         <TechMark name={it.stack[0]} size={26} />
-                        <span className="tree-num tabular">{String(i + 1).padStart(2, "0")}</span>
                       </span>
                       {isActive && <span key={`sh-${active}`} aria-hidden className="tree-shock" />}
                       <span className="tree-node-label">{it.title}</span>
@@ -239,19 +240,11 @@ export function SkillTree({ items }: { items: Capability[] }) {
             </span>
             {/* The beam that sweeps each new item in from the tether's side. */}
             <span key={`b-${active}`} aria-hidden className="tree-beam" />
-            <span aria-hidden className="tree-ghost display-caps tabular">
-              <span key={`g-${active}`}>{String(active + 1).padStart(2, "0")}</span>
-            </span>
+
             <div key={`c-${active}`} className="tree-panel-body">
-              <span className="micro flex items-center gap-3 text-fg/85">
-                <span className="tree-code">{t.craft.title}</span>
-                <span className="tree-roll tabular">
-                  <span>{String(active + 1).padStart(2, "0")}</span>
-                </span>
-                / {String(n).padStart(2, "0")}
-              </span>
+
               <h3 className="tree-title display-caps">{cur.title}</h3>
-              <p className="text-base leading-relaxed text-fg/85">{cur.description}</p>
+              <p className="text-base leading-relaxed text-fg/85"><Rich text={cur.description} /></p>
               <div>
                 <span className="tag text-[var(--color-rim)]">{t.craft.stack}</span>
                 <ul className="mt-3 flex flex-wrap gap-2">

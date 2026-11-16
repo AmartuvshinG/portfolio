@@ -1,9 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { iconStroke } from "@/lib/icon";
 import { AnimatePresence, motion, useAnimationControls, useInView } from "framer-motion";
-import { Briefcase, Clock, MapPin } from "lucide-react";
 import { sectionIndex } from "@/lib/content";
 import { useI18n } from "@/lib/i18n";
 import { ChapterSeam } from "@/components/chrome/ChapterSeam";
@@ -15,7 +13,6 @@ import { Seal } from "@/components/ui/Seal";
 import { MagneticButton } from "@/components/motion/MagneticButton";
 import { SectionHeader } from "@/components/ui/SectionHeader";
 import { FrameLock } from "@/components/motion/FrameLock";
-import { LocalClock } from "@/components/ui/LocalClock";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
 import { EASE_EXPO } from "@/lib/motion";
 
@@ -38,7 +35,7 @@ import { EASE_EXPO } from "@/lib/motion";
  */
 export function Contact() {
   const { c, t } = useI18n();
-  const { contact, profile, socials } = c;
+  const { contact, socials } = c;
   const linkedin = socials.find((s) => s.mark === "linkedin");
   const [copied, setCopied] = useState(false);
   /* Each copy stamps again, so the seal is keyed by a count, not the flag. */
@@ -84,7 +81,7 @@ export function Contact() {
 
       <div className="relative mx-auto max-w-[112.5rem] px-5 md:px-8 lg:px-16">
         <div className="flex flex-col justify-between gap-6 md:flex-row md:items-end">
-          <SectionHeader index={sectionIndex("#contact")} label={contact.heading} title={t.contact.title} chapter="#contact" />
+          <SectionHeader index={sectionIndex("#contact")} title={t.contact.title} chapter="#contact" />
           <p className="max-w-md text-lg leading-relaxed text-fg/85 md:text-right">{contact.lead}</p>
         </div>
 
@@ -92,7 +89,7 @@ export function Contact() {
             live status on the right. Locks in like every card on the page. */}
         <FrameLock className="ct-card mt-14 md:mt-20">
           <div className="ct-main fl-in min-w-0" style={{ "--i": 0 } as React.CSSProperties}>
-            <p className="tag text-[var(--color-rim)]">{t.contact.email}</p>
+
 
             {/* The address is the headline. It breaks anywhere rather than
                 overflowing a phone, and the copy button sits on its baseline.
@@ -153,35 +150,10 @@ export function Contact() {
               live readouts in the ID card's module style. */}
           <dl className="ct-status fl-in" style={{ "--i": 1 } as React.CSSProperties}>
             <div className="ct-row">
-              <dt className="tag flex items-center gap-2">
-                <span aria-hidden className="idc-lamp ct-lamp" />
-                {t.about.now}
-              </dt>
-              <dd className="flex items-center gap-2.5">
-                <Briefcase aria-hidden size={18} strokeWidth={iconStroke(18)} className="shrink-0 text-[var(--color-rim)]" />
-                {contact.availability}
-              </dd>
-            </div>
-            <div className="ct-row">
-              <dt className="tag">{t.about.localTime}</dt>
-              <dd className="flex items-center gap-2.5">
-                <Clock aria-hidden size={18} strokeWidth={iconStroke(18)} className="shrink-0 text-[var(--color-rim)]" />
-                <span>
-                  <LocalClock className="text-fg" /> <span className="text-fg/80">· GMT+8</span>
-                </span>
-              </dd>
-            </div>
-            <div className="ct-row">
               <dt className="tag">{t.contact.reply}</dt>
               <dd>{t.contact.responseTime}</dd>
             </div>
-            <div className="ct-row">
-              <dt className="tag">{c.about.signature[3]?.k}</dt>
-              <dd className="flex items-center gap-2.5">
-                <MapPin aria-hidden size={18} strokeWidth={iconStroke(18)} className="shrink-0 text-[var(--color-rim)]" />
-                {profile.location}
-              </dd>
-            </div>
+
           </dl>
         </FrameLock>
       </div>

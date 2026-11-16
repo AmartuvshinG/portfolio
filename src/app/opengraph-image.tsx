@@ -1,3 +1,4 @@
+import { plain } from "@/components/ui/Rich";
 import { ImageResponse } from "next/og";
 import { profile } from "@/lib/content";
 
@@ -65,7 +66,7 @@ export default function OpenGraphImage() {
 
         <div style={{ display: "flex", justifyContent: "space-between", gap: 40, fontSize: 20, color: "#c0bbe8", letterSpacing: 2 }}>
           <span>{profile.location}</span>
-          <span>{profile.status.toLowerCase()}</span>
+          <span>{plain(profile.status).toLowerCase()}</span>
         </div>
       </div>
     ),

@@ -1,5 +1,7 @@
 "use client";
 
+import { Rich } from "@/components/ui/Rich";
+
 import { PIN_QUERY } from "@/lib/viewport";
 
 import { useEffect, useState } from "react";
@@ -12,7 +14,6 @@ import { ICONS } from "@/components/ui/CapabilityCard";
 import { techLabel } from "@/components/ui/TechMarks";
 import { ToolChips } from "@/components/ui/LogoDock";
 import { CourseChips } from "@/components/ui/CourseChips";
-import { pad } from "@/lib/utils";
 
 /*
  * Craft on a phone. The wide-screen sideways track that used to live here was
@@ -37,7 +38,7 @@ export function CraftList({ items }: { items: Capability[] }) {
   const { c, t } = useI18n();
   return (
     <ol className="mt-12 flex flex-col gap-3">
-      {items.map((item, i) => {
+      {items.map((item) => {
         const Icon = ICONS[item.icon];
         const proof = item.proof ? c.projects.find((p) => p.slug === item.proof) : undefined;
         const tools = item.stack.map((k) => techLabel(k, t.craft.tools));
@@ -57,7 +58,6 @@ export function CraftList({ items }: { items: Capability[] }) {
                 </span>
                 <span className="flex min-w-0 flex-1 flex-col gap-1.5">
                   <span className="flex items-baseline gap-3">
-                    <span className="micro tabular !text-fg/70">{pad(i + 1)}</span>
                     <span className="font-tech text-xl font-bold uppercase leading-tight text-fg text-balance">
                       {item.title}
                     </span>
@@ -73,7 +73,7 @@ export function CraftList({ items }: { items: Capability[] }) {
               </summary>
 
               <div className="border-t border-line px-5 pb-6 pt-5">
-                <p className="text-base leading-relaxed text-fg/85">{item.description}</p>
+                <p className="text-base leading-relaxed text-fg/85"><Rich text={item.description} /></p>
                 {item.courses && item.courses.length > 0 && (
                   <div className="mt-5">
                     <p className="micro mb-2">{t.craft.studied}</p>

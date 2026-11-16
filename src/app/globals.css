@@ -536,6 +536,18 @@ html::-webkit-scrollbar {
   color: transparent;
 }
 
+/* A key phrase inside copy (components/ui/Rich): the ramp as its fill, bold.
+   Never a flat colour; the surrounding prose keeps its own. */
+.hl {
+  font-weight: 700;
+  background-image: var(--gradient-spectrum);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+}
+
 /* The ramp as an underline. Safe at any size because the text stays --color-fg. */
 @utility spectrum-underline {
   background-image: var(--gradient-spectrum);

@@ -159,7 +159,7 @@ function Stage({ sectionRef: ref }: { sectionRef: React.RefObject<HTMLElement | 
           <SectionHeader index={sectionIndex("#anatomy")} label={A.eyebrow} title={A.title} chapter="#anatomy" className="lf-masthead" />
           <p className="flex flex-col items-end gap-1 pb-1 text-right">
             <span className="tag !text-[var(--color-rim)]">{A.credit}</span>
-            <span className="tag">{A.source}</span>
+            <span className="tag hidden md:inline">{A.source}</span>
           </p>
         </header>
 
@@ -187,11 +187,6 @@ function Stage({ sectionRef: ref }: { sectionRef: React.RefObject<HTMLElement | 
             <AnimatePresence mode="popLayout" initial={false}>
               <StepCard key={beat} i={beat} n={n} pos={pos} boxRef={boxRef}>
                 <div className="fl-in min-w-0" style={{ "--i": 0 } as React.CSSProperties}>
-                  <span className="mission-step tag">
-                    <span className="mission-rec" />
-                    {A.eyebrow} · {String(beat + 1).padStart(2, "0")} / {String(n).padStart(2, "0")}
-                  </span>
-                  <span className="mission-num display-caps tabular">{String(beat + 1).padStart(2, "0")}</span>
                   <h3 className="mt-2 font-tech text-3xl font-bold uppercase leading-[1.05] text-fg lg:text-4xl">
                     <ScrambleText key={`t${beat}-${b.title}`} text={b.title} immediate speed={26} />
                   </h3>
@@ -209,8 +204,6 @@ function Stage({ sectionRef: ref }: { sectionRef: React.RefObject<HTMLElement | 
             </AnimatePresence>
           </div>
         </div>
-
-        <p className="tag mt-3 !text-fg/85">{A.hint}</p>
         <SrSequence words={A} />
       </div>
     </div>
@@ -407,7 +400,7 @@ function Sequence({ reduced }: { reduced: boolean }) {
       <SectionHeader index={sectionIndex("#anatomy")} label={A.eyebrow} title={A.title} chapter="#anatomy" />
       <p className="mt-6 flex flex-col gap-1">
         <span className="tag !text-[var(--color-rim)]">{A.credit}</span>
-        <span className="tag">{A.source}</span>
+        <span className="tag hidden md:inline">{A.source}</span>
       </p>
       <ol className="mt-6">
         {A.beats.map((b, i) => (
@@ -428,7 +421,7 @@ function Step({ i, reduced, words }: { i: number; reduced: boolean; words: UiStr
       <FrameLock className="lf-step grid gap-x-14 gap-y-6 p-5 md:p-8 lg:grid-cols-[minmax(0,5fr)_minmax(0,6fr)]">
       <div className="fl-in min-w-0" style={{ "--i": 0 } as React.CSSProperties}>
         <span className="tag tabular !text-[var(--color-rim)]">
-          {words.step(i + 1, words.beats.length)} · {b.station}
+          {b.station}
         </span>
         <h3 className="mt-3 font-tech text-3xl font-bold uppercase leading-[1.05] text-fg md:text-4xl">{b.title}</h3>
         <p className="mt-3 max-w-2xl text-lg leading-relaxed text-fg/85 md:text-xl">{b.body}</p>

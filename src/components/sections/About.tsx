@@ -1,6 +1,8 @@
 "use client";
 
-import { education, profile as enProfile, sectionIndex } from "@/lib/content";
+import { Rich } from "@/components/ui/Rich";
+
+import { education } from "@/lib/content";
 import { useI18n } from "@/lib/i18n";
 import { Reveal } from "@/components/motion/Reveal";
 import { ChapterSeam } from "@/components/chrome/ChapterSeam";
@@ -19,10 +21,9 @@ import { DecodeText } from "@/components/motion/DecodeText";
 import { InkSign } from "@/components/ui/InkSign";
 import { ScrubWords } from "@/components/motion/ScrubWords";
 import { FrameLock } from "@/components/motion/FrameLock";
-import { LocalClock } from "@/components/ui/LocalClock";
 import { MARK_D, MARK_T } from "@/components/chrome/NavGlyphs";
 import { iconStroke } from "@/lib/icon";
-import { Briefcase, Crosshair, GraduationCap, MapPin, Wrench } from "lucide-react";
+import { Briefcase, Crosshair, Wrench } from "lucide-react";
 import { ScriptLabel } from "@/components/ui/ScriptLabel";
 import { PIN_QUERY } from "@/lib/viewport";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
@@ -75,8 +76,6 @@ export function About() {
 
   const stats = [
     { v: education.gpaRecent.toFixed(2), k: t.about.statGpa },
-    { v: "222K+", k: t.about.statBugs },
-    { v: `×${education.deansList}`, k: t.about.statDeans },
     { v: "2", k: t.about.statLangs },
   ];
 
@@ -91,13 +90,13 @@ export function About() {
       <ChapterSeam />
 
       {pinned ? (
-        <PinnedStatement lead={about.lead} heading={about.heading} stats={stats} />
+        <PinnedStatement lead={about.lead} stats={stats} />
       ) : (
-        <FlowStatement lead={about.lead} heading={about.heading} stats={stats} reduced={reduced} />
+        <FlowStatement lead={about.lead} stats={stats} reduced={reduced} />
       )}
 
       {/* ---- 3. THE ID, then the story, page by page ------------------- */}
-      {pinned && bootRoom ? <ProfileBoot /> : <ProfileFlow reduced={reduced} />}
+      {pinned && bootRoom ? <ProfileBoot /> : <ProfileFlow />}
     </section>
   );
 }
@@ -111,7 +110,7 @@ type Stat = { v: string; k: string };
 /** The pinned frame: the stage's own progress lights the line, then the
  *  figures. The line never moves while pinned, so ScrubWords is handed this
  *  clock rather than measuring its own position. */
-function PinnedStatement({ lead, heading, stats }: { lead: string; heading: string; stats: Stat[] }) {
+function PinnedStatement({ lead, stats }: { lead: string; stats: Stat[] }) {
   const ref = useRef<HTMLDivElement>(null);
   const { scrollYProgress } = useScroll({ target: ref, offset: ["start start", "end end"] });
   const leadP = useTransform(scrollYProgress, [0.04, LEAD_END], [0, 1]);
@@ -126,7 +125,7 @@ function PinnedStatement({ lead, heading, stats }: { lead: string; heading: stri
   return (
     <div ref={ref} className="relative" style={{ height: `${STAGE_VH}vh` }}>
       <div className="sticky top-0 flex h-svh flex-col justify-center">
-        <StatementBody lead={lead} heading={heading} stats={stats} litCount={lit} progress={leadP} />
+        <StatementBody lead={lead} stats={stats} litCount={lit} progress={leadP} />
       </div>
     </div>
   );
@@ -136,12 +135,11 @@ function PinnedStatement({ lead, heading, stats }: { lead: string; heading: stri
  *  the figures strike on as the row comes into view. */
 function FlowStatement({
   lead,
-  heading,
   stats,
   reduced,
 }: {
   lead: string;
-  heading: string;
+
   stats: Stat[];
   reduced: boolean;
 }) {
@@ -159,21 +157,20 @@ function FlowStatement({
 
   return (
     <div className="relative pb-10 pt-24 md:pt-36">
-      <StatementBody lead={lead} heading={heading} stats={stats} litCount={reduced ? count : lit} rowRef={rowRef} />
+      <StatementBody lead={lead} stats={stats} litCount={reduced ? count : lit} rowRef={rowRef} />
     </div>
   );
 }
 
 function StatementBody({
   lead,
-  heading,
   stats,
   litCount,
   progress,
   rowRef,
 }: {
   lead: string;
-  heading: string;
+
   stats: Stat[];
   litCount: number;
   progress?: MotionValue<number>;
@@ -183,9 +180,7 @@ function StatementBody({
     <div className="relative mx-auto w-full max-w-[112.5rem] px-5 md:px-8 lg:px-16">
       <div className="relative">
         <ScriptLabel href="#about" />
-        <span className="tag text-[var(--color-rim)]">
-          {sectionIndex("#about")} — {heading}
-        </span>
+
         {/* The statement, at the size of the screen. Michroma sets wide, so
             this is ~5vw rather than a grotesk's 8. */}
         <h2 className="display-caps mt-8 max-w-[22ch] text-[clamp(1.75rem,min(5.1vw,7.2vh),5.75rem)] leading-[1.04] md:mt-10 md:pr-24">
@@ -195,7 +190,7 @@ function StatementBody({
 
       {/* The numbers. A <dl>: each figure is the value of its label. */}
       <div ref={rowRef}>
-        <dl className="mt-12 grid grid-cols-2 gap-x-6 gap-y-10 md:mt-16 lg:grid-cols-4 lg:gap-x-10">
+        <dl className="mt-12 grid max-w-sm gap-x-6 gap-y-10 md:mt-16">
           {stats.map((s, i) => (
             <div key={s.k} className="relative flex flex-col pt-5">
               <span aria-hidden className="spectrum-rule absolute inset-x-0 top-0 h-px opacity-80" />
@@ -226,15 +221,8 @@ function StatementBody({
 
 /** One glyph per signature field, in content order (focus, tools, degree,
  *  home), and one for the current role. */
-const FIELD_ICONS = [Crosshair, Wrench, GraduationCap, MapPin] as const;
+const FIELD_ICONS = [Crosshair, Wrench] as const;
 
-/** A passport's machine-readable line, from the Latin name only. Decoration:
- *  aria-hidden, and it states nothing the card does not. */
-const MRZ = (() => {
-  const [given = "", ...rest] = enProfile.fullName.toUpperCase().split(" ");
-  const line = `P<MNG${rest.join("<")}<<${given}`;
-  return (line + "<".repeat(44)).slice(0, 44);
-})();
 
 /**
  * The ID as a printed credential.
@@ -300,23 +288,16 @@ function IdCard({
                 </svg>
               </span>
               <div className="min-w-0 flex-1">
-                <div className="fl-in flex flex-wrap items-center justify-between gap-x-6 gap-y-1" style={{ "--i": 0 } as React.CSSProperties}>
-                  <span className="micro text-[var(--color-hazard)]">
-                    {t.about.file} · {sectionIndex("#about")}
-                  </span>
-                  <span className="micro">{profile.role}</span>
-                </div>
+
                 <p className="fl-in mt-3 font-display text-[clamp(1.5rem,2.6vw,2.6rem)] uppercase leading-none text-fg" style={{ "--i": 1 } as React.CSSProperties}>
                   {profile.fullName}
                 </p>
-                <p className="fl-in spectrum-text mt-2 font-tech text-base font-semibold uppercase tracking-wide md:text-lg" style={{ "--i": 2 } as React.CSSProperties}>
-                  {profile.discipline}
-                </p>
+
               </div>
             </div>
 
             <dl className="mt-7 grid grid-cols-1 gap-x-6 sm:grid-cols-2">
-              {about.signature.map((f, i) => {
+              {about.signature.slice(0, 2).map((f, i) => {
                 const Icon = FIELD_ICONS[i] ?? Crosshair;
                 return (
                   <div key={f.k} className="idc-field" style={{ "--i": i } as React.CSSProperties}>
@@ -341,31 +322,13 @@ function IdCard({
                 </dt>
                 <dd className="font-tech text-lg font-semibold uppercase leading-tight text-fg">
                   <Glyph aria-hidden size={18} strokeWidth={iconStroke(18, "medium")} className="mr-2 inline-block align-[-3px] text-[var(--color-rim)]" />
-                  <DecodeText text={profile.status} play={scanned} delay={1.15} />
+                  <Rich text={profile.status} />
                 </dd>
               </div>
             </dl>
 
             {/* The live strip: serial, place, the time there now. */}
-            <div className="idc-strip micro">
-              <span>
-                ID-{sectionIndex("#about")} · {profile.location}
-              </span>
-              <span className="flex items-center gap-2">
-                {t.about.localTime}
-                <span className="text-fg">
-                  <LocalClock />
-                </span>
-              </span>
-            </div>
-            <p aria-hidden className="idc-mrz">
-              {/* One span per character: it types out on opacity alone. */}
-              {MRZ.split("").map((ch, i) => (
-                <span key={i} style={{ "--c": i } as React.CSSProperties}>
-                  {ch}
-                </span>
-              ))}
-            </p>
+
           </div>
 
           {/* The name again, in Mongol bichig, down the card's spine. */}
@@ -457,7 +420,6 @@ function DossierPage({
   const scale = useTransform(back, [0, 1], [1, 0.92]);
   const y = useTransform(back, [0, 1], ["0%", "-8%"]);
   const dim = useTransform(back, [0, 1], [1, 0.08]);
-  const words = useTransform(progress, [a + span * 0.1, a + span * 0.7], [0, 1]);
   const last = index === count - 1;
   /* The frame locks onto the page as it lands, and stays locked. */
   const [landed, setLanded] = useState(false);
@@ -471,8 +433,8 @@ function DossierPage({
         {null}
       </FrameLock>
       <motion.div style={{ opacity: last ? 1 : dim }}>
-        <PageBody page={page} index={index} count={count}>
-          <ScrubWords text={page.text} progress={words} />
+        <PageBody page={page}>
+          <Rich text={page.text} />
         </PageBody>
         {page.games ? <GameChips games={page.games} progress={progress} at={a + span * 0.5} /> : null}
       </motion.div>
@@ -482,24 +444,15 @@ function DossierPage({
 
 function PageBody({
   page,
-  index,
-  count,
   children,
 }: {
   page: Page;
-  index: number;
-  count: number;
   children: React.ReactNode;
 }) {
-  const { c, t } = useI18n();
+  const { c } = useI18n();
   return (
     <>
-      <header className="dossier-page-head">
-        <span className="tag text-[var(--color-rim)]">{page.games ? c.about.offHours.label : t.about.file}</span>
-        <span className="tag text-fg/85">
-          {String(index + 1).padStart(2, "0")} / {String(count).padStart(2, "0")}
-        </span>
-      </header>
+      {page.games && <header className="dossier-page-head"><span className="tag text-[var(--color-rim)]">{c.about.offHours.label}</span></header>}
       <p className="text-base leading-relaxed text-fg md:text-lg">{children}</p>
     </>
   );
@@ -527,7 +480,7 @@ function GameChips({ games, progress, at = 0 }: { games: string[]; progress?: Mo
 }
 
 /** The same story in flow: the card, then each page lights as it scrolls by. */
-function ProfileFlow({ reduced }: { reduced: boolean }) {
+function ProfileFlow() {
   const pages = usePages();
   return (
     <div className="relative mx-auto max-w-[112.5rem] px-5 pb-20 pt-6 md:px-8 md:pb-28 lg:px-16">
@@ -536,11 +489,11 @@ function ProfileFlow({ reduced }: { reduced: boolean }) {
           <IdCard />
         </Reveal>
         <div className="flex flex-col gap-6 lg:col-span-5">
-          {pages.map((pg, i) => (
+          {pages.map((pg) => (
             <FrameLock key={pg.key} as="article" className="dossier-page dossier-page--flow">
               <div className="fl-in">
-                <PageBody page={pg} index={i} count={pages.length}>
-                  {reduced ? pg.text : <ScrubWords text={pg.text} />}
+                <PageBody page={pg}>
+                  <Rich text={pg.text} />
                 </PageBody>
                 {pg.games ? <GameChips games={pg.games} /> : null}
               </div>

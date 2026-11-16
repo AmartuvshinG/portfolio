@@ -98,7 +98,6 @@ export function Loadout({ className, footer }: { className?: string; footer?: Re
       data-in={reduced || inView ? "true" : "false"}
       data-still={reduced ? "true" : "false"}
     >
-      <h3 className="tag text-center text-fg">{t.craft.dock}</h3>
       <div ref={groupsRef} className="loadout-groups">
         {techGroups.map((keys, g) => {
           const first = ORDER[g][0];
@@ -111,17 +110,7 @@ export function Loadout({ className, footer }: { className?: string; footer?: Re
               style={{ "--count": keys.length, "--g": g, "--first": first, "--last": last } as React.CSSProperties}
             >
               <header className="loadout-head">
-                <span className="tag tabular text-fg/85">{String(g + 1).padStart(2, "0")}</span>
                 <span className="tag text-fg">{t.craft.groups[g]}</span>
-                {/* The counter: a column of digits stepped up the scroll. */}
-                <span aria-hidden className="loadout-count tag tabular">
-                  <span className="loadout-count-roll" style={{ "--n": keys.length } as React.CSSProperties}>
-                    {Array.from({ length: keys.length + 1 }, (_, n) => (
-                      <span key={n}>{n}</span>
-                    ))}
-                  </span>
-                  /{keys.length}
-                </span>
                 <span aria-hidden className="loadout-rule" />
               </header>
               <ul className="loadout-slots">

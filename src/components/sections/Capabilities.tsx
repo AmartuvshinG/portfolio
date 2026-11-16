@@ -1,6 +1,6 @@
 "use client";
 
-import { education, sectionIndex } from "@/lib/content";
+import { sectionIndex } from "@/lib/content";
 import { Loadout } from "@/components/craft/Loadout";
 import { useI18n } from "@/lib/i18n";
 import { SectionHeader } from "@/components/ui/SectionHeader";
@@ -45,7 +45,6 @@ export function Capabilities() {
         <div className="flex flex-col justify-between gap-8 md:flex-row md:items-end">
           <SectionHeader
             index={sectionIndex("#capabilities")}
-            label={t.craft.eyebrow}
             title={t.craft.title}
             chapter="#capabilities"
           />
@@ -56,10 +55,7 @@ export function Capabilities() {
           </Reveal>
         </div>
 
-        <Loadout
-          className="mt-14 md:mt-20"
-          footer={<p className="tag text-center text-fg/85">{t.craft.degree(education.credits, education.deansList)}</p>}
-        />
+        <Loadout className="mt-14 md:mt-20" />
 
         {/* Phones get the list from the first paint: the layout is CSS's call,
             so there is no grid rendered and then swapped out after hydration. */}

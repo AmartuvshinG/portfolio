@@ -173,51 +173,9 @@
 .ft-top svg { width: 26px; height: 26px; }
 
 /* ---- Journey: the spine's own motion -------------------------------------- */
-/* A comet of light rides the head of the fill, and a node per stop lights
-   as the playhead passes it. */
-.jr-spine-head {
-  position: absolute;
-  left: 50%;
-  top: 0;
-  width: 10px;
-  height: 64px;
-  margin: -64px 0 0 -5px;
-  border-radius: 999px;
-  background: linear-gradient(180deg, transparent, rgb(232 28 200 / 0.55) 60%, #fff);
-  box-shadow: 0 6px 18px rgb(232 28 200 / 0.8);
-  transform: translateY(0);
-  opacity: 0.9;
-}
-.jr-spine-node {
-  position: absolute;
-  left: 50%;
-  width: 8px;
-  height: 8px;
-  margin: -4px 0 0 -4px;
-  transform: rotate(45deg) scale(0.6);
-  background: rgb(243 241 255 / 0.25);
-  transition: transform 0.5s cubic-bezier(0.2, 1.6, 0.3, 1), opacity 0.3s ease;
-}
-.jr-spine-node[data-on="true"] {
-  background-image: var(--gradient-spectrum);
-  box-shadow: 0 0 10px rgb(232 28 200 / 0.8);
-  transform: rotate(45deg) scale(1);
-}
+/* The playhead turns a quarter at every new stop, then settles. */
 .jr-playhead { transition: transform 0.6s cubic-bezier(0.2, 1.4, 0.3, 1); }
 .jr-playhead[data-turn="1"] { transform: rotate(135deg); }
-@supports (animation-timeline: view()) {
-  .jr-spine-head {
-    animation: jr-head linear both;
-    animation-timeline: --jr;
-    animation-range: contain 0% contain 100%;
-  }
-}
-/* The spine is the grid row's full height, so its head travels by the
-   stage's height: the frame is 100svh minus the HUD band. */
-@keyframes jr-head {
-  from { transform: translateY(0); }
-  to { transform: translateY(calc(100svh - 64px - env(safe-area-inset-top))); }
-}
 /* Phones: each stop's piece of the spine fills as it scrolls by. */
 .jr-item::before {
   content: "";
@@ -243,9 +201,8 @@
 
 @media (prefers-reduced-motion: reduce) {
   .ct-row::after { transform: none; transition: none; }
-  .jr-spine-head { display: none; }
   .jr-item::before { animation: none !important; transform: none; }
-  .jr-spine-node, .jr-playhead, .ft-top, .ft-top::before, .ft-top::after { transition: none; }
+  .jr-wheel-node, .jr-wheel button, .jr-playhead, .ft-top, .ft-top::before, .ft-top::after { transition: none; }
 }
 
 /* The phone list keeps a faint track under the pieces that fill. */

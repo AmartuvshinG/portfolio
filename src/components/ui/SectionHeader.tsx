@@ -2,15 +2,14 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { ScrambleText } from "@/components/motion/ScrambleText";
 import { SliceTitle } from "@/components/motion/SliceTitle";
 import { ScriptLabel } from "@/components/ui/ScriptLabel";
 import { DUR, EASE_DEVELOP, inView } from "@/lib/motion";
 import { cn } from "@/lib/utils";
 
 interface SectionHeaderProps {
-  index: string;
-  label: string;
+  index?: string;
+  label?: string;
   title: string;
   description?: string;
   className?: string;
@@ -41,7 +40,6 @@ interface SectionHeaderProps {
  * than a number copied here.
  */
 export function SectionHeader({
-  index,
   label,
   title,
   description,
@@ -67,12 +65,7 @@ export function SectionHeader({
       onViewportEnter={() => setOn(true)}
     >
       {chapter && <ScriptLabel href={chapter} />}
-      <div className="flex items-center gap-4">
-        {on ? (
-          <ScrambleText text={index} className="eyebrow tabular" />
-        ) : (
-          <span className="eyebrow tabular opacity-0">{index}</span>
-        )}
+      {label && <div className="flex items-center gap-4">
         <motion.span
           className="h-px w-12 origin-left bg-current opacity-25"
           variants={{ hidden: { scaleX: 0 }, show: { scaleX: 1, transition: { duration: DUR.medium, ease, delay: 0.15 } } }}
@@ -83,7 +76,7 @@ export function SectionHeader({
         >
           {label}
         </motion.span>
-      </div>
+      </div>}
 
       <div className="relative">
         <motion.h2

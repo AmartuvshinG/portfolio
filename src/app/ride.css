@@ -90,6 +90,85 @@
 .ms-item:focus-visible {
   outline-offset: 6px;
 }
+/* The navbar's menus behave like the title screen's: the lit stage beats.
+   They only exist while open, so the loop never runs unseen. */
+.ms--hero .ms-label { display: inline-block; }
+.ms--hero .ms-item[data-lit="true"] .ms-label {
+  animation: ts-beat 0.75s cubic-bezier(0.2, 0.8, 0.2, 1) infinite;
+}
+
+/* ---- The lock-on: the navbar's number chips --------------------------------
+   The HUD's chapter chip and the lit stage's chip in the menus light the same
+   way: the ramp fills in from the left with an overshoot, and four bracket
+   corners snap down onto the chip from a turned, oversized frame. Once per
+   lighting (a chapter change remounts the HUD chip; hovering it replays). */
+.hud-code,
+.ms-code {
+  position: relative;
+  isolation: isolate;
+}
+.hud-code,
+.ms-item[data-lit="true"] .ms-code {
+  background-image: none;
+}
+.hud-code::before,
+.ms-item[data-lit="true"] .ms-code::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background-image: var(--gradient-spectrum);
+  transform-origin: 0 50%;
+  animation: chip-fill 0.55s cubic-bezier(0.2, 1.5, 0.35, 1) both;
+}
+.hud-code::after,
+.ms-item[data-lit="true"] .ms-code::after {
+  content: "";
+  position: absolute;
+  inset: -4px;
+  pointer-events: none;
+  --_c: #f3f1ff;
+  background:
+    linear-gradient(var(--_c), var(--_c)) top left / 6px 1.5px no-repeat,
+    linear-gradient(var(--_c), var(--_c)) top left / 1.5px 6px no-repeat,
+    linear-gradient(var(--_c), var(--_c)) top right / 6px 1.5px no-repeat,
+    linear-gradient(var(--_c), var(--_c)) top right / 1.5px 6px no-repeat,
+    linear-gradient(var(--_c), var(--_c)) bottom left / 6px 1.5px no-repeat,
+    linear-gradient(var(--_c), var(--_c)) bottom left / 1.5px 6px no-repeat,
+    linear-gradient(var(--_c), var(--_c)) bottom right / 6px 1.5px no-repeat,
+    linear-gradient(var(--_c), var(--_c)) bottom right / 1.5px 6px no-repeat;
+  animation: chip-lock 0.5s cubic-bezier(0.2, 1.4, 0.3, 1) 0.12s both;
+}
+/* Hovering the HUD readout replays it (a new name restarts the animation). */
+.hud-readout:hover .hud-code::before { animation-name: chip-fill-again; }
+.hud-readout:hover .hud-code::after { animation-name: chip-lock-again; }
+@keyframes chip-fill {
+  from { transform: scaleX(0); }
+  to { transform: none; }
+}
+@keyframes chip-fill-again {
+  from { transform: scaleX(0); }
+  to { transform: none; }
+}
+@keyframes chip-lock {
+  0% { opacity: 0; transform: scale(1.8) rotate(-12deg); }
+  55% { opacity: 1; }
+  100% { opacity: 0.9; transform: none; }
+}
+@keyframes chip-lock-again {
+  0% { opacity: 0; transform: scale(1.8) rotate(-12deg); }
+  55% { opacity: 1; }
+  100% { opacity: 0.9; transform: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ms--hero .ms-item[data-lit="true"] .ms-label,
+  .hud-code::before,
+  .hud-code::after,
+  .ms-code::before,
+  .ms-code::after {
+    animation: none !important;
+  }
+}
 :root:lang(mn) .ms-label {
   font-size: calc(var(--ms-size, clamp(1.4rem, 2.1vw, 2.1rem)) * 0.72);
 }
@@ -295,7 +374,6 @@
 /* ---- Projects: the reel ------------------------------------------------------ */
 .reel {
   --fw: min(84vw, calc(99svh + 24rem));
-  --fg: 6vw;
   display: flex;
   flex-direction: column;
 }
@@ -327,16 +405,24 @@
 }
 .reel-gate {
   flex: 1;
-  display: flex;
-  align-items: center;
   min-height: 0;
+}
+/* Pinned, the gate is the window the reel rises through: one project per
+   gate height, so 100cqh is exactly one step of travel. */
+.reel--pinned .reel-gate {
+  container-type: size;
+  overflow: clip;
 }
 .reel-track {
   display: flex;
-  gap: var(--fg);
+  flex-direction: column;
+  align-items: center;
   list-style: none;
   margin: 0;
-  padding: 0 calc((100vw - var(--fw)) / 2);
+  padding: 0;
+}
+.reel-track--css,
+.reel--pinned .reel-track {
   will-change: transform;
 }
 .reel-frame {
@@ -348,6 +434,7 @@
   column-gap: clamp(20px, 2.4vw, 40px);
   row-gap: 14px;
   align-items: end;
+  align-content: center;
   transition:
     transform 0.9s cubic-bezier(0.16, 1, 0.3, 1),
     opacity 0.7s ease;
@@ -356,8 +443,9 @@
   opacity: 0.32;
   transform: scale(0.84);
 }
-.reel--pinned .reel-frame[data-side="l"] { transform-origin: 100% 50%; }
-.reel--pinned .reel-frame[data-side="r"] { transform-origin: 0 50%; }
+.reel--pinned .reel-frame { height: 100cqh; }
+.reel--pinned .reel-frame[data-side="l"] { transform-origin: 50% 100%; }
+.reel--pinned .reel-frame[data-side="r"] { transform-origin: 50% 0; }
 .reel-shot {
   position: relative;
   grid-column: 1;
@@ -430,7 +518,7 @@
 }
 .reel--pinned .reel-frame[data-on="false"] .reel-card > * {
   opacity: 0;
-  transform: translateX(24px);
+  transform: translateY(24px);
 }
 .reel--pinned .reel-frame[data-on="true"] .reel-card > :nth-child(2) { transition-delay: 0.08s; }
 .reel--pinned .reel-frame[data-on="true"] .reel-card > :nth-child(3) { transition-delay: 0.16s; }
@@ -474,7 +562,7 @@
 @media (max-height: 760px) {
   .reel-strip { max-width: 46%; }
 }
-/* Compositor travel: the section's view timeline runs the reel sideways. */
+/* Compositor travel: the section's view timeline lifts the reel up through the gate. */
 .reel-timeline {
   view-timeline: --reel block;
 }
@@ -492,32 +580,23 @@
 }
 @keyframes reel-travel {
   from { transform: none; }
-  to { transform: translateX(calc((var(--n) - 1) * (var(--fw) + var(--fg)) * -1)); }
+  to { transform: translateY(calc((var(--n) - 1) * -100cqh)); }
 }
 @keyframes reel-meter {
   from { transform: scaleX(0); }
   to { transform: none; }
 }
-/* Swipe row: phones, short windows, reduced motion. */
-.reel--flow { --fw: min(88vw, 1100px); --fg: 16px; }
-.reel-gate--swipe {
-  margin-top: 28px;
-  overflow-x: auto;
-  scroll-snap-type: x mandatory;
-  scrollbar-width: none;
-  overscroll-behavior-x: contain;
-}
-.reel-gate--swipe::-webkit-scrollbar { display: none; }
-.reel-gate--swipe .reel-track { padding: 0 6vw; }
-.reel-gate--swipe .reel-frame {
-  scroll-snap-align: center;
-  grid-template-columns: minmax(0, 1fr);
-}
-.reel-gate--swipe .reel-card { grid-column: 1; grid-row: 2; }
-.reel-gate--swipe .reel-strip { display: none; }
+/* Stack: phones, short windows, reduced motion. One project after another,
+   top to bottom; nothing on the site scrolls sideways. */
+.reel--flow { --fw: min(88vw, 1100px); }
+.reel-gate--stack { margin-top: 28px; }
+.reel-gate--stack .reel-track { gap: clamp(48px, 8vw, 96px); }
+.reel-gate--stack .reel-frame { grid-template-columns: minmax(0, 1fr); }
+.reel-gate--stack .reel-card { grid-column: 1; grid-row: 2; }
+.reel-gate--stack .reel-strip { display: none; }
 @media (min-width: 1024px) {
-  .reel-gate--swipe .reel-frame { grid-template-columns: minmax(0, 1fr) minmax(16rem, 22rem); }
-  .reel-gate--swipe .reel-card { grid-column: 2; grid-row: 1; }
+  .reel-gate--stack .reel-frame { grid-template-columns: minmax(0, 1fr) minmax(16rem, 22rem); }
+  .reel-gate--stack .reel-card { grid-column: 2; grid-row: 1; }
 }
 :root:lang(mn) .reel-stage { --ms-size: clamp(1.3rem, 2.2vw, 2.1rem); }
 

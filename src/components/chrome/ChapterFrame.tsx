@@ -7,7 +7,6 @@ import { useReducedMotion } from "@/hooks/useReducedMotion";
 import { cn } from "@/lib/utils";
 import { useSmoothScroll } from "@/components/chrome/SmoothScroll";
 import { gsap, ScrollTrigger } from "@/lib/gsap";
-import { sectionIndex } from "@/lib/content";
 import { useI18n } from "@/lib/i18n";
 
 /**
@@ -72,8 +71,6 @@ export function ChapterFrame() {
   const id = chapters[active];
   const name =
     c.navLinks.find((l) => l.href === `#${id}`)?.label ?? id;
-  const code = sectionIndex(`#${id}`);
-  const last = c.navLinks[c.navLinks.length - 1]?.code ?? "--";
 
   return (
     <>
@@ -109,10 +106,6 @@ export function ChapterFrame() {
         className="absolute bottom-[14vh] left-5 flex origin-bottom-left translate-x-[0.6rem] items-center gap-3"
         style={{ writingMode: "vertical-rl", rotate: "180deg" }}
       >
-        <span className="micro tabular !text-current opacity-70">
-          {code} / {last}
-        </span>
-        <span className="h-6 w-px bg-current opacity-30" />
         <span className="micro !text-current opacity-70">{name}</span>
       </div>
     </div>

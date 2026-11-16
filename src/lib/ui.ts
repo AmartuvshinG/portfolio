@@ -65,8 +65,6 @@ const en = {
       { label: "Journey", sub: "Where I've been", href: "#timeline" },
       { label: "Contact", sub: "Get in touch", href: "#contact" },
     ],
-    selectKey: "↑ ↓ and Enter to jump to a section",
-    selectTap: "Tap a section to jump to it",
     /** The hero card's label over the current role. */
     player: "Currently",
   },
@@ -79,19 +77,14 @@ const en = {
     status: "Status",
     /** The ID card: the current-role row and the live strip. */
     now: "Now",
-    localTime: "Local time",
-    file: "About me",
     dossier: "Open the dossier",
     /** The four figures under the statement. Values come from
      *  content.ts (`education`, the heroSub's 222,000+ Firefox bugs). */
     statGpa: "GPA · final 4 terms",
-    statBugs: "Firefox bug reports my capstone learned from",
-    statDeans: "Terms on the Dean's List",
     statLangs: "Languages · Mongolian, English",
   },
   connect: {
     aria: "Find me elsewhere",
-    eyebrow: "Find me elsewhere",
     title: "Links",
     lead: "My code, my work history, and the app my team launched.",
     repos: (n: number) => `${n} public repos`,
@@ -108,7 +101,6 @@ const en = {
   },
   work: {
     aria: "Selected work",
-    eyebrow: "Selected work",
     title: "Work",
     open: "View project",
     /** The cursor's label over a case file you can open. */
@@ -117,25 +109,20 @@ const en = {
     prev: "Previous project",
     next: "Next project",
     rail: "Projects",
-    hint: "Scroll, or use ← →",
     count: (i: number, n: number) => `${String(i).padStart(2, "0")} / ${String(n).padStart(2, "0")}`,
     noSite: "No public build",
     preview: (title: string) => `View ${title}`,
   },
   craft: {
     aria: "Skills",
-    eyebrow: "What I do",
     title: "Skills",
     lead: "The tools I use, and where I've used each one.",
     proven: "Used in",
     stack: "Tools",
     /** The master logo dock under the header. */
-    dock: "Tech stack",
     /** The loadout's groups, in techStack order (content.ts `techGroups`). */
     groups: ["Languages", "Frontend", "Backend & data", "ML & DevOps"],
     studied: "Studied at Gannon",
-    degree: (credits: number, deans: number) =>
-      `B.S. Software Engineering · ${credits} credits · Dean's List ×${deans}`,
     hint: "Keep scrolling",
     tools: {
       usability: "Usability testing",
@@ -151,8 +138,6 @@ const en = {
     title: "How Spotfixes works",
     credit: "My part: UI/UX lead and testing",
     source: "Based on our final capstone report, spring 2026",
-    hint: "Scroll or use ← → keys",
-    step: (i: number, n: number) => `${String(i).padStart(2, "0")} / ${String(n).padStart(2, "0")}`,
     illustrative: "Example",
     exampleLabel: "Example report",
     beats: [
@@ -264,7 +249,6 @@ const en = {
     summers: "Summers",
     graduated: "Graduated",
     /** City names on the globe (short) and over the record (long). */
-    places: { ub: "Ulaanbaatar", erie: "Erie, PA" },
     placesLong: { ub: "Ulaanbaatar, Mongolia", erie: "Erie, Pennsylvania, USA" },
     transit: "Flying",
     distance: (km: number) => `≈ ${km.toLocaleString("en-US")} km`,
@@ -334,7 +318,6 @@ const en = {
     },
   },
   caseFile: {
-    label: "Project",
     close: "Close project",
     overview: "Overview",
     outcomes: "Key outcomes",
@@ -343,9 +326,7 @@ const en = {
     links: "Links",
     gallery: "Gallery",
     role: "Role",
-    year: "Year",
     category: "Category",
-    status: "Status",
     prev: "Previous",
     next: "Next",
     esc: "Esc to close",
@@ -356,7 +337,6 @@ const en = {
   contact: {
     aria: "Contact",
     title: "Get in touch",
-    email: "Email",
     responseTime: "Replies within 48 hours",
     reply: "Reply time",
     emailMe: "Email me",
@@ -380,7 +360,6 @@ const en = {
       footage: "Footage",
       ground: "Components",
       map: "Map data",
-      base: "Made in",
       via: "via",
     },
     /** Trademark credit for the marks on the Signal panels (see BrandMarks) and the Path (see OrgMark). */
@@ -487,8 +466,6 @@ const mn: UiStrings = {
       { label: "Замнал", sub: "Миний туулсан зам", href: "#timeline" },
       { label: "Холбогдох", sub: "Надтай холбогдох", href: "#contact" },
     ],
-    selectKey: "↑ ↓ болон Enter-ээр хэсэг рүү шилжинэ",
-    selectTap: "Хэсэг дээр товшиж шилжинэ",
     player: "Одоо",
   },
   about: {
@@ -498,18 +475,13 @@ const mn: UiStrings = {
     status: "Төлөв",
     /* MN draft (2026-11-15), awaiting proofread. */
     now: "Одоо",
-    localTime: "Орон нутгийн цаг",
-    file: "Миний тухай",
     dossier: "Дэлгэрэнгүйг нээх",
     /* Drafts: awaiting Amartuvshin's proofread. */
     statGpa: "Голч · сүүлийн 4 улирал",
-    statBugs: "Төгсөлтийн төслийн суралцсан Firefox-ийн алдааны тайлан",
-    statDeans: "Деканы жагсаалтад орсон улирал",
     statLangs: "Хэл · Монгол, Англи",
   },
   connect: {
     aria: "Бусад сувгууд",
-    eyebrow: "Бусад сувгууд",
     title: "Холбоосууд",
     lead: "Миний код, ажлын түүх, багийн маань гаргасан апп.",
     repos: (n: number) => `${n} нээлттэй репо`,
@@ -524,7 +496,6 @@ const mn: UiStrings = {
   },
   work: {
     aria: "Сонгосон төслүүд",
-    eyebrow: "Сонгосон төслүүд",
     title: "Төслүүд",
     open: "Дэлгэрэнгүй",
     view: "ҮЗЭХ",
@@ -532,24 +503,19 @@ const mn: UiStrings = {
     prev: "Өмнөх төсөл",
     next: "Дараах төсөл",
     rail: "Төслүүд",
-    hint: "Гүйлгэх, эсвэл ← →",
     count: (i: number, n: number) => `${String(i).padStart(2, "0")} / ${String(n).padStart(2, "0")}`,
     noSite: "Нээлттэй хувилбаргүй",
     preview: (title: string) => `${title}: дэлгэрэнгүй`,
   },
   craft: {
     aria: "Ур чадвар",
-    eyebrow: "Юу хийдэг вэ",
     title: "Ур чадвар",
     lead: "Миний ашигладаг хэрэгслүүд, тус бүрийг хаана ашигласан нь.",
     proven: "Ашигласан",
     stack: "Хэрэгсэл",
-    dock: "Технологийн стек",
     /* Draft: awaiting Amartuvshin's proofread. */
     groups: ["Програмчлалын хэл", "Фронтэнд", "Бэкэнд ба өгөгдөл", "ML ба DevOps"],
     studied: "Ганнонд судалсан",
-    degree: (credits: number, deans: number) =>
-      `Програм хангамжийн инженерчлэлийн бакалавр · ${credits} кредит · Деканы жагсаалт ×${deans}`,
     hint: "Үргэлжлүүлэн гүйлгэнэ үү",
     tools: {
       usability: "Хэрэглэгчийн туршилт",
@@ -565,8 +531,6 @@ const mn: UiStrings = {
     title: "Spotfixes хэрхэн ажилладаг вэ",
     credit: "Миний хэсэг: UI/UX ахлагч, туршилт",
     source: "Төслийн эцсийн тайлан дээр үндэслэв, 2026 оны хавар",
-    hint: "Гүйлгэх эсвэл ← → товч",
-    step: (i: number, n: number) => `${String(i).padStart(2, "0")} / ${String(n).padStart(2, "0")}`,
     illustrative: "Жишээ",
     exampleLabel: "Жишээ тайлан",
     beats: [
@@ -678,7 +642,6 @@ const mn: UiStrings = {
     summer: "Зун",
     summers: "Зун",
     graduated: "Төгссөн",
-    places: { ub: "Улаанбаатар", erie: "Эри, Пенсильвани" },
     placesLong: { ub: "Улаанбаатар, Монгол", erie: "Эри, Пенсильвани, АНУ" },
     transit: "Нислэгт",
     distance: (km: number) => `≈ ${km.toLocaleString("mn-MN")} км`,
@@ -748,7 +711,6 @@ const mn: UiStrings = {
     },
   },
   caseFile: {
-    label: "Төслийн дэлгэрэнгүй",
     close: "Хаах",
     overview: "Тойм",
     outcomes: "Гол үр дүн",
@@ -757,9 +719,7 @@ const mn: UiStrings = {
     links: "Холбоос",
     gallery: "Зургууд",
     role: "Үүрэг",
-    year: "Он",
     category: "Төрөл",
-    status: "Төлөв",
     prev: "Өмнөх",
     next: "Дараах",
     esc: "Esc — хаах",
@@ -769,7 +729,6 @@ const mn: UiStrings = {
   contact: {
     aria: "Холбогдох",
     title: "Холбоо барих",
-    email: "И-мэйл",
     responseTime: "48 цагийн дотор хариулна",
     /* MN draft (2026-11-15), awaiting proofread. */
     reply: "Хариу өгөх хугацаа",
@@ -792,7 +751,6 @@ const mn: UiStrings = {
       footage: "Видео бичлэг",
       ground: "Бүрэлдэхүүн",
       map: "Газрын зургийн өгөгдөл",
-      base: "Бүтээсэн газар",
       via: "эх сурвалж",
     },
     credit:

@@ -345,6 +345,8 @@ export function Navbar() {
                   linkProps={(i) => ({ href: isHome ? navLinks[i].href : `/${navLinks[i].href}` })}
                   label={t.nav.chapters}
                   size="sm"
+                  pointerLights
+                  sweep
                 />
               </>
             )}
@@ -426,6 +428,8 @@ export function Navbar() {
                 linkProps={(i) => ({ href: isHome ? navLinks[i].href : `/${navLinks[i].href}` })}
                 label={t.nav.siteMenu}
                 size="lg"
+                pointerLights
+                sweep
               />
             </div>
 

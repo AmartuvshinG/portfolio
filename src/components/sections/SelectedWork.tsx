@@ -1,5 +1,7 @@
 "use client";
 
+import { Rich } from "@/components/ui/Rich";
+
 import { useRef, useState } from "react";
 import Image from "next/image";
 import { ArrowUpRight } from "lucide-react";
@@ -22,9 +24,10 @@ import { PIN_QUERY } from "@/lib/viewport";
  *
  * Every project is one full frame, the whole screenshot uncropped, with its
  * other shots in a strip beneath it. On a wide screen the chapter pins and
- * the vertical scroll runs the reel sideways: the frame in the gate is lit
- * and full size, the ones either side recede into the dark, and its title
- * card comes in as a stage of the hero's menu.
+ * the scroll lifts the reel up through the gate, one project per gate height:
+ * the frame in the gate is lit and full size, the ones above and below recede
+ * into the dark, and its title card comes in as a stage of the hero's menu.
+ * Nothing moves sideways.
  *
  * **Scroll drives it, never the pointer** (AGENTS.md). With scroll timelines
  * the reel's travel is CSS on the compositor (`.reel-track`, ride.css); framer
@@ -32,7 +35,7 @@ import { PIN_QUERY } from "@/lib/viewport";
  * Clicking a frame in the gate opens its case file; clicking one beside it
  * scrolls the reel there.
  *
- * Phones and reduced motion: a native swipe row with snap, no pin.
+ * Phones and reduced motion: a plain vertical stack, no pin.
  */
 
 /** Scroll per project while pinned, in viewport heights. */
@@ -56,8 +59,8 @@ export function SelectedWork() {
     const k = Math.round(Math.min(1, Math.max(0, p)) * (n - 1));
     setFront((f) => (f === k ? f : k));
   });
-  /* Fallback travel: the same maths as the CSS keyframes. */
-  const x = useTransform(scrollYProgress, (p) => `calc(${-Math.min(1, Math.max(0, p)) * (n - 1)} * (var(--fw) + var(--fg)))`);
+  /* Fallback travel: the same maths as the CSS keyframes (100cqh = one gate). */
+  const y = useTransform(scrollYProgress, (p) => `calc(${-Math.min(1, Math.max(0, p)) * (n - 1)} * 100cqh)`);
   const bar = useTransform(scrollYProgress, (p) => Math.min(1, Math.max(0, p)));
 
   const goFrame = (i: number) => {
@@ -94,21 +97,19 @@ export function SelectedWork() {
         }}
       >
         <header className="reel-head">
-          <SectionHeader index={sectionIndex("#work")} label={t.work.eyebrow} title={t.work.title} chapter="#work" className="lf-masthead" />
+          <SectionHeader index={sectionIndex("#work")} title={t.work.title} chapter="#work" className="lf-masthead" />
           {pinned && (
             <div className="reel-meter" aria-hidden>
-              <span className="tag tabular text-fg">{t.work.count(front + 1, n)}</span>
               <span className="reel-meter-track">
                 {css ? <span className="reel-meter-fill reel-meter-fill--css" /> : <motion.span className="reel-meter-fill" style={{ scaleX: bar }} />}
               </span>
-              <span className="tag hidden text-fg/85 lg:inline">{t.work.hint}</span>
             </div>
           )}
         </header>
 
-        <div className={cn("reel-gate", !pinned && "reel-gate--swipe")}>
+        <div className={cn("reel-gate", !pinned && "reel-gate--stack")}>
           {pinned && !css ? (
-            <motion.ol className="reel-track" style={{ x }}>
+            <motion.ol className="reel-track" style={{ y }}>
               <Frames projects={projects} front={front} pinned={pinned} onPick={goFrame} />
             </motion.ol>
           ) : (
@@ -158,13 +159,12 @@ function Frames({
             {/* The title card uses the same arrival and modules as the ID. */}
             <FrameLock on={on} className="reel-card lf-project-card">
               <span className="lf-project-title fl-in" style={{ "--i": 0 } as React.CSSProperties} data-lit={on ? "true" : "false"}>
-                <span className="lf-code tag">{p.index}</span>
                 <span className="lf-project-name">{p.title}</span>
               </span>
               <span className="fl-in tag mt-3 block text-fg/85" style={{ "--i": 1 } as React.CSSProperties}>
-                {p.category} · {p.year}
+                {p.category}
               </span>
-              <p style={{ "--i": 2 } as React.CSSProperties} className="fl-in reel-summary text-sm leading-relaxed text-fg/85 md:text-base">{p.summary}</p>
+              <p style={{ "--i": 2 } as React.CSSProperties} className="fl-in reel-summary text-sm leading-relaxed text-fg/85 md:text-base"><Rich text={p.summary} /></p>
               <button type="button" className="reel-open tag fl-in" style={{ "--i": 3 } as React.CSSProperties} tabIndex={on ? 0 : -1} onClick={() => openCase(p.slug)}>
                 {t.work.open} <ArrowUpRight aria-hidden size={16} />
               </button>

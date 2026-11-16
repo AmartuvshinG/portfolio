@@ -147,6 +147,9 @@ const siteUrl =
 export const site = {
   name: "AMARTUVSHIN",
   title: "Amartuvshin Ganzorig · Software Engineer",
+  /** The browser tab: just the name. The full title above stays in link
+      previews, search results and the installed app's name. */
+  tabTitle: "Amartuvshin",
   description:
     "Portfolio of Amartuvshin Ganzorig, a software engineering graduate (B.S., Gannon University, 2026) building full-stack and machine learning applications, now a System Developer at Techpack Power Intel LLC in Ulaanbaatar, Mongolia.",
   url: siteUrl,
@@ -158,7 +161,7 @@ export const profile = {
   role: "Software Engineer",
   discipline: "Full-stack · Machine Learning · UI/UX",
   location: "Ulaanbaatar, Mongolia · GMT+8",
-  status: "SYSTEM DEVELOPER AT TECHPACK POWER INTEL LLC",
+  status: "[[SYSTEM DEVELOPER]] AT TECHPACK POWER INTEL LLC",
   /** The hero panel's degree row. Same facts as the page description. */
   degree: "B.S. Software Engineering · Gannon University, 2026",
   /** Set in the editorial serif under the name. */
@@ -241,8 +244,8 @@ export const about = {
   heading: "ABOUT ME",
   lead: "Gannon University graduate, now back home in Ulaanbaatar.",
   paragraphs: [
-    "I graduated from Gannon University (Erie, Pennsylvania) in May 2026 with a B.S. in Software Engineering. My capstone, Spotfixes, is a live web platform that predicts how serious a software bug is and finds duplicate reports, built on real Mozilla Firefox data with feedback from Firefox developers. I built much of its backend, tenant system and deployment, and led its UI/UX and testing.",
-    "I work mostly in Java, Python and React. I like making software that is easy to use, works every time, and gets tested before anyone else finds the bugs. I'm back in Ulaanbaatar, I speak Mongolian and English, and since November 2026 I work as a System Developer at Techpack Power Intel LLC.",
+    "My capstone, Spotfixes, is a live web platform that predicts how serious a software bug is and finds duplicate reports, built on real Mozilla Firefox data with feedback from Firefox developers. I built much of its [[backend, tenant system and deployment]], and led its UI/UX and testing.",
+    "I work mostly in [[Java, Python and React]]. I like making software that is easy to use, works every time, and gets tested before anyone else finds the bugs.",
   ],
   signature: [
     { k: "FOCUS", v: "Full-stack · ML" },
@@ -264,7 +267,7 @@ export const capabilities: Capability[] = [
     code: "SYS/01",
     title: "Full-stack Web",
     description:
-      "React frontends on FastAPI backends with PostgreSQL (Supabase): for Spotfixes, most of the company and admin API, per-company data tables, and a live Bugzilla sync.",
+      "[[React frontends on FastAPI backends]] with PostgreSQL (Supabase): for Spotfixes, most of the company and admin API, per-company data tables, and a live Bugzilla sync.",
     tags: ["React", "FastAPI", "PostgreSQL"],
     stack: ["react", "fastapi", "postgresql", "supabase"],
     courses: ["CIS 255", "CIS 390", "CIS 240"],
@@ -277,7 +280,7 @@ export const capabilities: Capability[] = [
     code: "SYS/02",
     title: "Machine Learning",
     description:
-      "Text classification with scikit-learn (TF-IDF + Random Forest) and retrieval-augmented similarity search with ChromaDB.",
+      "Text classification with [[scikit-learn]] (TF-IDF + Random Forest) and retrieval-augmented similarity search with ChromaDB.",
     tags: ["scikit-learn", "RAG", "ChromaDB"],
     stack: ["scikitlearn", "python", "chromadb"],
     courses: ["CIS 457", "CIS 458"],
@@ -290,7 +293,7 @@ export const capabilities: Capability[] = [
     code: "SYS/03",
     title: "Java & Core Programming",
     description:
-      "Java as my strongest language, plus Python, JavaScript, SQL and C++; Android apps in Android Studio.",
+      "[[Java as my strongest language]], plus Python, JavaScript, SQL and C++; Android apps in Android Studio.",
     tags: ["Java", "Python", "C++"],
     stack: ["java", "python", "javascript", "cpp", "androidstudio"],
     courses: ["CIS 182", "CSC 220", "CIS 377"],
@@ -300,7 +303,7 @@ export const capabilities: Capability[] = [
     code: "SYS/04",
     title: "UI/UX & Usability",
     description:
-      "Led UI/UX for Spotfixes; planned and ran usability tests, logged findings, and turned them into fixes.",
+      "[[Led UI/UX for Spotfixes]]; planned and ran usability tests, logged findings, and turned them into fixes.",
     tags: ["UI/UX", "Usability testing", "Accessibility"],
     stack: ["usability", "accessibility"],
     courses: ["CIS 239", "CIS 240"],
@@ -312,7 +315,7 @@ export const capabilities: Capability[] = [
     code: "SYS/05",
     title: "Testing & QA",
     description:
-      "Test case design, defect tracking and QA reporting across the software development lifecycle.",
+      "[[Test case design]], defect tracking and QA reporting across the software development lifecycle.",
     tags: ["QA", "Test cases", "SDLC"],
     stack: ["testcases", "defects", "sdlc"],
     courses: ["SOFT 310", "CIS 326", "CIS 350"],
@@ -323,7 +326,7 @@ export const capabilities: Capability[] = [
     code: "SYS/06",
     title: "DevOps & Security",
     description:
-      "Wrote the Spotfixes Docker setup and GitHub Actions CI/CD, deployed it with SSL on Ubuntu, and hardened its API; OAuth2, JWT, MFA and row-level security.",
+      "Wrote the Spotfixes [[Docker setup and GitHub Actions CI/CD]], deployed it with SSL on Ubuntu, and hardened its API; OAuth2, JWT, MFA and row-level security.",
     tags: ["Docker", "CI/CD", "OAuth2"],
     stack: ["docker", "ubuntu", "githubactions", "jwt"],
     courses: ["CIS 387", "SOFT 410", "CIS 219", "CSC 330"],
@@ -362,7 +365,7 @@ export const projects: Project[] = [
     role: "Full-stack Engineer · UI/UX Lead · Team of 3",
     status: "Live",
     summary:
-      "A live web app that tells you how serious a bug report is and finds duplicates, trained on 222,000+ real Firefox bugs.",
+      "A live web app that tells you how serious a bug report is and finds duplicates, trained on [[222,000+ real Firefox bugs]].",
     description:
       "Spotfixes was our year-long senior design capstone at Gannon University (Fall 2025 – Spring 2026), built with feedback from Mozilla Firefox developers and our faculty mentor. It predicts a bug's severity (S1–S4) with a TF-IDF + Random Forest model plus a critical-keyword rule engine, and uses RAG similarity search to surface the three most similar past bugs. Companies get isolated workspaces (multi-tenant, Supabase row-level security), can bulk-upload their own bugs, and retrain the model on them. On the backend I built most of the company and admin API (per-company bug tables, invites, approvals), the per-company retraining pipeline with live progress, a consent switch that keeps opted-out data out of the shared model, and a live sync with Mozilla's Bugzilla. I wrote the Docker setup and GitHub Actions pipeline, deployed it with SSL on Ubuntu, and ran a security pass over the API. I also led the React UI/UX, usability testing and QA logging, and merged my teammates' features into the release.",
     stack: ["React", "FastAPI", "Python", "scikit-learn", "ChromaDB", "Supabase", "Docker"],
@@ -414,7 +417,7 @@ export const projects: Project[] = [
     role: "Designer & Developer · AI-assisted",
     status: "Live",
     summary:
-      "Two concept websites for fictional brands, KRYOS and VOIDGATE, built for Gannon's website design course.",
+      "Two concept websites for [[fictional brands]], KRYOS and VOIDGATE, built for Gannon's website design course.",
     description:
       "Classwork for the website design course at Gannon University (Spring 2026). KRYOS is a fictional game studio and VOIDGATE a fictional sci-fi storytelling universe; both brands, and everything they claim, are invented for the brief. I designed and built both sites with AI assistance, working in Claude Code in VS Code with MCP servers for research (Firecrawl), image generation (Gemini Nano Banana) and UI generation (Magic, Google Stitch), then directing, editing and deploying the results.",
     stack: ["HTML/CSS/JS", "React", "Next.js", "Three.js", "GSAP", "Claude Code"],
@@ -463,7 +466,7 @@ export const projects: Project[] = [
     role: "Designer & Developer",
     status: "Live",
     summary:
-      "The site you're on: a portfolio that moves as you scroll, built in Next.js, with an accessibility check on every update.",
+      "The site you're on: a portfolio that moves as you scroll, built in Next.js, with an [[accessibility check]] on every update.",
     description:
       "Designed and built from scratch with Next.js 16, React 19, TypeScript, Tailwind CSS v4, GSAP and Framer Motion. Every push runs type-checking, linting, a production build and an automated axe accessibility sweep in GitHub Actions, and every animation has a reduced-motion fallback.",
     stack: ["Next.js", "TypeScript", "Tailwind", "GSAP", "GitHub Actions"],
@@ -513,7 +516,7 @@ export const timeline: TimelineEntry[] = [
     title: "Mongolian University of Science and Technology",
     org: "MUST · Ulaanbaatar",
     description:
-      "Started university in Ulaanbaatar and completed 21 credits before moving to the US to study software engineering.",
+      "Started university in Ulaanbaatar and completed [[21 credits]] before moving to the US to study software engineering.",
   },
   {
     start: { year: 2022, month: 1 },
@@ -525,7 +528,7 @@ export const timeline: TimelineEntry[] = [
     title: "Began B.S. Software Engineering",
     org: "Gannon University · Erie, PA",
     description:
-      "First semester in Erie: problem solving and programming, an introduction to networks, and Calculus 1.",
+      "First semester in Erie: [[problem solving and programming]], an introduction to networks, and Calculus 1.",
   },
   {
     start: { year: 2022, season: "summer" },
@@ -538,7 +541,7 @@ export const timeline: TimelineEntry[] = [
     photo: "erie-aerial",
     title: "Summer Student Conference Assistant",
     org: "Auxiliary Services · Gannon University",
-    description: "Got residence halls ready for summer conferences and helped guests, keeping track of the work in Excel and Word.",
+    description: "Got residence halls ready for summer conferences and helped guests, keeping track of the work in [[Excel and Word]].",
   },
   {
     start: { year: 2023, month: 8 },
@@ -551,7 +554,7 @@ export const timeline: TimelineEntry[] = [
     title: "Front Desk Student Attendant",
     org: "Office of Residence Life · Gannon University",
     description:
-      "Kept student housing records up to date in StarRez and answered residents' questions by phone, email and in person.",
+      "Kept student housing records up to date in [[StarRez]] and answered residents' questions by phone, email and in person.",
   },
   {
     start: { year: 2024, month: 1 },
@@ -563,7 +566,7 @@ export const timeline: TimelineEntry[] = [
     photo: "zurn",
     title: "Android Apps · Mobile App Development II",
     org: "Gannon University · Coursework",
-    description: "Built Android apps in Android Studio, tested on simulated phones, using live data from APIs.",
+    description: "Built Android apps in [[Android Studio]], tested on simulated phones, using live data from APIs.",
   },
   {
     start: { year: 2024, month: 8 },
@@ -576,7 +579,7 @@ export const timeline: TimelineEntry[] = [
     title: "Test Suite · Software Testing & QA",
     org: "Gannon University · Coursework",
     description:
-      "Wrote and ran tests for a Java calculator app, then fixed the bugs they found with my team on GitHub.",
+      "Wrote and ran [[tests for a Java calculator app]], then fixed the bugs they found with my team on GitHub.",
   },
   {
     start: { year: 2025, month: 5 },
@@ -588,7 +591,7 @@ export const timeline: TimelineEntry[] = [
     photo: "chickfila",
     title: "Foodservice Student Worker",
     org: "Metz Culinary Management · Chick-fil-A",
-    description: "Prepared food and restocked supplies during the busiest hours, following food safety rules.",
+    description: "Prepared food and restocked supplies during the busiest hours, following [[food safety rules]].",
   },
   {
     start: { year: 2025, month: 8 },
@@ -602,7 +605,7 @@ export const timeline: TimelineEntry[] = [
     title: "Spotfixes · Senior Design Capstone",
     org: "Gannon University · Team of 3",
     description:
-      "A live web app that rates how serious a bug report is, trained on 222,000+ real Firefox bugs. I built much of the backend and deployment, and led the design and the testing.",
+      "A live web app that rates how serious a bug report is, trained on [[222,000+ real Firefox bugs]]. I built much of the backend and deployment, and led the design and the testing.",
   },
   {
     start: { year: 2026, month: 5 },
@@ -616,7 +619,7 @@ export const timeline: TimelineEntry[] = [
     title: "B.S. Software Engineering",
     org: "Gannon University",
     description:
-      "137 credits. Dean's List, College of Engineering and Business, in Fall 2024, Spring 2025 and Spring 2026.",
+      "[[137 credits]]. Dean's List, College of Engineering and Business, in Fall 2024, Spring 2025 and Spring 2026.",
   },
   {
     start: { year: 2026, month: 6 },
@@ -629,7 +632,7 @@ export const timeline: TimelineEntry[] = [
     title: "Corporate Logistics Coordinator",
     org: "Oyu Tolgoi LLC · Contractor, Ulaanbaatar",
     description:
-      "The main contact for shipping and transport between the Ulaanbaatar head office and the mine site, working with many teams and contractors. I tracked logistics data to find slow or wasteful routes, under strict safety rules.",
+      "The [[main contact for shipping and transport]] between the Ulaanbaatar head office and the mine site, working with many teams and contractors. I tracked logistics data to find slow or wasteful routes, under strict safety rules.",
   },
   {
     /* From Amartuvshin (2026-11-15): started as System Developer in Nov 2026.
@@ -641,7 +644,7 @@ export const timeline: TimelineEntry[] = [
     photo: "techpack",
     title: "System Developer",
     org: "Techpack Power Intel LLC · Ulaanbaatar",
-    description: "Started work as a System Developer in November 2026.",
+    description: "Started work as a [[System Developer]] in November 2026.",
   },
 ];
 

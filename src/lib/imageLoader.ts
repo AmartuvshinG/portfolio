@@ -12,7 +12,10 @@ const WIDTHS = [640, 960, 1280, 1920];
 const BAKED = /^\/(work)\/[^/]+\.(webp|png|jpe?g)$/i;
 
 export default function imageLoader({ src, width }: { src: string; width: number; quality?: number }) {
-  if (process.env.NODE_ENV !== "production" || !BAKED.test(src)) return src;
+  /* Dev serves the original; the ?w= is ignored by the file server but tells
+     next/image the loader honours width, which silences its warning. */
+  if (process.env.NODE_ENV !== "production") return `${src}?w=${width}`;
+  if (!BAKED.test(src)) return src;
   const w = WIDTHS.find((x) => x >= width) ?? WIDTHS[WIDTHS.length - 1];
   return `/opt${src.replace(/\.[^.]+$/, "")}.w${w}.webp`;
 }

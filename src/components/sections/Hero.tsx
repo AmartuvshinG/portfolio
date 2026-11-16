@@ -1,5 +1,7 @@
 "use client";
 
+import { Rich } from "@/components/ui/Rich";
+
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useI18n } from "@/lib/i18n";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
@@ -221,14 +223,11 @@ export function Hero() {
             <span className="ts-card-tag tag">{t.hero.player}</span>
             <span className="flex items-center gap-2 text-sm text-fg">
               <span className={cn("ts-lamp")} aria-hidden />
-              {profile.status}
+              <span><Rich text={profile.status} /></span>
             </span>
-            <span className="text-sm text-fg/80">{profile.degree}</span>
+            <span className="hidden text-sm text-fg/80 md:block">{profile.degree}</span>
           </div>
-          <span className="ts-hint micro ts-reveal" style={{ "--d": "1.3s" } as React.CSSProperties}>
-            <span className="hidden md:inline">{t.hero.selectKey}</span>
-            <span className="md:hidden">{t.hero.selectTap}</span>
-          </span>
+
         </div>
       </div>
     </section>

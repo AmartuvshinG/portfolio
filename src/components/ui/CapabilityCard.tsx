@@ -1,5 +1,7 @@
 "use client";
 
+import { Rich } from "@/components/ui/Rich";
+
 import { motion } from "framer-motion";
 import { iconStroke } from "@/lib/icon";
 import {
@@ -78,7 +80,7 @@ export function CapabilityCard({ item }: { item: Capability }) {
       </h3>
 
       <p className={cn("mt-4 flex-1 leading-relaxed text-muted", item.feature ? "text-base md:text-lg" : "text-base")}>
-        {item.description}
+        <Rich text={item.description} />
       </p>
 
       {item.courses && item.courses.length > 0 && (

@@ -104,7 +104,7 @@ export function BeatNotes({ i, words, className }: { i: number; words: Words; cl
   const b = words.beats[i];
   if (!b.plain) return null;
   return (
-    <p className={cn("border-l-2 border-[var(--color-rim)] pl-4 text-base leading-relaxed text-fg/90", className)}>
+    <p className={cn("hidden md:block border-l-2 border-[var(--color-rim)] pl-4 text-base leading-relaxed text-fg/90", className)}>
       <span className="tag mr-2 text-[var(--color-rim)]">{words.plainLabel}</span>
       {b.plain}
     </p>
@@ -199,7 +199,7 @@ function Forest({ words, animate }: { words: Words; animate: boolean }) {
       <div>
         <div className="flex flex-wrap items-center gap-y-1">
           <Label>{words.votesLabel}</Label>
-          <Illustrative words={words} />
+
         </div>
         <div className="mt-3 grid grid-cols-6 gap-1.5">
           {VOTES.map((v, n) => (
@@ -273,7 +273,7 @@ function Neighbours({ words, animate }: { words: Words; animate: boolean }) {
     <div>
       <div className="flex flex-wrap items-center gap-y-1">
         <Label>{words.vectorLabel}</Label>
-        <Illustrative words={words} />
+
       </div>
       <div className="mt-2 flex h-8 items-end gap-[3px]">
         {VECTOR.map((v, n) => (
@@ -393,7 +393,7 @@ function Measured({ words, animate }: { words: Words; animate: boolean }) {
         <MatrixTable words={words} />
       </figure>
 
-      <p className="mt-2 text-sm leading-snug text-fg/85">
+      <p className="mt-2 hidden text-sm leading-snug text-fg/85 md:block">
         {M.caveat} <span className="text-[var(--color-rim)]">{M.loop}</span>
       </p>
     </div>

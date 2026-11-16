@@ -129,3 +129,8 @@
 @media (prefers-reduced-motion: reduce) {
   .lf-stat[data-lit="true"] { animation: none; }
 }
+
+@media (max-width: 767px) {
+  footer .cr-head,
+  footer .cr-roll { display: none; }
+}

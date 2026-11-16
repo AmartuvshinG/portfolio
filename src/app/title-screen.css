@@ -169,6 +169,10 @@
   padding: 2px 8px;
   background: rgb(5 4 12 / 0.72);
 }
+/* Phones: at the 14px floor the three disciplines sit on one line. */
+@media (max-width: 767px) {
+  .ts-role-sub { font-size: 0.875rem; letter-spacing: -0.01em; }
+}
 
 /* Staggered settle for everything that isn't the name. */
 .ts-reveal {
@@ -470,4 +474,13 @@
 @media (prefers-reduced-motion: reduce) {
   .ts-name-sweep { display: none; }
   .ts-name-keys > span:hover { animation: none !important; }
+}
+
+@media (max-width: 767px) {
+  .ts-slate,
+  .ts-item-sub { display: none; }
+  .ts-frame { grid-template-rows: 1fr auto; gap: 36px; }
+  .ts-main { gap: 36px; }
+  .ts-role { margin-top: 28px; row-gap: 16px; }
+  .ts-card { gap: 10px; }
 }

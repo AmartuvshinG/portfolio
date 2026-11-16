@@ -2,7 +2,6 @@
 
 import { useI18n } from "@/lib/i18n";
 import { useSmoothScroll } from "@/components/chrome/SmoothScroll";
-import { LocalClock } from "@/components/ui/LocalClock";
 import { FrameLock } from "@/components/motion/FrameLock";
 import { MARK_D, MARK_T } from "@/components/chrome/NavGlyphs";
 import { LedTicker } from "@/components/chrome/LedTicker";
@@ -42,7 +41,7 @@ const MAP = { name: "Natural Earth", href: "https://www.naturalearthdata.com" };
  */
 export function Footer() {
   const { c, t } = useI18n();
-  const { navLinks, socials, profile, contact } = c;
+  const { navLinks, socials, profile } = c;
   const { goTo } = useSmoothScroll();
   const reduced = useReducedMotion();
   const year = new Date().getFullYear();
@@ -89,7 +88,6 @@ export function Footer() {
         </a>
       ),
     },
-    { role: cr.base, value: profile.location },
   ];
 
   return (
@@ -97,7 +95,7 @@ export function Footer() {
       {/* The intro's name again, as a lit street sign: his name in Mongol
           bichig running through a dot-matrix band (LedTicker). It steps only
           while on screen. */}
-      <div className="border-y border-line py-6">
+      <div className="hidden border-y border-line py-6 md:block">
         <LedTicker />
       </div>
 
@@ -107,12 +105,12 @@ export function Footer() {
           tone="ghost"
           className="pointer-events-none absolute left-[4%] top-16 hidden h-[min(80%,34rem)] lg:block"
         />
-        <Reveal className="cr-head">
+        <Reveal className="cr-head hidden md:flex">
           <h2 className="cr-title">{cr.title}</h2>
           <span aria-hidden className="cr-rule" />
         </Reveal>
 
-        <FrameLock as="div" className="cr-roll">
+        <FrameLock as="div" className="cr-roll hidden md:block">
           <dl className="m-0">
             {credits.map((row, i) => (
               <div key={row.role} className="cr-row fl-in" style={{ "--i": Math.min(i, 6) } as React.CSSProperties}>
@@ -126,9 +124,7 @@ export function Footer() {
         <Reveal className="mt-20 flex flex-col items-center gap-6">
           <Seal className="h-12 w-12 opacity-90" />
           <p className="font-tech text-3xl text-fg md:text-4xl">{profile.fullName}</p>
-          <a href={`mailto:${contact.email}`} className="spectrum-underline font-mono text-sm text-fg">
-            {contact.email}
-          </a>
+
         </Reveal>
       </div>
 
@@ -145,7 +141,6 @@ export function Footer() {
                 }}
                 className="ft-link"
               >
-                <span className="ft-code tabular">{l.code}</span>
                 {l.label}
               </a>
             </li>
@@ -162,7 +157,7 @@ export function Footer() {
                 className="ft-link w-full justify-between"
               >
                 {s.label}
-                <span className="normal-case tracking-normal text-fg/80">{s.handle}</span>
+                <span className="hidden normal-case tracking-normal text-fg/80 md:inline">{s.handle}</span>
               </a>
             </li>
           ))}
@@ -177,16 +172,18 @@ export function Footer() {
             <span>
               © {year} {profile.fullName}
             </span>
-            <span className="flex items-center gap-2" aria-hidden>
-              UB <LocalClock className="text-fg" />
-            </span>
+
             <span aria-hidden lang="mn-Mong" className="font-script text-base normal-case tracking-normal text-[var(--color-rim)]">
               {profile.nameScript}
             </span>
           </span>
           {/* The trademark credit: a sentence someone may actually need to
               read, so sentence case at the 14px floor. */}
-          <span className="max-w-2xl text-sm leading-relaxed text-fg/80">{t.footer.credit}</span>
+          <span className="hidden max-w-2xl text-sm leading-relaxed text-fg/80 md:block">{t.footer.credit}</span>
+          <details className="max-w-2xl text-sm leading-relaxed text-fg/80 md:hidden">
+            <summary className="min-h-11 cursor-pointer py-3">{cr.title}</summary>
+            <p>{t.footer.credit}</p>
+          </details>
         </div>
         <div className="flex flex-wrap items-center gap-4">
           {/* The film can be run again. Not under reduced motion, where

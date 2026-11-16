@@ -6,7 +6,7 @@ import { useScrollTimelines } from "@/hooks/useScrollTimelines";
 import { iconStroke } from "@/lib/icon";
 import { motion, useScroll, useSpring, useTransform, type MotionValue } from "framer-motion";
 import { ArrowUpRight } from "lucide-react";
-import { sectionIndex, type SocialLink } from "@/lib/content";
+import { type SocialLink } from "@/lib/content";
 import { useI18n } from "@/lib/i18n";
 import { SliceTitle } from "@/components/motion/SliceTitle";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
@@ -71,11 +71,7 @@ export function Connect({ github }: { github: GitHubSummary | null }) {
         <div className="flex flex-col justify-between gap-6 md:flex-row md:items-end">
           <div className="relative flex flex-col gap-5">
             <ScriptLabel href="#connect" />
-            <div className="flex items-center gap-4">
-              <span className="eyebrow tabular">{sectionIndex("#connect")}</span>
-              <span className="h-px w-12 bg-current opacity-25" />
-              <span className="eyebrow">{t.connect.eyebrow}</span>
-            </div>
+
             <h2 className="display-caps text-fg" style={{ fontSize: "clamp(1.6rem, 4.4vw, 4.25rem)" }}>
               <SliceTitle text={t.connect.title} />
             </h2>
@@ -265,21 +261,21 @@ function Fact({ kind, github }: { kind: Kind; github: GitHubSummary | null }) {
   }
   if (kind === "live") {
     return (
-      <span className="tag mt-4 flex items-center gap-2 text-[var(--color-holo)]">
+      <span className="tag mt-4 hidden md:flex items-center gap-2 text-[var(--color-holo)]">
         <span aria-hidden className="h-2 w-2 rounded-full bg-[var(--color-holo)] shadow-[0_0_8px_var(--color-holo)]" />
         {t.connect.live}
       </span>
     );
   }
   if (!text) return null;
-  return <span className="tag mt-4 block text-[var(--color-holo)]">{text}</span>;
+  return <span className="tag mt-4 hidden md:block text-[var(--color-holo)]">{text}</span>;
 }
 
 /** The monolith's middle: what each place actually holds. The repos and
  *  languages are the daily GitHub fetch; the live product shows its own
  *  screen. Nothing here is invented, and with no data it is empty. */
 function Readout({ kind, github, shot }: { kind: Kind; github: GitHubSummary | null; shot?: string }) {
-  const { c, t } = useI18n();
+  const { t } = useI18n();
   if (kind === "github") {
     if (!github) return <span className="hidden md:block md:flex-1" />;
     const langs = github.languages.slice(0, 4);
@@ -319,17 +315,7 @@ function Readout({ kind, github, shot }: { kind: Kind; github: GitHubSummary | n
       </div>
     );
   }
-  if (kind === "linkedin") {
-    return (
-      <div className="readout relative hidden flex-1 flex-col justify-center gap-2 font-mono text-sm text-fg md:flex">
-        {[c.profile.role, c.profile.discipline, c.profile.location].map((line, i) => (
-          <span key={line} className="readout-line" style={{ "--i": i } as React.CSSProperties}>
-            <span className="spectrum-text">&gt;</span> {line}
-          </span>
-        ))}
-      </div>
-    );
-  }
+  if (kind === "linkedin") return null;
   if (!shot) return null;
   return (
     <div className="readout readout-screen relative hidden flex-1 md:block" aria-hidden>
@@ -397,7 +383,7 @@ function CopyLink({ href, label }: { href: string; label: string }) {
           transition={{ duration: 0.3, delay: done ? 0.12 : 0 }}
         />
       </svg>
-      <span aria-hidden className={done ? "text-[var(--color-holo)]" : undefined}>
+      <span aria-hidden className={cn("hidden md:inline", done && "text-[var(--color-holo)]")}>
         {done ? t.connect.copied : t.connect.copyShort}
       </span>
       <span role="status" className="sr-only">

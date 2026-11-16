@@ -27,7 +27,13 @@ export interface GitHubSummary {
 
 export async function getGitHubSummary(): Promise<GitHubSummary | null> {
   try {
-    const opts = { cache: "force-cache" as const, headers: { Accept: "application/vnd.github+json" } };
+    /* The timeout keeps a stalled GitHub from stalling the render (and so the
+       dev compile or the build); a timeout lands in the catch like any failure. */
+    const opts = {
+      cache: "force-cache" as const,
+      headers: { Accept: "application/vnd.github+json" },
+      signal: AbortSignal.timeout(8000),
+    };
     const [userRes, reposRes] = await Promise.all([
       fetch(`https://api.github.com/users/${USER}`, opts),
       fetch(`https://api.github.com/users/${USER}/repos?sort=pushed&per_page=100`, opts),
