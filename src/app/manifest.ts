@@ -15,10 +15,10 @@ export default function manifest(): MetadataRoute.Manifest {
     background_color: "#05040c",
     theme_color: "#05040c",
     icons: [
-      { src: "/icons/icon-v4.svg", type: "image/svg+xml", sizes: "any" },
-      { src: "/icons/icon-v4-192.png", type: "image/png", sizes: "192x192" },
-      { src: "/icons/icon-v4-512.png", type: "image/png", sizes: "512x512" },
-      { src: "/icons/apple-touch-icon-v4.png", type: "image/png", sizes: "180x180" },
+      { src: "/icons/icon-v5.svg", type: "image/svg+xml", sizes: "any" },
+      { src: "/icons/icon-v5-192.png", type: "image/png", sizes: "192x192" },
+      { src: "/icons/icon-v5-512.png", type: "image/png", sizes: "512x512" },
+      { src: "/icons/apple-touch-icon-v5.png", type: "image/png", sizes: "180x180" },
     ],
   };
 }

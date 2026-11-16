@@ -136,7 +136,7 @@ const onest = Onest({
 });
 
 export const metadata: Metadata = {
-  title: site.title,
+  title: site.tabTitle,
   description: site.description,
   metadataBase: new URL(site.url),
   /* Versioned paths (scripts/bake-favicons.mjs): Safari's favicon store is
@@ -145,12 +145,12 @@ export const metadata: Metadata = {
      The 32 px PNG is what Safari's tabs use — it takes no SVG favicon. */
   icons: {
     icon: [
-      { url: "/icons/favicon-v4.ico", sizes: "48x48" },
-      { url: "/icons/icon-v4-32.png", type: "image/png", sizes: "32x32" },
-      { url: "/icons/icon-v4-192.png", type: "image/png", sizes: "192x192" },
-      { url: "/icons/icon-v4.svg", type: "image/svg+xml", sizes: "any" },
+      { url: "/icons/favicon-v5.ico", sizes: "48x48" },
+      { url: "/icons/icon-v5-32.png", type: "image/png", sizes: "32x32" },
+      { url: "/icons/icon-v5-192.png", type: "image/png", sizes: "192x192" },
+      { url: "/icons/icon-v5.svg", type: "image/svg+xml", sizes: "any" },
     ],
-    apple: [{ url: "/icons/apple-touch-icon-v4.png", sizes: "180x180" }],
+    apple: [{ url: "/icons/apple-touch-icon-v5.png", sizes: "180x180" }],
   },
   /* Saved to an iPhone's Home Screen it opens with no Safari chrome, the
      status bar laid over the page (the viewport is `cover`, so the ground
